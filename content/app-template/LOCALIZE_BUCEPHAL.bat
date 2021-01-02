@@ -1,0 +1,39 @@
+chcp 1251 
+set robosd=E:\SOURCETREE\robosd++\content\
+
+set settings=%COMPUTERNAME%
+set settings=%settings::=,%
+set settings=%settings:.=,%
+set settings=settings\%settings%
+
+set prev=%CD%
+
+cd /D "%~dp0"
+
+if not EXIST reference (
+	MD   reference 
+)
+
+
+if not EXIST settings (
+	MD   settings 
+)
+
+
+if not EXIST "%settings%" (
+	MD   "%settings%" 
+)
+
+
+IF EXIST ".\reference\settings-ref"  RMDIR ".\reference\settings-ref"
+MKLINK /J ".\reference\settings-ref"  "%settings%"  
+
+IF EXIST ".\reference\robosd-ref"  RMDIR ".\reference\robosd-ref"
+MKLINK /J ".\reference\robosd-ref"  "%robosd%"\source  
+
+cd "%settings%"
+echo [LOCAL] > robosd-pp.ini
+echo CATALOG=%CD%\ >> robosd-pp.ini
+
+
+cd %prev%
