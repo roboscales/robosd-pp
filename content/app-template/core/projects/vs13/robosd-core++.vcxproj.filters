@@ -27,13 +27,16 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp">
       <Filter>robosd++/core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd-system-app-std.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_common.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\platform\win+vs13\robosd_app_tuning.hpp">
       <Filter>source/platform/win+vs13</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_common.hpp">
-      <Filter>robosd++/core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\core\platform\win+vs13\robosd_target.hpp">
       <Filter>robosd/core/platform/win+vs13</Filter>
@@ -45,6 +48,9 @@
       <Filter>robosd++/core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_list.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_common.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
   </ItemGroup>

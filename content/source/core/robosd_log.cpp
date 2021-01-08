@@ -9,7 +9,7 @@ namespace robo{
 		verb verb_ = verb::info;
 		unsigned int mask_ = 0;
 
-		void  log(verb _verb, unsigned int _mask, cstr _format, ...){
+		void  print(verb _verb, unsigned int _mask, cstr _format, ...){
 			if (
 				(print_ != 0) && 
 			(

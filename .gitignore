@@ -1,0 +1,9 @@
+/content/app-template/core/projects/vs13/obj
+/content/app-template/core/projects/vs13/bin
+/content/app-template/core/projects/vs13/.vs
+/content/app-template/core/projects/vs19/obj
+/content/app-template/core/projects/vs19/bin
+/content/app-template/core/projects/vs19/.vs
+/content/app-template/reference
+*.sdf
+*.suo

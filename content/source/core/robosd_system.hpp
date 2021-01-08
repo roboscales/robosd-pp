@@ -41,14 +41,13 @@ namespace robo{
 
 		void begin(void);
 		void finish(void);
-		void crash(char const * _file, char const * _function, int _line);
 
 		class ROBO_EXPORT os{
 			friend class system;
-			friend class guard;
 #if ROBO_APP_SYSTEM_MULTYTHRAD_ENABLED == 1
+			friend class guard;
 			static void *  enter(void);
-			static void  leave(void *);
+			static void leave(void *);
 			static void lock(void);
 			static void unlock(void);
 			static void critical_lock(void);
@@ -64,12 +63,11 @@ namespace robo{
 
 		class ROBO_EXPORT app{
 			friend class system;
-#if ROBO_APP_SYSTEM_MULTYTHRAD_ENABLED == 1
-			friend class guard;
-#endif
 			static void begin(void);
 			static void finish(void);
-			static bool is_backend();
+#if ROBO_APP_SYSTEM_MULTYTHRAD_ENABLED == 1
+			static bool is_backend(void);
+#endif
 		public:
 			static time_us_t time_us(void);
 			static time_ms_t time_ms(void);
@@ -81,6 +79,8 @@ namespace robo{
 #if ROBO_APP_SYSTEM_RANDOM_ENABLED == 1
 			static random_t rand(random_t _max);
 #endif
+		public:
+			static void crash(char const * _file, char const * _function, int _line);
 		};
 	};
 }

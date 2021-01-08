@@ -17,20 +17,20 @@
 #define ROBO_LOG_MASK_DISABLED 0
 
 #ifndef robo_errlog
-#define robo_errlog(format,...) ::robo::log(::robo::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
+#define robo_errlog(format,...) ::robo::log::print(::robo::log::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
 #endif
 
 #ifndef robo_warninglog
-#define robo_warninglog(format,...) ::robo::log(::robo::verb::warning, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
+#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
 #endif
 
 #ifndef robo_infolog
-#define robo_infolog(format,...) ::robo::log(::robo::verb::info, ROBO_LOG_MASK_DISABLED,RT(format) , __VA_ARGS__)
+#define robo_infolog(format,...) ::robo::log::print(::robo::log::verb::info, ROBO_LOG_MASK_DISABLED,RT(format) , __VA_ARGS__)
 #endif
 
 #ifndef robo_detaillog
 #define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,RT(format),__VA_ARGS__)
-#define robo_detaillog_(lvl,mask,format,...) ::robo::log(::robo::verb::detail##lvl, mask, RT(format) ,__VA_ARGS__)
+#define robo_detaillog_(lvl,mask,format,...) ::robo::log::print(::robo::log::verb::detail##lvl, mask, RT(format) ,__VA_ARGS__)
 #endif
 
 #define robo_log_init(verb,mask, logger) ::robo::log::begin(verb, mask, logger)
@@ -61,7 +61,7 @@ namespace robo{
 		bool ROBO_EXPORT begin(verb _verb, unsigned int _mask, print_f _print);
 		void ROBO_EXPORT fiish(void);
 
-		void ROBO_EXPORT log( verb _verb, unsigned int _mask, cstr _format, ...);
+		void ROBO_EXPORT print( verb _verb, unsigned int _mask, cstr _format, ...);
 	}
 }
 #endif

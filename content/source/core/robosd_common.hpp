@@ -23,14 +23,22 @@
 #include <string>
 #if ROBOSD_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t
+
+template class ROBO_EXPORT std::basic_string<wchar_t,  std::char_traits<wchar_t>,  std::allocator<wchar_t> >;
+#define ROBO_STRING std::basic_string<wchar_t,  std::char_traits<wchar_t>,  std::allocator<wchar_t> >	
+
 #define ROBO_CONST_STRING wchar_t const *
 #define RT(s) L##s
 #else
 #define ROBO_CHAR char
+class ROBO_EXPORT std::string;
+#define ROBO_STRING std::string
 #define ROBO_CONST_STRING char const *
 #define RT(s) s
 #endif
 
+
+#include "core/robosd_list.hpp"
 
 namespace robo {
 	typedef ROBO_TYPE_RANDOM random_t;
@@ -38,10 +46,46 @@ namespace robo {
 	typedef ROBO_TYPE_TIME_MS time_ms_t;
 
 	typedef  ROBO_CHAR char_t;
-	typedef  std::wstring str;
+	typedef  ROBO_STRING str;
 	typedef  ROBO_CONST_STRING cstr;
 
 	void ROBO_EXPORT crash(char const * _file, char const * _function, int _line);
+	//uint32_t ROBO_EXPORT hash(cstr _s, uint32_t _start);
+	typedef enum class result { complete, resume, panic };
+
+	class ROBO_EXPORT component{
+//		typedef enum class state{ unknown = -2, panic = -1, clean = 0, stopped, ready, startup, execute, shutdown };
+//		typedef enum class command { start, stop } ;
+		typedef  list::unsorted<component> list;
+		typedef  list::ref ref;
+		component * owner_ = nullptr;
+		ref ref_;
+		list disabled_;
+		list stopped_;
+		list startupped_;
+		list active_;
+		list shutdowned_;
+	protected:
+		virtual bool do_load(void) { return true; };
+		virtual void do_clean(void) {};
+		virtual result do_startup(void) { return result::complete;}
+		virtual result do_shutdown(void) { return result::complete;}
+		virtual bool do_start(void){ return true;}
+		virtual void do_stop(void) { }
+		virtual bool load(cstr _section);
+		virtual void clean(void);
+		virtual result startup(void);
+		virtual result shutdown(void);
+		virtual bool start(void);
+		virtual void stop(void);
+	public:
+		str alias;
+		str ini_section;
+		component( component * _owner = nullptr);
+		virtual ~component(void);
+		void set_owner(component * _owner);
+
+	};
 }
 
 

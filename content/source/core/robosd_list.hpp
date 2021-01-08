@@ -1,399 +1,219 @@
-#ifndef __robo_list__hpp
-#define __robo_list__hpp
+#ifndef __robo_list_hpp
+#define __robo_list_hpp
 
 #include "core/robosd_common.hpp"
 
 namespace robo{
+
 	namespace list{
+
 		template<typename T> class ROBO_EXPORT base;
 		
-		template<typename T> class ROBO_EXPORT ref{
+		template<typename T> class ROBO_EXPORT base_ref{
 			friend class base<T>;
-		protected:
-			/**Следующая ячейка в списке.*/
-			robo_cell_t * next_ = nullptr;
-			/**Предыдущая ячейка в списке.*/
-			robo_cell_t * prev_ = nullptr;	
 			T & owner_;
 			base<T> * list_ = nullptr;
-			ref(T & _owner) : owner_(_owner){};
+		protected:			
+			base_ref * next = nullptr;			
+			base_ref * prev = nullptr;	
+			base_ref(T & _owner) : owner_(_owner){};
+			void attach_to( base<T> & _list, base_ref<T> * _next){
+				_list.add_p( this, _next );
+			}
 		public:
-			virtual ~ref(void){
+			virtual ~base_ref(void){
 				dettach();
 			}
+			
+			/**ссылка на объект находится в списке*/
 			bool attached(void) {return list_ != nullptr;}
+			
+			/**убрать ссылку из текущего списка*/
 			void dettach(void){
-				if(list_!=nullptr){
+				if(attached()){
 					list_->drop_p(this);
 				}
 			}
+
+			/**владелец ссылки (объект)*/
 			T & owner(void) { return owner_; }
+
+			/**текущий список*/
+			base<T> * own_list(void) { return list_; };
 		};
-
-
+		
 		template<typename T> class ROBO_EXPORT base {
+			int count_ = 0;
 		protected:
-			void  add_p( ref<T> * _ref, ref<T> * _older){
-				if (first_ == nullptr){
-					first_=_ref;
-					last_ = _ref;
+			friend class base_ref<T>;
+			void  add_p( base_ref<T> * _ref, base_ref<T> * _next){
+				if (first == nullptr){
+					first =_ref;
+					last = _ref;
 					_ref->prev = nullptr;
 					_ref->next = nullptr;
 				}else{
-					;
-					if (_older == first_){
-						_older->prev_ = _ref;
-						_ref->next = _older;
-						_ref->prev_ = nullptr;
-						first_ = _ref;
-					}
-					else {
-						_older->prev_->next_ = _ref;
-						_ref->prev_ = _older->prev_;
-						_older->prev_ = _ref;
-						_ref->next_ = _older;
+					if(_next == nullptr){
+						last->next = _ref;
+						_ref->prev = last;
+						last = _ref;
+					} else {
+						if (_next == first){
+							_next->prev = _ref;
+							_ref->next = _next;
+							_ref->prev = nullptr;
+							first = _ref;
+						}
+						else {
+							_next->prev->next = _ref;
+							_ref->prev = _next->prev;
+							_next->prev = _ref;
+							_ref->next = _next;
+						}
 					}
 				}
 				count_ ++;
-				ref_ -> list_ = this;
+				_ref -> list_ = this;
 			}
 
-			void drop_p(ref<T> * _ref){
+			void drop_p(base_ref<T>* _ref){
    				count_--;
-				if (first_==last_){
-					first_ = nullptr;
-   					last_ = nullptr;
+				if (first==last){
+					first = nullptr;
+   					last = nullptr;
 				}else{
-					if (_ref == first_){
-						first_ = ref_->next;
-   						ref_->next_->prev_ = nullptr;
-    				}else if( ref_ == last_ ){
-	    				last_ = ref_->prev;
-						ref_->prev-_>next_ = nullptr;
+					if (_ref == first){
+						first = _ref->next;
+   						_ref->next->prev = nullptr;
+    				}else if( _ref == last ){
+	    				last = _ref->prev;
+						_ref->prev->next = nullptr;
    					}else{
-    					ref_-> prev_ -> next_ = ref_->next_;
-	    				ref_ -> next_ -> prev_ = ref_ -> prev _;
+    					_ref -> prev -> next = _ref->next;
+	    				_ref -> next -> prev = _ref -> prev;
    					}
 				}
-   				ref_ -> next_ = nullptr;
-   				ref_ -> prev_ = nullptr;
-				ref_ -> list_ = nullptr;
+   				_ref -> next = nullptr;
+   				_ref -> prev = nullptr;
+				_ref -> list_ = nullptr;
 			}
-			ref<T> * first_ = nullptr;
-			ref<T> * last_= nullptr;
-			int count_ = 0;
+			base_ref<T> * first = nullptr;
+			base_ref<T> * last= nullptr;
 		public:
-			typedef ref<T> ref;
-			int count(void)(void){  return count_; } /**< Количество ячеек. */
+			/** Количество элементов списка */
+			int count(void){  return count_; } 
 		};
 
-		template<typename T> class ROBO_EXPORT unsorted  : public base<T>
-			: public base<T> {
-		public:
-			class ref: public ref<T>{
+		template<typename T> class ROBO_EXPORT unsorted  : public base<T> {
 			public:
-				ref(T & _owner) : base<T>::ref(_owner){};
-				void attach_to( unsorted & _unsorted){
-					_unsorted->add_p(this, next());
-				}
-				ref * prev(void) { return (ref *)ref<T>::prev_; }
-				ref * next(void) { return (ref *)ref<T>::next_; }
-
-			};
-			ref * first(void){  return (ref *)base<T>::first_; }; /**< Первая ячейка. */
-			ref * last(void){  return (ref *)base<T>::last_; }; /**< Последняя ячейка. */
-		};
-	
-
-		template<typename T, typename L, typename K>  class ROBO_EXPORT pair: public ref<T>{		
-			K key_;
-		protected:
-		public:
-			void attach_to( L & _list){
-				if(coiunt_>0){
-					for ( ref * p = first(); p != nullptr; p = p->next()){
-						if( p->key_ > key_){
-							_list->L::add(this, p)
-							return;
-						}
+				class ROBO_EXPORT ref: public base_ref<T>{
+				public:
+					ref(T & _owner) : base_ref<T>(_owner){};
+					/** Добавить ссылку в конец списка */
+					void attach_to( unsorted & _L){
+						base_ref<T>::dettach();
+						base_ref<T>::attach_to(_L, nullptr);
 					}
-				} else {
-					_list->L::add(this, nullptr)
-				}
-			}
-			void set_key( const K &_key){
-				sorted * old =(sorted *)own_list();
-				if(old != nullptr){
-					dettach();
-					key_ = _key;
-					attach_to(*old)
-				} else {
-					key_ = _key;
-				}
-			}
-			const K &  key(void){ return key_; }
-			pair(T & _owner) : ref<T>(_owner){};			
+
+					/** предыдущая ссылка в списке */
+					ref * prev(void) { return (ref *)base_ref<T>::prev; }
+
+					/** следующая ссылка в списке */
+					ref * next(void) { return (ref *)base_ref<T>::next; }
+
+				};
+
+				/** первая ссылка в списке */
+				ref * first(void){  return (ref *)base<T>::first; };
+
+				/** последняя ссылка в списке */
+				ref * last(void){  return (ref *)base<T>::last; };
 		};
 
-
-
-	template<typename T, typename K> class ROBO_EXPORT sorted 
-		: public base<T> {
-		friend class ref;
-	public:
-		class ROBO_EXPORT ref: public pair<T>{
-			friend class sorted;
+		template<typename T, typename K, typename L, bool unique>  class ROBO_EXPORT pair: public base_ref<T>{		
+			K key_ ;
 		public:
-			ref * prev(void) { return (ref *)list<T>::ref::prev_; }
-			ref * next(void) { return (ref *)list<T>::ref::next_; }
-			void set_key( const K &_key){
-				sorted * old =(sorted *)own_list();
-				if(old != nullptr){
-					dettach();
-					key_ = _key;
-					attach_to(*old)
-				} else {
-					key_ = _key;
-				}
-			}
-			const K &  key(void){ return key_; }
-			ref(T & _owner) : list<T>::ref(_owner){};
-			void attach_to( sorted & _sorted){
-				if(coiunt_>0){
-					for ( ref * p = first(); p != nullptr; p = p->next()){
-						if( p->key_ > key_){
-							_sorted->add(this, p)
-							return;
-						}
-					}
-				} else {
-					_sorted->add(this, nullptr)
-				}
-			}
-		};
-		ref * first(void){  return (ref *)list<T>::first_; };
-		ref * last(void){  return (ref *)list<T>::last_; };
-	private:
-		void add(ref * _ref, ref * _older ){
-			add_p(_ref,_older);
-		}
-	};
 
-	template<typename T, typename K> class ROBO_EXPORT map 
-		: public list<T> {
-		friend class ref;
-	public:
-		class ROBO_EXPORT ref: public list<T>{
-			friend class list<T>;
-			K key_;
-		public:
-			ref * prev(void) { return (ref *)list<T>::ref::prev_; }
-			ref * next(void) { return (ref *)list<T>::ref::next_; }
-			void set_key( const K &_key){
-				sorted * old =(sorted *)own_list();
-				if(old != nullptr){
-					dettach();
-					key_ = _key;
-					attach_to(*old)
-				} else {
-					key_ = _key;
-				}
-			}
-			const K &  key(void){ return key_; }
-			ref(T & _owner) : list<T>::ref(_owner){};
-			bool attach_to( sorted & _sorted){
-				if(coiunt_>0){
-					for ( ref * p = first(); p != nullptr; p = p->next()){
-						ROBO_BREAKN( p->key_== key_)
+			/** Добавить ссылку в ссписок согласно порядку  */
+			bool attach_to( L & _list){
+				if(_list.count()>0){
+					for ( pair * p = _list.first(); p != nullptr; p = p->next()){
+						if(unique && p->key_ == key_) return false;
 						if( p->key_ > key_){
-							_sorted->add(this, p);
+							base_ref<T>::dettach();
+							base_ref<T>::attach_to(_list, p);
 							return true;
 						}
 					}
-				} else {
-					_sorted->add(this, nullptr)
-				}
+				} 
+				base_ref<T>::attach_to(_list, nullptr);
 				return true;
 			}
+
+			/** Изменить ключ  */
+			bool set_key( const K &_key){
+				L * old =(L *)own_list();
+				if(old != nullptr){
+					dettach();
+					key_ = _key;
+					return attach_to(*old);
+				} else {
+					key_ = _key;
+					return true;
+				}
+			}
+
+			/** Текущее значение ключа  */
+			const K &  key(void){ return key_; }
+
+			pair(T & _owner, const K & _key) : base_ref<T>(_owner), key_(_key){};			
+			pair * prev(void) { return (pair *)base_ref<T>::prev; }
+			pair * next(void) { return (pair *)base_ref<T>::next; }
+
 		};
-		ref * first(void){  return (ref *)list<T>::first_; }; 
-		ref * last(void){  return (ref *)list<T>::last_; }; 
 		
-		T * pop(void){
-			ref * r  = base<T>::first_;
+		template<typename T, typename K> class ROBO_EXPORT sorted 
+			: public base<T> {
+		public:
+			typedef pair<T,K, sorted<T,K>, false > ref;
+			ref * first(void){  return (ref *)base<T>::first; }; /**< Первая ячейка. */
+			ref * last(void){  return (ref *)base<T>::last; }; /**< Последняя ячейка. */
+		};
+
+		template<typename T, typename K> class ROBO_EXPORT unique 
+			: public base<T> {
+		public:
+			typedef pair<T,K, unique<T,K>, true > ref;
+			ref * first(void){  return (ref *)base<T>::first; }; /**< Первая ячейка. */
+			ref * last(void){  return (ref *)base<T>::last; }; /**< Последняя ячейка. */
+		};
+	}
+
+	template<typename T, typename L> class ROBO_EXPORT queue_base
+		: public L {
+		public:
+
+		void push(T * _t){
+			if (_t){
+				((L::ref &)(*_t)).attach_to(*this);
+			}
+		}
+
+		T * pop(){
+			L::ref * r = L::first();
 			if (r){
-				r -> dettach();
-				return (T *) &(r->owner()) );
+				r->dettach();
+				return & (r->owner());
 			}
 			else {
 				return nullptr;
 			}
 		}
-
-		void push(T * _t){
-			ROBO_VBREAK( _t != nullptr );
-			((ref *)(_t)) -> attach_to(*this);
-		}
-
-	private:
-		void add(ref * _ref, ref * _older ){
-			add_p(_ref,_older);
-		}
 	};
 
-/*	namespace list{
-		
-		template<typename T> class ROBO_EXPORT base;
-		
-		template<typename T> class ROBO_EXPORT  ref  {
-			robo_ref_t ref_;
-			robo_list_p list__;
-		public:
-			ref(T * _owner) :  list__(0){
-				robo_cell_init_p(&(ref_.cell));
-				ref_.owner = _owner;
-			}
-			ref(T * _owner, int _id) : list__(0){
-				robo_cell_init_p(&(ref_.cell));
-				ref_.owner = _owner;
-				ref_.cell.id = _id;
-			}
-			~ref(){
-				dettach(); 
-			}
-			void dettach(){
-				if (list__){
-					robo_cell_drop_p(list__, &(ref_.cell));
-					list__ = 0;
-				}
-			}
-			robo_result_t attach_to(robo_list_p _list){
-				if (list__ != _list){
-					dettach();
-					ROBO_CHECKRET(robo_cell_add_p(_list, &(ref_.cell)));
-					list__ = _list;
-				}
-				return ROBO_SUCCESS;
-			}
-			robo_result_t set_id(int _id){
-				robo_list_p tmp = list__;
-				if (tmp){
-					dettach();
-					ref_.cell.id = _id;
-					ROBO_RETEX(attach_to(tmp));
-				}
-				else{
-					ref_.cell.id = _id;
-					return ROBO_SUCCESS;
-				}
-			}
-			inline ref * next(){ return (ref *)(ref_.cell.next ); }
-			inline ref * prev(){ return (ref *)(ref_.cell.prev); }
-			inline T * owner() { return (T *)(ref_.owner); }
-			inline operator robo_list_p (){
-				return list__;
-			}
-			inline int id(){ return ref_.cell.id;  }
-			inline bool attached(){ return list__!=0; }
-		};
-		
-		template<typename T> class ROBO_EXPORT base{
-		protected:
-			robo_list_t list__;
-		public:
-			inline int count(){ return list__.count; }
-
-			inline operator robo_list_p (){
-				return &list__;
-			}
-			void inc_id(int _delta){
-				for (robo_cell_p cell = list__.first; cell; cell = cell->next){
-					cell->id += _delta;
-				}
-			}
-			void dec_id(int _delta){
-				for (robo_cell_p cell = list__.first; cell; cell = cell->next){
-					cell->id -= _delta;
-				}
-			}
-
-			void forall(lambda< void(T *) > _operator){
-				for (robo_cell_p cell = list__.first; cell; cell = cell->next){
-					_operator( (T *)(((robo_ref_p)cell)->owner) );
-				}
-			}
-
-			inline ref<T> * first(){ return (ref<T> *)(list__.first); }
-			inline ref<T> * last(){ return (ref<T> *)(list__.last); }
-		protected:
-			base(robo_list_style_t _style){
-				robo_list_init_p(&list__, _style);
-			}
-			~base(){
-				robo_list_clean_p(&list__);
-			}
-		};
-
-		template<typename T> class ROBO_EXPORT  map : public base<T>  {
-		public:
-			map() :base<T>(ROBO_LIST_MAP){}
-			~map(){	}
-			T * find(int _id){
-				robo_cell_p cell = robo_cell_get(&(base<T>::list__), _id);
-				if (cell){
-					return ((T *)(((robo_ref_p)cell)->owner));
-				}
-				else {
-					return 0;
-				}
-			}
-			
-			T * operator [](int _id){
-				T * ret = find(_id);
-				if (ret){
-					return ret;
-				}
-				else {
-					robo_errlog("item with id %d is't found", _id);
-					return 0;
-				}
-			}
-
-		};
-
-		template<typename T> class ROBO_EXPORT  queue : public base<T>{
-		public:
-			typedef list::ref<T> ref;
-			queue(bool _sorted = false) :base<T>(_sorted ? ROBO_LIST_SORTED : ROBO_LIST_QUEUE){}
-			~queue(){}
-			void push(T * _t){
-				if (_t){
-					((ref *)(*_t))->attach_to(*this);
-				}
-			}
-			T * pop(){
-				robo_cell_p cell = base<T>::list__.first;
-				if (cell){
-					((ref *)cell)->dettach();
-					return (T *)(((robo_ref_p)(cell))->owner);
-				}
-				else {
-					return 0;
-				}
-			}
-		};
-		
-		template<typename T> class ROBO_EXPORT  sorted : public base<T>{
-		public:
-			sorted() :base<T>(ROBO_LIST_SORTED){}
-			~sorted(){}
-		};
-		template<typename T> class ROBO_EXPORT  unsorted : public base<T>{
-		public:
-			unsorted() :base<T>(ROBO_LIST_QUEUE){}
-			~unsorted(){}
-		};
-		
-	}*/
+	namespace queue{			
+		template<typename T> class ROBO_EXPORT fifo  : public queue_base< T, ::robo::list::unsorted<T> > {};			
+		template<typename T> class ROBO_EXPORT priority   : public queue_base< T, ::robo::list::sorted<T,typename T::priority_t> > {};			
+	};
 }
 #endif
