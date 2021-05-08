@@ -1,10 +1,10 @@
-#ifndef __robo_list_hpp
-#define __robo_list_hpp
+#ifndef robo_list_hpp
+#define robo_list_hpp
 
 #include "core/robosd_common.hpp"
 
 namespace robo{
-
+	
 	namespace list{
 
 		template<typename T> class ROBO_EXPORT base;
@@ -25,20 +25,20 @@ namespace robo{
 				dettach();
 			}
 			
-			/**ссылка на объект находится в списке*/
+			/**СЃСЃС‹Р»РєР° РЅР° РѕР±СЉРµРєС‚ РЅР°С…РѕРґРёС‚СЃВ¤ РІ СЃРїРёСЃРєРµ*/
 			bool attached(void) {return list_ != nullptr;}
 			
-			/**убрать ссылку из текущего списка*/
+			/**СѓР±СЂР°С‚СЊ СЃСЃС‹Р»РєСѓ РёР· С‚РµРєСѓС‰РµРіРѕ СЃРїРёСЃРєР°*/
 			void dettach(void){
 				if(attached()){
 					list_->drop_p(this);
 				}
 			}
 
-			/**владелец ссылки (объект)*/
+			/**РІР»Р°РґРµР»РµС† СЃСЃС‹Р»РєРё (РѕР±СЉРµРєС‚)*/
 			T & owner(void) { return owner_; }
 
-			/**текущий список*/
+			/**С‚РµРєСѓС‰РёР№ СЃРїРёСЃРѕРє*/
 			base<T> * own_list(void) { return list_; };
 		};
 		
@@ -100,7 +100,7 @@ namespace robo{
 			base_ref<T> * first = nullptr;
 			base_ref<T> * last= nullptr;
 		public:
-			/** Количество элементов списка */
+			/** В РѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ СЃРїРёСЃРєР° */
 			int count(void){  return count_; } 
 		};
 
@@ -109,24 +109,24 @@ namespace robo{
 				class ROBO_EXPORT ref: public base_ref<T>{
 				public:
 					ref(T & _owner) : base_ref<T>(_owner){};
-					/** Добавить ссылку в конец списка */
+					/** РґРѕР±Р°РІРёС‚СЊ СЃСЃС‹Р»РєСѓ РІ РєРѕРЅРµС† СЃРїРёСЃРєР° */
 					void attach_to( unsorted & _L){
 						base_ref<T>::dettach();
 						base_ref<T>::attach_to(_L, nullptr);
 					}
 
-					/** предыдущая ссылка в списке */
+					/** РїСЂРµРґС‹РґСѓС‰Р°СЏ СЃСЃС‹Р»РєР° РІ СЃРїРёСЃРєРµ */
 					ref * prev(void) { return (ref *)base_ref<T>::prev; }
 
-					/** следующая ссылка в списке */
+					/** СЃР»РµРґСѓСЋС‰Р°СЏ СЃСЃС‹Р»РєР° РІ СЃРїРёСЃРєРµ */
 					ref * next(void) { return (ref *)base_ref<T>::next; }
 
 				};
 
-				/** первая ссылка в списке */
+				/** РїРµСЂРІР°СЏ СЃСЃС‹Р»РєР° РІ СЃРїРёСЃРєРµ */
 				ref * first(void){  return (ref *)base<T>::first; };
 
-				/** последняя ссылка в списке */
+				/** РїРѕСЃР»РµРґРЅСЏСЏ СЃСЃС‹Р»РєР° РІ СЃРїРёСЃРєРµ */
 				ref * last(void){  return (ref *)base<T>::last; };
 		};
 
@@ -134,7 +134,7 @@ namespace robo{
 			K key_ ;
 		public:
 
-			/** Добавить ссылку в ссписок согласно порядку  */
+			/** РґРѕР±Р°РІРёС‚СЊ СЃСЃС‹Р»РєСѓ РІ СЃСЃРїРёСЃРѕРє СЃРѕРіР»Р°СЃРЅРѕ РїРѕСЂВ¤РґРєСѓ  */
 			bool attach_to( L & _list){
 				if(_list.count()>0){
 					for ( pair * p = _list.first(); p != nullptr; p = p->next()){
@@ -150,7 +150,7 @@ namespace robo{
 				return true;
 			}
 
-			/** Изменить ключ  */
+			/** РёР·РјРµРЅРёС‚СЊ РєР»СЋС‡  */
 			bool set_key( const K &_key){
 				L * old =(L *)own_list();
 				if(old != nullptr){
@@ -163,7 +163,7 @@ namespace robo{
 				}
 			}
 
-			/** Текущее значение ключа  */
+			/** С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ РєР»СЋС‡Р°  */
 			const K &  key(void){ return key_; }
 
 			pair(T & _owner, const K & _key) : base_ref<T>(_owner), key_(_key){};			
@@ -176,44 +176,46 @@ namespace robo{
 			: public base<T> {
 		public:
 			typedef pair<T,K, sorted<T,K>, false > ref;
-			ref * first(void){  return (ref *)base<T>::first; }; /**< Первая ячейка. */
-			ref * last(void){  return (ref *)base<T>::last; }; /**< Последняя ячейка. */
+			ref * first(void){  return (ref *)base<T>::first; }; /**РїРµСЂРІР°СЏ СЏС‡РµР№РєР°. */
+			ref * last(void){  return (ref *)base<T>::last; }; /**РїРѕСЃР»РµРґРЅСЏСЏ СЏС‡РµР№РєР°. */
 		};
 
 		template<typename T, typename K> class ROBO_EXPORT unique 
 			: public base<T> {
 		public:
 			typedef pair<T,K, unique<T,K>, true > ref;
-			ref * first(void){  return (ref *)base<T>::first; }; /**< Первая ячейка. */
-			ref * last(void){  return (ref *)base<T>::last; }; /**< Последняя ячейка. */
+			ref * first(void){  return (ref *)base<T>::first; }; /**РїРµСЂРІР°СЏ СЏС‡РµР№РєР°. */
+			ref * last(void){  return (ref *)base<T>::last; };  /**РїРѕСЃР»РµРґРЅСЏСЏ СЏС‡РµР№РєР°. */
 		};
 	}
 
-	template<typename T, typename L> class ROBO_EXPORT queue_base
-		: public L {
-		public:
-
-		void push(T * _t){
-			if (_t){
-				((L::ref &)(*_t)).attach_to(*this);
-			}
-		}
-
-		T * pop(){
-			L::ref * r = L::first();
-			if (r){
-				r->dettach();
-				return & (r->owner());
-			}
-			else {
-				return nullptr;
-			}
-		}
-	};
 
 	namespace queue{			
-		template<typename T> class ROBO_EXPORT fifo  : public queue_base< T, ::robo::list::unsorted<T> > {};			
-		template<typename T> class ROBO_EXPORT priority   : public queue_base< T, ::robo::list::sorted<T,typename T::priority_t> > {};			
-	};
+		template<typename T, typename L> class ROBO_EXPORT base
+			: public L {
+		public:
+
+			void push(T* _t) {
+				if (_t) {
+					((L::ref&)(*_t)).attach_to(*this);
+				}
+			}
+
+			T* pop() {
+				L::ref* r = L::first();
+				if (r) {
+					r->dettach();
+					return &(r->owner());
+				}
+				else {
+					return nullptr;
+				}
+			}
+		};
+
+		template<typename T> class ROBO_EXPORT fifo  : public base< T, ::robo::list::unsorted<T> > {};			
+		template<typename T> class ROBO_EXPORT priority   : public base< T, ::robo::list::sorted<T,typename T::priority_t> > {};			
+	}
 }
+
 #endif

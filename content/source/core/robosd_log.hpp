@@ -1,6 +1,10 @@
+#ifndef robo_log_hpp
+#define robo_log_hpp
 #include "core/robosd_common.hpp"
 #ifndef __robosd_log_hpp
 #define __robosd_log_hpp
+
+#define ROBO_EMPTY_PARAM
 
 #ifndef ROBO_APP_DEBUG_LOG_ENABLED
 #define ROBO_APP_DEBUG_LOG_ENABLED 0
@@ -15,100 +19,162 @@
 #endif
 
 #define ROBO_LOG_MASK_DISABLED 0
+#endif 
 
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_errlog
-#define robo_errlog(format,...) ::robo::log::print(::robo::log::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
+//#define robo_errlog(format,...) ::robo::log::print(::robo::log::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
+#if ROBO_UNICODE_ENABLED == 1
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask_disabled,  RT( f "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__, ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
+#else
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask_disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__, ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
 #endif
 
+#endif
+#else
+#define robo_errlog(format,...)
+#endif
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_warninglog
-#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
+#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, robo::log::mask_disabled,RT(format),__VA_ARGS__) 
+#endif
+#endif
+#else
+#define robo_warninglog(format,...)
 #endif
 
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_infolog
-#define robo_infolog(format,...) ::robo::log::print(::robo::log::verb::info, ROBO_LOG_MASK_DISABLED,RT(format) , __VA_ARGS__)
+#define robo_infolog(format,...) ::robo::log::print(::robo::log::verb::info, robo::log::mask_disabled,RT(format) , __VA_ARGS__)
+#endif
+#else
+#define robo_infolog(format,...)
 #endif
 
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_detaillog
 #define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,RT(format),__VA_ARGS__)
 #define robo_detaillog_(lvl,mask,format,...) ::robo::log::print(::robo::log::verb::detail##lvl, mask, RT(format) ,__VA_ARGS__)
 #endif
-
-#define robo_log_init(verb,mask, logger) ::robo::log::begin(verb, mask, logger)
-#define robo_log_deinit() ::robo::log::finish()
-
-
-#ifndef ROBO_NESTED_ERROR
-#define ROBO_NESTED_ERROR "nested error"
-#endif
-
-#define ROBO_ALARM()  robo_errlog(ROBO_NESTED_ERROR);
-#define ROBO_BREAK() {robo_errlog(ROBO_NESTED_ERROR); return false;}
-#define ROBO_VBREAK() {robo_errlog(ROBO_NESTED_ERROR); return;}
-
-
-#define ROBO_ALARMN(x) if(!(x)) robo_errlog(ROBO_NESTED_ERROR);
-#define ROBO_BREAKN(x) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR); return false;}
-#define ROBO_VBREAKN(x) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR); return;}
-#define ROBO_RET(x) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR);return false;} else {return true;}
-#define ROBO_VRET(x) {if(!(x)) {robo_errlog(ROBO_NESTED_ERROR);} return;}
-
-
-namespace robo{
-	namespace log{
-		enum class verb { skip = -3, error = -2, warning = -1, info = 0, detail_1 = 1, detail_2 = 2, detailL_3 = 3, detail_4 = 4, detail_5 = 5, detail_6 = 6, detail_7 = 7 } robo_log_verb_t;
-		typedef  void ( * print_f)(verb _verb, cstr, va_list  _args);
-
-		bool ROBO_EXPORT begin(verb _verb, unsigned int _mask, print_f _print);
-		void ROBO_EXPORT fiish(void);
-
-		void ROBO_EXPORT print( verb _verb, unsigned int _mask, cstr _format, ...);
-	}
-}
-#endif
 #else
-#define robo_disp(format,...) 
-
-#ifndef robo_errlog
-#define robo_errlog(format,...) 
-#endif
-
-#define robo_warninglog(format,...) 
-
-#ifndef robo_infolog
-#define robo_infolog(format,...) 
-#endif
-
-#ifndef robo_detaillog
-#define robo_detaillog(lvl,mask,format,...) 
+#define robo_detaillog(lvl,mask,format,...)
 #define robo_detaillog_(lvl,mask,format,...)
 #endif
 
-
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#define robo_log_init(verb,mask, logger) ::robo::log::begin(verb, mask, logger)
+#define robo_log_deinit() ::robo::log::finish()
+#else
 #define robo_log_init(verb,mask, logger)
-#define robo_log_deinit() 
+#define robo_log_deinit()
 #endif
 
 
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_NESTED_ERROR
+#define ROBO_NESTED_ERROR "nested error"
+#endif
+#endif
 
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_ALARM
+#define ROBO_ALARM()  robo_errlog(ROBO_NESTED_ERROR);
+#endif
+#else
+#define ROBO_ALARM()
+#endif
+
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_BREAK
+#define ROBO_BREAK(fault) {robo_errlog(ROBO_NESTED_ERROR); return fault;}
+#endif
+#else
+#define ROBO_BREAK(fault)
+#endif
+
+#ifndef ROBO_LBREAK
+#define ROBO_LBREAK() ROBO_BREAK(false)
+#endif
+
+#ifndef ROBO_VBREAK
+#define ROBO_VBREAK() ROBO_BREAK(ROBO_EMPTY_PARAM)
+#endif
+
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_ALARMN
+#define ROBO_ALARMN(x) if(!(x)) robo_errlog(ROBO_NESTED_ERROR);
+#endif
+#else
+#define ROBO_ALARMN(x)
+#endif
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_BREAKN
+#define ROBO_BREAKN(x,fault) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR); return fault;}
+#endif
+#else
+#define ROBO_BREAKN(x,fault)
+#endif
+
+#ifndef ROBO_LBREAKN
+#define ROBO_LBREAKN() ROBO_BREAKN(x,false)
+#endif 
+
+#ifndef ROBO_VBREAKN
+#define ROBO_VBREAKN() ROBO_BREAKN(x,ROBO_EMPTY_PARAM)
+#endif 
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_RET
+#define ROBO_RET(x, success, fault) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR);return fault;} else {return success;}
+#endif
+#else
+#define ROBO_RET(x, success, fault)
+#endif
+
+#ifndef ROBO_LRET
+#define ROBO_LRET(x) ROBO_RET(x,true,false)
+#endif
+
+//==================
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_ALARM_F
 #define ROBO_ALARM_F(f,...){ \
 	robo_errlog(f,__VA_ARGS__);\
 }
 #endif
+#else
+#define ROBO_ALARM_F(x,f,...)
+#endif
 
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_BREAK_F
-#define ROBO_BREAK_F(f,...) \
-	robo_errlog( f,__VA_ARGS__); \
-    return false;
+#define ROBO_BREAK_F(fault,f,...)  \
+{\
+	robo_errlog(f,__VA_ARGS__); \
+	return fault; \
+} 
+#endif
+#else
+#define ROBO_BREAK_F(x,fault,f,...)
+#endif
+
+#ifndef ROBO_LBREAK_F
+#define ROBO_LBREAK_F(f,...) ROBO_BREAK_F(false,f,__VA_ARGS__)
 #endif
 
 #ifndef ROBO_VBREAK_F
-#define ROBO_VBREAK_F(f,...) \
-	robo_errlog( f,__VA_ARGS__); \
-    return ;
+#define ROBO_VBREAK_F(f,...) ROBO_BREAK_F(x,ROBO_EMPTY_PARAM,f,__VA_ARGS__)
 #endif
+//=================
 
-
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_ALARMN_F
 #define ROBO_ALARMN_F(x,f,...){ \
 if(!(x)){\
@@ -116,40 +182,74 @@ if(!(x)){\
 }\
 }
 #endif
+#else
+#define ROBO_ALARMN_F(x,f,...)
+#endif
 
 
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_BREAKN_F
-#define ROBO_BREAKN_F(x,f,...)  \
+#define ROBO_BREAKN_F(x,fault,f,...)  \
 if ( !( x ) ){\
 	robo_errlog(f,__VA_ARGS__); \
-	return false; \
+	return fault; \
 } 
+#endif
+#else
+#define ROBO_BREAKN_F(x,fault,f,...)
+#endif
+
+#ifndef ROBO_LBREAKN_F
+#define ROBO_LBREAKN_F(x,f,...) ROBO_BREAKN_F(x,false,f,__VA_ARGS__)
 #endif
 
 #ifndef ROBO_VBREAKN_F
-#define ROBO_VBREAKN_F(x,f,...)  \
-if ( !( x ) ){\
-	robo_errlog(f,__VA_ARGS__); \
-	return; \
-} 
+#define ROBO_VBREAKN_F(x,f,...) ROBO_BREAKN_F(x,ROBO_EMPTY_PARAM,f,__VA_ARGS__)
 #endif
 
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_RET_F
-#define ROBO_RET_F(x,f,...)  \
+#define ROBO_RET_F(x, success,fault ,f,...)  \
 if (!(x)){\
-	robo_errlog(f,__VA_ARGS__); \
-	return false; \
-} else return true;
+robo_errlog(f,__VA_ARGS__); \
+return fault; \
+} else return success;
+#endif
+#else
+#define ROBO_RET_F(x,success,fault,f,...)
 #endif
 
-#ifndef ROBO_VRET_F
-#define ROBO_VRET_F(x,f,...)  \
-{\
-	if (!(x)){\
-		robo_errlog(f,__VA_ARGS__); \
-	}\
-	return; \
+#ifndef ROBO_LRET_F
+#define ROBO_LRET_F(f,...) ROBO_RET_F(x,true,false,f,__VA_ARGS__)
+#endif
+
+
+
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+namespace robo{
+	namespace log{
+		enum class verb { skip = -3, error = -2, warning = -1, info = 0, detail_1 = 1, detail_2 = 2, detail_3 = 3, detail_4 = 4, detail_5 = 5, detail_6 = 6, detail_7 = 7 };
+		enum {mask_disabled = 0};
+		typedef  void ( * print_f)(verb _verb, cstr  _format , va_list  _args);
+
+		bool ROBO_EXPORT begin(verb _verb, unsigned int _mask, print_f _print);
+		void ROBO_EXPORT fiish(void);
+
+		void ROBO_EXPORT print( verb _verb, unsigned int _mask, cstr _format, ...);
+	}
+	
+#ifndef ROBO_TERMINAL_PRINT_ENABLED
+#define ROBO_TERMINAL_PRINT_ENABLED 0
+#endif
+#if ROBO_TERMINAL_PRINT_ENABLED == 1
+	namespace termial{
+		void ROBO_EXPORT print(robo::log::verb _verb,  cstr _format, va_list  _args);		
+	}
+#endif
 }
 #endif
 
 
+#endif

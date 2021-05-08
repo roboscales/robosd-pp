@@ -1,6 +1,7 @@
-#include "pch.h"
+//#include "pch.h"
 #include "CppUnitTest.h"
 #include "core/robosd_list.hpp"
+#include "core/robosd_log.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -206,5 +207,45 @@ namespace libtest
 
 			}
 		}
+	};
+	TEST_CLASS(log)
+	{
+		bool err_aram_(void) {
+			ROBO_ALARM();
+			ROBO_ALARMN(0);
+			ROBO_ALARMN(1);
+			return true;
+		}
+		bool err_aram2_(void) {			
+			ROBO_BREAKN(1, false);
+			ROBO_BREAKN_F(1,false,"error %d",1);
+			ROBO_LBREAKN_F(0,"test %d error",-1);
+			return true;
+		}
+		void err_aram3_(void) {
+			ROBO_VBREAKN_F(1, "test error %d", 1);
+			ROBO_VBREAKN_F(0, "test %d error", -1);
+		}
+	public:
+		static  void print(robo::log::verb _verb, robo::cstr _format, va_list  _args) {
+			robo::char_t buf[255];
+
+#if ROBO_UNICODE_ENABLED == 1
+			buf[vswprintf_s( buf,255, _format, _args)]=0;
+#else
+			buf[vsprintf(buf, _format, _args)] = 0;
+#endif
+			Logger::WriteMessage(buf);
+			Logger::WriteMessage(RT("\n"));
+		}
+		TEST_METHOD(err_aram)
+		{	
+			robo::log::begin(robo::log::verb::detail_7, 0, print);
+			err_aram_();			;
+			err_aram3_();
+			Assert::IsFalse(err_aram2_());
+		}
+
+
 	};
 }

@@ -17,3 +17,5 @@
 #define ROBO_APP_PROC_NAME __FUNCTION__
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__
+#define ROBO_UNUSED(x) ((void)(x))
+
