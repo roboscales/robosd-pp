@@ -20,23 +20,27 @@
 #define ROBO_UNICODE_ENABLED 0
 #endif
 
-#include <string>
 #if ROBO_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t
-
-//template class ROBO_EXPORT std::basic_string<wchar_t,  std::char_traits<wchar_t>,  std::allocator<wchar_t> >;
-#define ROBO_STRING std::basic_string<wchar_t,  std::char_traits<wchar_t>,  std::allocator<wchar_t> >	
-
 #define ROBO_CONST_STRING wchar_t const *
 #define RT(s) L##s
 #else
 #define ROBO_CHAR char
-//class ROBO_EXPORT std::string;
-#define ROBO_STRING std::string
 #define ROBO_CONST_STRING char const *
 #define RT(s) s
 #endif
 
+#ifdef ROBO_STD_ARGS
+#include ROBO_STD_ARGS
+#else
+#include <stdarg.h>
+#endif
+
+#include <stdint.h>
+
+
+void* operator new(size_t size);
+void operator delete(void* ptr);
 
 namespace robo {
 	typedef ROBO_TYPE_RANDOM random_t;
@@ -44,13 +48,16 @@ namespace robo {
 	typedef ROBO_TYPE_TIME_MS time_ms_t;
 
 	typedef  ROBO_CHAR char_t;
-	typedef  ROBO_STRING str;
 	typedef  ROBO_CONST_STRING cstr;
 
+	/*bool ROBO_EXPORT begin(cstr _ini);
+	bool ROBO_EXPORT start(void);
+	void ROBO_EXPORT stop(void);
+	bool ROBO_EXPORT active(void);
+	void ROBO_EXPORT finish(void);*/
+
 	void ROBO_EXPORT crash(char const * _file, char const * _function, int _line);
-	//uint32_t ROBO_EXPORT hash(cstr _s, uint32_t _start);
 	enum class result { complete, resume, panic };
-	
 }
 
 

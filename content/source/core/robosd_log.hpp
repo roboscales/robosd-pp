@@ -12,11 +12,7 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 
-#ifdef ROBO_STD_ARGS
-#include ROBO_STD_ARGS
-#else
-#include <stdarg.h>
-#endif
+
 
 #define ROBO_LOG_MASK_DISABLED 0
 #endif 
@@ -122,11 +118,11 @@
 #endif
 
 #ifndef ROBO_LBREAKN
-#define ROBO_LBREAKN() ROBO_BREAKN(x,false)
+#define ROBO_LBREAKN(x) ROBO_BREAKN(x,false)
 #endif 
 
 #ifndef ROBO_VBREAKN
-#define ROBO_VBREAKN() ROBO_BREAKN(x,ROBO_EMPTY_PARAM)
+#define ROBO_VBREAKN(x) ROBO_BREAKN(x,ROBO_EMPTY_PARAM)
 #endif 
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1

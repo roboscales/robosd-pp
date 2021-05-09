@@ -19,12 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp" />
+    <ClCompile Include="..\..\..\..\source\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd-system-dummy.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\source\core\robosd_delegat.hpp" />
+    <ClInclude Include="..\..\..\..\source\core\robosd_ini.hpp" />
+    <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp" />
+    <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

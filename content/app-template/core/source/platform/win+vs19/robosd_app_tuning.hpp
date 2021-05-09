@@ -17,4 +17,8 @@
 
 #define ROBO_APP_SYSTEM_DUMMY_ENABLED 1
 
+#define ROBO_APP_INI_ENABLED 1
+
+#define ROBO_APP_INI_DUMMY_ENABLED 1
+
 #include <stdint.h>

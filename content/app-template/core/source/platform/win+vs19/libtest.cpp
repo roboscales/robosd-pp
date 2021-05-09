@@ -2,13 +2,31 @@
 #include "CppUnitTest.h"
 #include "core/robosd_list.hpp"
 #include "core/robosd_log.hpp"
+#include "core/robosd_system.hpp"
+#include "core/robosd_string.hpp"
+#include "core/robosd_delegat.hpp"
+#include <fstream>
 #include <iostream>
 #include <sstream>
+
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace libtest
 {
+	static  void print(robo::log::verb _verb, robo::cstr _format, va_list  _args) {
+		robo::char_t buf[255];
+
+#if ROBO_UNICODE_ENABLED == 1
+		buf[vswprintf_s(buf, 255, _format, _args)] = 0;
+#else
+		buf[vsprintf(buf, _format, _args)] = 0;
+#endif
+		Logger::WriteMessage(buf);
+		Logger::WriteMessage(RT("\n"));
+	}
+
+
 	TEST_CLASS(list)
 	{
 		class item{			
@@ -216,10 +234,10 @@ namespace libtest
 			ROBO_ALARMN(1);
 			return true;
 		}
-		bool err_aram2_(void) {			
+		bool err_aram2_(void) {
 			ROBO_BREAKN(1, false);
-			ROBO_BREAKN_F(1,false,"error %d",1);
-			ROBO_LBREAKN_F(0,"test %d error",-1);
+			ROBO_BREAKN_F(1, false, "error %d", 1);
+			ROBO_LBREAKN_F(0, "test %d error", -1);
 			return true;
 		}
 		void err_aram3_(void) {
@@ -227,25 +245,150 @@ namespace libtest
 			ROBO_VBREAKN_F(0, "test %d error", -1);
 		}
 	public:
-		static  void print(robo::log::verb _verb, robo::cstr _format, va_list  _args) {
-			robo::char_t buf[255];
-
-#if ROBO_UNICODE_ENABLED == 1
-			buf[vswprintf_s( buf,255, _format, _args)]=0;
-#else
-			buf[vsprintf(buf, _format, _args)] = 0;
-#endif
-			Logger::WriteMessage(buf);
-			Logger::WriteMessage(RT("\n"));
-		}
 		TEST_METHOD(err_aram)
-		{	
+		{
 			robo::log::begin(robo::log::verb::detail_7, 0, print);
-			err_aram_();			;
+			err_aram_(); ;
 			err_aram3_();
 			Assert::IsFalse(err_aram2_());
 		}
+	};
 
+	TEST_CLASS(util){
+
+		TEST_METHOD(memo)
+		{
+			robo::system::memstat memstat0 = robo::system::get_mem_statistic();
+			enum { cnt = 100 };
+			void* ptrs[cnt] = {};
+			for (int i = 0; i < 1000000; i++) {
+				int no = rand() % cnt;
+				void* p = ptrs[no];
+				if (p == nullptr) {
+					if (rand() % 100 > 98) {
+						robo::system::fall  f__;
+						ptrs[no] = new uint32_t[rand() % 100 + 1];
+					}
+					else {
+						ptrs[no] = new uint32_t[rand() % 100 + 1];
+					}
+				}
+				else {
+					delete[] p;
+					ptrs[no] = nullptr;
+				}
+			}
+
+			for (int i = 0; i < cnt; i++) {
+				void* p = ptrs[i];
+				if (p != nullptr) {
+					delete[] p;
+				}
+			}
+
+			robo::system::memstat memstat1 = robo::system::get_mem_statistic();
+			Assert::IsTrue(memstat0.used.size == memstat1.used.size);
+		}
+		TEST_METHOD(string)
+		{
+			robo::log::begin(robo::log::verb::detail_7, 0, print);
+			robo::string * strings[4];
+			robo::string str1(RT("oppa %d %s"), 1974, RT("кака€ прелесть"));
+			robo::string str2; str2.format( RT("oppa %d %s"), 1974,  RT("кака€ прелесть"));
+			robo::string str3(str2);
+			robo::string str4; str4 = str1;
+			strings[0] = &str1;
+			strings[1] = &str2;
+			strings[2] = &str3;
+			strings[3] = &str4;
+			bool ret = true;
+			for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 4; j++) {
+					ret &= (*strings[i] == *strings[j]);
+				};
+			robo_infolog("%s", str4.c_str());
+
+			Assert::IsTrue(	ret	);
+
+
+			robo::string n(RT("-1.88855"));
+			double dn = 0.;
+			ROBO_ALARMN( n.to_number(dn) );
+			Assert::IsTrue( dn == -1.88855);
+
+			float fn = 0.f;
+			ROBO_ALARMN(n.to_number(fn));
+			float err = -1.88855f - fn;
+			Assert::IsTrue( err<0.0001 && err>-0.0001);
+
+			int in = 0;
+			ROBO_ALARMN(n.to_number(in));
+			Assert::IsTrue(in == -1);
+			unsigned int uin = 100;
+			ROBO_ALARMN(n.to_number(uin));
+			Assert::IsTrue(uin == 100);
+
+		}
+
+		static void test_simple( robo::cstr _src, robo::string & dst) {
+			//dst.format(RT("copy %s"), src.c_str() );
+			dst = RT(" copy ");
+			dst += _src;
+		}
+
+		
+		static void test_void(void) {
+		}
+
+		static int test_void2(void * _instance) {
+			return *(int *)_instance + 1;
+		}
+		class member_test {
+		public:
+			int run(int _x) {
+				return _x * _x;
+			}
+		};
+		
+		TEST_METHOD(delegat)
+		{
+
+			robo::delegat::simple< void, robo::cstr , robo::string& > recorder(test_simple);
+			robo::string tmp;
+			robo::string tmp2;
+			recorder( RT("aaaa"), tmp);
+			test_simple(RT("aaaa"), tmp2);
+			Assert::IsTrue(tmp == tmp2);
+			Assert::IsTrue(tmp == RT(" copy aaaa"));
+
+			robo::delegat::simple<void> test_void_(test_void);
+			test_void_();
+
+			int instance = 5;
+			robo::delegat::uni<int> test_void_2_(&instance, test_void2);
+			Assert::IsTrue(test_void_2_()==6);
+
+			member_test  member_test_;
+			robo::delegat::member< member_test, int,int> member_test__(member_test_, &member_test::run);
+			Assert::IsTrue(member_test_.run(5) == member_test__(5) );
+
+		}
+		TEST_METHOD(ini) {
+			robo::log::begin(robo::log::verb::detail_7, 0, print);
+			{
+				std::ofstream ini(RT("E:\\~temp.ini"));
+				ini
+					<< "[SETTINGS]\n"
+					<< "PATAM1=1\n"
+					<< "PATAM1=2.0007\n"
+					<< "PATAM3=\"ёсупов - красавчик!\"\n";
+			}
+			robo::system::os::ini_init(RT("E:\\~temp.ini"));
+			robo::string msg;
+			Assert::IsTrue(msg.load(RT("SETTINGS"), RT("PATAM3")));
+			robo_infolog("%s",msg.c_str());
+
+		}
 
 	};
 }

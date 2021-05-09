@@ -1,5 +1,5 @@
 #include "core/robosd_log.hpp"
-
+#include <stdio.h>
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 namespace robo{

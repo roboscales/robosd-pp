@@ -27,9 +27,27 @@
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\source\core\robosd_string.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_ini.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_delegat.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
