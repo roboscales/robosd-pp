@@ -165,10 +165,12 @@ namespace robo{
 
 			/** текущее значение ключа  */
 			const K &  key(void){ return key_; }
-
-			pair(T & _owner, const K & _key) : base_ref<T>(_owner), key_(_key){};			
+						
+			pair(T & _owner, const K & _key) : base_ref<T>(_owner), key_(_key){};
 			pair * prev(void) { return (pair *)base_ref<T>::prev; }
 			pair * next(void) { return (pair *)base_ref<T>::next; }
+
+
 
 		};
 		
@@ -186,6 +188,15 @@ namespace robo{
 			typedef pair<T,K, unique<T,K>, true > ref;
 			ref * first(void){  return (ref *)base<T>::first; }; /**первая ячейка. */
 			ref * last(void){  return (ref *)base<T>::last; };  /**последняя ячейка. */
+			ref * find(const K& _key) {
+				for (ref* _ref = first(); _ref; _ref = _ref->next()) {
+					if (_ref->key() == _key) {
+						return  _ref;
+					}
+				}
+				return nullptr;
+			}
+
 		};
 	}
 

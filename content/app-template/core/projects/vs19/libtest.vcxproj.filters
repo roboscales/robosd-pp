@@ -18,12 +18,6 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd-system-dummy.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -33,11 +27,20 @@
     <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_native.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_app.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
@@ -48,6 +51,21 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\source\core\robosd_delegat.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\source\platform\win+vs19\robosd_app_tuning.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_app.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

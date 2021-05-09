@@ -34,13 +34,17 @@ namespace robo{
 	
 	bool string::format(cstr _format, va_list _args){
 		system::guard g__;
-		if (system::os::sprintf(string_buffer, ROBO_STRING_BUFFER_SIZE, _format, _args)) {
+#if ROBO_APP_ENV_ENABLED == 1
+		if (system::env::sprintf(string_buffer, ROBO_STRING_BUFFER_SIZE, _format, _args)) {
 			*( (string_base *)this) = string_buffer;
 			return true;
 		}
 		else {
 			return false;
 		}
+#else
+		return false;
+#endif
 	}
 	bool string::format( cstr _format, ... ){
 		va_list args;
@@ -57,13 +61,17 @@ namespace robo{
 	
 	bool string::tryload(cstr _section, cstr _key){
 		system::guard g__;
-		if (system::os::ini_load_str(string_buffer, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
+#if ROBO_APP_INI_ENABLED == 1
+		if (system::ini::load_str(string_buffer, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
 			*((string_base*)this) = string_buffer;
 			return true;
 		}
 		else {
 			return false;
 		}
+#else
+		return false;
+#endif
 	}
 	bool string::load(delegat::base<bool, uint8_t *, size_t > & _converter){
 		ROBO_LBREAKN( _converter( (uint8_t*)string_buffer, ROBO_STRING_BUFFER_SIZE*sizeof(char_t)) );

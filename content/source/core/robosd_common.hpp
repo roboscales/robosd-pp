@@ -56,6 +56,8 @@ namespace robo {
 	bool ROBO_EXPORT active(void);
 	void ROBO_EXPORT finish(void);*/
 
+	int ROBO_EXPORT hash( cstr _src, int _begin = 0);
+	int ROBO_EXPORT fast_hash(cstr _src, int _begin = 0);
 	void ROBO_EXPORT crash(char const * _file, char const * _function, int _line);
 	enum class result { complete, resume, panic };
 }
@@ -81,5 +83,19 @@ namespace robo {
 #define ROBO_APP_ASSERT(x) 
 #endif
 
+#ifndef ROBO_EXPORT_FUNCTION_PREFIX
+#define ROBO_EXPORT_FUNCTION_PREFIX RT("")
+#endif
+
+#define ROBO_APP_TYPE_NONE 0
+#define ROBO_APP_TYPE_DUMMY 1
+#define ROBO_APP_TYPE_NATIVE 2
+#define ROBO_APP_TYPE_STD 3
+#define ROBO_APP_TYPE_WIN 4
+#define ROBO_APP_TYPE_LINUX 5
+#define ROBO_APP_TYPE_RASPBERRY 6
+#define ROBO_APP_TYPE_UBUNTU 7
+#define ROBO_APP_TYPE_ASTRA 8
 
 #endif
+

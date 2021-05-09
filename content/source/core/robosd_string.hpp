@@ -2,6 +2,7 @@
 #define robosd_cstring_hpp
 #include "core/robosd_delegat.hpp"
 #include <string>
+#include <locale.h>
 #ifndef ROBO_STRING_BUFFER_SIZE
 #define ROBO_STRING_BUFFER_SIZE 255
 #endif
@@ -29,10 +30,7 @@ namespace robo{
 		inline  cstr c_str() const { return   string_base::c_str();  };
         inline operator  cstr () const { return c_str(); }; //todo осмыслить
 
-		template <typename T> bool to_number(T & _value) {
-			cstr begc = c_str();
-			char_t* endc;
-
+		template <typename T> bool to_number(cstr begc, char_t* &endc, T& _value) {
 			setlocale(LC_NUMERIC, "C");
 
 #if ROBO_UNICODE_ENABLED ==1
@@ -44,9 +42,21 @@ namespace robo{
 			setlocale(LC_NUMERIC, "");
 			double lo = (double)std::numeric_limits<T>::lowest();
 			double hi = (double)std::numeric_limits<T>::max();
-			ROBO_LBREAKN_F(tmp >=lo  && tmp <= hi, "value %f is outside", tmp);
+			ROBO_LBREAKN_F(tmp >= lo && tmp <= hi, "value %f is outside", tmp);
 			//todo а ну как округлится?
 			_value = (T)tmp;
+			return true;
+		}
+
+		template <typename T> bool to_number( T& _value) {
+			char_t* endc;
+			ROBO_LRET(to_number(c_str(), endc, _value) );
+		}
+
+		template <typename T> bool to_number_array(size_t _max_count, T* _values, size_t _count) {
+			return true;
+		}
+		template <typename T> bool to_number_list(size_t _max_count, T* _values, size_t _count) {
 			return true;
 		}
 	};

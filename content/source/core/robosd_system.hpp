@@ -1,17 +1,71 @@
 #ifndef __robo_system_hpp
 #define  __robo_system_hpp
 #include "core/robosd_common.hpp"
-#ifndef ROBO_APP_SYSTEM_ENABLED 
-#define ROBO_APP_SYSTEM_ENABLED  0
+
+
+
+#ifndef ROBO_APP_ENV_TYPE 
+#define ROBO_APP_ENV_TYPE  ROBO_APP_TYPE_NONE
 #endif
-#ifndef ROBO_APP_INI_ENABLED 
-#define ROBO_APP_INI_ENABLED  0
+
+#ifndef ROBO_APP_INI_TYPE 
+#define ROBO_APP_INI_TYPE  ROBO_APP_TYPE_NONE
+#endif
+
+#ifndef ROBO_APP_LIB_TYPE 
+#define ROBO_APP_LIB_TYPE  ROBO_APP_TYPE_NONE
+#endif
+
+#ifndef ROBO_APP_ALLOC_TYPE 
+#define ROBO_APP_ALLOC_TYPE  ROBO_APP_TYPE_NONE
 #endif
 
 
-#if ROBO_APP_SYSTEM_ENABLED == 1
+#define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_ALLOC_ENABLED (ROBO_APP_ALLOC_TYPE != ROBO_APP_TYPE_NONE)
+
+#if ROBO_APP_SYSTEM_ENABLED  == 1
 namespace robo {
 	class system {
+#if ROBO_APP_ALLOC_ENABLED ==1
+	public:
+		struct mem {
+			struct stat {
+				struct {
+					int size = 0;
+					int count = 0;
+				} used;
+				struct {
+					int size = 0;
+					int count = 0;
+				} total;
+			};
+			static void* alloc(size_t _sz) { return instance_.mem_alloc_(_sz); }
+			static void free(void* _memo) { instance_.mem_free_(_memo); }
+		};
+		static mem::stat& get_mem_statistic(void) { guard g__; return instance_.memstat_; }
+	private:
+		mem::stat memstat_;
+#endif
+	private:
+		enum  class state { enabled = 178, unknown = -178 };
+		state state_ = state::unknown;
+#if ROBO_APP_ENV_ENABLED == 1
+		void* context_ = nullptr;
+		int lock_count_ = 0;
+		int guest_count_ = 0;
+#endif
+		static system instance_;
+		void enter_(void);
+		void leave_(void);
+#if ROBO_APP_ALLOC_ENABLED == 1
+		void* mem_alloc_(size_t _sz);
+		void mem_free_(void* _memo);
+#endif
+		system(void);
+		~system(void);
 	public:
 		//останавливает ядро системы
 		class ROBO_EXPORT guard {
@@ -36,10 +90,12 @@ namespace robo {
 			~fall(void);
 		};
 
-		class os {
+#if ROBO_APP_ENV_ENABLED ==1
+		class  env {
 			friend class guard;
 			friend class fall;
 			friend class system;
+
 			static bool is_frontend(void);
 			static bool is_backend(void);
 			static void* enter(void);
@@ -48,16 +104,21 @@ namespace robo {
 			static void unlock(void);
 			static void fall(void);
 			static void comeback(void);
-			static void begin(void);
-			static void finish(void);
-			static void * mem_alloc(size_t _sz);
+#if ROBO_APP_ALLOC_ENABLED ==1
+			static void* mem_alloc(size_t _sz);
 			static void mem_free(void* _memo);
-		public:
-#if ROBO_APP_INI_ENABLED ==1
-			static bool ini_init(cstr _ini);
-			static void ini_finish(void);
-			static bool ini_load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 #endif
+		public:
+			static void abort(void);
+			static bool begin(void);
+			static void finish(void);
+			static bool start(void);
+			static void stop(void);
+			static result startup(void);
+			static result shutdown(void);
+			static void frontend_loop(void);
+			static void backend_loop(void);
+
 			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
 			static time_ms_t time_ms(void);
@@ -67,33 +128,24 @@ namespace robo {
 			static void sleep(void); //вернуть контекст
 			static bool sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
 		};
-		static void* mem_alloc(size_t _sz) { return instance_.mem_alloc_(_sz); }
-		static void mem_free(void* _memo) { instance_.mem_free_( _memo );  }
-		struct memstat {
-			struct {
-				int size = 0;
-				int count = 0;
-			} used;
-			struct {
-				int size = 0;
-				int count = 0;
-			} total;
+#endif
+
+#if ROBO_APP_INI_ENABLED ==1
+		struct ini {
+			static bool begin(cstr _ini);
+			static void finish(void);
+			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 		};
-		static memstat& get_mem_statistic(void) { guard g__; return instance_.memstat_; }
-	private:
-		enum  class state { enabled = 178, unknown = -178 };
-		state state_ = state::unknown;
-		void* context_ = nullptr;
-		int lock_count_ = 0;
-		int guest_count_ = 0;
-		static system instance_;
-		memstat memstat_;
-		void enter_(void);
-		void leave_(void);
-		void* mem_alloc_(size_t _sz);
-		 void mem_free_(void* _memo);
-		system(void);
-		~system(void);
+#endif
+#if ROBO_APP_LIB_ENABLED ==1
+		struct lib {
+			static void * proc_get(void* _handle, cstr _proc_name);
+			static bool exists(cstr _proc_name);
+			static void* load(cstr _lib_name);
+			static void free(void* _instance);
+		};
+#endif
+
 	};
 }
 #endif

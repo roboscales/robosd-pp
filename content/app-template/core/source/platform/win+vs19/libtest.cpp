@@ -5,9 +5,12 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_delegat.hpp"
+#include "core/robosd_app.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <thread>
+#include <windows.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -255,10 +258,10 @@ namespace libtest
 	};
 
 	TEST_CLASS(util){
-
+#if ROBO_APP_ALLOC_ENABLED ==1
 		TEST_METHOD(memo)
 		{
-			robo::system::memstat memstat0 = robo::system::get_mem_statistic();
+			robo::system::mem::stat memstat0 = robo::system::get_mem_statistic();
 			enum { cnt = 100 };
 			void* ptrs[cnt] = {};
 			for (int i = 0; i < 1000000; i++) {
@@ -286,9 +289,10 @@ namespace libtest
 				}
 			}
 
-			robo::system::memstat memstat1 = robo::system::get_mem_statistic();
+			robo::system::mem::stat memstat1 = robo::system::get_mem_statistic();
 			Assert::IsTrue(memstat0.used.size == memstat1.used.size);
 		}
+#endif
 		TEST_METHOD(string)
 		{
 			robo::log::begin(robo::log::verb::detail_7, 0, print);
@@ -373,6 +377,7 @@ namespace libtest
 			Assert::IsTrue(member_test_.run(5) == member_test__(5) );
 
 		}
+#if ROBO_APP_INI_ENABLED == 1 
 		TEST_METHOD(ini) {
 			robo::log::begin(robo::log::verb::detail_7, 0, print);
 			{
@@ -383,12 +388,69 @@ namespace libtest
 					<< "PATAM1=2.0007\n"
 					<< "PATAM3=\"Юсупов - красавчик!\"\n";
 			}
-			robo::system::os::ini_init(RT("E:\\~temp.ini"));
+			robo::system::ini::begin(RT("E:\\~temp.ini"));
 			robo::string msg;
 			Assert::IsTrue(msg.load(RT("SETTINGS"), RT("PATAM3")));
 			robo_infolog("%s",msg.c_str());
 
 		}
+#if ROBO_APP_LIB_ENABLED == 1 
+		TEST_METHOD(app) {
+			{
+				std::ofstream ini(RT("E:\\~temp.ini"));
+				ini
+					<< "[SETTINGS]\n"
+					<< "DEBUG_VERB=7\n"
+					<< "[MODULES]\n"
+					<< "COUNT=1\n"
+					<< "M_1=\"lib.test\"\n"
+					;
+			}
+
+			
+			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {
+				robo::app::machine::start();
+				std::thread backend_thrd([] {
+					while (!robo::app::machine::terminated()) {
+						robo::app::machine::backend_loop();
+						Sleep(10);
+					}
+				});
+				std::thread stop_thrd([] {
+					Sleep(3000);
+					robo::app::machine::stop();					
+				});
+				while ( !robo::app::machine::terminated() ) {
+					robo::app::machine::frontend_loop();
+					Sleep(10);
+				}
+				stop_thrd.join();
+				backend_thrd.join();
+			}
+
+			robo::app::machine::finish();
+
+		}
+#endif
+#endif
 
 	};
 }
+
+namespace test{
+	class module : public robo::app::module {
+	protected:
+		virtual void frontend_loop(void) {};
+		virtual void backend_loop(void) {};
+	public:
+		static module& instance(void) {
+			static module instance_;
+			return instance_;
+		}
+	};
+};
+
+#define MODULE_NAME test
+#define MODULE_NAME_STR RT("lib.test")
+
+#include "core/robosd_system_module_reg.hpp"
