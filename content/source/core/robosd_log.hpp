@@ -158,7 +158,7 @@
 #endif
 
 #ifndef ROBO_VBREAK_F
-#define ROBO_VBREAK_F(f,...) ROBO_BREAK_F(x,ROBO_EMPTY_PARAM,f,__VA_ARGS__)
+#define ROBO_VBREAK_F(x,f,...) ROBO_BREAK_F(x,ROBO_EMPTY_PARAM,f,__VA_ARGS__)
 #endif
 //=================
 

@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\source\core\robosd_backend.cpp" />
+    <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp" />
@@ -29,7 +31,9 @@
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_delegat.hpp" />
+    <ClInclude Include="..\..\..\..\source\core\robosd_frontend.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_ini.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp" />

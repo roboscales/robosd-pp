@@ -21,16 +21,19 @@ namespace robo {
 			component* owner_ = nullptr;
 			ref ref_;
 			mref own_ref_;
+			mref index_ref_;
 			list disabled_;
 			list stopped_;
 			list startupped_;
 			list active_;
 			list shutdowned_;
-			string name_;
+			cstr name_;
 			string alias_;
 			state actual_state_ = state::unknown;
+			static map& index_(void);
 		protected:
 			map owned;
+			int id(void) { return index_ref_.key();  }
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual result do_startup(void) { return result::complete; }
@@ -46,15 +49,53 @@ namespace robo {
 			bool start(void);
 			void stop(void);
 			bool init(cstr _name, component* _owner);
-			component(cstr _name, component* _owner);
+			component(cstr _name, component* _owner);			
 		public:
+			cstr name(void) { return name_; }
+			void path(string& _path);
 			state actual_state(void) {	return actual_state_; }
-			const string& alias(void) { return alias_.length()== 0 ? name_ : alias_;  };
+			const cstr alias(void) { return alias_.length()== 0 ? name_ : alias_.c_str();  };
 
 			component(void);
 			virtual ~component(void);
+
+			static component* find(cstr _path) { return index_().find(fast_hash(_path)); }
 		};
-		
+
+		template <class C > class ROBO_EXPORT injection: public component{
+			C& owner_;
+		protected:
+			virtual bool do_load(void) { ROBO_LRET(owner_.C::node_load()); }
+			virtual void do_clean(void) { owner_.C::node_clean(); }
+			virtual bool do_start(void) { ROBO_LRET(owner_.C::node_start()); }
+			virtual void do_stop(void) { owner_.C::node_stop();  }
+			virtual void do_panic(void) { owner_.C::node_panic(); }
+		public:
+			injection(C& _owner, cstr _name, component* _parent) : component(_name,_parent), owner_(_owner) {}
+		};
+
+		class node {
+			friend class injection<node>;
+			injection<node>  node_;
+		protected:
+			virtual bool node_load(void) { return true; }
+			virtual void node_clean(void) {}
+			virtual bool node_start(void) { return true; }
+			virtual void node_stop(void) {}
+			virtual void node_panic(void) {}
+		public:
+			operator component *() { return &node_; }
+			cstr name(void) { return node_.name(); }
+			void path(string& _path) { node_.path(_path);  };
+			component::state node_state(void) { return node_.actual_state(); }
+			const cstr alias(void) { return node_.alias(); };
+			node(cstr _name, component* _parent) :node_(*this,_name,_parent) {
+				ROBO_ALARMN_F(_name && _name[0], "name is empty");
+				ROBO_ALARMN_F(_parent != nullptr, "parent is null ('%s')", _name );
+			}
+		};
+
+
 		class wrapper;
 		class machine;
 
@@ -64,6 +105,7 @@ namespace robo {
 			friend class machine;
 			virtual void frontend_loop(void) = 0;
 			virtual void backend_loop(void) = 0;
+			module(cstr _name) : component(_name,nullptr) {}
 		};
 
 #if ROBO_APP_LIB_ENABLED == 1
@@ -108,7 +150,6 @@ namespace robo {
 			void frontend_loop_(void);
 			void backend_loop_(void);
 			bool terminated__(void);
-			static machine& instance(void);
 
 			enum class req_state  { start, stop };
 
@@ -122,20 +163,22 @@ namespace robo {
 			virtual result do_shutdown(void);
 
 		public:
+			static machine& root(void);
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
-			static inline bool begin(cstr _ini, log::print_f _print) { return instance().begin_(_ini, _print); }
+			static inline bool begin(cstr _ini, log::print_f _print) { return root().begin_(_ini, _print); }
 #else
 			static inline bool begin(cstr _ini) { return instance().begin_(_ini); }
 #endif
 
-			static inline void finish(void) { instance().finish_(); }
-			static inline void  stop(void) { instance().stop_(); };
-			static inline void  start(void) { instance().start_(); };
+			static inline void finish(void) { root().finish_(); }
+			static inline void  stop(void) { root().stop_(); };
+			static inline void  start(void) { root().start_(); };
 
-			static inline void  backend_loop(void) { instance().backend_loop_(); };
-			static inline void  frontend_loop(void) { instance().frontend_loop_(); };
-			static inline bool  terminated(void) { return instance().terminated__(); }
+			static inline void  backend_loop(void) { root().backend_loop_(); };
+			static inline void  frontend_loop(void) { root().frontend_loop_(); };
+			static inline bool  terminated(void) { return root().terminated__(); }
 		};
+
 #endif
 	}
 }

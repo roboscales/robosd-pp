@@ -11,7 +11,7 @@
 #include <sstream>
 #include <thread>
 #include <windows.h>
-
+#include "core/robosd_backend.hpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -356,8 +356,10 @@ namespace libtest
 		
 		TEST_METHOD(delegat)
 		{
-
-			robo::delegat::simple< void, robo::cstr , robo::string& > recorder(test_simple);
+			
+			//robo::delegat::simple< robo::delegat::base< void, robo::cstr, robo::string& >, void, robo::cstr , robo::string& > recorder(test_simple);
+			robo::delegat::ssimple< void, robo::cstr, robo::string& > recorder(test_simple);
+			
 			robo::string tmp;
 			robo::string tmp2;
 			recorder( RT("aaaa"), tmp);
@@ -365,15 +367,15 @@ namespace libtest
 			Assert::IsTrue(tmp == tmp2);
 			Assert::IsTrue(tmp == RT(" copy aaaa"));
 
-			robo::delegat::simple<void> test_void_(test_void);
+			robo::delegat::ssimple<void> test_void_(test_void);
 			test_void_();
 
 			int instance = 5;
-			robo::delegat::uni<int> test_void_2_(&instance, test_void2);
+			robo::delegat::suni<int> test_void_2_(&instance, test_void2);
 			Assert::IsTrue(test_void_2_()==6);
 
 			member_test  member_test_;
-			robo::delegat::member< member_test, int,int> member_test__(member_test_, &member_test::run);
+			robo::delegat::smember< member_test, int,int> member_test__(&member_test_, &member_test::run);
 			Assert::IsTrue(member_test_.run(5) == member_test__(5) );
 
 		}
@@ -407,6 +409,26 @@ namespace libtest
 					;
 			}
 
+			class ddddd : public robo::frontend::idevagent {
+			public:
+				enum class icommand { external, service, stopped, fault, reset, none };
+				enum class istate { external, independed, service, stopped, fault, unknown, locked };
+				struct iaction: public robo::frontend::idevagent::iaction {
+				};
+				struct ifeedback : public robo::frontend::idevagent::ifeedback {
+				};
+				struct irequired : public robo::frontend::idevagent::irequired {
+				};
+				struct istatus : public robo::frontend::idevagent::istatus {
+				};
+				ddddd(void) :robo::frontend::idevagent() {}
+			};
+			
+			typedef robo::backend::devagent< ddddd > devagent;
+			
+			robo::backend::boardagent boardagent(RT("тестовая барда"), &robo::app::machine::root());
+
+			devagent agent(RT("тестовый агент"), boardagent );
 			
 			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {
 				robo::app::machine::start();
@@ -437,11 +459,13 @@ namespace libtest
 	};
 }
 
+#define MODULE_NAME_STR RT("lib.test")
 namespace test{
 	class module : public robo::app::module {
 	protected:
 		virtual void frontend_loop(void) {};
 		virtual void backend_loop(void) {};
+		module(void) : robo::app::module( MODULE_NAME_STR RT(".module") ) {}
 	public:
 		static module& instance(void) {
 			static module instance_;
@@ -451,6 +475,6 @@ namespace test{
 };
 
 #define MODULE_NAME test
-#define MODULE_NAME_STR RT("lib.test")
+
 
 #include "core/robosd_system_module_reg.hpp"

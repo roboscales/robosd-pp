@@ -1,5 +1,5 @@
-#ifndef __robo_system_hpp
-#define  __robo_system_hpp
+#ifndef  robo_system_hpp
+#define  robo_system_hpp
 #include "core/robosd_common.hpp"
 
 

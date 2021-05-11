@@ -9,14 +9,22 @@
 
 namespace robo {
 	namespace app {
-		component::component(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr) {
+		component::component(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this,0) {
 		}
-		component::component(cstr _name, component* _owner) : ref_(*this), own_ref_(*this,0), owner_(nullptr) {
+		
+		component::component(cstr _name, component* _owner) : ref_(*this), own_ref_(*this,0), owner_(nullptr), index_ref_(*this,0) {
 			ROBO_ALARMN(init(_name, _owner));
 		}
+
 		component::~component(void) {
 			init(nullptr, nullptr);
 		}
+
+		component::map& component::index_(void) {
+			static map index__;
+			return index__;
+		}
+
 
 		bool component::do_load(void) { 
 			alias_.tryload(name_, RT("ALIAS"));
@@ -31,7 +39,7 @@ namespace robo {
 		bool component::init(cstr _name, component* _owner) {
 			actual_state_ = state::unknown;
 
-			if (_name) name_ = _name; else name_ = RT("");
+			if (_name) name_ = _name; 
 
 			if (owner_ != nullptr) {
 				ref_.dettach();
@@ -46,10 +54,21 @@ namespace robo {
 				ref_.attach_to(owner_->disabled_);
 			}
 			actual_state_ = state::clean;
+
+			if (name_ && name_[0]) {
+				string ph;
+				path(ph);
+				index_ref_.set_key(fast_hash(ph));
+				index_ref_.attach_to(index_());
+			}
 			return true;
 		}
-
 		
+		void component::path(string& _path) {
+			_path.format(RT("%s/%s"), name_, _path.c_str());
+			if (owner_) return owner_->path(_path);
+		}
+
 		bool component::load(void) {
 
 			ROBO_LBREAKN(do_load());
@@ -65,7 +84,7 @@ namespace robo {
 			ROBO_LBREAKN(disabled_.count() == 0)
 
 
-			robo_applog("component '%s' is loaded", alias().c_str());
+			robo_applog("component '%s' is loaded", alias());
 			actual_state_ = state::stopped;
 			return true;
 		}
@@ -90,7 +109,7 @@ namespace robo {
 			if (owner_)
 				ref_.attach_to(owner_->startupped_);
 
-			robo_applog("component '%s' is begin start", alias().c_str());
+			robo_applog("component '%s' is begin start", alias());
 
 			actual_state_ = state::startup;
 			return true;
@@ -99,6 +118,7 @@ namespace robo {
 			if (owner_)
 				ref_.attach_to(owner_->disabled_);
 			actual_state_ = state::panic;
+			do_panic();
 		}
 
 		result component::startup(void) {
@@ -118,7 +138,7 @@ namespace robo {
 				case result::complete:
 					if (owner_)
 						ref_.attach_to(owner_->active_);
-					robo_applog("component '%s' is started", alias().c_str());
+					robo_applog("component '%s' is started", alias());
 					actual_state_ = state::execute;
 					return result::complete;
 				case result::resume:
@@ -142,7 +162,7 @@ namespace robo {
 			if (owner_)
 				ref_.attach_to(owner_->shutdowned_);
 			actual_state_ = state::shutdown;
-			robo_applog("component '%s' is begin shutdown", alias().c_str());
+			robo_applog("component '%s' is begin shutdown", alias());
 		}
 
 
@@ -163,7 +183,7 @@ namespace robo {
 				case result::complete:
 					if (owner_)
 						ref_.attach_to(owner_->stopped_);
-					robo_applog("component %s is stopped", alias().c_str());
+					robo_applog("component %s is stopped", alias());
 					actual_state_ = state::stopped;
 					return result::complete;
 				case result::resume:
@@ -187,7 +207,7 @@ namespace robo {
 			do_clean();
 			if (owner_)
 				ref_.attach_to(owner_->disabled_);
-			robo_applog("component %s is cleaned", alias().c_str());
+			robo_applog("component %s is cleaned", alias());
 			actual_state_ = state::clean;
 		}
 
@@ -232,7 +252,7 @@ namespace robo {
 
 			ref_.set_key(hash(lib_));
 
-			if (!ref_.attach_to(machine::instance().wrappers_)) {
+			if (!ref_.attach_to(machine::root().wrappers_)) {
 				ROBO_LBREAK_F("module isn't loaded (dupplicated lib names) %s", lib_);
 			}
 
@@ -255,7 +275,7 @@ namespace robo {
 			}
 
 			
-			if ( !module_->init( string(RT("%s.module"), lib_.c_str() ), &machine::instance()) ) {
+			if ( !module_->init( nullptr,  &machine::root()) ) {
 				finish();
 				ROBO_LBREAK_F("module isn't init  from  lib  '%s'", lib_.c_str());
 			}
@@ -336,7 +356,7 @@ namespace robo {
 			}
 		}
 		
-		machine& machine::instance() {
+		machine& machine::root() {
 			static machine instance_;
 			return instance_;
 		}

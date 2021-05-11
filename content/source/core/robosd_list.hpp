@@ -102,6 +102,18 @@ namespace robo{
 		public:
 			/**  оличество элементов списка */
 			int count(void){  return count_; } 
+
+			T* pop(void) {
+				base_ref<T> * r = first;
+				if (r) {
+					r->dettach();
+					return &(r->owner());
+				}
+				else {
+					return nullptr;
+				}
+			}
+
 		};
 
 		template<typename T> class ROBO_EXPORT unsorted  : public base<T> {
@@ -133,17 +145,26 @@ namespace robo{
 		template<typename T, typename K, typename L, bool unique>  class ROBO_EXPORT pair: public base_ref<T>{		
 			K key_ ;
 		public:
+			void hack_key_(const K& _key) {
+				key_ = _key;
+			}
 
 			/** добавить ссылку в ссписок согласно пор¤дку  */
 			bool attach_to( L & _list){
 				if(_list.count()>0){
-					for ( pair * p = _list.first(); p != nullptr; p = p->next()){
-						if(unique && p->key_ == key_) return false;
-						if( p->key_ > key_){
-							base_ref<T>::dettach();
-							base_ref<T>::attach_to(_list, p);
-							return true;
+					if (_list.L::sort() ) {
+						for (pair* p = _list.first(); p != nullptr; p = p->next()) {
+							if (unique && p->key_ == key_) return false;
+							if (p->key_ > key_) {
+								base_ref<T>::dettach();
+								base_ref<T>::attach_to(_list, p);
+								return true;
+							}
 						}
+					}
+					else {
+						base_ref<T>::dettach();
+						base_ref<T>::attach_to(_list, nullptr);
 					}
 				} 
 				base_ref<T>::attach_to(_list, nullptr);
@@ -151,6 +172,8 @@ namespace robo{
 			}
 
 			/** изменить ключ  */
+			
+
 			bool set_key( const K &_key){
 				L * old =(L *)own_list();
 				if(old != nullptr){
@@ -176,24 +199,48 @@ namespace robo{
 		
 		template<typename T, typename K> class ROBO_EXPORT sorted 
 			: public base<T> {
+		protected:
+			bool  sort_ = true;
 		public:
+			bool sort(void) { return sort_; }
 			typedef pair<T,K, sorted<T,K>, false > ref;
 			ref * first(void){  return (ref *)base<T>::first; }; /**первая ячейка. */
 			ref * last(void){  return (ref *)base<T>::last; }; /**последняя ячейка. */
+			void inc_key(const K& _delta) {
+				for (ref* _ref = first(); _ref; _ref = _ref->next()) {
+					K key = _ref->key();
+					key = key + _delta;
+					_ref->hack_key_(key);
+				}
+			}
+
+		};
+
+		template<typename T, typename K> class ROBO_EXPORT pool : public sorted< T, K >
+		{
+		public:
+			pool(void) :sorted< T, K>() { sort_ = false; }
 		};
 
 		template<typename T, typename K> class ROBO_EXPORT unique 
 			: public base<T> {
 		public:
+			bool sort(void) { return true;  }
 			typedef pair<T,K, unique<T,K>, true > ref;
 			ref * first(void){  return (ref *)base<T>::first; }; /**первая ячейка. */
 			ref * last(void){  return (ref *)base<T>::last; };  /**последняя ячейка. */
-			ref * find(const K& _key) {
+			ref * at(const K& _key) {
 				for (ref* _ref = first(); _ref; _ref = _ref->next()) {
 					if (_ref->key() == _key) {
 						return  _ref;
 					}
 				}
+				return nullptr;
+			}
+
+			T * find(const K& _key) {
+				ref* r = at(_key);
+				if (r) return &(r->owner());
 				return nullptr;
 			}
 
@@ -209,17 +256,6 @@ namespace robo{
 			void push(T* _t) {
 				if (_t) {
 					((L::ref&)(*_t)).attach_to(*this);
-				}
-			}
-
-			T* pop() {
-				L::ref* r = L::first();
-				if (r) {
-					r->dettach();
-					return &(r->owner());
-				}
-				else {
-					return nullptr;
 				}
 			}
 		};

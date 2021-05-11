@@ -23,15 +23,13 @@ namespace robo {
 
 		}
 
-		lib* lib::find_by_name_(cstr _name) {
-			ref* _ref = libs().find(fast_hash(_name));
-			return _ref ? &_ref->owner() : nullptr;
+		lib* lib::find_by_name_(cstr _name) {			
+			return libs().find(fast_hash(_name));
 		}
 
 		lib* lib::find_by_instance_(const void* _instance) {
 			int id = (int)(_instance);
-			ref* _ref = libs().find( id );
-			return _ref ? &_ref->owner() : nullptr;
+			return libs().find(id);
 		}
 
 		bool lib::reg_proc(proc* _proc) {
@@ -48,8 +46,7 @@ namespace robo {
 		}
 
 		lib::functor* lib::find_functor_by_name_(cstr _name) {
-			functor::ref* _ref = procs_.find(fast_hash(_name));
-			return _ref ? &_ref->owner() : nullptr;
+			return procs_.find(fast_hash(_name));
 		}
 
 		bool lib::exists(cstr _name) {

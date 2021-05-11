@@ -39,6 +39,12 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\core\robosd_backend.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -67,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp">
       <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_frontend.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp">
+      <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
