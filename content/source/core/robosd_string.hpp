@@ -53,11 +53,11 @@ namespace robo{
 			ROBO_LRET(to_number(c_str(), endc, _value) );
 		}
 
-		template <typename T> bool to_number_array(size_t _max_count, T* _values, size_t _count) {
-			return true;
+		template <typename T> bool to_number_array( T* _values, size_t _count) {
+			return false;
 		}
 		template <typename T> bool to_number_list(size_t _max_count, T* _values, size_t _count) {
-			return true;
+			return false;
 		}
 	};
 }

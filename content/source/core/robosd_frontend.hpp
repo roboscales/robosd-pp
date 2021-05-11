@@ -8,8 +8,7 @@
 
 namespace robo {
 
-#ifndef ROBO_OBJECT_ID_TYPE
-	struct ROBO_EXPORT object_id_t {
+	struct ROBO_EXPORT dev_id_t {
 		union {
 			struct {
 				uint8_t address : 8;
@@ -21,21 +20,21 @@ namespace robo {
 			uint32_t value;
 		};
 		const uint32_t undefined = (uint32_t)(-1);
-		object_id_t(void);
-		object_id_t(uint32_t _id);
-		object_id_t(const object_id_t& _src);
-		object_id_t(
+		dev_id_t(void);
+		dev_id_t(uint32_t _id);
+		dev_id_t(const dev_id_t& _src);
+		dev_id_t(
 			uint8_t _servo,
 			uint8_t _modul,
 			uint8_t _dev,
 			uint8_t _bus,
 			uint8_t _adress);
-		object_id_t& operator = (const object_id_t& _src);
-		object_id_t& operator = (const int& _src);
+		dev_id_t& operator = (const dev_id_t& _src);
+		dev_id_t& operator = (const int& _src);
 		operator int() const { return (int)value; }
 		enum { ALL_INDEX = -1 };
 	};
-#endif
+
 	class ROBO_EXPORT signal {
 	public:
 		class ROBO_EXPORT  performer {
@@ -175,7 +174,7 @@ namespace robo {
 		class idevagent {
 		public:
 			enum class icommand { external, service, stopped, fault, reset,none };
-			enum class istate { external, independed, service, stopped, fault, unknown, locked };
+			enum class istate { unknown, disabled, external, independed, service, stopped, fault, locked };
 
 			struct iaction {
 			};

@@ -1,10 +1,13 @@
 #ifndef robosd_backend_hpp
 #define robosd_backend_hpp
+
 #include "core/robosd_frontend.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_app.hpp"
-
+#include "core/robosd_tran.h"
+#include "core/robosd_tran.h"
+#include "net/robosd_net_trafic.hpp"
 namespace robo {
 	namespace backend {
 		class ROBO_EXPORT task {
@@ -119,15 +122,158 @@ namespace robo {
 
 		class boardagent;
 		
-
-		class idevagent: public app::node  {
-		private:
-			boardagent & boardagent_;
+		class ROBO_EXPORT router : public app::node {
 		public:
+			struct record {
+				typedef uint8_t address_t;
+				typedef uint8_t suba_t;
+				robo_tran_header_t tran_header;
+				int bus_id;
+				suba_t request_suba;
+				suba_t answer_suba;
+			};
+		private:
+			size_t table_size_=0;
+			record* table_ = nullptr;
+		public:
+			virtual bool node_load(void);
+			virtual void node_clean(void);
+			record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
+			router(cstr _name, app::module* _owner);
+		};
+
+
+		class idevagent : public app::node {
+		public:
+			typedef  ::robo::list::sorted<idevagent, int> bus_index;
+			typedef  bus_index::ref bus_ref;
+			class ROBO_EXPORT  stream {
+			public:
+				enum class query_result {
+					none = 0
+					, success
+					, repeat
+				};
+
+				class ROBO_EXPORT msg {
+				protected:
+					stream* stream_;
+					friend class stream;
+				public:
+					typedef  ::robo::list::unsorted<msg> list;
+					typedef  list::ref ref;
+					ref ref_;
+					robo_tran_p tran_;
+					void confirm();
+					msg(robo_tran_p _tran);
+					virtual bool prepare();
+					inline idevagent& own_agent() { return stream_->own_agent(); }
+				};
+
+				typedef signal::performer::priority priority;
+				typedef  ::robo::list::sorted<stream, priority> list;
+				typedef  list::ref ref;
+			private:
+				ref ref_;
+				idevagent& agent_;
+			public:
+				inline idevagent& own_agent() { return agent_; }
+				stream(idevagent& _agent, priority _priority);
+				virtual ~stream();
+				virtual bool exchange_need() = 0;
+				virtual query_result query(robo_tran_p _tran) = 0;
+				virtual void confirm(robo_tran_p _tran) = 0;
+				query_result query(msg* _msg);
+			};
+
+		private:
+			boardagent& boardagent_;
+			dev_id_t dev_id_;
+			bus_ref bus_ref_;
+			int bus_order_ = 0;
+			router* router_ = nullptr;
+			typedef frontend::idevagent::istate state;
+			state actual_state_ = state::unknown;
+			stream::list streams_;
+		protected:
 			virtual void apply_action(void) = 0;
 			virtual void uppdate_feedback(void) = 0;
+			bool exchabge_enabled(void) { return actual_state_ > state::disabled; }
+			virtual bool node_load(void);
+			virtual void node_clean(void);
+			virtual bool node_start(void);
+
+		public:
+			itrafic trafic;
+
+			const dev_id_t& dev_id(void) { return dev_id_; };
+			
+			stream::query_result query(stream::msg* _msg);
+
 			idevagent(cstr _name, boardagent& _boardagent);
+
+			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 		};
+
+		class ROBO_EXPORT bus : public app::node {
+		public:
+			typedef ::robo::list::unique<bus, int> index;
+			typedef index::ref ref;
+		private:
+			ref ref_;
+		public:
+			class ROBO_EXPORT msg : public idevagent::stream::msg {
+			public:
+				robo_tran_t tran;
+				router::record::address_t address;
+				router::record::suba_t suba;
+				bus* ownbus;
+				msg(void) : idevagent::stream::msg(&tran), ownbus(0) {}
+				virtual ~msg() {}
+				virtual bool  prepare(void);
+				virtual void release(void) {}
+			};
+
+		private:
+			friend class idevagent;
+			idevagent::bus_ref* current_agent_ref_ = nullptr;
+			idevagent::bus_index agents_;
+			msg* current_msg_ = nullptr;
+			void refuse__(msg* _msg);
+			friend class api;
+			bool request_(msg* _msg);
+			void perform_(void);
+			bool ready_(void);
+			msg* pop_incom_msg_(void);
+			time_us_t  request_begin_us_;
+			time_us_t  timeout_us_;
+			time_us_t  default_timeout_us_;
+			void tick1sec_(void);
+			bool setup_(int _id);
+		protected:
+			virtual bool post(msg* _msg) = 0;
+			virtual void cancel(void) = 0;
+			virtual bool ready(void) = 0;
+			virtual bool node_load(void);
+			virtual void node_clean(void);
+		public:
+			//короткий id
+			bool id(void) { return ref_.key(); }
+			//todo подпорка для busmarshal
+			msg* current_msg(void) { return current_msg_; };
+			itrafic trafic;
+			virtual msg* get_msg(void) = 0;
+			virtual void  release_msg(msg*) = 0;
+			bus(cstr _name, app::module* _owner);
+			virtual ~bus(void);
+			void confirm(robo_tran_status_t _result);
+			static void perform(void);
+			static void tick1sec(void);
+		};
+
+
+
+
 
 		template<class D> class devagent : public ::robo::frontend::devagent<D> , public ::robo::backend::idevagent {
 		public:
@@ -157,9 +303,22 @@ namespace robo {
 		};
 
 		class boardagent : public app::node {
+			friend class idevagent;
+			time_us_t request_pause_us_ = 0;
+			time_us_t last_request_us_ = 0;
+		protected:
+			virtual bool node_load(void);
+			virtual void node_clean(void);
 		public:
-			boardagent(cstr _name, app::component* _owner) :app::node(_name,_owner) {};
+			boardagent(cstr _name, app::module* _owner) :app::node(_name,_owner) {};
+
 		};
+
+
+		
+
+
+
 
 		namespace process {
 			class base;
@@ -230,6 +389,8 @@ namespace robo {
 				static void clean(void);
 
 			};
+
+
 			/*
 			class ROBO_EXPORT repeater : public base {
 				front::signal::performer& performer_;

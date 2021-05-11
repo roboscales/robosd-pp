@@ -45,6 +45,9 @@
     <ClCompile Include="..\..\..\..\source\core\robosd_backend.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\source\net\robosd_net_trafic.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -79,6 +82,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp">
       <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_tran.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\net\robosd_net_trafic.hpp">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

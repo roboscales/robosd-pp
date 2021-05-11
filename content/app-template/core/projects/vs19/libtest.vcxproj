@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_string.cpp" />
+    <ClCompile Include="..\..\..\..\source\net\robosd_net_trafic.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_native.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_app.cpp" />
@@ -37,6 +38,8 @@
     <ClInclude Include="..\..\..\..\source\core\robosd_ini.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp" />
+    <ClInclude Include="..\..\..\..\source\core\robosd_tran.h" />
+    <ClInclude Include="..\..\..\..\source\net\robosd_net_trafic.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_app.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />

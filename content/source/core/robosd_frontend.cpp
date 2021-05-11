@@ -3,8 +3,7 @@
 #include "core/robosd_log.hpp"
 #include "core/robosd_system.hpp"
 namespace robo {
-#ifndef ROBO_OBJECT_ID_TYPE
-	object_id_t::object_id_t(
+	dev_id_t::dev_id_t(
 		uint8_t _servo,
 		uint8_t _module,
 		uint8_t _dev,
@@ -18,20 +17,19 @@ namespace robo {
 	{
 
 	}
-	object_id_t::object_id_t(void)
+	dev_id_t::dev_id_t(void)
 		: value(0) {
 	};
 
-	object_id_t::object_id_t(const object_id_t& _src)
+	dev_id_t::dev_id_t(const dev_id_t& _src)
 		: value(_src.value) {
 	};
-	object_id_t& object_id_t::operator = (const object_id_t& _src) {
+	dev_id_t& dev_id_t::operator = (const dev_id_t& _src) {
 		value = _src.value;  return *this;
 	}
-	object_id_t& object_id_t::operator = (const int& _src) {
+	dev_id_t& dev_id_t::operator = (const int& _src) {
 		value = (unsigned int)_src;  return *this;
 	}
-#endif
 
 	signal::performer::performer(bool _once)
 		: ref_(*this,priority::normal)

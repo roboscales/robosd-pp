@@ -18,7 +18,7 @@ namespace robo {
 
 		template<typename T> bool try_load_arr(cstr _section, cstr _key, T * _values, size_t _count) {
 			string values;
-			return value.tryload(_section, _key) && value.to_number_array(_values, _count);
+			return values.tryload(_section, _key) && values.to_number_array(_values, _count);
 		}
 
 		template <typename T>	bool load_arr(cstr _sect, cstr _key, T* _values, size_t _count) {

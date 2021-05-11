@@ -62,15 +62,18 @@ namespace robo {
 			static component* find(cstr _path) { return index_().find(fast_hash(_path)); }
 		};
 
+		
+		// идет массовое копирование, где старт, лоад и прочее имеют другое назначение, пока обхождим так
 		template <class C > class ROBO_EXPORT injection: public component{
 			C& owner_;
 		protected:
-			virtual bool do_load(void) { ROBO_LRET(owner_.C::node_load()); }
-			virtual void do_clean(void) { owner_.C::node_clean(); }
-			virtual bool do_start(void) { ROBO_LRET(owner_.C::node_start()); }
-			virtual void do_stop(void) { owner_.C::node_stop();  }
-			virtual void do_panic(void) { owner_.C::node_panic(); }
+			virtual bool do_load(void) { ROBO_LBREAKN(component::do_load()); ROBO_LRET(owner_.node_load()); }
+			virtual void do_clean(void) { owner_.node_clean(); component::do_clean();  }
+			virtual bool do_start(void) { ROBO_LBREAKN(component::do_start());  ROBO_LRET(owner_.node_start()); }
+			virtual void do_stop(void) { owner_.node_stop();  component::do_stop(); }
+			virtual void do_panic(void) { owner_.node_panic(); component::do_panic(); }
 		public:
+			C& owner(void) { return owner_;  }
 			injection(C& _owner, cstr _name, component* _parent) : component(_name,_parent), owner_(_owner) {}
 		};
 
@@ -78,13 +81,19 @@ namespace robo {
 			friend class injection<node>;
 			injection<node>  node_;
 		protected:
-			virtual bool node_load(void) { return true; }
-			virtual void node_clean(void) {}
+			virtual bool node_load(void) = 0;
+			virtual void node_clean(void) = 0;
 			virtual bool node_start(void) { return true; }
 			virtual void node_stop(void) {}
 			virtual void node_panic(void) {}
 		public:
 			operator component *() { return &node_; }
+
+			static node* find(cstr _name) {
+				injection<node>* c = dynamic_cast< injection<node> *> (component::find(_name));
+				if (c) return &c->owner(); else return nullptr;
+			}
+
 			cstr name(void) { return node_.name(); }
 			void path(string& _path) { node_.path(_path);  };
 			component::state node_state(void) { return node_.actual_state(); }

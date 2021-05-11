@@ -65,8 +65,11 @@ namespace robo {
 		}
 		
 		void component::path(string& _path) {
-			_path.format(RT("%s/%s"), name_, _path.c_str());
-			if (owner_) return owner_->path(_path);
+			if (_path.length() > 0)
+				_path.format(RT("%s/%s"), name_, _path.c_str());
+			else
+				_path = name_;
+			if (owner_ && owner_ != & machine::root() ) return owner_->path(_path);
 		}
 
 		bool component::load(void) {

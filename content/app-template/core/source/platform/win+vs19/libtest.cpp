@@ -13,6 +13,26 @@
 #include <windows.h>
 #include "core/robosd_backend.hpp"
 
+#define MODULE_NAME_STR RT("lib.test")
+namespace test {
+	class module : public robo::app::module {
+	protected:
+		virtual void frontend_loop(void) {};
+		virtual void backend_loop(void) {};
+		module(void) : robo::app::module(MODULE_NAME_STR ) {}
+	public:
+		static module& instance(void) {
+			static module instance_;
+			return instance_;
+		}
+	};
+};
+
+#define MODULE_NAME test
+
+
+#include "core/robosd_system_module_reg.hpp"
+
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace libtest
@@ -406,6 +426,16 @@ namespace libtest
 					<< "[MODULES]\n"
 					<< "COUNT=1\n"
 					<< "M_1=\"lib.test\"\n"
+					<< "[тестовая логическая шина]\n"
+					<< "BUS_ID=1\n"
+					<< "DEFAULT_TIMEOUT_US=200\n"
+					<< "[тестовая барда]\n"
+					<< "REQUEST_PAUSE_US=2000]\n"
+					<< "[тестовый агент]\n"
+					<< "ALIAS=\"охренеть на сколько тестовый агент\"\n"
+					<< "BUS_NAME=\"lib.test/тестовая логическая шина\"\n"
+					<< "BOARD_DEV_ID=0\n"
+					<< "BOARD_ADDRESS=0x0A\n"
 					;
 			}
 
@@ -426,7 +456,21 @@ namespace libtest
 			
 			typedef robo::backend::devagent< ddddd > devagent;
 			
-			robo::backend::boardagent boardagent(RT("тестовая барда"), &robo::app::machine::root());
+			robo::backend::boardagent boardagent(RT("тестовая барда"), &test::module::instance());
+
+			class bus : public  robo::backend::bus {
+			public:
+				virtual bool post(msg* _msg) { return false; };
+				virtual void cancel(void) {};
+				virtual bool ready(void) { return false; };
+				virtual msg* get_msg(void) { return 0;  };
+				virtual void  release_msg(msg*) { };
+
+				bus( robo::cstr _name, robo::app::module* _module): robo::backend::bus( _name, _module){
+				}
+			};
+
+			bus bus_(RT("тестовая логическая шина"), &test::module::instance());
 
 			devagent agent(RT("тестовый агент"), boardagent );
 			
@@ -451,7 +495,6 @@ namespace libtest
 			}
 
 			robo::app::machine::finish();
-
 		}
 #endif
 #endif
@@ -459,22 +502,3 @@ namespace libtest
 	};
 }
 
-#define MODULE_NAME_STR RT("lib.test")
-namespace test{
-	class module : public robo::app::module {
-	protected:
-		virtual void frontend_loop(void) {};
-		virtual void backend_loop(void) {};
-		module(void) : robo::app::module( MODULE_NAME_STR RT(".module") ) {}
-	public:
-		static module& instance(void) {
-			static module instance_;
-			return instance_;
-		}
-	};
-};
-
-#define MODULE_NAME test
-
-
-#include "core/robosd_system_module_reg.hpp"
