@@ -10,15 +10,15 @@
 
 namespace robo {
 	namespace app {
-		class ROBO_EXPORT component {
+		class ROBO_EXPORT node {
 		public:
 			enum class state { unknown = -2, panic = -1, clean = 0, stopped, startup, execute, shutdown };
 		private:
-			typedef  ::robo::list::unsorted<component> list;
-			typedef  ::robo::list::unique<component,int> map;
+			typedef  ::robo::list::unsorted<node> list;
+			typedef  ::robo::list::unique<node,int> map;
 			typedef  list::ref ref;
 			typedef  map::ref mref;
-			component* owner_ = nullptr;
+			node* owner_ = nullptr;
 			ref ref_;
 			mref own_ref_;
 			mref index_ref_;
@@ -36,85 +36,44 @@ namespace robo {
 			int id(void) { return index_ref_.key();  }
 			virtual bool do_load(void);
 			virtual void do_clean(void);
-			virtual result do_startup(void) { return result::complete; }
-			virtual result do_shutdown(void) { return result::complete; }
-			virtual bool do_start(void) { return true; }
-			virtual void do_stop(void) { }
+			virtual result do_node_startup(void) { return result::complete; }
+			virtual result do_node_shutdown(void) { return result::complete; }
+			virtual bool do_node_start(void) { return true; }
+			virtual void do_node_stop(void) { }
 			virtual void do_panic(void) { }
 			void panic(void);
 			bool load(void);
 			void clean(void);
-			result startup(void);
-			result shutdown(void);
-			bool start(void);
-			void stop(void);
-			bool init(cstr _name, component* _owner);
-			component(cstr _name, component* _owner);			
+			result node_startup(void);
+			result node_shutdown(void);
+			bool node_start(void);
+			void node_stop(void);
+			bool init(cstr _name, node* _owner);
+			node(cstr _name, node* _owner);			
 		public:
 			cstr name(void) { return name_; }
 			void path(string& _path);
 			state actual_state(void) {	return actual_state_; }
 			const cstr alias(void) { return alias_.length()== 0 ? name_ : alias_.c_str();  };
 
-			component(void);
-			virtual ~component(void);
+			node(void);
+			virtual ~node(void);
 
-			static component* find(cstr _path) { return index_().find(fast_hash(_path)); }
+			static node* find(cstr _path) { return index_().find(fast_hash(_path)); }
 		};
 
 		
-		// идет массовое копирование, где старт, лоад и прочее имеют другое назначение, пока обхождим так
-		template <class C > class ROBO_EXPORT injection: public component{
-			C& owner_;
-		protected:
-			virtual bool do_load(void) { ROBO_LBREAKN(component::do_load()); ROBO_LRET(owner_.node_load()); }
-			virtual void do_clean(void) { owner_.node_clean(); component::do_clean();  }
-			virtual bool do_start(void) { ROBO_LBREAKN(component::do_start());  ROBO_LRET(owner_.node_start()); }
-			virtual void do_stop(void) { owner_.node_stop();  component::do_stop(); }
-			virtual void do_panic(void) { owner_.node_panic(); component::do_panic(); }
-		public:
-			C& owner(void) { return owner_;  }
-			injection(C& _owner, cstr _name, component* _parent) : component(_name,_parent), owner_(_owner) {}
-		};
-
-		class node {
-			friend class injection<node>;
-			injection<node>  node_;
-		protected:
-			virtual bool node_load(void) = 0;
-			virtual void node_clean(void) = 0;
-			virtual bool node_start(void) { return true; }
-			virtual void node_stop(void) {}
-			virtual void node_panic(void) {}
-		public:
-			operator component *() { return &node_; }
-
-			static node* find(cstr _name) {
-				injection<node>* c = dynamic_cast< injection<node> *> (component::find(_name));
-				if (c) return &c->owner(); else return nullptr;
-			}
-
-			cstr name(void) { return node_.name(); }
-			void path(string& _path) { node_.path(_path);  };
-			component::state node_state(void) { return node_.actual_state(); }
-			const cstr alias(void) { return node_.alias(); };
-			node(cstr _name, component* _parent) :node_(*this,_name,_parent) {
-				ROBO_ALARMN_F(_name && _name[0], "name is empty");
-				ROBO_ALARMN_F(_parent != nullptr, "parent is null ('%s')", _name );
-			}
-		};
-
 
 		class wrapper;
 		class machine;
 
-		class ROBO_EXPORT module: public component {
+		class ROBO_EXPORT module: public node {
 		protected:
 			friend class wrapper;
 			friend class machine;
 			virtual void frontend_loop(void) = 0;
 			virtual void backend_loop(void) = 0;
-			module(cstr _name) : component(_name,nullptr) {}
+			module(cstr _name) : node(_name,nullptr) {}
 		};
 
 #if ROBO_APP_LIB_ENABLED == 1
@@ -142,7 +101,7 @@ namespace robo {
 			void finish(void);
 		};
 		
-		class  ROBO_EXPORT machine: public component {
+		class  ROBO_EXPORT machine: public node {
 		private:
 			friend class wrapper;
 			bool terminated_ = true;

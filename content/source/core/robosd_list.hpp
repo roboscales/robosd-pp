@@ -175,9 +175,9 @@ namespace robo{
 			
 
 			bool set_key( const K &_key){
-				L * old =(L *)own_list();
+				L * old =(L *)base_ref<T>::own_list();
 				if(old != nullptr){
-					dettach();
+					base_ref<T>::dettach();
 					key_ = _key;
 					return attach_to(*old);
 				} else {
@@ -219,7 +219,7 @@ namespace robo{
 		template<typename T, typename K> class ROBO_EXPORT pool : public sorted< T, K >
 		{
 		public:
-			pool(void) :sorted< T, K>() { sort_ = false; }
+			pool(void) :sorted< T, K>() { sorted< T, K >::sort_ = false; }
 		};
 
 		template<typename T, typename K> class ROBO_EXPORT unique 
@@ -252,10 +252,11 @@ namespace robo{
 		template<typename T, typename L> class ROBO_EXPORT base
 			: public L {
 		public:
-
+			typedef typename L::ref ref;
 			void push(T* _t) {
 				if (_t) {
-					((L::ref&)(*_t)).attach_to(*this);
+					ref & tmp = ( ref & )(*_t);
+					tmp.L::attach_to(*this);
 				}
 			}
 		};

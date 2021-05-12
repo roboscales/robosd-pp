@@ -1,5 +1,6 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
+#include "core/robosd_String.hpp"
 #include <algorithm>
 
 #if ROBO_APP_SYSTEM_ENABLED == 1
@@ -140,28 +141,30 @@ namespace robo {
 	allocator allocator::instance_;
 #endif
 
-	void system::enter_(void) {
+	void *  system::enter_() {
 #if ROBO_APP_ENV_ENABLED ==1
-
 		if (state_ == state::enabled) {
 			if (env::is_frontend()) {
-				context_ = env::enter();
+				void *context_ = env::enter();
+				guest_count_++;
+				return context_;
 			}
 			else {
 				if (lock_count_ == 0) {
 					env::lock();
 				}
 				lock_count_++;
-				context_ = nullptr;
 			}
 		}
 #endif
+		return nullptr;
 	}
 
-	void system::leave_(void) {
+	void system::leave_(void * context_) {
 #if ROBO_APP_ENV_ENABLED ==1
 		if (state_ == state::enabled) {
 			if (env::is_frontend()) {
+				guest_count_--;
 				env::leave(context_);
 			}
 			else {
@@ -177,13 +180,38 @@ namespace robo {
 	}
 
 	system::guard::guard(void) {
-		system::instance_.enter_();
+		context_ = system::instance_.enter_();
 	}
 
 	system::guard::~guard(void) {
-		system::instance_.leave_();
+		system::instance_.leave_(context_);
 	}
-		
+	
+	void* system::critical_enter_(void){
+#if ROBO_APP_ENV_ENABLED == 1
+		//юыстрым процессам сдесь делать нечего - это разборки между потоками "фронткнд"
+		ROBO_APP_ASSERT(env::is_frontend())
+		return system::env::critical_enter();
+#else 
+		return nullptr;
+#endif
+	}
+	void system::critical_leave_(void* _context){
+#if ROBO_APP_ENV_ENABLED == 1
+		ROBO_APP_ASSERT(env::is_frontend())
+		system::env::critical_leave(_context);
+#else
+		ROBO_UNUSED(_context);
+#endif
+	}
+
+	system::critical::critical(void){
+		context_ = system::instance_.critical_enter_();
+	}
+	system::critical::~critical(void){
+		system::instance_.critical_leave_(context_);
+	}
+
 	system::system(void) {
 		state_ = state::enabled;
 	}
@@ -276,6 +304,19 @@ namespace robo {
 		while (true) {}
 #endif
 	}
+	void system::printf(  cstr _format, va_list _args){
+#if ROBO_APP_ENV_ENABLED == 1		
+		string tmp;
+		tmp.format(_format,_args);
+		env::print(tmp.c_str());
+#endif
+	}
+	void system::printf(  cstr _format, ...){
+		va_list args;
+		va_start(args, _format);
+		printf(_format,args);
+		va_end(args);
+	}
 
 	system system::instance_;
 }
@@ -292,6 +333,7 @@ void operator delete(void* ptr) {
 #else
 	free(ptr);
 #endif
+
 }
 
 

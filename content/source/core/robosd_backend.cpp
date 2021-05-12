@@ -289,7 +289,7 @@ namespace robo {
 		}
 
 		idevagent::idevagent(cstr _name, boardagent& _boardagent) 
-			: app::node(_name, _boardagent)
+			: app::node(_name, &_boardagent)
 			, boardagent_(_boardagent)
 			, bus_ref_(*this, 0){
 		}
@@ -354,7 +354,8 @@ namespace robo {
 			return false;
 		}
 
-		bool bus::node_load(void) {
+		bool bus::do_load(void) {
+			ROBO_LBREAKN(app::node::do_load());
 			int bus_id;
 			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), bus_id));
 			ROBO_LBREAKN(setup_(bus_id));
@@ -362,8 +363,9 @@ namespace robo {
 			return true;
 		}
 		
-		void   bus::node_clean(void) {
+		void   bus::do_clean(void) {
 			ref_.dettach();
+			app::node::do_clean();
 		}
 
 		void bus::confirm(robo_tran_status_t _result) {
@@ -555,7 +557,8 @@ namespace robo {
 		}
 
 
-		bool router::node_load(void) {
+		bool router::do_load(void) {
+			ROBO_LBREAKN(app::node::do_load());
 			ROBO_LBREAKN( ini::load(name(), RT("ROUT_TABLE_SIZE"), table_size_) )
 			if (table_size_ > 0) {
 				table_ = new record[table_size_];
@@ -580,11 +583,12 @@ namespace robo {
 			return true;
 		}
 
-		void router::node_clean(void) {
+		void router::do_clean(void) {
 			if (table_) {
 				delete[] table_;
 				table_ = 0;
 			}
+			app::node::do_clean();
 		}
 		router::record* router::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
 			record* rec = table_;
@@ -633,14 +637,17 @@ namespace robo {
 			return ret;
 		};
 
-		bool boardagent::node_load(void) {
+		bool boardagent::do_load(void) {
+			ROBO_LBREAKN(app::node::do_load());
 			ROBO_LBREAKN(ini::load(name(), RT("REQUEST_PAUSE_US"), request_pause_us_));
 			return true;
 		}
-		void boardagent::node_clean(void) {
+		void boardagent::do_clean(void) {
+			app::node::do_clean();
 		}
 
-		bool idevagent::node_load(void) {
+		bool idevagent::do_load(void) {
+			ROBO_LBREAKN(app::node::do_load() );
 			uint8_t tmp;
 //			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), tmp));
 //			dev_id_.bus = tmp;
@@ -651,23 +658,31 @@ namespace robo {
 			return true;
 		}
 		
-		bool idevagent::node_start(void) {
-			string bus_name;
-			bus_name.load(name(), RT("BUS_NAME"));
-			bus* b = dynamic_cast<bus*>(find(bus_name));
+		bool idevagent::do_node_start(void) {
+			ROBO_LBREAKN(app::node::do_node_start());
+			string tmp_name;
+			ROBO_LBREAKN(tmp_name.load(name(), RT("BUS_NAME")));
+			bus* b = dynamic_cast<bus*>(find(tmp_name));
 			bus_ref_.set_key(dev_id_.value);
 			if (b) {
 				ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
 				dev_id_.bus = b->id();
-				robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
-				return true;
 			}
 			else {
-				ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_name.c_str(), alias(), dev_id_.value)
+				ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", tmp_name.c_str(), alias(), dev_id_.value)
 			}
+
+			ROBO_LBREAKN(tmp_name.load(name(), RT("ROUTER_NAME")));
+			router_  = dynamic_cast<router*>(find(tmp_name));
+			ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", tmp_name.c_str(), alias(), dev_id_.value);
+			robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+			return true;
 		}
 
-		void idevagent::node_clean(void) {
+		void idevagent::do_clean(void) {
+			dev_id_.value = (uint32_t)-1;
+			bus_ref_.dettach();
+			app::node::do_clean();
 		}
 	}
 }

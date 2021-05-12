@@ -48,7 +48,7 @@ namespace robo {
 			bool once_;
 		public:
 			inline bool once(void) { return once_; }
-			inline bool set_once(bool _once) { once_ = _once; }
+			inline void set_once(bool _once) { once_ = _once; }
 			inline bool cancel(void) {
 				if (ref_.attached()) {
 					ref_.dettach();
@@ -145,13 +145,13 @@ namespace robo {
 				: public  delegat::member < performer, C, void > {
 			public:
 				member(C* _instance, void (C::* _member) (void))
-					: delegat::member < performer, C, void, command& _command >(_instance, _member) {
+					: delegat::member < performer, C, void, command&  >(_instance, _member) {
 				}
 			};
 
 		private:
 			performer* performer_ = nullptr;
-			signal::performer * ñonfirm_;
+			signal::performer * confirm_;
 			signal::member<command> execute_delegat_;
 			signal::member<command> configure_delegat_;
 			void execute_(void);
@@ -161,8 +161,8 @@ namespace robo {
 		public:
 			void configure( void );
 			void execute(void);
-			command(cstr _name, signal::performer* _ñonfirm = nullptr)
-				: ñonfirm_(_ñonfirm)
+			command(cstr _name, signal::performer* _confirm = nullptr)
+				: confirm_(_confirm)
 				, execute_delegat_(this, &command::execute_)
 				, configure_delegat_(this, &command::configure_)
 				, id_(fast_hash(_name))

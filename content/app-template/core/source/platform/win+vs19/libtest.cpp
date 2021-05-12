@@ -423,6 +423,7 @@ namespace libtest
 				ini
 					<< "[SETTINGS]\n"
 					<< "DEBUG_VERB=7\n"
+					<< "DEBUG_MASK_BITS=0 1 2 3\n"					
 					<< "[MODULES]\n"
 					<< "COUNT=1\n"
 					<< "M_1=\"lib.test\"\n"
@@ -434,8 +435,12 @@ namespace libtest
 					<< "[тестовый агент]\n"
 					<< "ALIAS=\"охренеть на сколько тестовый агент\"\n"
 					<< "BUS_NAME=\"lib.test/тестовая логическая шина\"\n"
+					<< "ROUTER_NAME=\"lib.test/тестовый роутер\"\n"
 					<< "BOARD_DEV_ID=0\n"
 					<< "BOARD_ADDRESS=0x0A\n"
+					<< "[тестовый роутер]\n"
+					<< "ROUT_TABLE_SIZE=1\n"
+					<< "RT_1= 1 2  0xff  3 4 5\n"
 					;
 			}
 
@@ -473,6 +478,7 @@ namespace libtest
 			bus bus_(RT("тестовая логическая шина"), &test::module::instance());
 
 			devagent agent(RT("тестовый агент"), boardagent );
+			robo::backend::router router(RT("тестовый роутер"), &test::module::instance());
 			
 			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {
 				robo::app::machine::start();

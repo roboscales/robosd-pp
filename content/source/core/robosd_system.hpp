@@ -53,22 +53,26 @@ namespace robo {
 		enum  class state { enabled = 178, unknown = -178 };
 		state state_ = state::unknown;
 #if ROBO_APP_ENV_ENABLED == 1
-		void* context_ = nullptr;
 		int lock_count_ = 0;
 		int guest_count_ = 0;
 #endif
 		static system instance_;
-		void enter_(void);
-		void leave_(void);
+		void *  enter_(void);
+		void leave_(void * context_);
+		void* critical_enter_(void);
+		void critical_leave_(void* _context);
+
 #if ROBO_APP_ALLOC_ENABLED == 1
 		void* mem_alloc_(size_t _sz);
 		void mem_free_(void* _memo);
 #endif
+		friend class critical;
 		system(void);
 		~system(void);
 	public:
 		//останавливает ядро системы
 		class ROBO_EXPORT guard {
+			void* context_;
 		public:
 			guard(void);
 			~guard(void);
@@ -90,14 +94,22 @@ namespace robo {
 			~fall(void);
 		};
 
+		class critical {
+			void * context_;
+		public:
+			critical(void);
+			~critical(void);
+		};
+
 #if ROBO_APP_ENV_ENABLED ==1
 		class  env {
 			friend class guard;
 			friend class fall;
 			friend class system;
 
-			static bool is_frontend(void);
-			static bool is_backend(void);
+			static void* critical_enter(void);
+			static void critical_leave(void* _context);
+
 			static void* enter(void);
 			static void leave(void* _context);
 			static void lock(void);
@@ -109,6 +121,8 @@ namespace robo {
 			static void mem_free(void* _memo);
 #endif
 		public:
+			static bool is_frontend(void);
+			static bool is_backend(void);
 			static void abort(void);
 			static bool begin(void);
 			static void finish(void);
@@ -127,8 +141,11 @@ namespace robo {
 			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
 			static bool sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
+			static void print( cstr  _s);
 		};
 #endif
+		static void printf( cstr _format, va_list _args);
+		static void printf( cstr _format, ...);
 
 #if ROBO_APP_INI_ENABLED ==1
 		struct ini {

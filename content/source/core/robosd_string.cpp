@@ -9,13 +9,14 @@
 
 namespace robo{	
 
-	char_t string_buffer[ROBO_STRING_BUFFER_SIZE];
+	char_t string_buffer_frontend[ROBO_STRING_BUFFER_SIZE];
+	char_t string_buffer_backend[ROBO_STRING_BUFFER_SIZE];
 
 	string::~string(void){
 	}
 	
 	string::string(void) : string_base() {
-	}
+}
 
 	
 	string::string(const string &  _src) : string_base(_src) {
@@ -33,10 +34,16 @@ namespace robo{
 	}
 	
 	bool string::format(cstr _format, va_list _args){
-		system::guard g__;
 #if ROBO_APP_ENV_ENABLED == 1
-		if (system::env::sprintf(string_buffer, ROBO_STRING_BUFFER_SIZE, _format, _args)) {
-			*( (string_base *)this) = string_buffer;
+		char_t * _buffer;
+		if( system::env::is_backend() ){
+			_buffer = string_buffer_backend; 
+		} else {
+			system::critical c__;
+			_buffer = string_buffer_frontend; 
+		}
+		if (system::env::sprintf(_buffer, ROBO_STRING_BUFFER_SIZE, _format, _args)) {
+			*( (string_base *)this) = _buffer;
 			return true;
 		}
 		else {
@@ -56,27 +63,41 @@ namespace robo{
 	}
 
 	bool string::load(cstr _section, cstr _key){
-		ROBO_LRET(tryload(_section,_key));
+		ROBO_LRET_F(tryload(_section,_key),"error load string %s/%s", _section, _key);
 	}
 	
 	bool string::tryload(cstr _section, cstr _key){
-		system::guard g__;
 #if ROBO_APP_INI_ENABLED == 1
-		if (system::ini::load_str(string_buffer, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
-			*((string_base*)this) = string_buffer;
-			return true;
+		if( system::env::is_backend() ){
+			if (system::ini::load_str(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
+				*((string_base*)this) = string_buffer_backend;
+				return true;
+			}
+		} else {
+			system::critical c__;
+			if (system::ini::load_str(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
+				*((string_base*)this) = string_buffer_frontend;
+				return true;
+			}
 		}
-		else {
-			return false;
+#endif
+		return false;
+	}
+	
+	bool string::load(delegat::base<bool, uint8_t *, size_t > & _converter){
+#if ROBO_APP_ENV_ENABLED == 1
+		if( system::env::is_backend() ){
+			ROBO_LBREAKN( _converter( (uint8_t*)string_buffer_backend, ROBO_STRING_BUFFER_SIZE*sizeof(char_t)) );
+			*((string_base*)this) = string_buffer_backend;
+		} else {
+			system::critical c__;
+			ROBO_LBREAKN( _converter( (uint8_t*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE*sizeof(char_t)) );
+		*((string_base*)this) = string_buffer_frontend;
 		}
+		return true;
 #else
 		return false;
 #endif
-	}
-	bool string::load(delegat::base<bool, uint8_t *, size_t > & _converter){
-		ROBO_LBREAKN( _converter( (uint8_t*)string_buffer, ROBO_STRING_BUFFER_SIZE*sizeof(char_t)) );
-		*((string_base*)this) = string_buffer;
-		return true;
 	}
 
 }

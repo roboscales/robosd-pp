@@ -1,8 +1,13 @@
 #include "core/robosd_log.hpp"
+#include "core/robosd_system.hpp"
+#include "core/robosd_string.hpp"
 #include <stdio.h>
+#if ROBO_UNICODE_ENABLED == 1
+#include <wchar.h>
+#endif
 
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 namespace robo{
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 	namespace log{
 		print_f print_ = 0;
 
@@ -78,7 +83,7 @@ namespace robo{
 			RT("\x1B[37m")
 		};
 
-		static cstr background_colors_[16] = {
+		static cstr background_colors_ [16] = {
 				RT("\x1B[40m"), //Black = 0,
 				RT("\x1B[44m"), //Blue = 1,
 				RT("\x1B[42m"), //Green = 2,
@@ -99,13 +104,15 @@ namespace robo{
 
 		void set_consol_color_(consol_color_t text, consol_color_t background)
 		{
-#if ROBO_UNICODE_ENABLED ==1
-				wprintf( consol_colors_[text] );
-				wprintf( background_colors_[background]);
+/*#if ROBO_UNICODE_ENABLED ==1
+				wprintf( RT("%s"), consol_colors_[text] );
+				wprintf( RT("%s"), background_colors_[background]);
 #else
-				printf(  consol_colors_[text] );
-				printf( background_colors_[background]);
-#endif			
+				printf(RT("%s"), consol_colors_[text] );
+				printf(RT("%s"), background_colors_[background]);
+#endif			*/
+			system::env::print(  consol_colors_[text] );
+			system::env::print((cstr)background_colors_[background]);
 		}
 
 		void print( robo::log::verb _verb,  cstr _format, va_list  _args){
@@ -143,12 +150,10 @@ namespace robo{
 			default:
 				set_consol_color_((consol_color_t)( (int)_verb & 0xF), (consol_color_t)(( (int)_verb & 0xF0) >> 4) );
 			}
-#if ROBO_UNICODE_ENABLED ==1
-			vwprintf(_format, _args);
-#else
-			vprintf(_format, _args);
-#endif
-			printf("\n\r");
+		
+			system::printf(_format,_args);
+			system::env::print(RT("\n\r"));
+			
 			set_consol_color_(White, Black);
 		}
 	}

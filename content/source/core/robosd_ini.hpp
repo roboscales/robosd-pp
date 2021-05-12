@@ -31,7 +31,7 @@ namespace robo {
 		}
 
 		template <typename T>	bool load_list(cstr _section, cstr _key, size_t _max_count, T* _values, size_t& _count) {
-			ROBO_LRET_F(try_load_list(_section, _key, _max_count, _values, _count), "error load list %s/%s", _sect, _key);
+			ROBO_LRET_F(try_load_list(_section, _key, _max_count, _values, _count), "error load list %s/%s", _section, _key);
 		}
 	}
 }

@@ -9,34 +9,34 @@
 
 namespace robo {
 	namespace app {
-		component::component(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this,0) {
+		node::node(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this,0) {
 		}
 		
-		component::component(cstr _name, component* _owner) : ref_(*this), own_ref_(*this,0), owner_(nullptr), index_ref_(*this,0) {
+		node::node(cstr _name, node* _owner) : ref_(*this), own_ref_(*this,0), owner_(nullptr), index_ref_(*this,0) {
 			ROBO_ALARMN(init(_name, _owner));
 		}
 
-		component::~component(void) {
+		node::~node(void) {
 			init(nullptr, nullptr);
 		}
 
-		component::map& component::index_(void) {
+		node::map& node::index_(void) {
 			static map index__;
 			return index__;
 		}
 
 
-		bool component::do_load(void) { 
+		bool node::do_load(void) { 
 			alias_.tryload(name_, RT("ALIAS"));
 			return true; 
 		};
 		
-		void component::do_clean(void) { 
+		void node::do_clean(void) { 
 			alias_.clear(); 
 		};
 
 		
-		bool component::init(cstr _name, component* _owner) {
+		bool node::init(cstr _name, node* _owner) {
 			actual_state_ = state::unknown;
 
 			if (_name) name_ = _name; 
@@ -64,7 +64,7 @@ namespace robo {
 			return true;
 		}
 		
-		void component::path(string& _path) {
+		void node::path(string& _path) {
 			if (_path.length() > 0)
 				_path.format(RT("%s/%s"), name_, _path.c_str());
 			else
@@ -72,7 +72,7 @@ namespace robo {
 			if (owner_ && owner_ != & machine::root() ) return owner_->path(_path);
 		}
 
-		bool component::load(void) {
+		bool node::load(void) {
 
 			ROBO_LBREAKN(do_load());
 			if (owner_)
@@ -80,19 +80,19 @@ namespace robo {
 
 			ref* r = disabled_.first();
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
 				ROBO_LBREAKN(c.load());
 			}
 			ROBO_LBREAKN(disabled_.count() == 0)
 
 
-			robo_applog("component '%s' is loaded", alias());
+			robo_applog("node '%s' is loaded", alias());
 			actual_state_ = state::stopped;
 			return true;
 		}
 
-		bool component::start(void) {
+		bool node::node_start(void) {
 			ROBO_LBREAKN(disabled_.count() == 0);
 			ROBO_LBREAKN(startupped_.count() == 0);
 			ROBO_LBREAKN(active_.count() == 0);
@@ -101,47 +101,47 @@ namespace robo {
 			ref* r = stopped_.first();
 
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
-				ROBO_LBREAKN(c.start());
+				ROBO_LBREAKN(c.node_start());
 			}
 			ROBO_LBREAKN(stopped_.count() == 0)
 
-			ROBO_LBREAKN(do_start());
+			ROBO_LBREAKN(do_node_start());
 
 			if (owner_)
 				ref_.attach_to(owner_->startupped_);
 
-			robo_applog("component '%s' is begin start", alias());
+			robo_applog("node '%s' is begin start", alias());
 
 			actual_state_ = state::startup;
 			return true;
 		}
-		void component::panic(void) {
+		void node::panic(void) {
 			if (owner_)
 				ref_.attach_to(owner_->disabled_);
 			actual_state_ = state::panic;
 			do_panic();
 		}
 
-		result component::startup(void) {
+		result node::node_startup(void) {
 			ref* r = startupped_.first();
 			
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
-				if (c.startup() == result::panic) {
+				if (c.node_startup() == result::panic) {
 					panic();
 					return result::panic;
 				}
 			}
 
 			if (startupped_.count() == 0) {
-				switch(do_startup()){
+				switch(do_node_startup()){
 				case result::complete:
 					if (owner_)
 						ref_.attach_to(owner_->active_);
-					robo_applog("component '%s' is started", alias());
+					robo_applog("node '%s' is started", alias());
 					actual_state_ = state::execute;
 					return result::complete;
 				case result::resume:
@@ -154,39 +154,39 @@ namespace robo {
 			return result::resume;
 		}
 
-		void component::stop(void) {
+		void node::node_stop(void) {
 			ref* r = active_.first();
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
-				c.stop();
+				c.node_stop();
 			}
-			do_stop();
+			do_node_stop();
 			if (owner_)
 				ref_.attach_to(owner_->shutdowned_);
 			actual_state_ = state::shutdown;
-			robo_applog("component '%s' is begin shutdown", alias());
+			robo_applog("node '%s' is begin shutdown", alias());
 		}
 
 
-		result component::shutdown(void) {
+		result node::node_shutdown(void) {
 
 			ref* r = shutdowned_.first();
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
-				if (c.shutdown() == result::panic) {
+				if (c.node_shutdown() == result::panic) {
 					panic();
 					return result::panic;
 				}
 			}
 
 			if (shutdowned_.count() == 0) {
-				switch (do_shutdown()) {
+				switch (do_node_shutdown()) {
 				case result::complete:
 					if (owner_)
 						ref_.attach_to(owner_->stopped_);
-					robo_applog("component %s is stopped", alias());
+					robo_applog("node %s is stopped", alias());
 					actual_state_ = state::stopped;
 					return result::complete;
 				case result::resume:
@@ -200,17 +200,17 @@ namespace robo {
 		}
 
 
-		void component::clean(void) {
+		void node::clean(void) {
 			ref* r = stopped_.first();
 			while (r) {
-				component& c = r->owner();
+				node& c = r->owner();
 				r = r->next();
 				c.clean();
 			}
 			do_clean();
 			if (owner_)
 				ref_.attach_to(owner_->disabled_);
-			robo_applog("component %s is cleaned", alias());
+			robo_applog("node %s is cleaned", alias());
 			actual_state_ = state::clean;
 		}
 
@@ -256,7 +256,7 @@ namespace robo {
 			ref_.set_key(hash(lib_));
 
 			if (!ref_.attach_to(machine::root().wrappers_)) {
-				ROBO_LBREAK_F("module isn't loaded (dupplicated lib names) %s", lib_);
+				ROBO_LBREAK_F("module isn't loaded (dupplicated lib names) %s", lib_.c_str());
 			}
 
 			ROBO_LBREAKN_F(system::lib::exists(lib_), "module isn't found  %s", lib_.c_str() );
@@ -326,12 +326,15 @@ namespace robo {
 					mask = (unsigned int)-1;
 				}
 			}
+			else {
+				mask = (unsigned int)-1;
+			}
 
 
 			robo::log::begin(verb, mask, _print);
 			
 #endif
-			ROBO_LBREAKN(component::load());
+			ROBO_LBREAKN(node::load());
 #if ROBO_APP_TRACE_ENABLED == 1
 			ROBO_BREAKN(robo::trace::begin());
 #endif
@@ -365,7 +368,7 @@ namespace robo {
 		}
 
 		void  machine::finish_() {
-			component::clean();
+			node::clean();
 			system::ini::finish();
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::finish();
@@ -383,10 +386,10 @@ namespace robo {
 					break;
 				case state::startup:
 				case state::execute:
-					component::stop();
+					node::node_stop();
 					break;
 				case state::shutdown:
-					component::shutdown();
+					node::node_shutdown();
 					break;
 				default:
 					panic();
@@ -395,15 +398,15 @@ namespace robo {
 			else {
 				switch ( actual_state() ) {
 				case state::stopped:
-					component::start();
+					node::node_start();
 					break;
 				case  state::startup:
-					component::startup();
+					node::node_startup();
 					break;
 				case state::execute:
 					break;
 				case state::shutdown:
-					component::shutdown();
+					node::node_shutdown();
 					break;
 				default:
 					panic();

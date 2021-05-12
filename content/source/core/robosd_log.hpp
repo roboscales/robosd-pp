@@ -22,9 +22,9 @@
 #ifndef robo_errlog
 //#define robo_errlog(format,...) ::robo::log::print(::robo::log::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
 #if ROBO_UNICODE_ENABLED == 1
-#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__, ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__ __VA_OPT__(,) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
 #else
-#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__, ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__ __VA_OPT__ (,) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
 #endif
 
 #endif
@@ -205,7 +205,7 @@ return fault; \
 } else return success;
 #endif
 #else
-#define ROBO_RET_F(x,success,fault,f,...)
+#define ROBO_RET_F(x,success,fault,f,...) return (x)?(success):(fault)
 #endif
 
 #ifndef ROBO_LRET_F
@@ -223,6 +223,7 @@ namespace robo{
 			enum {
 				disabled = 0 // выводить все
 				, app = 1 // выводить сообщения от модулей приложения - загрузился, стартовал, остановился
+				, net = 2 // выводить сообщения от сетевых модулей - получил/отправил
 			};
 		};
 		typedef  void ( * print_f)(verb _verb, cstr  _format , va_list  _args);
@@ -244,7 +245,8 @@ namespace robo{
 }
 #endif
 
-#define robo_applog(format,...) robo_detaillog(1,0/*robo::log::mask::app*/,format,__VA_ARGS__)
+#define robo_applog(format,...) robo_detaillog(4,robo::log::mask::app,format,__VA_ARGS__)
+#define robo_netlog(format,...) robo_detaillog(4,robo::log::mask::net,format,__VA_ARGS__)
 
 
 #endif

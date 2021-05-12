@@ -135,9 +135,10 @@ namespace robo {
 		private:
 			size_t table_size_=0;
 			record* table_ = nullptr;
+		protected:
+			virtual bool do_load(void);
+			virtual void do_clean(void);
 		public:
-			virtual bool node_load(void);
-			virtual void node_clean(void);
 			record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 			router(cstr _name, app::module* _owner);
 		};
@@ -199,9 +200,9 @@ namespace robo {
 			virtual void apply_action(void) = 0;
 			virtual void uppdate_feedback(void) = 0;
 			bool exchabge_enabled(void) { return actual_state_ > state::disabled; }
-			virtual bool node_load(void);
-			virtual void node_clean(void);
-			virtual bool node_start(void);
+			virtual bool do_load(void);
+			virtual void do_clean(void);
+			virtual bool do_node_start(void);
 
 		public:
 			itrafic trafic;
@@ -254,8 +255,8 @@ namespace robo {
 			virtual bool post(msg* _msg) = 0;
 			virtual void cancel(void) = 0;
 			virtual bool ready(void) = 0;
-			virtual bool node_load(void);
-			virtual void node_clean(void);
+			virtual bool do_load(void);
+			virtual void do_clean(void);
 		public:
 			//короткий id
 			bool id(void) { return ref_.key(); }
@@ -284,19 +285,22 @@ namespace robo {
 				typename D::ifeedback feedback;
 			} actual;
 			virtual void apply_action(void){
-				if ((istate)actual.status.state == istate::external) {
-					actual.action = front.action;
+				typedef typename D::istate tstate;
+				if ((tstate) (actual.status.state) == tstate::external) {
+					actual.action = ::robo::frontend::devagent<D>::front.action;
 				}
-				if ((istate)actual.status.state == istate::stopped) {
-					actual.required = front.required;
+				
+				if ( ( (tstate) (actual.status.state) ) == tstate::stopped) {
+					actual.required = ::robo::frontend::devagent<D>::front.required;
 				}
 			}
 
 			virtual void uppdate_feedback(void) {
-				if ( (istate)actual.status.state == istate::external) {
-					front.action = actual.action;
+				typedef typename D::istate tstate;
+				if ( (tstate)(actual.status.state) == tstate::external) {
+					::robo::frontend::devagent<D>::front.action = actual.action;
 				}
-				front.feedback = actual.feedback;
+				::robo::frontend::devagent<D>::front.feedback = actual.feedback;
 			
 			}
 			devagent(cstr _name, boardagent& _boardagent) : ::robo::backend::idevagent(_name, _boardagent) {}
@@ -307,8 +311,8 @@ namespace robo {
 			time_us_t request_pause_us_ = 0;
 			time_us_t last_request_us_ = 0;
 		protected:
-			virtual bool node_load(void);
-			virtual void node_clean(void);
+			virtual bool do_load(void);
+			virtual void do_clean(void);
 		public:
 			boardagent(cstr _name, app::module* _owner) :app::node(_name,_owner) {};
 
