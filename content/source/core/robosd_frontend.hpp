@@ -199,6 +199,61 @@ namespace robo {
 			} front;
 		};
 
+		class contrltable {
+		public:
+			struct record {
+				cstr _name;
+				uint16_t _addr;
+				uint16_t _length;
+			};
+			struct ivar {
+				uint16_t _addr;
+				uint16_t _length;
+				uint16_t _offset;
+				record* instance_ = nullptr;
+				contrltable & _contrltable;
+			public:	
+				enum class status { disable, clean, ready,  put, get , punic};
+			private:
+				status status_ = status::disable;
+			public:
+				uint16_t addr(void) { _addr; };
+				uint16_t length(void) { _length; };
+				uint16_t name(void) { _length; };
+				status actual_status(void) { status_; };
+				virtual void encode(uint8_t*& _dst) = 0;
+				virtual void decode(uint8_t*& _src) = 0;
+				void refuse(void);
+				void confirm(void);
+				//bool query(void);
+				//bool post(void);
+
+				ivar(contrltable& _contrltable, cstr _name);
+
+				typedef list::pool<ivar, int> index;
+				typedef list::unique<ivar, int> map;
+				typedef map:: ref ref;
+			private:
+				ref ref_;
+				ref index_ref_;
+
+			};
+
+
+			template< typename T > class var: public  ivar {
+				T local_ = nullptr;
+				T remote_ = nullptr;
+			public:
+
+			};
+
+			contrltable(record _records[], size_t _count);
+		protected:
+			ivar::map map;
+			ivar::index update_index;
+
+		};
+
 	}
 }
 #endif

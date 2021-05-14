@@ -684,5 +684,74 @@ namespace robo {
 			bus_ref_.dettach();
 			app::node::do_clean();
 		}
+
+		contrltable::contrltable(idevagent& _agent, priority _priority, int command_, record _records[], size_t _count):
+			frontend::contrltable(_records, _count), stream(_agent, _priority) {
+
+		}
+
+		contrltable::query_result contrltable::query(robo_tran_p _tran) {
+			if (current_ != nullptr) {
+				ROBO_ALARM("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				current_->refuse();
+				current_ = nullptr;
+				return query_result::none;
+			}
+
+			current_ = update_index.pop();
+			if (current_ == nullptr) {
+				ROBO_ALARM("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				current_->refuse();
+				current_ = nullptr;
+				return query_result::none;
+			}
+
+			if (current_->actual_status() == ivar::status::put) {
+				if ( _tran->size_max > current_->length()) {
+					_tran->header.command = command_;
+					_tran->size_actual = current_->length();
+					current_->encode(_tran->data);
+					_tran->request = ROBO_TRAN_REQUEST_PUT;
+					return query_result::success;
+				}
+				else {
+					ROBO_ALARM("var oversize for %s/%S", own_agent().alias(), current_->name());
+					current_->refuse();
+					current_ = nullptr;
+					return query_result::none;
+				}
+			}
+			else {
+				if (current_->actual_status() == ivar::status::get) {
+					_tran->header.command = command_;
+					_tran->size_actual = current_->length();
+					_tran->request = ROBO_TRAN_REQUEST_GET;
+					return query_result::success;
+				}
+				else {
+					ROBO_ALARM("var oversize for %s/%S", own_agent().alias(), current_->name());
+					current_->refuse();
+					current_ = nullptr;
+					return query_result::none;
+				}
+			}
+			ROBO_ALARM("invalid proto for %s/%S", own_agent().alias(), current_->name());
+			current_->refuse();
+			current_ = nullptr;
+			return query_result::none;
+		}
+
+		void contrltable::confirm(robo_tran_p _tran) {
+			if (current_ == nullptr) {
+				ROBO_ALARM("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				current_->refuse();
+				current_ = nullptr;
+				return query_result::none;
+			}
+
+		}
+		
+
+
 	}
 }

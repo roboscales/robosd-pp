@@ -295,12 +295,12 @@ namespace robo {
 		bool machine::begin_(cstr _ini) {
 #endif
 			init(RT("app.machine"), nullptr);
-			ROBO_LBREAKN( system::env::begin());
-			
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::begin(log::verb::detail_7, log::mask::disabled, _print);
 #endif
-			robo_applog("load from %s ", _ini);
+			ROBO_LBREAKN( system::env::begin());
+			
+			robo_infolog("load from %s ", _ini);
 			ROBO_LBREAKN( system::ini::begin(_ini));
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1

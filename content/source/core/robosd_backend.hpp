@@ -23,7 +23,7 @@ namespace robo {
 				enum { infinite = -1, immediately = 0 };
 			};
 			enum class state { disable = 0, destroy = 1, sleep = 2, active = 3 };
-			enum { state_count=4};
+			enum { state_count = 4 };
 		private:
 			state state_;
 			void step_();
@@ -41,7 +41,7 @@ namespace robo {
 				pool trash_;
 				list timer_;
 				pool getup_;
-				machine(void){};
+				machine(void) {};
 				static machine& instance(void);
 				time_us_t time;
 				time_us_t time_prev;
@@ -58,7 +58,7 @@ namespace robo {
 			bool destroy(void);
 			bool active(void) { return  state_ >= state::sleep; }
 		protected:
-			bool sleep( time_us_t _timeout = timeout::infinite );
+			bool sleep(time_us_t _timeout = timeout::infinite);
 			bool continue_sleep(void);
 		};
 
@@ -81,13 +81,13 @@ namespace robo {
 				friend class timer;
 				timer::list timers_;
 				typedef ::robo::list::unique<timer, time_us_t>::ref ref;
-				void start_( signal::performer* _performer, time_us_t _period);
-				void stop_( signal::performer* _performer, time_us_t _period);
+				void start_(signal::performer* _performer, time_us_t _period);
+				void stop_(signal::performer* _performer, time_us_t _period);
 				void restart_(void);
 				static core& instance(void);
 			public:
-				static void start( signal::performer* _performer, time_us_t _period) { instance().start_(_performer, _period); }
-				static void stop( signal::performer* _performer, time_us_t _period) { instance().stop_(_performer, _period); }
+				static void start(signal::performer* _performer, time_us_t _period) { instance().start_(_performer, _period); }
+				static void stop(signal::performer* _performer, time_us_t _period) { instance().stop_(_performer, _period); }
 				static void restart() { instance().restart_(); }
 			};
 		};
@@ -107,21 +107,21 @@ namespace robo {
 			static bool ready(void) { return instance_().ready_(); }
 		};
 
-		class ROBO_EXPORT repeater: public signal::performer {
+		class ROBO_EXPORT repeater : public signal::performer {
 			time_us_t period_;
 		public:
 			enum { default_period_us = 1000 };
-			repeater( signal::performer& _performer, time_us_t _period = default_period_us)
+			repeater(signal::performer& _performer, time_us_t _period = default_period_us)
 				: performer(false)
 				, period_(_period)
 			{}
 			void start(void) { timer::core::start(this, period_); }
-			void start( time_us_t _period) { period_ = _period;  start(); }
+			void start(time_us_t _period) { period_ = _period;  start(); }
 			void stop(void) { timer::core::stop(this, period_); }
 		};
 
 		class boardagent;
-		
+
 		class ROBO_EXPORT router : public app::node {
 		public:
 			struct record {
@@ -133,7 +133,7 @@ namespace robo {
 				suba_t answer_suba;
 			};
 		private:
-			size_t table_size_=0;
+			size_t table_size_ = 0;
 			record* table_ = nullptr;
 		protected:
 			virtual bool do_load(void);
@@ -208,7 +208,7 @@ namespace robo {
 			itrafic trafic;
 
 			const dev_id_t& dev_id(void) { return dev_id_; };
-			
+
 			stream::query_result query(stream::msg* _msg);
 
 			idevagent(cstr _name, boardagent& _boardagent);
@@ -272,11 +272,7 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-
-
-
-
-		template<class D> class devagent : public ::robo::frontend::devagent<D> , public ::robo::backend::idevagent {
+		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent {
 		public:
 			struct {
 				typename D::irequired required;
@@ -284,24 +280,24 @@ namespace robo {
 				typename D::iaction action;
 				typename D::ifeedback feedback;
 			} actual;
-			virtual void apply_action(void){
+			virtual void apply_action(void) {
 				typedef typename D::istate tstate;
-				if ((tstate) (actual.status.state) == tstate::external) {
+				if ((tstate)(actual.status.state) == tstate::external) {
 					actual.action = ::robo::frontend::devagent<D>::front.action;
 				}
-				
-				if ( ( (tstate) (actual.status.state) ) == tstate::stopped) {
+
+				if (((tstate)(actual.status.state)) == tstate::stopped) {
 					actual.required = ::robo::frontend::devagent<D>::front.required;
 				}
 			}
 
 			virtual void uppdate_feedback(void) {
 				typedef typename D::istate tstate;
-				if ( (tstate)(actual.status.state) == tstate::external) {
+				if ((tstate)(actual.status.state) == tstate::external) {
 					::robo::frontend::devagent<D>::front.action = actual.action;
 				}
 				::robo::frontend::devagent<D>::front.feedback = actual.feedback;
-			
+
 			}
 			devagent(cstr _name, boardagent& _boardagent) : ::robo::backend::idevagent(_name, _boardagent) {}
 		};
@@ -314,13 +310,22 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			boardagent(cstr _name, app::module* _owner) :app::node(_name,_owner) {};
+			boardagent(cstr _name, app::module* _owner) :app::node(_name, _owner) {};
 
 		};
 
 
-		
 
+		class contrltable : public idevagent:: stream, frontend::contrltable{
+			typedef frontend::contrltable::ivar ivar;
+			ivar* current_ = nullptr;
+			int command_;
+		public:
+			virtual query_result query(robo_tran_p _tran);
+			virtual void confirm(robo_tran_p _tran);
+			virtual bool exchange_need() { return update_index.count() > 0; }
+			contrltable(idevagent& _agent, priority _priority, int command_, record _records[], size_t _count);
+		};
 
 
 
