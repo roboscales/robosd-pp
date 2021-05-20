@@ -256,7 +256,7 @@ namespace robo{
 			void push(T* _t) {
 				if (_t) {
 					ref & tmp = ( ref & )(*_t);
-					tmp.L::attach_to(*this);
+					tmp.ref:: attach_to(*this);
 				}
 			}
 		};

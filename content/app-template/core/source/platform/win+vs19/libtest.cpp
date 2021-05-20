@@ -448,9 +448,9 @@ namespace libtest
 			public:
 				enum class icommand { external, service, stopped, fault, reset, none };
 				enum class istate { external, independed, service, stopped, fault, unknown, locked };
-				struct iaction: public robo::frontend::idevagent::iaction {
+				struct iaction {
 				};
-				struct ifeedback : public robo::frontend::idevagent::ifeedback {
+				struct ifeedback {
 				};
 				struct irequired : public robo::frontend::idevagent::irequired {
 				};
@@ -461,7 +461,7 @@ namespace libtest
 			
 			typedef robo::backend::devagent< ddddd > devagent;
 			
-			robo::backend::boardagent boardagent(RT("тестовая барда"), &test::module::instance());
+			robo::backend::boardagent boardagent(RT("тестовая барда"), test::module::instance());
 
 			class bus : public  robo::backend::bus {
 			public:

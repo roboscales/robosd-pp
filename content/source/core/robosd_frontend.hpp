@@ -5,6 +5,8 @@
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_log.hpp"
+#include "core/robosd_delegat.hpp"
+#include "core/robosd_app.hpp"
 
 namespace robo {
 
@@ -174,13 +176,13 @@ namespace robo {
 		class idevagent {
 		public:
 			enum class icommand { external, service, stopped, fault, reset,none };
-			enum class istate { unknown, disabled, external, independed, service, stopped, fault, locked };
+			enum class istate { unknown, disabled, external, independed, service, stopped, fault, configure };
 
-			struct iaction {
+/*			struct iaction {
 			};
 			struct ifeedback {
 			};
-
+			*/
 			struct irequired {
 				icommand command = icommand::none;
 			};
@@ -198,61 +200,147 @@ namespace robo {
 				typename D::ifeedback feedback;
 			} front;
 		};
-
-		class contrltable {
+		
+		const struct{
+			const cstr u8 = RT("u8");
+			const cstr u16 = RT("u16");
+			const cstr u32 = RT("u32");
+		} type_names;
+		
+		class contrltable:public app::node {
 		public:
+
 			struct record {
-				cstr _name;
-				uint16_t _addr;
-				uint16_t _length;
+				cstr name;
+				cstr type;
+				cstr converter;
+				uint16_t address;
+				uint16_t length;				
 			};
-			struct ivar {
-				uint16_t _addr;
-				uint16_t _length;
-				uint16_t _offset;
-				record* instance_ = nullptr;
-				contrltable & _contrltable;
-			public:	
-				enum class status { disable, clean, ready,  put, get , punic};
+
+			class ivar {
+				const record & instance_ ;
+				contrltable & contrltable_;
+			public:
+				typedef delegat::base<void, ivar&, bool>  delegat;
+				enum class status { disable, clean, ready, put, get, panic };
+				enum class hook { free, frontend, backend };
 			private:
 				status status_ = status::disable;
+				hook hook_ = hook::free;
+				delegat* static_delegat_ = nullptr;
+				delegat* dynamic_delegat_ = nullptr;
+				int repeat_count_=0;
+				int repeat_current_max_ = 3;
 			public:
-				uint16_t addr(void) { _addr; };
-				uint16_t length(void) { _length; };
-				uint16_t name(void) { _length; };
-				status actual_status(void) { status_; };
-				virtual void encode(uint8_t*& _dst) = 0;
-				virtual void decode(uint8_t*& _src) = 0;
-				void refuse(void);
+				enum {invalid_value = -1};
+				uint16_t addr(void) { return  instance_.address; };
+				uint16_t length(void) { return  instance_.length; };
+				cstr name(void) { return  instance_.name; };
+				cstr type(void) { return  instance_.type; };
+
+				bool query(void);
+				bool query(delegat & _delegat);
+				bool query( robo::lambda<void(ivar &, bool)> & _lambda );
+
+				bool is_ready(void) { return  (status_ == status::ready) || (status_ == status::panic) || (status_ == status::clean);  }
+				bool is_success(void) { return  (status_ == status::ready) ; }
+				bool is_busy(void) { return !is_ready(); }
+
+
+				typedef ::robo::list::unique<ivar, int> map;
+				typedef map::ref map_ref;
+				status actual_status(void) { return status_; }
+			protected:
+				void reset_delegat(void);
+				contrltable& owner(void) { return contrltable_;  }
 				void confirm(void);
-				//bool query(void);
-				//bool post(void);
+				void refuse(void);
+				ivar(contrltable& _contrltable, const record& _instance);
+				virtual ~ivar(void) {}
+				virtual bool rerquest(void) = 0;
+				bool post(void);
+				bool post(delegat& _delegat);
+				bool post(robo::lambda<void(ivar&, bool)>& _lambda);
+				bool begin_hook(void);
+				void finish_hook(void);
+				hook actual_hook(void) { return hook_; }
+				static ivar * create_var(cstr _path, cstr _name);
+				void begin(void) { status_ = status::clean ; }
+				void set_repeat_count( int  _repeat_count ){ repeat_count_ = _repeat_count;};
+			private:
+				map_ref map_ref_;
+				bool query_(void);
+				bool post_(void);
 
-				ivar(contrltable& _contrltable, cstr _name);
+			};
 
-				typedef list::pool<ivar, int> index;
-				typedef list::unique<ivar, int> map;
-				typedef map:: ref ref;
+
+			template< class B, typename T > class var : public  B {
+			protected:
+				struct {
+					T local;
+					T remote;
+				} front;
+			public:
+
+				typedef typename B::delegat  delegat;
+
+				bool post(void) {
+					ROBO_LRET(B::post());	
+				}
+				bool post(delegat& _delegat) {
+					ROBO_LRET(B::post(_delegat));	
+				}
+				
+				bool post(const T & _value) {
+					front.local = _value;
+					ROBO_LRET(B::post());
+				}
+
+				bool post(const T& _value, delegat& _delegat) {
+					front.local = _value;
+					ROBO_LRET(B::post(_delegat ));
+				}
+				static var & create_var(cstr _path, cstr _name) {
+					var * v =  dynamic_cast<var * >( ivar::create_var(_path, _name));
+					ROBO_APP_ASSERT(v!=nullptr);
+					return (*v);
+				}
+				const T & value(void) { 
+					return front.remote;
+				}
+			protected:
+				var( contrltable & _contrltable, const record& _instance) : B(_contrltable, _instance) {};
+			};
+
+			class fabric {
+			public:
+				typedef ::robo::list::unique<fabric, int> map;
+				typedef map::ref ref;
+				static fabric::map & fabrics(void);
 			private:
 				ref ref_;
-				ref index_ref_;
-
-			};
-
-
-			template< typename T > class var: public  ivar {
-				T local_ = nullptr;
-				T remote_ = nullptr;
 			public:
-
+				fabric(cstr _type);
+				static fabric * find(cstr _type);
+				virtual ivar* create(contrltable & _contrltable, const  record & _record ) = 0;
 			};
 
-			contrltable(record _records[], size_t _count);
-		protected:
-			ivar::map map;
-			ivar::index update_index;
+			contrltable(node & _owner, const record  *  const _records, size_t _count);
 
+			const record& find_record_ref(cstr _name);
+
+		protected:
+			friend class ivar;
+			ivar::map vars;
+			const record * const records_ = nullptr;
+			size_t count_ = 0;
+			const record * find_record( cstr _name );
+			ivar * create_var(cstr _name);
+			ivar* find_var(cstr _name);
 		};
+
 
 	}
 }

@@ -8,6 +8,7 @@ namespace robo {
         template <typename R, typename ... Args> class ROBO_EXPORT base {
         public:
             virtual R operator ()(Args... args) = 0;
+						virtual ~base(void){} 
         };
 
         template <class B, typename R, typename ... Args> class ROBO_EXPORT simple : public B {

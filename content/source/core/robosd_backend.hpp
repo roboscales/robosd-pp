@@ -92,6 +92,20 @@ namespace robo {
 			};
 		};
 
+		/*class ROBO_EXPORT repeater{
+			signal::performer & performer_;
+			time_us_t period_;
+		public:
+		enum { default_period_us = 1000 };
+		repeater(signal::performer & _performer, time_us_t _period = default_period_us)
+			: performer_(_performer)
+			, period_(_period)
+		{}
+		void start(void){ timer::core::start(&performer_, period_); }
+		void start(time_us_t _period){ period_ = _period;  start(); }
+		void stop(void){ timer::core::stop(&performer_, period_); }
+	};*/
+			
 		class ROBO_EXPORT queue : public signal {
 			void poll_(void);
 			void post_(signal::performer* _performer, signal::performer::priority _priority);
@@ -111,7 +125,7 @@ namespace robo {
 			time_us_t period_;
 		public:
 			enum { default_period_us = 1000 };
-			repeater(signal::performer& _performer, time_us_t _period = default_period_us)
+			repeater(time_us_t _period = default_period_us)
 				: performer(false)
 				, period_(_period)
 			{}
@@ -132,6 +146,7 @@ namespace robo {
 				suba_t request_suba;
 				suba_t answer_suba;
 			};
+			enum class mode { table, dummy } mode_ = mode::table;
 		private:
 			size_t table_size_ = 0;
 			record* table_ = nullptr;
@@ -139,8 +154,9 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
-			router(cstr _name, app::module* _owner);
+			mode actual_mode(void) { return mode_;  }
+			virtual record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
+			router(cstr _name, app::module & _owner);
 		};
 
 
@@ -186,6 +202,7 @@ namespace robo {
 				virtual void confirm(robo_tran_p _tran) = 0;
 				query_result query(msg* _msg);
 			};
+			typedef frontend::idevagent::istate state;
 
 		private:
 			boardagent& boardagent_;
@@ -193,13 +210,17 @@ namespace robo {
 			bus_ref bus_ref_;
 			int bus_order_ = 0;
 			router* router_ = nullptr;
-			typedef frontend::idevagent::istate state;
 			state actual_state_ = state::unknown;
 			stream::list streams_;
 		protected:
 			virtual void apply_action(void) = 0;
 			virtual void uppdate_feedback(void) = 0;
 			bool exchabge_enabled(void) { return actual_state_ > state::disabled; }
+			bool configure_complete(void) { 
+				ROBO_LBREAKN(actual_state_ == state::configure);
+				actual_state_ = state::stopped;
+				return true;
+			}
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual bool do_node_start(void);
@@ -208,20 +229,23 @@ namespace robo {
 			itrafic trafic;
 
 			const dev_id_t& dev_id(void) { return dev_id_; };
+			void dev_set_id(uint8_t _addr) { dev_id_.address =_addr; };
 
 			stream::query_result query(stream::msg* _msg);
 
 			idevagent(cstr _name, boardagent& _boardagent);
 
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
+			state actual_state(void) { return actual_state_;  };
+
 		};
 
 		class ROBO_EXPORT bus : public app::node {
 		public:
 			typedef ::robo::list::unique<bus, int> index;
-			typedef index::ref ref;
+			typedef index::ref index_ref;
 		private:
-			ref ref_;
+			index_ref index_ref_;
 		public:
 			class ROBO_EXPORT msg : public idevagent::stream::msg {
 			public:
@@ -259,7 +283,7 @@ namespace robo {
 			virtual void do_clean(void);
 		public:
 			//короткий id
-			bool id(void) { return ref_.key(); }
+			int id(void) { return index_ref_.key(); }
 			//todo подпорка для busmarshal
 			msg* current_msg(void) { return current_msg_; };
 			itrafic trafic;
@@ -293,7 +317,7 @@ namespace robo {
 
 			virtual void uppdate_feedback(void) {
 				typedef typename D::istate tstate;
-				if ((tstate)(actual.status.state) == tstate::external) {
+				if ((tstate)(actual.status.state) != tstate::external) {
 					::robo::frontend::devagent<D>::front.action = actual.action;
 				}
 				::robo::frontend::devagent<D>::front.feedback = actual.feedback;
@@ -310,21 +334,116 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			boardagent(cstr _name, app::module* _owner) :app::node(_name, _owner) {};
+			boardagent(cstr _name, app::module& _owner) :app::node(_name, &_owner) {};
 
 		};
 
 
 
 		class contrltable : public idevagent:: stream, frontend::contrltable{
-			typedef frontend::contrltable::ivar ivar;
-			ivar* current_ = nullptr;
+		private:
 			int command_;
 		public:
+			class ivar : public frontend ::contrltable :: ivar {
+				friend class contrltable;
+				typedef ::robo::list::unsorted<ivar> queue;
+				typedef queue::ref ref;
+				ref ref_;
+			protected:
+				ivar(frontend::contrltable& _contrltable, const record& _instance);
+				virtual bool rerquest(void);
+				virtual void encode(uint8_t* _dst) = 0;
+				virtual void decode(uint8_t* _dst) = 0;
+			public:
+				contrltable& owner(void) { return (contrltable&)frontend::contrltable::ivar::owner(); }
+			};
+
+			
+			template<  typename T> class var : public frontend::contrltable::var< ivar, T>  {
+			public:
+				typedef frontend::contrltable::var< ivar, T> B;
+				typedef frontend::contrltable::ivar::delegat delegat; 
+			protected:
+				struct {
+					T local;
+					T remote;
+				} actual;
+			public:
+
+				bool post(const T& _value) {
+					actual.local = _value;
+					ROBO_LRET(B::post());
+				}
+				bool post(const T& _value, delegat& _delegat) {
+					actual.local = _value;
+					ROBO_LRET(B::post(_delegat));
+
+				}			
+				
+				bool query(void) {
+					ROBO_LRET( B::query() );
+				}
+				
+				bool query(delegat& _delegat) {
+					ROBO_LRET(B::query(_delegat) );
+				}				
+
+				static var & create_var( cstr _path, cstr _name ) {
+					var * v = dynamic_cast<var *>(ivar::create_var(_path, _name));
+					ROBO_APP_ASSERT(v!=nullptr)
+					return *v;
+				}
+
+				const T & value(void) { 
+					if(system::env::is_backend()){
+						return actual.remote;
+					} else {
+						return B::front.remote;
+					}
+				}
+
+				var(contrltable& _contrltable, cstr _name) 
+					: frontend::contrltable::var< ivar, T>(
+						_contrltable
+						, _contrltable.find_record_ref(_name)
+					) {
+					ROBO_VBREAKN_F(sizeof(T) == B::length(), "error typecast for var '%s/%s' ", B::owner().alias(), ivar::name());
+					B::begin();
+				};
+
+			protected:
+
+				virtual void encode(uint8_t* _dst) {
+					{
+						system::guard g__;
+						if (B::actual_hook() == B::hook::frontend) {
+							actual.local = B::front.local;
+						}
+						else {
+							B::front.local = actual.local ;
+						}
+					}
+					std::copy_n((uint8_t*)(&actual.local), B::length(), _dst);
+				}
+				virtual void decode(uint8_t* _src) {
+					std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
+					{
+						system::guard g__;
+						B::front.remote = actual.remote;
+					}
+				}
+			};
+
 			virtual query_result query(robo_tran_p _tran);
 			virtual void confirm(robo_tran_p _tran);
-			virtual bool exchange_need() { return update_index.count() > 0; }
-			contrltable(idevagent& _agent, priority _priority, int command_, record _records[], size_t _count);
+			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
+			contrltable(idevagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
+			bool query(void);
+			bool query(frontend::contrltable::ivar::delegat & _delegat);
+			bool ready(void);
+		private:
+			ivar::queue queue_;
+			ivar* current_ = nullptr;
 		};
 
 

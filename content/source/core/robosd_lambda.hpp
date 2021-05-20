@@ -3,6 +3,7 @@
 
 
 #include "core/robosd_common.hpp"
+#include <algorithm>
 
 namespace robo{
 
@@ -35,16 +36,10 @@ namespace robo{
 
 			template<typename T> static context * query(T const & _context){
 				context * ctx = new context;
-				assert(ctx != nullptr);
+				ROBO_APP_ASSERT(ctx != nullptr);
 				ctx->sz_ = sizeof(T);
-				#if ROBO_MEMORY_HEAP_ENABLED == 1				
-				robo_mem_alloc(&(ctx->p_), ctx->sz_);
-				assert( ctx->p_ != nullptr );
-				robo_mem_set((robo_byte_p)(ctx->p_), 0, ctx->sz_, (robo_byte_p)(&_context));
-				#else
 				ctx->p_ = new uint8_t[ctx->sz_];
-				ROBO_STD_MEM_COPY_TO((void *)&_context,ctx->p_, ctx->sz_);
-				#endif
+				std::copy_n((uint8_t*)&_context, ctx->sz_, (uint8_t*)ctx->p_);
 				ctx->used_++;
 				ctx->run_ = [](context *_context, In... arguments) -> Out
 				{

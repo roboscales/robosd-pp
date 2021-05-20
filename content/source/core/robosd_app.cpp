@@ -343,7 +343,6 @@ namespace robo {
 		}
 
 		void machine::frontend_loop_(void) {
-			system::fall f__;
 			machine_();
 			system::env::frontend_loop();
 			if (actual_state() > state::stopped) {
@@ -354,6 +353,7 @@ namespace robo {
 		}
 
 		void machine::backend_loop_(void) {
+			system::fall f__;
 			system::env::backend_loop();
 			if (actual_state() > state::stopped) {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
