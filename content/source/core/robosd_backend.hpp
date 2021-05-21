@@ -448,6 +448,7 @@ namespace robo {
 
 
 
+		
 		namespace process {
 			class base;
 			class ROBO_EXPORT controller : public task {

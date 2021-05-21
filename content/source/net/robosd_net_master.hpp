@@ -27,9 +27,12 @@ namespace robo{
 			state state_ = state::disable;
 			
 			void panic_(void){
-				phys::panic();
+				if( phys::panic() ){
+					state_ = state::panic;
+				} else {
+				state_ = state::idle;
+				}
 				reset_();
-				state_ = state::panic;
 			}
 			
 			const uint8_t * outcom_buf_ = nullptr;

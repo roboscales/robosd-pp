@@ -313,18 +313,20 @@ namespace robo {
 				if (boardagent_.request_pause_us_ < tm - boardagent_.last_request_us_) {
 					stream::query_result ret;
 					for (stream::ref* _ref = streams_.first(); _ref; _ref = _ref->next()) {
-						ret = _ref->owner().query(_msg);
-						if (ret == stream::query_result::none) {
-							continue;
-						}
-						else {
-							_msg->tran_->header.dev_id = dev_id_.dev;
-							if (!_msg->prepare()) {
-								ROBO_ALARM();
-								return stream::query_result::none;
+						if(_ref->owner().exchange_need()){
+							ret = _ref->owner().query(_msg);
+							if (ret == stream::query_result::none) {
+								continue;
 							}
-							boardagent_.last_request_us_ = tm;
-							return ret;
+							else {
+								_msg->tran_->header.dev_id = dev_id_.dev;
+								if (!_msg->prepare()) {
+									ROBO_ALARM();
+									return stream::query_result::none;
+								}
+								boardagent_.last_request_us_ = tm;
+								return ret;
+							}
 						}
 					}
 				}
