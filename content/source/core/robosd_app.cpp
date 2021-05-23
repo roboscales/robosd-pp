@@ -16,6 +16,7 @@ namespace robo {
 			ROBO_ALARMN(init(_name, _owner));
 		}
 
+
 		node::~node(void) {
 			init(nullptr, nullptr);
 		}
@@ -38,8 +39,10 @@ namespace robo {
 		
 		bool node::init(cstr _name, node* _owner) {
 			actual_state_ = state::unknown;
-
-			if (_name) name_ = _name; 
+			if(_name) {
+				store_name_ = _name;
+				name_ = store_name_; 
+			}
 
 			if (owner_ != nullptr) {
 				ref_.dettach();
@@ -47,9 +50,9 @@ namespace robo {
 
 			owner_ = _owner;
 
-			ROBO_LBREAKN(own_ref_.set_key( hash(name_) ))
-
 			if (owner_ != nullptr) {
+				ROBO_LBREAKN(name_!=nullptr)
+				ROBO_LBREAKN(own_ref_.set_key( hash(name_) ))
 				ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
 				ref_.attach_to(owner_->disabled_);
 			}

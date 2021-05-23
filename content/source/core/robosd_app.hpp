@@ -18,6 +18,7 @@ namespace robo {
 			typedef  ::robo::list::unique<node,int> map;
 			typedef  list::ref ref;
 			typedef  map::ref mref;
+			robo::string store_name_;
 			node* owner_ = nullptr;
 			ref ref_;
 			mref own_ref_;
@@ -42,8 +43,6 @@ namespace robo {
 			virtual void do_node_stop(void) { }
 			virtual void do_panic(void) { }
 			void panic(void);
-			bool load(void);
-			void clean(void);
 			result node_startup(void);
 			result node_shutdown(void);
 			bool node_start(void);
@@ -51,6 +50,8 @@ namespace robo {
 			bool init(cstr _name, node* _owner);
 			node(cstr _name, node* _owner);			
 		public:
+			bool load(void);
+			void clean(void);
 			cstr name(void) { return name_; }
 			void path(string& _path);
 			state actual_state(void) {	return actual_state_; }

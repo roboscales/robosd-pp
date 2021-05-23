@@ -750,16 +750,15 @@ namespace robo {
 				if ( _tran->size_max > current_->length()) {
 					_tran->header.command = current_->addr();
 					_tran->size_actual = current_->length();
-					current_->encode(_tran->data);
-					_tran->request = ROBO_TRAN_REQUEST_PUT;
-					return query_result::success;
+					if( current_->encode(_tran->data) ){
+						_tran->request = ROBO_TRAN_REQUEST_PUT;
+						return query_result::success;
+					}
 				}
-				else {
-					ROBO_ALARM_F("var oversize for %s/%S", own_agent().alias(), current_->name());
-					current_->refuse();
-					current_ = nullptr;
-					return query_result::none;
-				}
+				ROBO_ALARM_F("var oversize or format error for %s/%s", own_agent().alias(), current_->name());
+				current_->refuse();
+				current_ = nullptr;
+				return query_result::none;
 			}
 			else {
 				if (current_->actual_status() == ivar::status::get) {
@@ -790,8 +789,12 @@ namespace robo {
 					if (_tran->size_actual > current_->length()) {
 						current_->refuse();
 					} else{
-						current_->decode( _tran->data );
-						current_->confirm();
+						if( current_->decode( _tran->data ) ){
+							current_->confirm();
+						} else {
+							ROBO_ALARM_F("var oversize or format error for %s/%s", own_agent().alias(), current_->name());
+							current_->refuse();
+						}
 					}
 				} else {
 					current_->refuse();

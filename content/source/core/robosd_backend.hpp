@@ -8,6 +8,9 @@
 #include "core/robosd_tran.h"
 #include "core/robosd_tran.h"
 #include "net/robosd_net_trafic.hpp"
+#include "core/robosd_tran.h"
+#include "core/robosd_ini.hpp"
+#include "core/robosd_convert.hpp"
 namespace robo {
 	namespace backend {
 		class ROBO_EXPORT task {
@@ -308,10 +311,14 @@ namespace robo {
 				typedef typename D::istate tstate;
 				if ((tstate)(actual.status.state) == tstate::external) {
 					actual.action = ::robo::frontend::devagent<D>::front.action;
+				} else {
+					::robo::frontend::devagent<D>::front.action = actual.action;
 				}
 
 				if (((tstate)(actual.status.state)) == tstate::stopped) {
 					actual.required = ::robo::frontend::devagent<D>::front.required;
+				} else {
+					::robo::frontend::devagent<D>::front.required = actual.required;
 				}
 			}
 
@@ -352,8 +359,8 @@ namespace robo {
 			protected:
 				ivar(frontend::contrltable& _contrltable, const record& _instance);
 				virtual bool rerquest(void);
-				virtual void encode(uint8_t* _dst) = 0;
-				virtual void decode(uint8_t* _dst) = 0;
+				virtual bool encode(uint8_t* _dst) = 0;
+				virtual bool decode(uint8_t* _dst) = 0;
 			public:
 				contrltable& owner(void) { return (contrltable&)frontend::contrltable::ivar::owner(); }
 			};
@@ -370,6 +377,13 @@ namespace robo {
 				} actual;
 			public:
 
+				bool post(void) {
+					ROBO_LRET(B::post());
+				}
+				bool post(delegat& _delegat) {
+					ROBO_LRET(B::post(_delegat));
+				}			
+
 				bool post(const T& _value) {
 					actual.local = _value;
 					ROBO_LRET(B::post());
@@ -377,7 +391,6 @@ namespace robo {
 				bool post(const T& _value, delegat& _delegat) {
 					actual.local = _value;
 					ROBO_LRET(B::post(_delegat));
-
 				}			
 				
 				bool query(void) {
@@ -402,6 +415,10 @@ namespace robo {
 					}
 				}
 
+				operator const T & (void) { 
+						return actual.remote;
+				}
+
 				var(contrltable& _contrltable, cstr _name) 
 					: frontend::contrltable::var< ivar, T>(
 						_contrltable
@@ -413,7 +430,7 @@ namespace robo {
 
 			protected:
 
-				virtual void encode(uint8_t* _dst) {
+				virtual bool encode(uint8_t* _dst) {
 					{
 						system::guard g__;
 						if (B::actual_hook() == B::hook::frontend) {
@@ -423,14 +440,221 @@ namespace robo {
 							B::front.local = actual.local ;
 						}
 					}
-					std::copy_n((uint8_t*)(&actual.local), B::length(), _dst);
+					std::copy_n((uint8_t*)(&actual.local), B::length() , _dst);
+					return true;
 				}
-				virtual void decode(uint8_t* _src) {
+				
+				virtual bool decode(uint8_t* _src) {
 					std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
 					{
 						system::guard g__;
 						B::front.remote = actual.remote;
 					}
+					return true;
+				}
+				
+		};
+			
+		template<  typename T> class fvar : public var<T>  {
+			converter * converter_  = nullptr;
+			public:
+				typedef var<T> B;
+				bool set_converter(cstr _name){
+					converter_ = dynamic_cast<converter *>( app::node::find(_name));
+					return converter_ != nullptr;
+				}
+
+				bool set_converter(converter * _converter){					
+					converter_ = _converter;
+					return converter_ != nullptr;
+				}
+
+				fvar(contrltable& _contrltable, cstr _name, cstr _converter = nullptr) 
+					: var< T>(
+						_contrltable
+						, _name
+					) 
+				{
+					if(_converter != nullptr) {
+						set_converter(_converter);
+					}
+				};
+				
+
+				result try_load(cstr _section, cstr _key) {
+					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);			
+					if( B::actual.local != B::actual.remote )	{
+						ROBO_RET(B::post(),result::resume,result::panic);
+					} else {
+						return result::complete;
+					}
+				}
+				
+				typedef frontend::contrltable::ivar::delegat delegat; 
+				result try_load( cstr _section, cstr _key, delegat& _delegat) {
+					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);			
+					if( B::actual.local != B::actual.remote )	{
+						ROBO_RET(B::post(_delegat),result::resume,result::panic);
+					} else {
+						return result::complete;
+					}
+				}
+				
+				template <typename U> float  to_float( U _src){  return converter_==nullptr? 0.f  : converter_->to_float(_src); }
+				result try_post_min(void){
+					if(converter_){
+						if( fabs( B::acual.remote - converter_->min() ) > converter_->eps() ){
+							B::acual.local  = converter_->min();
+							ROBO_RET(B::post(),result::resume,result::panic);
+						}
+					}
+					return result::complete;
+				}
+
+				result try_post_max(void){
+					if(converter_){
+						if( fabs( B::actual.remote - converter_->max()) > converter_->eps() ){
+							B::actual.local  = converter_->max();
+							ROBO_RET(B::post(),result::resume,result::panic);
+						}
+					}
+					return result::complete;
+				}
+
+				result try_post_min(delegat& _delegat){
+					if(converter_){
+						if( fabs( B::actual.remote - converter_->min() ) > converter_->eps() ){
+							B::actual.local  = converter_->min();
+							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+						}
+					}
+					return result::complete;
+				}
+
+				result try_post_max(delegat& _delegat){
+					if(converter_){
+						if( fabs( B::actual.remote - converter_->max() ) > converter_->eps() ){
+							B::actual.local  = converter_->max();
+							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+						}
+					}
+					return result::complete;
+				}
+
+
+				result try_post(const T& _value) {
+					B::actual.local  = _value;
+					if(converter_){
+						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
+							ROBO_RET(B::post(),result::resume,result::panic);
+						} else {
+							return result::complete;
+						}
+					}else{
+							ROBO_RET(B::post(),result::resume,result::panic);
+					}
+				}
+
+				result try_post(const T& _value, delegat& _delegat) {
+					B::actual.local  = _value;
+					if(converter_){
+						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
+							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+						} else {
+							return result::complete;
+						}
+					}else{
+							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+					}
+				}
+
+			protected:
+				virtual bool encode(uint8_t* _dst) {
+					{
+						system::guard g__;
+						if (B::actual_hook() == B::hook::frontend) {
+							B::actual.local = B::front.local;
+						}
+						else {
+							B::front.local = B::actual.local ;
+						}
+					}
+					if(converter_){
+						switch(B::length()){
+							case 1:
+							{
+								uint8_t tmp = converter_->to_u8( B::actual.local);
+								std::copy_n(&tmp, 1, _dst);
+							}
+								break;
+							case 2:
+							{
+								uint16_t tmp = converter_->to_u16(B::actual.local);
+								std::copy_n((uint8_t*)(&tmp), 2, _dst);
+							}
+								break;
+							case 4:
+							{
+								uint32_t tmp = converter_->to_u32(B::actual.local);
+								std::copy_n((uint8_t*)(&tmp), 4, _dst);
+							}
+								break;								
+							default:
+								return false;
+						}
+					} else {
+						switch(B::length()){
+							case 1:
+							{
+								uint8_t tmp = (uint8_t)B::actual.local;
+								std::copy_n(&tmp, 1, _dst);
+							}
+								break;
+							case 2:
+							{
+								uint16_t tmp = (uint16_t)(B::actual.local);
+								std::copy_n((uint8_t*)(&tmp), 2, _dst);
+							}
+								break;
+							case 4:
+							{
+								uint32_t tmp = (uint32_t)(B::actual.local);
+								std::copy_n((uint8_t*)(&tmp), 4 , _dst);
+							}
+								break;
+							default:
+								std::copy_n((uint8_t*)(&B::actual.local), B::length() , _dst);
+								
+						}
+					}
+					return true;
+				}
+				
+				virtual bool decode(uint8_t* _src) {
+					//std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
+					if(converter_){
+						switch(B::length()){
+							case 1:
+								B::actual.remote= (T)converter_->to_float( *(uint8_t *)_src);
+								break;
+							case 2:
+								B::actual.remote= (T)converter_->to_float( *(uint16_t *)_src);
+								break;
+							case 4:
+								B::actual.remote= (T)converter_->to_float( *(uint32_t *)_src);
+								break;								
+							default:
+								return false;
+						}
+					} else {						
+						std::copy_n( _src, B::length() , (uint8_t*)(&B::actual.remote));
+					}
+					
+					{
+						system::guard g__;
+						B::front.remote = B::actual.remote;
+					}
+					return true;
 				}
 			};
 

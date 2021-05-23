@@ -213,7 +213,6 @@ namespace robo {
 			struct record {
 				cstr name;
 				cstr type;
-				cstr converter;
 				uint16_t address;
 				uint16_t length;				
 			};
@@ -231,7 +230,7 @@ namespace robo {
 				delegat* static_delegat_ = nullptr;
 				delegat* dynamic_delegat_ = nullptr;
 				int repeat_count_=0;
-				int repeat_current_max_ = 3;
+				int repeat_current_max_ = 30;
 			public:
 				enum {invalid_value = -1};
 				uint16_t addr(void) { return  instance_.address; };
@@ -310,6 +309,7 @@ namespace robo {
 				const T & value(void) { 
 					return front.remote;
 				}
+				
 			protected:
 				var( contrltable & _contrltable, const record& _instance) : B(_contrltable, _instance) {};
 			};
