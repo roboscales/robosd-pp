@@ -4,6 +4,10 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_app.hpp"
 namespace robo{
+	template<typename T>
+		constexpr T pi = T(3.1415926535897932385);
+	
+	
 	class ROBO_EXPORT converter: public app::node{
 	private:
 		float offset_;
