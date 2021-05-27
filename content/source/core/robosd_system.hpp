@@ -140,12 +140,13 @@ namespace robo {
 			static void wakeup(void);
 			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
-			static bool sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
+			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
 			static void print( cstr  _s);
 		};
 #endif
 		static void printf( cstr _format, va_list _args);
 		static void printf( cstr _format, ...);
+		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...);
 
 #if ROBO_APP_INI_ENABLED ==1
 		struct ini {

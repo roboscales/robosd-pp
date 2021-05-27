@@ -103,6 +103,15 @@ namespace robo {
 
 	}
 #endif
+
+	void system::env::print(cstr  _s) {
+#if ROBO_UNICODE_ENABLED
+		wprintf(_s);
+#else
+		printf(_s);
+#endif
+	}
+
 #if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_DUMMY
 	cstr g_robo_ini_fn = nullptr;
 	bool system::ini::begin(cstr _ini) {
@@ -138,6 +147,14 @@ namespace robo {
 	}
 
 #endif
+
+	void * system::env::critical_enter(void) {
+		return nullptr;
+
+	}
+	void system::env::critical_leave(void * ) {
+
+	}
 }
 
 

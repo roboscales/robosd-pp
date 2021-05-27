@@ -81,11 +81,11 @@
 #define ROBO_BREAK(fault) {robo_errlog(ROBO_NESTED_ERROR); return fault;}
 #endif
 #else
-#define ROBO_BREAK(fault)
+#define ROBO_BREAK(fault) return fault;
 #endif
 
 #ifndef ROBO_LBREAK
-#define ROBO_LBREAK() ROBO_BREAK(false)
+#define ROBO_LBREAK() ROBO_BREAK(false) 
 #endif
 
 #ifndef ROBO_VBREAK
@@ -106,7 +106,7 @@
 #define ROBO_BREAKN(x,fault) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR); return fault;}
 #endif
 #else
-#define ROBO_BREAKN(x,fault)
+#define ROBO_BREAKN(x,fault) if( !(x)) return fault;
 #endif
 
 #ifndef ROBO_LBREAKN
@@ -122,7 +122,7 @@
 #define ROBO_RET(x, success, fault) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR);return fault;} else {return success;}
 #endif
 #else
-#define ROBO_RET(x, success, fault)
+#define ROBO_RET(x, success, fault) if( !(x) ) { return success;} else { return fault; }
 #endif
 
 #ifndef ROBO_LRET
@@ -150,7 +150,7 @@
 } 
 #endif
 #else
-#define ROBO_BREAK_F(x,fault,f,...)
+#define ROBO_BREAK_F(x,fault,f,...) if(!(x)) return fault;
 #endif
 
 #ifndef ROBO_LBREAK_F
@@ -184,7 +184,7 @@ if ( !( x ) ){\
 } 
 #endif
 #else
-#define ROBO_BREAKN_F(x,fault,f,...)
+#define ROBO_BREAKN_F(x,fault,f,...) if( !(x)) return fault;
 #endif
 
 #ifndef ROBO_LBREAKN_F
@@ -209,7 +209,7 @@ return fault; \
 #endif
 
 #ifndef ROBO_LRET_F
-#define ROBO_LRET_F(x,f,...) ROBO_RET_F(x,true,false,f,__VA_ARGS__)
+#define ROBO_LRET_F(x,f,...) ROBO_RET_F(x,true,false,f,__VA_ARGS__) 
 #endif
 
 

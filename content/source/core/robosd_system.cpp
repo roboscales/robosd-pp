@@ -317,6 +317,13 @@ namespace robo {
 		printf(_format,args);
 		va_end(args);
 	}
+	size_t system::sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...){
+		va_list args;
+		va_start(args, _format);
+		size_t ret = env::sprintf(_dst,_max_sz,_format,args);
+		va_end(args);
+		return ret;
+	}
 
 	system system::instance_;
 }

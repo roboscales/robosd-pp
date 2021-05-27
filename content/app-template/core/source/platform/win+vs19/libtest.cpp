@@ -12,6 +12,7 @@
 #include <thread>
 #include <windows.h>
 #include "core/robosd_backend.hpp"
+#include "jsonsl.h"
 
 #define MODULE_NAME_STR RT("lib.test")
 namespace test {
@@ -31,6 +32,74 @@ namespace test {
 #define MODULE_NAME test
 
 
+struct command {
+	enum { key_count = 11 };
+	enum class format {
+		key = 0
+		, number = 2
+		, string = 3
+	};
+	const char* keys[key_count] = {
+		"\"timestamp\": "
+		,"\"command\": "
+		,"\"pos\": {"
+		,"\"x\": "
+		,"\"y\": "
+		,"\"z\": "
+		,"\"rot\": {"
+		,"\"r\": "
+		,"\"p\": "
+		,"\"y\": "
+		,"\"fingers\": "
+	};
+	enum class kind { stop = 0, shutdown = 1, reset = 2, status = 3 };
+	enum class status { idle = 0, error = 1, moving = 2 };
+	struct content {
+		char timestamp[15];
+		char cmd[10];
+		int arm =1;
+		struct {
+			float x = 0.f;
+			float y = 0.f;
+			float z = 0.f;
+		} pos;
+		struct {
+			float r = 0.f;
+			float p = 0.f;
+			float y = 0.f;
+		} rot;
+		float fingers[5];
+		bool error = false;;
+		char buf[512];
+		void rand(void) {
+			sprintf(timestamp, "%d-%d-%d-%d", ::rand(), ::rand(), ::rand(), ::rand());
+			pos.x = ::rand();
+			pos.y = ::rand();
+			pos.z = ::rand();
+			rot.r = ::rand();
+			rot.p = ::rand();
+			rot.y = ::rand();
+			for (int i=0;i<5;i++) fingers[i] = ::rand();
+		}
+		void	create_arm(void) {
+			const char* drmt =
+				"{\"command\": \"%s\",\"timestamp\" : \"%s\",\"data\" : {\"arm\": %d,\"pos\" : {\"x\": %f,\"y\" : %f,\"z\" : %f},\"rot\" : {\"r\": %f,\"p\" : %f,\"y\" : %f},\"fingers\" : [%f, %f, %f, %f, %f]	}}";
+			rand();
+			sprintf(cmd, "%s", "ARM");
+			buf[
+				sprintf(buf, drmt, cmd, timestamp, arm, pos.x, pos.y, pos.z, rot.r, rot.p, rot.y, fingers[0], fingers[1], fingers[2], fingers[3], fingers[4])
+			] = 0;
+		}
+	};
+	bool gets(const char* _get, char* _buf) {
+		return true;
+	}
+
+	bool parse(const char* _buf) {
+
+	}
+};
+command::content content_;
 #include "core/robosd_system_module_reg.hpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -478,7 +547,7 @@ namespace libtest
 			bus bus_(RT("тестовая логическая шина"), &test::module::instance());
 
 			devagent agent(RT("тестовый агент"), boardagent );
-			robo::backend::router router(RT("тестовый роутер"), &test::module::instance());
+			robo::backend::router router(RT("тестовый роутер"), test::module::instance());
 			
 			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {
 				robo::app::machine::start();
@@ -504,7 +573,136 @@ namespace libtest
 		}
 #endif
 #endif
+		
+		
+		static void pop_callback(jsonsl_t jsn,
+			jsonsl_action_t action,
+			struct jsonsl_state_st* state,
+			const char* buf)
+		{
+			static char key[20];
+			static bool is_rot_ = false;
+			static bool is_pos_ = false;
+			static bool is_finger_ = false;
+			if (
+				((state->special_flags & JSONSL_SPECIALf_UNSIGNED) == JSONSL_SPECIALf_UNSIGNED)
+			||
+				((state->special_flags & JSONSL_SPECIALf_UNSIGNED) == JSONSL_SPECIALf_UNSIGNED)
+			||
+				((state->special_flags & JSONSL_SPECIALf_FLOAT) == JSONSL_SPECIALf_FLOAT)
+			||
+				((state->special_flags & JSONSL_SPECIALf_EXPONENT) == JSONSL_SPECIALf_EXPONENT)
+				)
+			{
+				const char* s = buf - (state->pos_cur - state->pos_begin);
+					if (strcmp(key, "arm") == 0) {
+						content_.arm = atoi(s);
+					}
+				if (strcmp(key, "x") == 0) {
+					if (is_pos_) {
+						content_.pos.x = atof(s);
+					}
+					else {
+						content_.error = true;
+					}
+
+				}
+				if (strcmp(key, "y") == 0) {
+					if (is_pos_) {
+						content_.pos.y = atof(s);
+					}
+					else
+						if (is_rot_) {
+							content_.rot.y = atof(s);
+						}
+						else {
+							content_.error = true;
+						}
+				}
+				if (strcmp(key, "z") == 0) {
+					if (is_pos_) {
+						content_.pos.z = atof(s);
+					}
+					else {
+						content_.error = true;
+					}
+				}
+				if (strcmp(key, "r") == 0) {
+					if (is_rot_) {
+						content_.rot.r = atof(s);
+					}
+					else {
+						content_.error = true;
+					}
+				}
+				if (strcmp(key, "p") == 0) {
+					if (is_rot_) {
+						content_.rot.p = atof(s);
+					}
+					else {
+						content_.error = true;
+					}
+				}
+				if (strcmp(key, "fingers") == 0) {
+					static int counter = 0;
+					if (counter < 5) {
+						is_finger_ = true;
+					}
+					else {
+						is_finger_ = false;
+					}
+					content_.fingers[counter++] = atof(s);
+				}
+			}
+			if(!is_finger_)
+			key[0] = 0;
+			switch (state->type) {
+			case JSONSL_T_HKEY:
+			case JSONSL_T_LIST:
+			{
+				const char* s = buf - (state->pos_cur - state->pos_begin) + 1;
+				char* d = key;
+				for (int i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d)	*d = *s;	*d = 0;
+			}
+			if (strcmp(key, "pos") == 0) {
+				is_pos_ = true;
+				is_rot_ = false;
+			}
+			if (strcmp(key, "rot") == 0) {
+				is_rot_ = true;
+				is_pos_ = false;
+			}
+			break;
+			case JSONSL_T_STRING:
+			{
+				const char* s = buf - (state->pos_cur - state->pos_begin) + 1;
+				char* d = nullptr;
+				if (strcmp(key, "timestamp") == 0) {
+					 d = content_.timestamp;
+				}
+				else if (key, "command") {
+					d = content_.cmd;
+				} 
+				if (d) {
+					for (int i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d) *d = *s;		*d = 0;
+				}
+			}
+				break;
+			}
+		}
+		TEST_METHOD(json) {
+			command::content c;
+			c.create_arm();			
+			//const char* arm = "{ \"a\": \"arma aram\" }";
+			jsonsl_t parser =  jsonsl_new(100);
+			parser->action_callback_POP = pop_callback;
+			jsonsl_enable_all_callbacks(parser);
+			jsonsl_feed(parser, c.buf, (size_t)strlen(c.buf));
+			jsonsl_destroy(parser);
+			
+		}
 
 	};
+
 }
 

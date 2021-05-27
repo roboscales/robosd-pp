@@ -19,6 +19,12 @@ namespace robo{
 	public:
 		float offset(void) { return offset_;};
 		float scale(void){ return scale_;}
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 		float min(void){ return min_;}
 		float max(void){ return max_;}
 		float eps(void){ return eps_;}

@@ -136,7 +136,7 @@ namespace robo {
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			static inline bool begin(cstr _ini, log::print_f _print) { return root().begin_(_ini, _print); }
 #else
-			static inline bool begin(cstr _ini) { return instance().begin_(_ini); }
+			static inline bool begin(cstr _ini) { return root().begin_(_ini); }
 #endif
 
 			static inline void finish(void) { root().finish_(); }

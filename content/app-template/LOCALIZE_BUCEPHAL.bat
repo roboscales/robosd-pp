@@ -1,6 +1,8 @@
 chcp 1251 
 set robosd=E:\SOURCETREE\robosd++\content\
 
+set JSON=E:\SOURCETREE\jsonsl
+
 set settings=%COMPUTERNAME%
 set settings=%settings::=,%
 set settings=%settings:.=,%
@@ -30,6 +32,9 @@ MKLINK /J ".\reference\settings-ref"  "%settings%"
 
 IF EXIST ".\reference\robosd-ref"  RMDIR ".\reference\robosd-ref"
 MKLINK /J ".\reference\robosd-ref"  "%robosd%"\source  
+
+IF EXIST ".\reference\json-ref"  RMDIR ".\reference\json-ref"
+MKLINK /J ".\reference\json-ref"  "%JSON%"  
 
 cd "%settings%"
 echo [LOCAL] > robosd-pp.ini

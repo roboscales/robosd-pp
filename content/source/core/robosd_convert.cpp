@@ -14,7 +14,7 @@ namespace robo{
 		ROBO_LBREAKN(ini::load(name(),RT("scale"),scale_));
 		ROBO_LBREAKN(ini::load(name(),RT("min"),min_));		
 		ROBO_LBREAKN(ini::load(name(),RT("max"),max_));
-		eps_ = 0.5f/scale_;
+		eps_ = abs(0.5f/scale_);
 		return true;
 	}
 	converter::converter(cstr _name, app::node * _owner ): app::node(_name,_owner){

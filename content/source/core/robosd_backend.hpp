@@ -11,6 +11,7 @@
 #include "core/robosd_tran.h"
 #include "core/robosd_ini.hpp"
 #include "core/robosd_convert.hpp"
+#include "core/robosd_system.hpp"
 namespace robo {
 	namespace backend {
 		class ROBO_EXPORT task {
@@ -386,12 +387,32 @@ namespace robo {
 
 				bool post(const T& _value) {
 					actual.local = _value;
+					//robo::system::printf (RT("convert '%s/%s' %f\n\r"), B::owner().own_agent().alias(), B::name(), actual.local);
 					ROBO_LRET(B::post());
 				}
 				bool post(const T& _value, delegat& _delegat) {
 					actual.local = _value;
 					ROBO_LRET(B::post(_delegat));
 				}			
+				
+				result try_post(const T& _value) {
+					actual.local  = _value;
+					if(  actual.remote != _value  ){
+						ROBO_RET(B::post(),result::resume,result::panic);
+					} else {
+						return result::complete;
+					}
+				}
+
+				result try_post(const T& _value, delegat& _delegat) {
+					actual.local  = _value;
+					if(  actual.remote != _value  ){
+						ROBO_RET(B::post(_delegat),result::resume,result::panic);
+					} else {
+						return result::complete;
+					}				
+				}
+
 				
 				bool query(void) {
 					ROBO_LRET( B::query() );
@@ -530,7 +551,7 @@ namespace robo {
 					}
 					return result::complete;
 				}
-
+				converter * conv(void){ return converter_; }
 				result try_post_max(delegat& _delegat){
 					if(converter_){
 						if( fabs( B::actual.remote - converter_->max() ) > converter_->eps() ){
@@ -543,28 +564,28 @@ namespace robo {
 
 
 				result try_post(const T& _value) {
-					B::actual.local  = _value;
 					if(converter_){
+						B::actual.local  = _value;
 						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
 							ROBO_RET(B::post(),result::resume,result::panic);
 						} else {
 							return result::complete;
 						}
 					}else{
-							ROBO_RET(B::post(),result::resume,result::panic);
+							return B::try_post(_value);;
 					}
 				}
 
 				result try_post(const T& _value, delegat& _delegat) {
-					B::actual.local  = _value;
 					if(converter_){
+						B::actual.local  = _value;
 						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
 							ROBO_RET(B::post(_delegat),result::resume,result::panic);
 						} else {
 							return result::complete;
 						}
 					}else{
-							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+							return B::try_post(_value,_delegat);;
 					}
 				}
 
@@ -580,6 +601,7 @@ namespace robo {
 						}
 					}
 					if(converter_){
+						//robo::system::printf (RT("convert '%s/%s' %f\n\r"), B::owner().own_agent().alias(), B::name(), B::actual.local);
 						switch(B::length()){
 							case 1:
 							{

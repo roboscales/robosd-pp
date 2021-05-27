@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\..\..\source\net\robosd_net_trafic.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\reference\json-ref\jsonsl.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -87,6 +90,9 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\source\net\robosd_net_trafic.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\json-ref\jsonsl.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
