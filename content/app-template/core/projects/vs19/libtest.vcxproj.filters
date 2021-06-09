@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Исходные файлы\mexo">
+      <UniqueIdentifier>{d6709c03-e61e-458d-9eb2-6a88f2a8240d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp">
@@ -50,6 +53,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\reference\json-ref\jsonsl.c">
       <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\mexo\ps.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +103,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\reference\json-ref\jsonsl.h">
       <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\mexo\ps.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

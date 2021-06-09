@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="source/common/">
+      <UniqueIdentifier>{ae040ccd-1268-4c55-a52c-721444cbd6c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source/platform/win+vs13">
+      <UniqueIdentifier>{6df8c7e0-8490-4337-9004-ff778c82289e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="robosd++/core">
+      <UniqueIdentifier>{72b686bb-ea8e-4a86-a9c1-cfe0b4a990ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="robosd/core/platform/win+vs19">
+      <UniqueIdentifier>{851d9493-7a6e-4a29-8766-8c90f2519be2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_log.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_list.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_common.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

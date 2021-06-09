@@ -13,6 +13,9 @@
 #include <windows.h>
 #include "core/robosd_backend.hpp"
 #include "jsonsl.h"
+#include "mexo/mexo.hpp"
+#include "mexo/ps.hpp"
+using namespace mexo;
 
 #define MODULE_NAME_STR RT("lib.test")
 namespace test {
@@ -73,13 +76,13 @@ struct command {
 		char buf[512];
 		void rand(void) {
 			sprintf(timestamp, "%d-%d-%d-%d", ::rand(), ::rand(), ::rand(), ::rand());
-			pos.x = ::rand();
-			pos.y = ::rand();
-			pos.z = ::rand();
-			rot.r = ::rand();
-			rot.p = ::rand();
-			rot.y = ::rand();
-			for (int i=0;i<5;i++) fingers[i] = ::rand();
+			pos.x = (float)::rand();
+			pos.y = (float)::rand();
+			pos.z = (float)::rand();
+			rot.r = (float)::rand();
+			rot.p = (float)::rand();
+			rot.y = (float)::rand();
+			for (int i=0;i<5;i++) fingers[i] = (float) ::rand();
 		}
 		void	create_arm(void) {
 			const char* drmt =
@@ -600,7 +603,7 @@ namespace libtest
 					}
 				if (strcmp(key, "x") == 0) {
 					if (is_pos_) {
-						content_.pos.x = atof(s);
+						content_.pos.x = (float) atof(s);
 					}
 					else {
 						content_.error = true;
@@ -609,11 +612,11 @@ namespace libtest
 				}
 				if (strcmp(key, "y") == 0) {
 					if (is_pos_) {
-						content_.pos.y = atof(s);
+						content_.pos.y = (float)atof(s);
 					}
 					else
 						if (is_rot_) {
-							content_.rot.y = atof(s);
+							content_.rot.y = (float)atof(s);
 						}
 						else {
 							content_.error = true;
@@ -621,7 +624,7 @@ namespace libtest
 				}
 				if (strcmp(key, "z") == 0) {
 					if (is_pos_) {
-						content_.pos.z = atof(s);
+						content_.pos.z = (float)atof(s);
 					}
 					else {
 						content_.error = true;
@@ -629,7 +632,7 @@ namespace libtest
 				}
 				if (strcmp(key, "r") == 0) {
 					if (is_rot_) {
-						content_.rot.r = atof(s);
+						content_.rot.r = (float)atof(s);
 					}
 					else {
 						content_.error = true;
@@ -637,7 +640,7 @@ namespace libtest
 				}
 				if (strcmp(key, "p") == 0) {
 					if (is_rot_) {
-						content_.rot.p = atof(s);
+						content_.rot.p = (float)atof(s);
 					}
 					else {
 						content_.error = true;
@@ -651,7 +654,7 @@ namespace libtest
 					else {
 						is_finger_ = false;
 					}
-					content_.fingers[counter++] = atof(s);
+					content_.fingers[counter++] = (float)atof(s);
 				}
 			}
 			if(!is_finger_)
@@ -662,7 +665,7 @@ namespace libtest
 			{
 				const char* s = buf - (state->pos_cur - state->pos_begin) + 1;
 				char* d = key;
-				for (int i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d)	*d = *s;	*d = 0;
+				for (size_t i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d)	*d = *s;	*d = 0;
 			}
 			if (strcmp(key, "pos") == 0) {
 				is_pos_ = true;
@@ -684,7 +687,7 @@ namespace libtest
 					d = content_.cmd;
 				} 
 				if (d) {
-					for (int i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d) *d = *s;		*d = 0;
+					for (size_t i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d) *d = *s;		*d = 0;
 				}
 			}
 				break;
@@ -702,6 +705,225 @@ namespace libtest
 			
 		}
 
+	};
+
+
+	TEST_CLASS(mexo)
+	{
+		bool result = false;
+		TEST_METHOD(test_machine) {
+			union {
+				struct {
+					int begin;
+					int start;
+					int priority;
+					int frontend;
+					int backend;
+					int slots[::mexo::machine::slot_count];
+				};
+				int arr[::mexo::machine::slot_count + 5];
+			} flags;
+
+			static int samples[::mexo::machine::slot_count + 5] = {1, 1, 16, 16, 16
+				, 4  //0
+				, 2  //1
+				, 2  //2
+				, 2  //3
+				, 2  //4
+				, 1  //5
+				, 1  //6
+				, 1  //7
+				, 2  //8
+				, 1  //9
+				, 1  //10
+				, 1  //11
+				, 2  //12
+				, 1  //13
+				, 1  //14
+				, 1  //15
+			};
+			::mexo::machine::slot::lambda begin([&flags] {
+				flags.begin++;
+				});
+			::mexo::machine::slot::lambda begin2([this] {
+				this->result = true;
+				});
+			::mexo::machine::slot::lambda start([&flags] {
+				flags.start++;
+				});
+			::mexo::machine::slot::lambda priority([&flags] {
+				flags.priority++;
+				});
+			::mexo::machine::slot::lambda frontend([&flags] {
+				flags.frontend++;
+				});
+			::mexo::machine::slot::lambda backend([&flags] {
+				flags.backend++;
+				});
+			::mexo::machine::slot::lambda slots([&flags] {
+				flags.slots[ ::mexo::machine::slot_index() ]++;
+				});
+
+
+			begin.attach(::mexo::machine::slot::kind::begin);
+			begin2.attach(::mexo::machine::slot::kind::begin);
+			start.attach(::mexo::machine::slot::kind::start);
+			priority.attach(::mexo::machine::slot::kind::priority);
+			frontend.attach(::mexo::machine::slot::kind::frontend);
+			backend.attach(::mexo::machine::slot::kind::backend);
+			slots.attach(0);
+			int a[] = { 0,1,2,3 };
+			slots.attach(a);
+			slots.attach({0,4,8,12});
+			for (int i = 0; i < ::mexo::machine::slot_count; i++) {
+				slots.attach(i);
+			}
+
+			for (int i = 0; i < ::mexo::machine::slot_count + 5; ++i) {
+				flags.arr[i] = 0;
+			}
+			::mexo::machine::begin();
+			::mexo::machine::start();
+			for (int i = 0; i < 16; ++i) {
+				::mexo::machine::priority_loop();
+				::mexo::machine::backend_loop();
+				::mexo::machine::frontend_loop();
+			}
+			bool success = true;
+			const int* src = samples;
+			int* dst = flags.arr;
+			for (int i = 0; i < ::mexo::machine::slot_count + 5; ++i, ++src,++dst) {
+				if ( *src != *dst) {
+					success = false;
+					break;
+				}
+			}
+			Assert::IsTrue(success);
+		}
+		class power_dc_1 {
+		public:
+			float pwm;
+		protected:
+			void boot_begin(void) {}
+			bool do_boot(void) { return true; }
+			void boot_complete(float _startup) { ROBO_UNUSED(_startup);  }
+
+			void shutdown_begin(void) {  }
+			bool do_shutdown(void) { return true; }
+			void shutdown_complete(void) {  }
+
+			void do_run(float _voltage) { pwm =_voltage; }
+		};
+		/*class power_dc_2 {
+		protected:
+			void boot_begin(void) {}
+			bool do_boot(void) { return true; }
+			void boot_complete(void) { }
+
+			void shutdown_begin(void) {  }
+			bool do_begin(void) { return true; }
+			void shutdown_complete(void) {  }
+		};*/
+
+
+		class actuator: public ps::dev {
+		public:
+			struct action : public ps::dev::action {
+				signal_t voltage = (signal_t)0;
+				signal_t current = (signal_t)0;
+				signal_t speed = (signal_t)0;
+				long_signal_t position = (long_signal_t)0;
+				long_signal_t force = (long_signal_t)0;
+				struct {
+					signal_t voltage = (signal_t)0;
+					signal_t current = (signal_t)0;
+					signal_t speed = (signal_t)0;
+					struct {
+						long_signal_t lo = (long_signal_t)0;
+						long_signal_t hi = (long_signal_t)0;
+					} position;
+					struct {
+						long_signal_t lo = (long_signal_t)0;
+						long_signal_t hi = (long_signal_t)0;
+					} forsces;
+				} lim;
+			} action_inst;
+			struct snapshot : public ps::dev::snapshot {
+				signal_t voltage = (signal_t)0;
+				signal_t current = (signal_t)0;
+				signal_t speed = (signal_t)0;
+				long_signal_t position = (long_signal_t)0;
+				long_signal_t force = (long_signal_t)0;
+			} snapshot_inst;
+
+			enum {
+				voltage_id = 1
+				/*, current_id = 2
+				, speed_id = 3
+				, position_id =4*/
+			};
+
+			class mode : ::mexo::ps::dev::mode {
+			public:
+				actuator& owner() { return (actuator&) ::mexo::ps::dev::mode::owner(); };
+				mode(int _id, cstr _name, dev& _dev) : ::mexo::ps::dev::mode(_id, _name, _dev) {};
+			};
+			
+			class voltage_mode : mode {
+			protected:
+				::mexo::block::output_t<signal_t>  required;
+				virtual ::mexo::ps::power::command reset(void) {
+					owner().power.required.link_to(&required);
+					required = owner().action_inst.voltage;
+					return ::mexo::ps::power::command::on; 
+				};
+				virtual void applay_action(void) {
+					required = owner().action_inst.voltage;
+				}
+			public:
+				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev){};
+			} voltage_mode_;
+
+/*					: voltage(voltage_id, RT("voltage"), _owner)
+					, current(current_id, RT("current"), _owner)
+					, speed(speed_id, RT("speed"), _owner)
+					, position(position_id, RT("position"), _owner)
+					*/
+			actuator(cstr  _name, ::mexo::ps::power& _power) : dev(_name, _power, action_inst, snapshot_inst), voltage_mode_(*this){
+			}
+
+		};
+		TEST_METHOD(ps) {
+			typedef ::mexo::ps::dc< power_dc_1>  dc_1_t;
+
+			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"));
+
+			dc_1_t::config_s dc1_cfg = {
+				{0} //block
+				,0.5f
+			};
+
+			dc_1_t power_supply_1(hardware_subsystem, RT("power_supply-1"), dc1_cfg);
+
+			actuator  a_1(RT("actuator-1"), power_supply_1);
+
+
+			::mexo::machine::begin();
+			::mexo::machine::start();
+
+			a_1.action_inst.voltage = 1.f;
+			a_1.action_inst.mode = actuator::voltage_id;
+				//switch_to(actuator::voltage_id);
+
+			
+			for (int i = 0; i < 16; ++i) {
+				::mexo::machine::priority_loop();
+				::mexo::machine::backend_loop();
+				::mexo::machine::frontend_loop();
+			}
+
+			Assert::IsTrue(power_supply_1.pwm>0.99 && power_supply_1.pwm < 1.1);
+		}
 	};
 
 }

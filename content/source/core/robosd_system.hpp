@@ -88,13 +88,13 @@ namespace robo {
 
 		enum class context { backend, frontend };
 
-		class fall {
+		class ROBO_EXPORT fall {
 		public:
 			fall(void);
 			~fall(void);
 		};
 
-		class critical {
+		class ROBO_EXPORT critical {
 			void * context_;
 		public:
 			critical(void);

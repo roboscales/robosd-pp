@@ -72,7 +72,7 @@ namespace robo {
 				_path.format(RT("%s/%s"), name_, _path.c_str());
 			else
 				_path = name_;
-			if (owner_ && owner_ != & machine::root() ) return owner_->path(_path);
+			if (owner_ && owner_ != & machine::root() ) owner_->path(_path);
 		}
 
 		bool node::load(void) {
