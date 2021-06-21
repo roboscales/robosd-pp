@@ -340,6 +340,7 @@ namespace robo {
 				bool proto_res;
 				switch (_msg->tran.request) {
 				case ROBO_TRAN_REQUEST_GET:
+				case ROBO_TRAN_EXCANGE:
 					request_begin_us_ = system::env::time_us();
 					timeout_us_ = default_timeout_us_;
 					proto_res = post(_msg);

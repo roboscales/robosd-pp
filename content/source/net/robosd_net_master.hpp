@@ -117,26 +117,23 @@ namespace robo{
 					guard g__;
 					switch (state_){
 					case state::send:
-						wd_begin_ms_ = phys::time_ms();
-						state_ = state::receive;
-						wd_delay_ms_ = incom_size_*10;
-						phys::receive(incom_buf_, incom_size_);
-						break;
-					case state::receive:
 						if(incom_size_>0){
 							wd_begin_ms_ = phys::time_ms();
 							state_ = state::receive;
 							wd_delay_ms_ = incom_size_*10;
 							phys::receive(incom_buf_, incom_size_);
-						} else{
-							reset_();
-							state_ = state::idle;
+							break;
 						}
-						return;	
+					case state::receive:
+						reset_();
+						state_ = state::idle;
+						cf = true;
+						result = true;
+						break;
 					default:;
 						cf = true;
 						result = false;
-						panic_();
+						panic_();					
 					}
 				}
 				if(cf) if(confirm_) (*confirm_)(result);
