@@ -15,6 +15,7 @@ typedef enum{
 typedef enum{
 	ROBO_TRAN_REQUEST_GET = 1
 	, ROBO_TRAN_REQUEST_PUT = 2
+	, ROBO_TRAN_EXCANGE = 3
 } robo_tran_request_t;
 
 #ifndef ROBO_TRAN_COMMAND_ID

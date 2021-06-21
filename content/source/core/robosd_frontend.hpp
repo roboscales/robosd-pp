@@ -230,7 +230,7 @@ namespace robo {
 				delegat* static_delegat_ = nullptr;
 				delegat* dynamic_delegat_ = nullptr;
 				int repeat_count_=0;
-				int repeat_current_max_ = 30;
+				int repeat_current_max_ = 30000000;
 			public:
 				enum {invalid_value = -1};
 				uint16_t addr(void) { return  instance_.address; };
