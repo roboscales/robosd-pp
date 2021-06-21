@@ -123,11 +123,16 @@ namespace robo{
 						phys::receive(incom_buf_, incom_size_);
 						break;
 					case state::receive:
-						reset_();
-						state_ = state::idle;
-						cf = true;
-						result = true;
-						break;
+						if(incom_size_>0){
+							wd_begin_ms_ = phys::time_ms();
+							state_ = state::receive;
+							wd_delay_ms_ = incom_size_*10;
+							phys::receive(incom_buf_, incom_size_);
+						} else{
+							reset_();
+							state_ = state::idle;
+						}
+						return;	
 					default:;
 						cf = true;
 						result = false;
