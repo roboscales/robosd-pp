@@ -826,9 +826,9 @@ namespace libtest
 		};*/
 
 
-		class actuator: public ps::dev {
+		class actuator: public dev {
 		public:
-			struct action : public ps::dev::action {
+			struct action : public dev::action {
 				signal_t voltage = (signal_t)0;
 				signal_t current = (signal_t)0;
 				signal_t speed = (signal_t)0;
@@ -848,7 +848,7 @@ namespace libtest
 					} forsces;
 				} lim;
 			} action_inst;
-			struct snapshot : public ps::dev::snapshot {
+			struct snapshot : public dev::snapshot {
 				signal_t voltage = (signal_t)0;
 				signal_t current = (signal_t)0;
 				signal_t speed = (signal_t)0;
@@ -863,25 +863,33 @@ namespace libtest
 				, position_id =4*/
 			};
 
-			class mode : ::mexo::ps::dev::mode {
+			ps::voltage & psv;
+
+			class mode : ::mexo::dev::mode {
+
 			public:
-				actuator& owner() { return (actuator&) ::mexo::ps::dev::mode::owner(); };
-				mode(int _id, cstr _name, dev& _dev) : ::mexo::ps::dev::mode(_id, _name, _dev) {};
+				virtual void do_start(void) { owner().psv.on(); };
+				virtual void do_stop(void) { owner().psv.off();  };
+
+				actuator& owner() { return (actuator&) ::mexo::dev::mode::owner(); };
+				mode(int _id, cstr _name, dev& _dev) : ::mexo::dev::mode(_id, _name, _dev) {};
 			};
 			
 			class voltage_mode : mode {
+			private:
+				signal_t required__ =(signal_t)0;
+				::mexo::iblock::output_t<signal_t>  required_;
 			protected:
-				::mexo::block::output_t<signal_t>  required;
-				virtual ::mexo::ps::power::command reset(void) {
-					owner().power.required.link_to(&required);
-					required = owner().action_inst.voltage;
-					return ::mexo::ps::power::command::on; 
+				virtual void do_start(void) {
+					owner().psv.required.link_to(&required_);
+					required__ = owner().action_inst.voltage;
+					mode::do_start();
 				};
 				virtual void applay_action(void) {
-					required = owner().action_inst.voltage;
+					required__ = owner().action_inst.voltage;
 				}
 			public:
-				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev){};
+				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), required_(required__){};
 			} voltage_mode_;
 
 /*					: voltage(voltage_id, RT("voltage"), _owner)
@@ -889,18 +897,20 @@ namespace libtest
 					, speed(speed_id, RT("speed"), _owner)
 					, position(position_id, RT("position"), _owner)
 					*/
-			actuator(cstr  _name, ::mexo::ps::power& _power) : dev(_name, _power, action_inst, snapshot_inst), voltage_mode_(*this){
+			actuator(cstr  _name, ::mexo::ps::voltage& _psv)
+				: dev(_name,  action_inst, snapshot_inst),  psv(_psv), voltage_mode_(*this){
 			}
 
 		};
 		TEST_METHOD(ps) {
-			typedef ::mexo::ps::dc< power_dc_1>  dc_1_t;
 
-			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"));
-
+			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"),true);
+			typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
 			dc_1_t::config_s dc1_cfg = {
 				{0} //block
 				,0.5f
+				,{-12,12}
+				,0
 			};
 
 			dc_1_t power_supply_1(hardware_subsystem, RT("power_supply-1"), dc1_cfg);
@@ -910,10 +920,9 @@ namespace libtest
 
 			::mexo::machine::begin();
 			::mexo::machine::start();
-
+			//hardware_subsystem
 			a_1.action_inst.voltage = 1.f;
 			a_1.action_inst.mode = actuator::voltage_id;
-				//switch_to(actuator::voltage_id);
 
 			
 			for (int i = 0; i < 16; ++i) {

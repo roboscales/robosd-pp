@@ -30,6 +30,13 @@ namespace mexo {
 	typedef APP_MEXO_SIGNAL_T signal_t;
 	typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
 	typedef APP_MEXO_PARAMETR_T parametr_t;
+	
+	struct range_s {
+		signal_t lo;
+		signal_t hi;
+	};
+
+	
 	class machine {
 	public:
 		enum { slot_count = APP_MEXO_SLOT_COUNT };
@@ -119,6 +126,7 @@ namespace mexo {
 		typedef map::ref map_ref;
 		typedef robo::list::unsorted<node> list;
 		typedef list::ref ref;
+		enum class state { configure, ready, fault} ;
 	private:
 		ref ref_;
 		list childs_;
@@ -127,13 +135,17 @@ namespace mexo {
 		cstr name_;
 		node* owner_;
 
-		bool auto_enabled_ = false;
+		//bool auto_enabled_ = false;
+		state state_ = state::configure;
 		node(void);
 
 		static node& root_(void);
 		static map& map_(void);
 	protected:
 		list& childs(void) { return childs_; }
+//		virtual void do_enable(void) {};
+//		virtual void do_disable(void) {};
+		virtual bool do_reconfig(void) { return true; };
 	public:
 		node* owner() { return owner_;  };
 		cstr name(void) { return name_; };
@@ -141,25 +153,24 @@ namespace mexo {
 		static bool begin(void);
 			
 		bool reconfig(void);
-		virtual bool do_reconfig(void) { return true;  };
 
-		node(cstr _name, bool _auto_enabled, node* _owner = nullptr);
+		node(cstr _name, /*bool _auto_enabled,*/ node* _owner = nullptr);
 
 		static node* find(int _key) {
 			map_().find(_key);
 		}
-		virtual void do_enable(void) {};
-		virtual void do_disable(void) {};
-		void enable(bool _hand = false);
-		void disable(void);
+//		void enable(bool _hand = false);
+//		void disable(void);
+		bool enabled(void) { return state_ == state::ready; };
 	};
-	class block:  public node {
-		friend class subsystem;
+	class isubsystem;
+	class iblock : public node {
+		friend class isubsystem;
 	public:
 		struct config_s {
 			int ver;
 		};
-		typedef robo::list::unsorted<block> list;
+		typedef robo::list::unsorted<iblock> list;
 		typedef list::ref ref;
 	private:
 		ref ref_;
@@ -167,32 +178,25 @@ namespace mexo {
 		config_s& config;
 	public:
 		template <typename T> class output_t {
-			T value_;			
+			T & value_;
 		public:
 
-			const T& value(void) const { return value_;  }
-
-			output_t& operator = (const T& _value) {
-				value_ = _value;
-				return *this;
-			}
+			const T& value(void) const { return value_; }
 
 			bool operator == (const T& _value) {
 				return value_ == _value;
 			}
 
-			output_t(const T& _value) : value_(_value) {}
-			output_t(void) : value_((T)0) {}
+			output_t(T& _value) : value_(_value) {}
 		};
 
 		template <typename T> class input_t {
 			output_t<T> dummy_;
 			const output_t<T>* output_;
 		public:
-			const T& value(void) { return output_->value() ; }
+			const T& value(void) { return output_->value(); }
 
-			input_t(const T& _dummy) : dummy_(_dummy), output_(&dummy_) {}
-			input_t(void) :  dummy_((T)0), output_(&dummy_) {}
+			input_t(T& _dummy) : dummy_(_dummy), output_(&dummy_) {}
 			void link_to(const output_t<T>* _output) {
 				if (_output == nullptr) {
 					output_ = &dummy_;
@@ -203,59 +207,84 @@ namespace mexo {
 			}
 		};
 
+		enum class satstate { none,  both, low, up };
+
 	protected:
 
-		block(subsystem& _subsystem, cstr  _name, config_s& _config);
+		iblock(isubsystem& _subsystem, cstr  _name, config_s& _config);
 
 		virtual void execute(void) = 0;
 	};
 
-	class subsystem : public node, public machine::slot::delegat {
-		friend class block;
+
+	class isubsystem : public node{
+		friend class iblock;
+	public:
+		typedef robo::list::unsorted<isubsystem> list;
+		typedef robo::list::unsorted<isubsystem>::ref ref;
 	private:
-		block::list blocks_;
-		typedef machine::slot::delegat::ref ref;
+		iblock::list blocks_;
+		list childs_;
+		ref ref_;
+		bool autostart_;
 	protected:
-		subsystem(cstr  _name, bool _auto_enable, node* _owner = nullptr);
+		virtual void  do_start(void) = 0;
+		virtual void do_stop(void) = 0;
+		isubsystem(cstr  _name, bool _autostart, node* _owner = nullptr);
+		void execute(void);
+		void  start(void);
+		void stop(void);
+		virtual bool do_reconfig(void) {
+			ROBO_LBREAKN(node::do_reconfig());
+			if (autostart_) start();
+		}
+	public:
+	};
+
+	class subsystem : public isubsystem, public machine::slot::delegat {
+
+	protected:
+		subsystem(cstr  _name, bool _autostart, node* _owner = nullptr);
 	public:
 		virtual	void operator()(void);
-		virtual	void do_execute(void){};
 	};
+
 
 	class prioritet_subsystem : public subsystem {
 		machine::slot::delegat::ref ref_;
+	protected:
+		virtual void do_start(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority); };
+		virtual void do_stop(void) { robo::system::guard g__; ref_.dettach(); };
 	public:
-		virtual void do_enable(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority); };
-		virtual void do_disable(void) { robo::system::guard g__; ref_.dettach();  };
-		prioritet_subsystem(cstr  _name, node* _owner = nullptr) : subsystem(_name,true, _owner), ref_(*this){};
+		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart,_owner), ref_(*this) {};
 	};
 
 	class frontend_subsystem : public subsystem {
 		machine::slot::delegat::ref ref_;
 	public:
-		virtual void do_enable(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
-		virtual void do_disable(void) { robo::system::guard g__; ref_.dettach(); };
-		frontend_subsystem(cstr  _name, node* _owner = nullptr) : subsystem(_name, true, _owner), ref_(*this) {};
+		virtual void do_start(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
+		virtual void do_stop(void) { robo::system::guard g__; ref_.dettach(); };
+		frontend_subsystem(cstr  _name, bool _autostart,  node* _owner = nullptr) : subsystem(_name, _autostart,  _owner), ref_(*this) {};
 	};
 
 
 	class periodic_subsystem : public subsystem {
-		machine::slot::delegat::ref ** refs_ = nullptr;
+		machine::slot::delegat::ref** refs_ = nullptr;
 		size_t ref_count_ = 0;
 	public:
-		virtual void do_enable(void) {
+		virtual void do_start(void) {
 			machine::slot::delegat::ref** pref = refs_;
 			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
 				machine::slot::delegat::attach(**pref, n);
 			}
 		};
-		virtual void do_disable(void) {
-			machine::slot::delegat::ref ** pref = refs_;
+		virtual void do_stop(void) {
+			machine::slot::delegat::ref** pref = refs_;
 			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				(*pref)-> dettach();
+				(*pref)->dettach();
 			}
 		};
-		periodic_subsystem(cstr  _name, std::initializer_list<int> _index, node* _owner = nullptr) : subsystem(_name, true, _owner) {
+		periodic_subsystem(cstr  _name, bool _autostart,  std::initializer_list<int> _index, node* _owner = nullptr) : subsystem(_name, _autostart, _owner) {
 			ref_count_ = _index.end() - _index.begin() + 1;
 			refs_ = new machine::slot::delegat::ref * [ref_count_];
 			machine::slot::delegat::ref** pref = refs_;
@@ -266,12 +295,72 @@ namespace mexo {
 		virtual ~periodic_subsystem(void) {
 			machine::slot::delegat::ref** pref = refs_;
 			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				delete *pref;
+				delete* pref;
 			}
 			delete[] refs_;
 		}
 	};
+
+
+	class dev : public node {
+	public:
+		enum { idle_id = 0 };	 	
+		struct action {
+			bool actual;
+			int mode = idle_id;
+		};
+		struct snapshot {
+			int mode = idle_id;
+		};
+
+
+
+		class mode : public isubsystem {
+			friend class dev;
+		public:
+			typedef robo::list::unique<mode, int> map;
+			typedef map::ref ref;
+
+		private:
+			typedef robo::list::unsorted<subsystem> subsystems_;
+			ref ref_;
+		protected:
+			dev& owner() { return *((dev*)node::owner()); };
+			virtual void applay_action(void) { };
+			virtual void do_start(void) { };
+			virtual void do_stop(void) { };
+		public:
+			mode(int _index, cstr  _name, dev& _dev);
+		};
+
+		class idle_mode : public mode {
+		protected:
+			virtual void do_start(void) { };
+			virtual void do_stop(void) { };
+			virtual	void do_execute(void) { };
+
+		public:
+			virtual	void operator()(void) {};
+			idle_mode(dev& _dev) : dev::mode(idle_id, RT("idle"), _dev) {};
+		};
+
+		idle_mode idle;
+		dev(cstr  _name, action& _action, snapshot& _snapshot);
+		void switch_to(int _mode);
+	private:
+		friend class mode;
+		mode::map modes_;
+		mode* actual_mode_;
+		int actual_mode_id_;
+		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
+		::mexo::machine::slot::delegat::ref  backend_ref_;
+		action &  action_;
+		snapshot & snapshot_;
+		void backend__(void);
+	};
+
 	
+
 	/*
 	class tandem_subsystem : public node {
 	public:
@@ -300,17 +389,19 @@ namespace mexo {
 	};
 	*/
 
-	template < typename S > class block_t : public  block {		
+	template < typename S > class block_t : public  iblock {		
 	protected: 
 	public:
-		block_t(subsystem & _subsystem, cstr  _name, S & _config) : block (_subsystem, _name, reinterpret_cast<config_s& >( _config)) {};
+		block_t(subsystem & _subsystem, cstr  _name, S & _config) : iblock (_subsystem, _name, reinterpret_cast<config_s& >( _config)) {};
 		//S - это старая добрая сишная структура
 		virtual bool do_reconfig(void) {
-			return applay(reinterpret_cast<S&> (block::config) );
+			return applay(reinterpret_cast<S&> (iblock::config) );
 		}
 
 		virtual bool applay( const  S& _config ) = 0;
 	};
 
+
+	
 }
 #endif

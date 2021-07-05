@@ -128,7 +128,7 @@ namespace mexo {
 	}
 
 
-	node::node(void) : ref_(*this), map_ref_(*this, 0), name_(RT("root")), owner_(nullptr), auto_enabled_(true) {
+	node::node(void) : ref_(*this), map_ref_(*this, 0), name_(RT("root")), owner_(nullptr)/*, auto_enabled_(true)*/ {
 		ROBO_APP_ASSERT(system::env::is_frontend());
 	}
 
@@ -143,17 +143,22 @@ namespace mexo {
 	}
 
 	bool node::reconfig(void) {
+		state_ = state::fault;
 		for (ref* r = childs_.first(); r; r = r->next()) {
 			ROBO_LBREAKN(r->owner().reconfig())
 		}
-		ROBO_LRET(do_reconfig());
+		ROBO_LBREAKN(do_reconfig());
+		state_ = state::ready;
+		return true;
 	}
-	void node::enable(bool _hand) {
+	
+	/*void node::enable(bool _hand) {
 		if (auto_enabled_ || _hand) {
 			for (ref* r = childs_.first(); r; r = r->next()) {
 				r->owner().enable();
 			}
 			do_enable();
+			enabled_ = true;
 		}
 	}
 	void node::disable(void) {
@@ -161,12 +166,14 @@ namespace mexo {
 			r->owner().disable();
 		}
 		do_disable();
-	}
+		enabled_ = false;
+	}*/
 
-	node::node(cstr _name, bool _auto_enabled, node* _owner) : ref_(*this), map_ref_(*this, 0)
+	node::node(cstr _name, /*bool _auto_enabled,*/ node* _owner) : ref_(*this), map_ref_(*this, 0)
 		, name_(_name)
 		, owner_(_owner == nullptr ? &root_() : _owner)
-		, auto_enabled_(_auto_enabled) {
+	//	, auto_enabled_(_auto_enabled) 
+	{
 		int key;
 		if (_owner) {
 			key = owner_->map_ref_.key();
@@ -182,25 +189,120 @@ namespace mexo {
 	}
 
 	bool node::begin(void) {
-		root_().enable();
+		//root_().enable();
 		return  root_().reconfig();
 	}
 
-	block::block(subsystem& _subsystem, cstr  _name, config_s& _config) 
-		: node(_name, true, &_subsystem)
+	isubsystem::isubsystem(cstr  _name, bool _autostart, node* _owner) : node(_name, _owner), ref_(*this), autostart_(_autostart)  {
+		isubsystem* m = dynamic_cast<isubsystem*>(_owner);
+		if (m != nullptr) {
+			ref_.attach_to(m->childs_);			
+		}
+	}
+
+	void isubsystem::execute(void) {
+		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
+			r->owner().execute();
+		}
+		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().execute();
+		}
+	}
+
+	void isubsystem::start(void) {
+		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().start();
+		}
+		do_start();
+	}
+
+	void isubsystem::stop(void) {
+		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().stop();
+		}
+		do_stop();
+	}
+
+	iblock::iblock(isubsystem& _subsystem, cstr  _name, config_s& _config)
+		: node(_name, &_subsystem)
 		, ref_(*this)
 		, config(_config) {
 			ref_.attach_to(_subsystem.blocks_);
 	};
 
-	subsystem::subsystem(cstr  _name, bool _auto_enable, node* _owner) : node(_name, _auto_enable, _owner) {
+	subsystem::subsystem(cstr  _name, bool _autostart, node* _owner) : isubsystem(_name, _autostart, _owner) {
+	};
+	
+	void subsystem::operator()(void) {
+		isubsystem::execute();
+	}
+
+
+
+	dev::mode::mode(int _index, cstr  _name, dev& _dev)
+		: isubsystem(_name, false, &_dev)
+		, ref_(*this, _index) {
+		ref_.attach_to(_dev.modes_);
 	};
 
-	void subsystem::operator()(void) {
-		for (block::ref* r = blocks_.first(); r; r = r->next()) {
-			r->owner().execute();
+	/*dev::control::command dev::mode::start_(void) {
+		start();
+		return do_reset();
+	}*/
+
+	dev::dev(cstr  _name, action& _action, snapshot& _snapshot)
+		: node(_name, nullptr)
+		, idle(*this)
+		, actual_mode_(&idle)
+		, actual_mode_id_(idle_id)
+		, backend_(this, &dev::backend__)
+		, backend_ref_(backend_)
+		, action_(_action)
+		, snapshot_(_snapshot)
+	{
+		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend);
+	}
+
+	void dev::switch_to(int _mode_id) {
+		ROBO_APP_ASSERT(system::env::is_backend());
+		if (_mode_id != actual_mode_id_) {
+			if (actual_mode_id_ != idle_id) {
+				actual_mode_->stop();
+			}
+
+			if (_mode_id == idle_id) {
+				actual_mode_ = &idle;
+				actual_mode_id_ = idle_id;
+			}
+			else {
+				mode* m = modes_.find(_mode_id);
+				if (m == nullptr || ! m->enabled() ) {
+					actual_mode_ = &idle;
+					actual_mode_id_ = idle_id;
+				}
+				else {
+					m->start();
+					m->applay_action();
+					actual_mode_ = m;
+					actual_mode_id_ = _mode_id;
+				}
+			}
 		}
-		do_execute();
+	}
+	void dev::backend__(void) {
+		ROBO_APP_ASSERT(system::env::is_backend());
+
+		robo::system::guard g__;
+
+		if (action_.mode != actual_mode_id_) {
+			switch_to(action_.mode);
+		}
+
+		if (action_.actual) {
+			action_.actual = false;
+			actual_mode_->applay_action();
+		}
+
 	}
 
 }
