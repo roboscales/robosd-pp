@@ -800,20 +800,80 @@ namespace libtest
 			}
 			Assert::IsTrue(success);
 		}
-		class power_dc_1 {
-		public:
-			float pwm;
-		protected:
-			void boot_begin(void) {}
-			bool do_boot(void) { return true; }
-			void boot_complete(float _startup) { ROBO_UNUSED(_startup);  }
 
-			void shutdown_begin(void) {  }
-			bool do_shutdown(void) { return true; }
-			void shutdown_complete(void) {  }
-
-			void do_run(float _voltage) { pwm =_voltage; }
+		struct float_to_int16 {
+			struct config_s {
+				int16_t lo;
+				int16_t up;
+				float scale;
+			} config;
+			iblock::satstate dirrect(float _required, int16_t& _duty) {
+				float tmp = _required * config.scale;
+				if (tmp > 0.) tmp += 0.5f;
+				else
+					if (tmp < 0.) tmp -= 0.5f;
+				
+				_duty = (int16_t)tmp;
+				
+				if (_duty >= config.up) {
+					_duty = config.up;
+					return iblock::satstate::up;
+				}
+				else if (tmp <= config.lo) {
+					_duty = config.lo;
+					return iblock::satstate::low;
+				}
+				else {
+					return iblock::satstate::none;
+				}
+			}
+			void revert(int16_t _duty, float& _actual) {
+				_actual = _duty / config.scale;
+			}
 		};
+
+		class fake_dc_periphery  {
+		public:
+			typedef signal_t required_t;
+			typedef int16_t duty_t;
+		private:
+			float_to_int16 	float_to_int16_;
+		public:
+			int16_t duty;
+			struct config_s {
+				::mexo::iblock::config_s block;
+				float_to_int16::config_s converter;
+			};
+		protected:
+			static void boot_begin(void) {}
+			static bool do_boot(void) { return true; }
+			void boot_complete(duty_t _duty) { duty  = _duty;  }
+
+			static void shutdown_begin(void) {  }
+			static bool do_shutdown(void) { return true; }
+			static void shutdown_complete(void) {  }
+
+			void do_run(duty_t _duty) { duty = _duty;  }
+
+			iblock::satstate dirrect(required_t _required, duty_t & _duty) {
+				return float_to_int16_.dirrect(_required, _duty);
+			}
+			void revert(duty_t _duty, required_t & _actual) {
+				float_to_int16_.revert(_duty, _actual);
+			}
+			bool applay(const config_s& _config) {
+				if (_config.converter.lo < _config.converter.up && _config.converter.scale > 1.f / 32767) {
+					float_to_int16_.config = _config.converter;
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+		};
+
+		typedef ::mexo::ps::pwm<fake_dc_periphery> fake_dc;
+
 		/*class power_dc_2 {
 		protected:
 			void boot_begin(void) {}
@@ -825,7 +885,7 @@ namespace libtest
 			void shutdown_complete(void) {  }
 		};*/
 
-
+/*
 		class actuator: public dev {
 		public:
 			struct action : public dev::action {
@@ -858,9 +918,9 @@ namespace libtest
 
 			enum {
 				voltage_id = 1
-				/*, current_id = 2
+				, current_id = 2
 				, speed_id = 3
-				, position_id =4*/
+				, position_id =4
 			};
 
 			ps::voltage & psv;
@@ -892,20 +952,30 @@ namespace libtest
 				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), required_(required__){};
 			} voltage_mode_;
 
-/*					: voltage(voltage_id, RT("voltage"), _owner)
-					, current(current_id, RT("current"), _owner)
-					, speed(speed_id, RT("speed"), _owner)
-					, position(position_id, RT("position"), _owner)
-					*/
+//					: voltage(voltage_id, RT("voltage"), _owner)
+//					, current(current_id, RT("current"), _owner)
+//					, speed(speed_id, RT("speed"), _owner)
+//					, position(position_id, RT("position"), _owner)
+//					
 			actuator(cstr  _name, ::mexo::ps::voltage& _psv)
 				: dev(_name,  action_inst, snapshot_inst),  psv(_psv), voltage_mode_(*this){
 			}
 
 		};
+		*/
 		TEST_METHOD(ps) {
+			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
+			fake_dc::config_s config = {
+				{0} //block
+				,{ //converter
+					-4095
+					, 4095
+					, 4095./12.
+				}
+			};
+			fake_dc dc(hardware_subsystem, RT("dc"), config, 0);
 
-			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"),true);
-			typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
+			/*typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
 			dc_1_t::config_s dc1_cfg = {
 				{0} //block
 				,0.5f
@@ -917,13 +987,14 @@ namespace libtest
 
 			actuator  a_1(RT("actuator-1"), power_supply_1);
 
-
+			*/
 			::mexo::machine::begin();
 			::mexo::machine::start();
 			//hardware_subsystem
-			a_1.action_inst.voltage = 1.f;
-			a_1.action_inst.mode = actuator::voltage_id;
-
+			//a_1.action_inst.voltage = 1.f;
+			//a_1.action_inst.mode = actuator::voltage_id;
+			dc.standalone_value = 12.f;
+			dc.on();
 			
 			for (int i = 0; i < 16; ++i) {
 				::mexo::machine::priority_loop();
@@ -931,7 +1002,7 @@ namespace libtest
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(power_supply_1.pwm>0.99 && power_supply_1.pwm < 1.1);
+			Assert::IsTrue(dc.duty>4000 && dc.duty < 4096);
 		}
 	};
 

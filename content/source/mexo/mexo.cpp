@@ -287,6 +287,9 @@ namespace mexo {
 					actual_mode_id_ = _mode_id;
 				}
 			}
+			if (actual_mode_ == &idle) {
+				on_idle();
+			}
 		}
 	}
 	void dev::backend__(void) {

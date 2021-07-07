@@ -26,27 +26,107 @@ namespace mexo {
 			virtual ~control(void) {}
 		};
 
-		class  voltage: public control {
+		template < typename C > class pwm 
+			: public ps::control
+			, public C
+			, public  controller_t < typename C::config_s, typename C::required_t >
+		{
+		public:
+			typedef typename C::required_t R;
+			typedef typename C::duty_t A;
+			typedef typename C::config_s  config_s;
+			//???
+			//typedef typename block_t < typename C::config_s >::config_s config_s;
+		private:
+			A duty_;
+		public:
+			void actual(R& _actual) {
+				C::revert(duty_, _actual);
+			}
+
+		public:
+			pwm(isubsystem& _subsystem, cstr  _name, config_s & _config, const R& _default )
+				: block_t < config_s >(_subsystem,_name, _config)
+			{
+				C::dirrect(def_req, duty_);
+			}
+			
+			virtual bool applay(const config_s & _config) {
+				if (C::applay(_config)) {
+					enable();
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+
+			virtual void execute(void) {
+				switch (status_) {
+				case status::off:
+					if (command_ == command::on) {
+						C::boot_begin();
+						status_ = status::boot;
+					}
+					else {
+						break;
+					}
+
+				case status::boot:
+					if (C::do_boot()) {
+						satstate_ = C::dirrect(required.value(), duty_);
+						C::boot_complete(duty_);
+						status_ = status::on;
+					}
+					else {
+						break;
+					}
+				case status::on:
+					if (command_ == command::on) {
+						satstate_ = C::dirrect(required.value(), duty_);
+						C::do_run(duty_);
+						break;
+					}
+					else {
+						status_ = status::shutdown;
+						C::shutdown_begin();
+					}
+				case status::shutdown:
+					if (C::do_shutdown()) {
+						C::shutdown_complete();
+						status_ = status::off;
+					}
+					else {
+						break;
+					}
+				case status::configure:
+					satstate_ = iblock::satstate::both;
+					break;
+				}
+
+			}
+		};
+
+		class  ramp {
 		protected:
 			signal_t desired = (signal_t)0;
 			parametr_t rampGain = (signal_t)0;
 			mexo::range_s def_range;
 			signal_t def_req = (signal_t)0;
 			iblock::satstate satstate_val;
-		private:
 		public:
 			struct config_s {
-				iblock::config_s  block;
+				iblock::config_s block;
 				parametr_t rampGain;
 				mexo::range_s range;
-				signal_t def;
 			};
 
 			iblock::input_t<signal_t> required;
 			iblock::input_t<mexo::range_s> range;
+			iblock::input_t<iblock::satstate> master_satstate;
 			iblock::output_t<iblock::satstate> satstate;
 		protected:
-			void ramp(void) {
+			void run(void) {
 				signal_t r = required.value();
 				if (r >= range.value().hi) {
 					r = range.value().hi;
@@ -80,7 +160,7 @@ namespace mexo {
 				}
 			}
 
-			voltage(void)
+			ramp(void)
 				: required(def_req)
 				, range(def_range)
 				, satstate(satstate_val) {
@@ -89,67 +169,15 @@ namespace mexo {
 		};
 
 
-
-		template < typename C,  typename D, typename R > class machine : public D, public C {
-		private:
-			const R& required_;
-		protected:
-			machine(const R& _required) :required_(_required) {}
-			void execute(void) {
-				switch (C::status_) {
-				case status::off:
-					if (C::command_ == command::on) {
-						D::boot_begin();
-						C::status_ = status::boot;
-					}
-					else {
-						break;
-					}
-
-				case status::boot:
-					if (D::do_boot()) {
-						D::boot_complete(required_);
-						C::status_ = status::on;
-					}
-					else {
-						break;
-					}
-				case status::on:
-					if (C::command_ == command::on) {
-						D::do_run(required_);
-						break;
-					}
-					else {
-						C::status_ = status::shutdown;
-						D::shutdown_begin();
-					}
-				case status::shutdown:
-					if (D::do_shutdown()) {
-						D::shutdown_complete();
-						C::status_ = status::off;
-					}
-					else {
-						break;
-					}
-				case status::configure:
-					break;
-				}
-			}
-		};
-
-
-	
-
-		template < typename D > class vdc
-			: public  block_t < mexo::ps::voltage::config_s >, public machine<mexo::ps::voltage, D,  signal_t>{
+		class voltage
+			: public ramp, public  block_t < ramp::config_s >{
 		public:
+
 			typedef  mexo::ps::voltage::config_s config_s;
-			typedef  machine<mexo::ps::voltage, D, signal_t> machine;
-			typedef  block_t < config_s> block;
+			typedef  block_t < ramp::config_s > block;
 		public:
-			vdc(subsystem& _subsystem, cstr  _name, config_s& _config)
+			voltage(subsystem& _subsystem, cstr  _name, config_s& _config)
 				: block(_subsystem, _name, _config)
-				, machine(voltage::desired)
 			{
 
 			}
@@ -158,7 +186,6 @@ namespace mexo {
 				voltage::rampGain = _config.rampGain;
 				voltage::def_range = _config.range;
 				voltage::desired = _config.def;
-				machine::enable();
 				return true;
 			}
 
@@ -172,11 +199,7 @@ namespace mexo {
 				machine::execute();
 			}
 		};
-
-
-
-
-
+		*/
 	}
 }
 #endif

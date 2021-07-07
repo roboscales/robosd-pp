@@ -25,6 +25,7 @@
 #define APP_MEXO_LONG_SIGNAL_T double
 #endif
 
+
 using namespace robo;
 namespace mexo {
 	typedef APP_MEXO_SIGNAL_T signal_t;
@@ -36,7 +37,6 @@ namespace mexo {
 		signal_t hi;
 	};
 
-	
 	class machine {
 	public:
 		enum { slot_count = APP_MEXO_SLOT_COUNT };
@@ -303,6 +303,9 @@ namespace mexo {
 
 
 	class dev : public node {
+		friend class mode;
+	protected:
+		virtual void on_idle(void) { };
 	public:
 		enum { idle_id = 0 };	 	
 		struct action {
@@ -389,18 +392,36 @@ namespace mexo {
 	};
 	*/
 
-	template < typename S > class block_t : public  iblock {		
+
+	template < typename S > class block_t : public  iblock {
 	protected: 
 	public:
-		block_t(subsystem & _subsystem, cstr  _name, S & _config) : iblock (_subsystem, _name, reinterpret_cast<config_s& >( _config)) {};
 		//S - это старая добрая сишная структура
+		block_t(isubsystem & _subsystem, cstr  _name, S& _config) : iblock (_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
 		virtual bool do_reconfig(void) {
 			return applay(reinterpret_cast<S&> (iblock::config) );
 		}
 
-		virtual bool applay( const  S& _config ) = 0;
+		virtual bool applay( const  typename S& _config ) = 0;
 	};
+	
+	template < typename S, typename I > class controller_t : public  block_t<S> {
+	protected:
+		iblock::satstate satstate_value;
+	public:
+		I standalone_value;
 
+		iblock::input_t<I> required;
+		iblock::output_t<iblock::satstate> satstate;
+
+		controller_t(isubsystem& _subsystem, cstr  _name, S& _config, const I& _standalone)
+			: block_t<S> (_subsystem, _name, _config)
+			, standalone_value(_standalone)
+			, required(standalone_value)
+			, satstate(satstate_value)
+		{
+		};
+	};
 
 	
 }
