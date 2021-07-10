@@ -31,11 +31,6 @@ namespace mexo {
 	typedef APP_MEXO_SIGNAL_T signal_t;
 	typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
 	typedef APP_MEXO_PARAMETR_T parametr_t;
-	
-	struct range_s {
-		signal_t lo;
-		signal_t hi;
-	};
 
 	class machine {
 	public:
@@ -157,7 +152,7 @@ namespace mexo {
 		node(cstr _name, /*bool _auto_enabled,*/ node* _owner = nullptr);
 
 		static node* find(int _key) {
-			map_().find(_key);
+			return map_().find(_key);
 		}
 //		void enable(bool _hand = false);
 //		void disable(void);
@@ -237,6 +232,7 @@ namespace mexo {
 		virtual bool do_reconfig(void) {
 			ROBO_LBREAKN(node::do_reconfig());
 			if (autostart_) start();
+			return true;
 		}
 	public:
 	};
@@ -397,30 +393,62 @@ namespace mexo {
 	protected: 
 	public:
 		//S - это старая добрая сишная структура
-		block_t(isubsystem & _subsystem, cstr  _name, S& _config) : iblock (_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
+		typedef typename S config_s;
+		block_t(isubsystem & _subsystem, cstr  _name, config_s& _config) : iblock (_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
 		virtual bool do_reconfig(void) {
-			return applay(reinterpret_cast<S&> (iblock::config) );
+			return applay(reinterpret_cast<config_s&> (iblock::config) );
 		}
 
-		virtual bool applay( const  typename S& _config ) = 0;
+		virtual bool applay( const  config_s & _config ) = 0;
 	};
 	
-	template < typename S, typename I > class controller_t : public  block_t<S> {
-	protected:
-		iblock::satstate satstate_value;
-	public:
-		I standalone_value;
 
-		iblock::input_t<I> required;
+	template < typename A> class controller_block_t : public  block_t<typename A::config_s>, public A {
+	protected:
+		iblock::satstate standalone_master_satstate_ = iblock::satstate::none;
+		iblock::satstate satstate_ = iblock::satstate::none;
+	public:
+		typedef  typename A::deseired_t deseired_t;
+		typedef  typename A::actual_t actual_t;
+		typedef  typename A::config_s config_s;
+
+		deseired_t standalone_deseired;
+		iblock::input_t<deseired_t> deseired;
+		iblock::input_t<iblock::satstate> master_satstate;
+		iblock::output_t<actual_t> actual;
 		iblock::output_t<iblock::satstate> satstate;
 
-		controller_t(isubsystem& _subsystem, cstr  _name, S& _config, const I& _standalone)
-			: block_t<S> (_subsystem, _name, _config)
-			, standalone_value(_standalone)
-			, required(standalone_value)
-			, satstate(satstate_value)
+		controller_block_t( isubsystem& _subsystem, cstr  _name, config_s & _config, const deseired_t & _standalone_deseired)
+			: block_t<A::config_s>(_subsystem, _name, _config)
+			, A(_standalone_deseired)
+			, standalone_deseired(_standalone_deseired)
+			, deseired(standalone_deseired)
+			, master_satstate(standalone_master_satstate_)
+			, actual(A::actual() )
+			, satstate(satstate_)
 		{
-		};
+		}
+
+		virtual bool applay(const config_s & _config) {				
+			return A::applay(_config);
+		}
+
+		virtual void execute(void) {
+			iblock::satstate local = A::execute( deseired.value() );
+			iblock::satstate master = master_satstate.value();
+			if (master == iblock::satstate::none) {
+				satstate_ = local;
+			}
+			else {
+				satstate_ =  master;
+			}
+		}
+
+		template < typename M> void link_to(M & _controller) {
+			deseired.link_to( &_controller.actual );
+			master_satstate.link_to(&_controller.satstate);
+		}
+
 	};
 
 	

@@ -1,7 +1,7 @@
 #ifndef robosd_backend_hpp
 #define robosd_backend_hpp
-
 #include "core/robosd_frontend.hpp"
+#if		ROBO_MODULE_ENABLED == 1
 #include "core/robosd_string.hpp"
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_app.hpp"
@@ -303,7 +303,7 @@ namespace robo {
 		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent {
 		public:
 			struct {
-				typename D::irequired required;
+				typename D::ideseired deseired;
 				typename D::istatus status;
 				typename D::iaction action;
 				typename D::ifeedback feedback;
@@ -317,9 +317,9 @@ namespace robo {
 				}
 
 				if (((tstate)(actual.status.state)) == tstate::stopped) {
-					actual.required = ::robo::frontend::devagent<D>::front.required;
+					actual.deseired = ::robo::frontend::devagent<D>::front.deseired;
 				} else {
-					::robo::frontend::devagent<D>::front.required = actual.required;
+					::robo::frontend::devagent<D>::front.deseired = actual.deseired;
 				}
 			}
 
@@ -693,7 +693,6 @@ namespace robo {
 		};
 
 
-
 		
 		namespace process {
 			class base;
@@ -867,4 +866,5 @@ namespace robo {
 		}
 	}
 }
+#endif
 #endif

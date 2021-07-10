@@ -20,6 +20,11 @@
 #define ROBO_UNICODE_ENABLED 0
 #endif
 
+
+#ifndef ROBO_MODULE_ENABLED
+#define ROBO_MODULE_ENABLED 1
+#endif
+
 #if ROBO_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t
 #define ROBO_CONST_STRING wchar_t const *

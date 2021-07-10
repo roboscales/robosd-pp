@@ -1,4 +1,5 @@
 #include "core/robosd_frontend.hpp"
+#if		ROBO_MODULE_ENABLED == 1
 #include "core/robosd_backend.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_system.hpp"
@@ -350,5 +351,5 @@ namespace robo {
 		
 	}
 }
-
+#endif
 

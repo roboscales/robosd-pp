@@ -19,6 +19,7 @@ using namespace mexo;
 
 #define MODULE_NAME_STR RT("lib.test")
 namespace test {
+#if ROBO_MODULE_ENABLED  == 1
 	class module : public robo::app::module {
 	protected:
 		virtual void frontend_loop(void) {};
@@ -30,6 +31,7 @@ namespace test {
 			return instance_;
 		}
 	};
+#endif
 };
 
 #define MODULE_NAME test
@@ -515,7 +517,7 @@ namespace libtest
 					<< "RT_1= 1 2  0xff  3 4 5\n"
 					;
 			}
-
+#if ROBO_MODULE_ENABLED  == 1
 			class ddddd : public robo::frontend::idevagent {
 			public:
 				enum class icommand { external, service, stopped, fault, reset, none };
@@ -524,7 +526,7 @@ namespace libtest
 				};
 				struct ifeedback {
 				};
-				struct irequired : public robo::frontend::idevagent::irequired {
+				struct ideseired : public robo::frontend::idevagent::ideseired {
 				};
 				struct istatus : public robo::frontend::idevagent::istatus {
 				};
@@ -573,6 +575,7 @@ namespace libtest
 			}
 
 			robo::app::machine::finish();
+		#endif
 		}
 #endif
 #endif
@@ -807,8 +810,8 @@ namespace libtest
 				int16_t up;
 				float scale;
 			} config;
-			iblock::satstate dirrect(float _required, int16_t& _duty) {
-				float tmp = _required * config.scale;
+			iblock::satstate dirrect(float _deseired, int16_t& _duty) {
+				float tmp = _deseired * config.scale;
 				if (tmp > 0.) tmp += 0.5f;
 				else
 					if (tmp < 0.) tmp -= 0.5f;
@@ -834,8 +837,8 @@ namespace libtest
 
 		class fake_dc_periphery  {
 		public:
-			typedef signal_t required_t;
-			typedef int16_t duty_t;
+			typedef signal_t deseired_t;
+			typedef int16_t actual_t;
 		private:
 			float_to_int16 	float_to_int16_;
 		public:
@@ -847,18 +850,18 @@ namespace libtest
 		protected:
 			static void boot_begin(void) {}
 			static bool do_boot(void) { return true; }
-			void boot_complete(duty_t _duty) { duty  = _duty;  }
+			void boot_complete(actual_t _duty) { duty  = _duty;  }
 
 			static void shutdown_begin(void) {  }
 			static bool do_shutdown(void) { return true; }
 			static void shutdown_complete(void) {  }
 
-			void do_run(duty_t _duty) { duty = _duty;  }
+			void do_run(actual_t _duty) { duty = _duty;  }
 
-			iblock::satstate dirrect(required_t _required, duty_t & _duty) {
-				return float_to_int16_.dirrect(_required, _duty);
+			iblock::satstate dirrect(deseired_t _deseired, actual_t& _duty) {
+				return float_to_int16_.dirrect(_deseired, _duty);
 			}
-			void revert(duty_t _duty, required_t & _actual) {
+			void revert(actual_t _duty, deseired_t & _actual) {
 				float_to_int16_.revert(_duty, _actual);
 			}
 			bool applay(const config_s& _config) {
@@ -872,7 +875,8 @@ namespace libtest
 			}
 		};
 
-		typedef ::mexo::ps::pwm<fake_dc_periphery> fake_dc;
+		typedef controller_block_t< ::mexo::ps::pwm<fake_dc_periphery>  > fake_dc;
+		typedef controller_block_t< ramp< signal_t > > voltage;
 
 		/*class power_dc_2 {
 		protected:
@@ -937,19 +941,19 @@ namespace libtest
 			
 			class voltage_mode : mode {
 			private:
-				signal_t required__ =(signal_t)0;
-				::mexo::iblock::output_t<signal_t>  required_;
+				signal_t deseired__ =(signal_t)0;
+				::mexo::iblock::output_t<signal_t>  deseired_;
 			protected:
 				virtual void do_start(void) {
-					owner().psv.required.link_to(&required_);
-					required__ = owner().action_inst.voltage;
+					owner().psv.deseired.link_to(&deseired_);
+					deseired__ = owner().action_inst.voltage;
 					mode::do_start();
 				};
 				virtual void applay_action(void) {
-					required__ = owner().action_inst.voltage;
+					deseired__ = owner().action_inst.voltage;
 				}
 			public:
-				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), required_(required__){};
+				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), deseired_(deseired__){};
 			} voltage_mode_;
 
 //					: voltage(voltage_id, RT("voltage"), _owner)
@@ -965,7 +969,7 @@ namespace libtest
 		*/
 		TEST_METHOD(ps) {
 			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
-			fake_dc::config_s config = {
+			fake_dc::config_s dc_config = {
 				{0} //block
 				,{ //converter
 					-4095
@@ -973,8 +977,18 @@ namespace libtest
 					, 4095./12.
 				}
 			};
-			fake_dc dc(hardware_subsystem, RT("dc"), config, 0);
-
+			voltage::config_s dcv_config = {
+				{0} //block
+				, 0.8f
+				,{ //
+					-12.f
+					, 12.f
+				}
+				, 0.f
+			};
+			fake_dc dc(hardware_subsystem, RT("dc"), dc_config, 0);
+			voltage dcv(hardware_subsystem, RT("dcv"), dcv_config, 0);
+			dc.link_to(dcv);
 			/*typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
 			dc_1_t::config_s dc1_cfg = {
 				{0} //block
@@ -993,7 +1007,7 @@ namespace libtest
 			//hardware_subsystem
 			//a_1.action_inst.voltage = 1.f;
 			//a_1.action_inst.mode = actuator::voltage_id;
-			dc.standalone_value = 12.f;
+			dcv.standalone_deseired = 12.f;
 			dc.on();
 			
 			for (int i = 0; i < 16; ++i) {
@@ -1002,7 +1016,8 @@ namespace libtest
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(dc.duty>4000 && dc.duty < 4096);
+			Assert::IsTrue(dc.actual.value() >4000 && dc.actual.value() < 4096);
+			Assert::IsTrue(dcv.actual.value() > 11.f && dcv.actual.value() < 12.1f);
 		}
 	};
 

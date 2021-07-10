@@ -2,6 +2,9 @@
 #define robosd_frontend_hpp
 
 #include "core/robosd_common.hpp"
+
+#if ROBO_MODULE_ENABLED  == 1
+
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_log.hpp"
@@ -183,7 +186,7 @@ namespace robo {
 			struct ifeedback {
 			};
 			*/
-			struct irequired {
+			struct ideseired {
 				icommand command = icommand::none;
 			};
 			struct istatus {
@@ -194,7 +197,7 @@ namespace robo {
 		template<class D> class devagent : public D {
 		public:
 			struct {
-				typename D::irequired required;
+				typename D::ideseired deseired;
 				typename D::istatus status;
 				typename D::iaction action;
 				typename D::ifeedback feedback;
@@ -206,7 +209,8 @@ namespace robo {
 			const cstr u16 = RT("u16");
 			const cstr u32 = RT("u32");
 		} type_names;
-		
+
+
 		class contrltable:public app::node {
 		public:
 
@@ -341,7 +345,7 @@ namespace robo {
 			ivar* find_var(cstr _name);
 		};
 
-
 	}
 }
+#endif
 #endif

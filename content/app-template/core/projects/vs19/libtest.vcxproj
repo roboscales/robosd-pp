@@ -50,6 +50,7 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ramp.hpp" />
     <ClInclude Include="..\..\source\platform\win+vs19\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

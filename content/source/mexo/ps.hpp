@@ -1,12 +1,9 @@
-#include "mexo/mexo.hpp"
 #ifndef mexo_ps_hpp
 #define mexo_ps_hpp
+#include "mexo/mexo.hpp"
+#include "mexo/ramp.hpp"
+
 namespace mexo {
-	/*class regulator {
-	public:
-		enum class saturate { none, low, hi };
-		block::output_t< saturate > status;
-	};*/
 	namespace ps {
 		
 		class  control {
@@ -29,29 +26,28 @@ namespace mexo {
 		template < typename C > class pwm 
 			: public ps::control
 			, public C
-			, public  controller_t < typename C::config_s, typename C::required_t >
 		{
 		public:
-			typedef typename C::required_t R;
-			typedef typename C::duty_t A;
+			typedef typename C::deseired_t deseired_t;
+			typedef typename C::actual_t actual_t;
 			typedef typename C::config_s  config_s;
-			//???
-			//typedef typename block_t < typename C::config_s >::config_s config_s;
 		private:
-			A duty_;
+			actual_t duty_;
 		public:
-			void actual(R& _actual) {
+			void loockup(deseired_t& _actual) {
 				C::revert(duty_, _actual);
+			}
+			actual_t & actual(void) {
+				return duty_;
 			}
 
 		public:
-			pwm(isubsystem& _subsystem, cstr  _name, config_s & _config, const R& _default )
-				: block_t < config_s >(_subsystem,_name, _config)
+			pwm(const deseired_t & _default)
 			{
-				C::dirrect(def_req, duty_);
+				C::dirrect(_default, duty_);
 			}
 			
-			virtual bool applay(const config_s & _config) {
+			bool applay(const config_s & _config) {
 				if (C::applay(_config)) {
 					enable();
 					return true;
@@ -61,7 +57,8 @@ namespace mexo {
 				}
 			}
 
-			virtual void execute(void) {
+			iblock::satstate  execute(const deseired_t & _deseired) {
+				iblock::satstate satstate = iblock::satstate::none;
 				switch (status_) {
 				case status::off:
 					if (command_ == command::on) {
@@ -74,7 +71,7 @@ namespace mexo {
 
 				case status::boot:
 					if (C::do_boot()) {
-						satstate_ = C::dirrect(required.value(), duty_);
+						satstate = C::dirrect(_deseired, duty_);
 						C::boot_complete(duty_);
 						status_ = status::on;
 					}
@@ -83,7 +80,7 @@ namespace mexo {
 					}
 				case status::on:
 					if (command_ == command::on) {
-						satstate_ = C::dirrect(required.value(), duty_);
+						satstate = C::dirrect(_deseired, duty_);
 						C::do_run(duty_);
 						break;
 					}
@@ -100,106 +97,14 @@ namespace mexo {
 						break;
 					}
 				case status::configure:
-					satstate_ = iblock::satstate::both;
+					satstate = iblock::satstate::both;
 					break;
 				}
 
-			}
-		};
-
-		class  ramp {
-		protected:
-			signal_t desired = (signal_t)0;
-			parametr_t rampGain = (signal_t)0;
-			mexo::range_s def_range;
-			signal_t def_req = (signal_t)0;
-			iblock::satstate satstate_val;
-		public:
-			struct config_s {
-				iblock::config_s block;
-				parametr_t rampGain;
-				mexo::range_s range;
-			};
-
-			iblock::input_t<signal_t> required;
-			iblock::input_t<mexo::range_s> range;
-			iblock::input_t<iblock::satstate> master_satstate;
-			iblock::output_t<iblock::satstate> satstate;
-		protected:
-			void run(void) {
-				signal_t r = required.value();
-				if (r >= range.value().hi) {
-					r = range.value().hi;
-					satstate_val = iblock::satstate::up;
-				}
-				else if (r <= range.value().lo) {
-					r = range.value().lo;
-					satstate_val = iblock::satstate::low;
-				}
-				else {
-					satstate_val = iblock::satstate::none;
-				}
-				signal_t delta = r - desired;
-				if (delta > 0) {
-					if (delta < rampGain) {
-						desired = r;
-					}
-					else {
-						desired += rampGain;
-					}
-				}
-				else {
-					if (delta < 0) {
-						if ((-delta) < rampGain) {
-							desired = r;
-						}
-						else {
-							desired -= rampGain;
-						}
-					}
-				}
-			}
-
-			ramp(void)
-				: required(def_req)
-				, range(def_range)
-				, satstate(satstate_val) {
+				return satstate;
 
 			}
-		};
-
-
-		class voltage
-			: public ramp, public  block_t < ramp::config_s >{
-		public:
-
-			typedef  mexo::ps::voltage::config_s config_s;
-			typedef  block_t < ramp::config_s > block;
-		public:
-			voltage(subsystem& _subsystem, cstr  _name, config_s& _config)
-				: block(_subsystem, _name, _config)
-			{
-
-			}
-
-			virtual bool applay(const config_s& _config) {
-				voltage::rampGain = _config.rampGain;
-				voltage::def_range = _config.range;
-				voltage::desired = _config.def;
-				return true;
-			}
-
-			virtual void execute(void) {
-				if (voltage::active()) {
-					voltage::ramp();
-				}
-				else {
-					voltage::satstate_val = iblock::satstate::both;
-				}
-				machine::execute();
-			}
-		};
-		*/
+		};		
 	}
 }
 #endif

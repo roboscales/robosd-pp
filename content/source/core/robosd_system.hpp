@@ -21,6 +21,7 @@
 #endif
 
 
+
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
@@ -124,6 +125,7 @@ namespace robo {
 			static bool is_frontend(void);
 			static bool is_backend(void);
 			static void abort(void);
+#if ROBO_MODULE_ENABLED == 1
 			static bool begin(void);
 			static void finish(void);
 			static bool start(void);
@@ -132,7 +134,7 @@ namespace robo {
 			static result shutdown(void);
 			static void frontend_loop(void);
 			static void backend_loop(void);
-
+#endif
 			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
 			static time_ms_t time_ms(void);

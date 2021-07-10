@@ -62,12 +62,12 @@ namespace robo {
 			std::fill_n(memo_, size_ + 1, 0);
 		}
 		size offset_(size_t _sz) {
-			size required = (size)(_sz >> bits_);
-			size tmp = required << bits_;
+			size deseired = (size)(_sz >> bits_);
+			size tmp = deseired << bits_;
 			if (tmp < _sz) {
-				required++; //данные не выровнены
+				deseired++; //данные не выровнены
 			}
-			return required + 1;
+			return deseired + 1;
 		}
 		void* query(size_t _sz) {
 
@@ -320,7 +320,10 @@ namespace robo {
 	size_t system::sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...){
 		va_list args;
 		va_start(args, _format);
-		size_t ret = env::sprintf(_dst,_max_sz,_format,args);
+		size_t ret = 0;
+#if ROBO_APP_ENV_ENABLED == 1		
+		ret = env::sprintf(_dst,_max_sz,_format,args);
+#endif
 		va_end(args);
 		return ret;
 	}

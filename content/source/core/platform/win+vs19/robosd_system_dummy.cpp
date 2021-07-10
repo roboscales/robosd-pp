@@ -11,7 +11,7 @@ namespace robo {
 	void  system::env::abort(void) {
 		::abort();
 	}
-
+#if ROBO_MODULE_ENABLED == 1
 	bool system::env::start(void) {
 		return true;
 	}
@@ -26,12 +26,12 @@ namespace robo {
 	result system::env::shutdown(void) {
 		return result::complete;
 	}
-
 	void system::env::frontend_loop(void) {
 	}
 	
 	void system::env::backend_loop(void) {
 	}
+#endif 
 
 
 	bool system::env::is_frontend(void) {
@@ -75,11 +75,15 @@ namespace robo {
 	}
 	void system::env::sleep(void) {
 	}
+
+#if ROBO_MODULE_ENABLED == 1
 	bool system::env::begin(void) {
 		return true;
 	}
 	void system::env::finish(void) {
 	}
+#endif
+
 #if ROBO_APP_ALLOC_TYPE == ROBO_APP_TYPE_DUMMY
 	void* system::env::mem_alloc(size_t _size) {
 		return malloc(_size);

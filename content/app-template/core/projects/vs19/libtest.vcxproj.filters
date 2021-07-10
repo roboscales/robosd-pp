@@ -110,5 +110,8 @@
     <ClInclude Include="..\..\..\..\source\mexo\ps.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ramp.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

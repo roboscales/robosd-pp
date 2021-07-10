@@ -6,7 +6,8 @@
 namespace robo{
 	template<typename T>
 		constexpr T pi = T(3.1415926535897932385);
-	
+
+#if		ROBO_MODULE_ENABLED == 1
 	
 	class ROBO_EXPORT converter: public app::node{
 	private:
@@ -45,6 +46,7 @@ namespace robo{
 	protected:
 		virtual bool do_load(void);
 	};
+#endif
 }
 
 #endif
