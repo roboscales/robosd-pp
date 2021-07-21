@@ -15,6 +15,7 @@
 #include "jsonsl.h"
 #include "mexo/mexo.hpp"
 #include "mexo/ps.hpp"
+#include "mexo/math.hpp"
 using namespace mexo;
 
 #define MODULE_NAME_STR RT("lib.test")
@@ -986,8 +987,8 @@ namespace libtest
 				}
 				, 0.f
 			};
-			fake_dc dc(hardware_subsystem, RT("dc"), dc_config, 0);
-			voltage dcv(hardware_subsystem, RT("dcv"), dcv_config, 0);
+			fake_dc dc(hardware_subsystem, RT("dc"), dc_config);
+			voltage dcv(hardware_subsystem, RT("dcv"), dcv_config);
 			dc.link_to(dcv);
 			/*typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
 			dc_1_t::config_s dc1_cfg = {
@@ -1016,8 +1017,8 @@ namespace libtest
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(dc.actual.value() >4000 && dc.actual.value() < 4096);
-			Assert::IsTrue(dcv.actual.value() > 11.f && dcv.actual.value() < 12.1f);
+			Assert::IsTrue(dc.actual.value >4000 && dc.actual.value < 4096);
+			Assert::IsTrue(dcv.actual.value > 11.f && dcv.actual.value < 12.1f);
 		}
 	};
 

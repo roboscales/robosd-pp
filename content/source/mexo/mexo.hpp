@@ -173,25 +173,24 @@ namespace mexo {
 		config_s& config;
 	public:
 		template <typename T> class output_t {
-			T & value_;
 		public:
 
-			const T& value(void) const { return value_; }
+			const T& value;
 
 			bool operator == (const T& _value) {
 				return value_ == _value;
 			}
 
-			output_t(T& _value) : value_(_value) {}
+			output_t(const T& _value) : value(_value) {}
 		};
 
 		template <typename T> class input_t {
 			output_t<T> dummy_;
 			const output_t<T>* output_;
 		public:
-			const T& value(void) { return output_->value(); }
+			const T& value(void) { return output_->value; }
 
-			input_t(T& _dummy) : dummy_(_dummy), output_(&dummy_) {}
+			input_t(const T& _dummy) : dummy_(_dummy), output_(&dummy_) {}
 			void link_to(const output_t<T>* _output) {
 				if (_output == nullptr) {
 					output_ = &dummy_;
@@ -418,15 +417,14 @@ namespace mexo {
 		iblock::output_t<actual_t> actual;
 		iblock::output_t<iblock::satstate> satstate;
 
-		controller_block_t( isubsystem& _subsystem, cstr  _name, config_s & _config, const deseired_t & _standalone_deseired)
+		controller_block_t( isubsystem& _subsystem, cstr  _name, config_s & _config)
 			: block_t<A::config_s>(_subsystem, _name, _config)
-			, A(_standalone_deseired)
-			, standalone_deseired(_standalone_deseired)
 			, deseired(standalone_deseired)
 			, master_satstate(standalone_master_satstate_)
 			, actual(A::actual() )
 			, satstate(satstate_)
 		{
+			standalone_deseired = {};
 		}
 
 		virtual bool applay(const config_s & _config) {				

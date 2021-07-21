@@ -1,7 +1,7 @@
 #ifndef mexo_ps_hpp
 #define mexo_ps_hpp
 #include "mexo/mexo.hpp"
-#include "mexo/ramp.hpp"
+#include "mexo/math.hpp"
 
 namespace mexo {
 	namespace ps {
@@ -105,6 +105,126 @@ namespace mexo {
 
 			}
 		};		
+
+
+		//typedef controller_block_t< ramp< signal_t > > voltage;
+		/*
+		namespace inverter {
+			class voltage {
+			public:
+				typedef typename signal2ph_s deseired_t;
+				typedef typename signal3ph_s actual_t;
+
+
+				class math {
+				public:
+					struct dummy {
+						deseired_t& dq;
+						deseired_t ab;
+						actual_t ABC;
+						dummy(deseired_t& _dq) : dq(_dq) {}
+					} voltage_;
+				protected:
+					transform transform_;
+				public:
+					const actual_t& actual() { return voltage_.ABC; };
+					virtual void perform(void) {
+						transform_.backward(voltage_.dq, voltage_.ab);
+						voltage_.ab >> voltage_.ABC;
+					}
+					void rotate(const signal_t& _angle) {
+						transform_.set_angle(_angle);
+						perform();
+					}
+					math(deseired_t& _voltage_dq) : voltage_(_voltage_dq) {}
+				};
+			protected:
+				math math_;
+			public:
+				const actual_t& actual(void) {
+					return math_.actual();
+				}
+
+				voltage(const actual_t& _standalone_desirted)
+					: range(standalone_range)
+				{
+					ROBO_UNUSED(_standalone_desirted);
+					standalone_range = {};
+				}
+
+				bool applay(const config_s& _config) {
+					math_.rampStep = _config.rampGain;
+					if ((_config.default > _config.range.lo) && (_config.default < _config.range.hi)) {
+						standalone_range = _config.range;
+						math_.actual = _config.default;
+						return true;
+					}
+					else {
+						return false;
+					}
+				}
+			};
+		}*/
+		/*
+			class current {
+			public:
+				class math : public voltage::math {
+					struct dummy {
+						signal2ph_s dq;
+						signal2ph_s ab;
+						signal3ph_s& ABC;
+						dummy(signal3ph_s & _ABC) : ABC(_ABC) {}
+					} current_;
+
+				public:
+					const signal2ph_s& current() { return current_.dq; };
+					
+					virtual void perform(void) {
+						voltage::math::perform();
+						current_.ABC >> current_.ab;
+						transform_.forward(current_.ab, current_.dq);
+					}
+					
+					math(signal2ph_s& _voltage_dq, signal3ph_s& _current_ABC)
+						: voltage::math(_voltage_dq), current_(_current_ABC) {}
+				};
+
+			};
+		}
+		*/
+
+		/*
+		struct dq_to_ABC {
+			signal2ph_s& dq;
+			transform& transform_;
+			signal2ph_s ab;
+			signal3ph_s ABC;
+			dq_to_ABC(signal2ph_s& _dq, transform _transform) : dq(_dq) {}
+		};
+		struct current  {
+			signal2ph_s dq;
+			signal2ph_s ab;
+			signal3ph_s & ABC;
+			current(signal3ph_s& _ABC) : ABC(_ABC) {}
+		};
+		struct no_current {};
+
+		template <typename current_t = void> class  inverter {
+			transform transform_;
+			//это для отладки
+		public:
+			const signal3ph_s& voltage() { return voltage_.ABC_ };
+			virtual void update(void) {
+				transform_.backward(voltage_.dq_, voltage_.ab);
+				voltage_.ab >> voltage_.ABC;
+			}
+			void rotate(const signal_t& _angle) {
+				transform_.set_angle(_angle);
+				update();
+			}
+			inverter(signal2ph_s& _voltage_dq) : voltage_(_voltage_dq) {}
+		};*/
+
 	}
 }
 #endif

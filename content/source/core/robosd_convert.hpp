@@ -1,11 +1,9 @@
-#ifndef __roboconvert_h
-#define __roboconvert_h
+#ifndef __roboconvert_hpp
+#define __roboconvert_hpp
 #include "core/robosd_list.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_app.hpp"
 namespace robo{
-	template<typename T>
-		constexpr T pi = T(3.1415926535897932385);
 
 #if		ROBO_MODULE_ENABLED == 1
 	

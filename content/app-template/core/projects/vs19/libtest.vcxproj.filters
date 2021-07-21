@@ -60,6 +60,9 @@
     <ClCompile Include="..\..\..\..\source\mexo\ps.cpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\math.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -110,7 +113,7 @@
     <ClInclude Include="..\..\..\..\source\mexo\ps.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ramp.hpp">
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
   </ItemGroup>
