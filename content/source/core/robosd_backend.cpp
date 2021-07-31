@@ -1,5 +1,4 @@
 #include "core/robosd_backend.hpp"
-#if		ROBO_MODULE_ENABLED == 1
 #include "core/robosd_system.hpp"
 #include "core/robosd_ini.hpp"
 namespace robo {
@@ -288,6 +287,7 @@ namespace robo {
 		}
 		timer::~timer() {
 		}
+#if ROBO_APP_MODULE_ENABLED  == 1
 
 		idevagent::idevagent(cstr _name, boardagent& _boardagent) 
 			: app::node(_name, &_boardagent)
@@ -679,10 +679,10 @@ namespace robo {
 			ROBO_LBREAKN(ini::load(name(), RT("ENABLED"), tmp));
 
 			if (tmp) {
-				actual_state_ = state::configure ;
+				actual_state_.local = state::ilocal::configure ;
 			}
 			else {
-				actual_state_ = state::disabled;
+				actual_state_.local = state::ilocal::disabled;
 			}
 			return true;
 		}
@@ -750,7 +750,7 @@ namespace robo {
 
 			if (current_->actual_status() == ivar::status::put) {
 				if ( _tran->size_max > current_->length()) {
-					_tran->header.command = current_->addr();
+					_tran->header.command = (robo_tran_command_id_t) current_->addr();
 					_tran->size_actual = current_->length();
 					if( current_->encode(_tran->data) ){
 						_tran->request = ROBO_TRAN_REQUEST_PUT;
@@ -827,6 +827,7 @@ namespace robo {
 			}
 			return true;
 		}
+#endif
 	}
 }
-#endif
+

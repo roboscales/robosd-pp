@@ -1,6 +1,7 @@
 #include "core/robosd_convert.hpp"
 #include "core/robosd_ini.hpp"
 namespace robo{
+#if		ROBO_APP_MODULE_ENABLED == 1
 	const char * convert_names[] = {
 		"Смещение",
 		"Разр.",
@@ -114,5 +115,5 @@ namespace robo{
 		else
 			return 0.f;
 	}
-	
+#endif	
 }

@@ -3,7 +3,6 @@
 
 #include "core/robosd_common.hpp"
 
-#if ROBO_MODULE_ENABLED  == 1
 
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
@@ -178,30 +177,61 @@ namespace robo {
 
 		class idevagent {
 		public:
-			enum class icommand { external, service, stopped, fault, reset,none };
-			enum class istate { unknown, disabled, external, independed, service, stopped, fault, configure };
+			enum class icommand { 
+				stop = 0,
+				sw2service = 1,
+				raise_fault = 2,
+				sw2independed = 3,
+				sw2dirrect = 4,
+				reset_fault = 5
+			};
+			struct istate {
+				enum class ilocal {
+					unknown = 0,
+					disabled = 1,
+					configure = 2,
+					ready = 3
+				} local = ilocal::unknown;	
 
-/*			struct iaction {
+				enum class iremote {
+					unknown = 0,
+					stopped = 1,
+					fault = 2,
+					run = 3,
+					broke = 4
+				} remote = iremote::unknown;
 			};
-			struct ifeedback {
-			};
-			*/
-			struct ideseired {
-				icommand command = icommand::none;
-			};
-			struct istatus {
-				istate state = istate::unknown;
+			enum class istatus {
+				unknown = 0,
+				disabled = 1,
+				busy = 2,
+				stopped = 3,
+				fault = 4,
+				dirrect = 5,
+				independed = 6,
+				service = 7,
+				broke =8
 			};
 		};
 		
 		template<class D> class devagent : public D {
 		public:
-			struct {
-				typename D::ideseired deseired;
-				typename D::istatus status;
-				typename D::iaction action;
-				typename D::ifeedback feedback;
+			struct iaction {
+				idevagent::icommand command;
+				typename D::iaction deseired;
+				typename D::iaction required;
+			};
+			struct ifeedback {
+				typename idevagent::istatus status;
+				typename D::ifeedback actual;
+			};
+
+			struct ifront {
+				iaction & action;
+				ifeedback  & feedback;
+				ifront( iaction& _action, ifeedback& _feedback) : action(_action), feedback(_feedback) {}
 			} front;
+			devagent( iaction& _action, ifeedback& _feedback) : front(_action, _feedback) {}
 		};
 		
 		const struct{
@@ -211,6 +241,7 @@ namespace robo {
 		} type_names;
 
 
+		#if ROBO_APP_MODULE_ENABLED  == 1
 		class contrltable:public app::node {
 		public:
 
@@ -344,8 +375,8 @@ namespace robo {
 			ivar * create_var(cstr _name);
 			ivar* find_var(cstr _name);
 		};
+		#endif
 
 	}
 }
-#endif
 #endif

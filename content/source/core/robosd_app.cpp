@@ -8,7 +8,7 @@
 #endif
 
 namespace robo {
-	#if ROBO_MODULE_ENABLED  == 1
+	#if ROBO_APP_MODULE_ENABLED  == 1
 	namespace app {
 		node::node(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this,0) {
 		}

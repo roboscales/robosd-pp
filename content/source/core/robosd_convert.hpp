@@ -5,7 +5,7 @@
 #include "core/robosd_app.hpp"
 namespace robo{
 
-#if		ROBO_MODULE_ENABLED == 1
+#if		ROBO_APP_MODULE_ENABLED == 1
 	
 	class ROBO_EXPORT converter: public app::node{
 	private:

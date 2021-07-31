@@ -1,7 +1,6 @@
 #ifndef robosd_backend_hpp
 #define robosd_backend_hpp
 #include "core/robosd_frontend.hpp"
-#if		ROBO_MODULE_ENABLED == 1
 #include "core/robosd_string.hpp"
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_app.hpp"
@@ -95,20 +94,6 @@ namespace robo {
 				static void restart() { instance().restart_(); }
 			};
 		};
-
-		/*class ROBO_EXPORT repeater{
-			signal::performer & performer_;
-			time_us_t period_;
-		public:
-		enum { default_period_us = 1000 };
-		repeater(signal::performer & _performer, time_us_t _period = default_period_us)
-			: performer_(_performer)
-			, period_(_period)
-		{}
-		void start(void){ timer::core::start(&performer_, period_); }
-		void start(time_us_t _period){ period_ = _period;  start(); }
-		void stop(void){ timer::core::stop(&performer_, period_); }
-	};*/
 			
 		class ROBO_EXPORT queue : public signal {
 			void poll_(void);
@@ -137,6 +122,8 @@ namespace robo {
 			void start(time_us_t _period) { period_ = _period;  start(); }
 			void stop(void) { timer::core::stop(this, period_); }
 		};
+
+#if ROBO_APP_MODULE_ENABLED  == 1
 
 		class boardagent;
 
@@ -207,6 +194,8 @@ namespace robo {
 				query_result query(msg* _msg);
 			};
 			typedef frontend::idevagent::istate state;
+			typedef frontend::idevagent::icommand command;
+			typedef frontend::idevagent::istatus status;
 
 		private:
 			boardagent& boardagent_;
@@ -214,15 +203,20 @@ namespace robo {
 			bus_ref bus_ref_;
 			int bus_order_ = 0;
 			router* router_ = nullptr;
-			state actual_state_ = state::unknown;
+			state actual_state_;
 			stream::list streams_;
+			command actual_command_ = command::stop;
 		protected:
-			virtual void apply_action(void) = 0;
-			virtual void uppdate_feedback(void) = 0;
-			bool exchabge_enabled(void) { return actual_state_ > state::disabled; }
+			void perform_command(command _command) {
+
+			}
+			virtual void apply_action(void) {};
+			virtual void uppdate_feedback(void) {};
+
+			bool exchabge_enabled(void) { return actual_state_.local > state::ilocal::disabled; }
 			bool configure_complete(void) { 
-				ROBO_LBREAKN(actual_state_ == state::configure);
-				actual_state_ = state::stopped;
+				ROBO_LBREAKN(actual_state_.local == state::ilocal::configure);
+				actual_state_.local = state::ilocal::ready;
 				return true;
 			}
 			virtual bool do_load(void);
@@ -240,7 +234,38 @@ namespace robo {
 			idevagent(cstr _name, boardagent& _boardagent);
 
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
-			state actual_state(void) { return actual_state_;  };
+
+			status actual_status(void) {
+				static const status tb[] =
+				{
+					//icommand
+					//stop = 0,			sw2service = 1,		raise_fault = 2,	sw2independed = 3,	sw2dirrect = 4,	reset_fault = 5
+					//unknown
+					status::unknown,	status::unknown,	status::unknown,	status::unknown,	status::unknown,	status::unknown,
+					//stopped
+					status::stopped,	status::stopped,	status::stopped,	status::stopped,	status::stopped,	status::stopped,
+					//fault
+					status::fault,		status::fault,		status::fault,		status::fault,		status::fault,		status::busy,
+					//run
+					status::busy,		status::service,	status::busy,		status::independed,status::dirrect,	status::busy,
+					//broke
+					status::broke,		status::broke,		status::broke,		status::broke,		status::broke,		status::broke
+				};
+				switch (actual_state_.local) {
+				case state::ilocal::unknown:
+					return status::unknown;
+				case state::ilocal::disabled:
+					return status::disabled;
+				case state::ilocal::configure:
+					return status::busy;
+				case state::ilocal::ready:
+					return tb[((int)actual_state_.remote * 5) + (int)actual_command_];
+				}
+			}
+
+			command actual_command(void) { return actual_command_;  };
+			state::ilocal local_state(void) { return  actual_state_.local; };
+			state::iremote remote_state(void) { return  actual_state_.remote; };
 
 		};
 
@@ -302,36 +327,29 @@ namespace robo {
 
 		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent {
 		public:
-			struct {
-				typename D::ideseired deseired;
-				typename D::istatus status;
-				typename D::iaction action;
-				typename D::ifeedback feedback;
-			} actual;
-			virtual void apply_action(void) {
-				typedef typename D::istate tstate;
-				if ((tstate)(actual.status.state) == tstate::external) {
-					actual.action = ::robo::frontend::devagent<D>::front.action;
-				} else {
-					::robo::frontend::devagent<D>::front.action = actual.action;
-				}
+			typedef typename ::robo::frontend::devagent<D>::iaction iaction;
+			typedef typename ::robo::frontend::devagent<D>::ifeedback ifeedback;
+			iaction action;
+			ifeedback feedback;
 
-				if (((tstate)(actual.status.state)) == tstate::stopped) {
-					actual.deseired = ::robo::frontend::devagent<D>::front.deseired;
-				} else {
-					::robo::frontend::devagent<D>::front.deseired = actual.deseired;
-				}
+			virtual void apply_action(void) {
+				perform_command( ::robo::frontend::devagent<D>::front.action.command ) ;
+				feedback.status = actual_status();
+				action.deseired = ::robo::frontend::devagent<D>::front.action.deseired;
+				if (feedback.status == status::dirrect ) {
+					action.required = action.deseired;
+				} 
 			}
 
 			virtual void uppdate_feedback(void) {
-				typedef typename D::istate tstate;
-				if ((tstate)(actual.status.state) != tstate::external) {
-					::robo::frontend::devagent<D>::front.action = actual.action;
-				}
-				::robo::frontend::devagent<D>::front.feedback = actual.feedback;
-
+				feedback.status = actual_status();
+				::robo::frontend::devagent<D>::front.feedback = feedback;
+				::robo::frontend::devagent<D>::front.action.required = action.required;
 			}
-			devagent(cstr _name, boardagent& _boardagent) : ::robo::backend::idevagent(_name, _boardagent) {}
+
+			devagent(cstr _name, boardagent& _boardagent, iaction& _action, ifeedback& _feedback) :
+				::robo::frontend::devagent<D>(_action, _feedback)
+				, ::robo::backend::idevagent(_name, _boardagent) {}
 		};
 
 		class boardagent : public app::node {
@@ -343,10 +361,7 @@ namespace robo {
 			virtual void do_clean(void);
 		public:
 			boardagent(cstr _name, app::module& _owner) :app::node(_name, &_owner) {};
-
 		};
-
-
 
 		class contrltable : public idevagent:: stream, frontend::contrltable{
 		private:
@@ -691,9 +706,7 @@ namespace robo {
 			ivar::queue queue_;
 			ivar* current_ = nullptr;
 		};
-
-
-		
+				
 		namespace process {
 			class base;
 			class ROBO_EXPORT controller : public task {
@@ -765,106 +778,9 @@ namespace robo {
 			};
 
 
-			/*
-			class ROBO_EXPORT repeater : public base {
-				front::signal::performer& performer_;
-			protected:
-				virtual bool do_start(void) { return true; };
-				virtual void do_stop(void) {};
-				virtual result run(void);
-				repeater(const robo::string& _name, front::signal::performer& _performer, robo_time_us_t _period_us);
-			};
-
-			class ROBO_EXPORT repeat_simple : public repeater {
-				front::signal::simple simple_;
-			public:
-				repeat_simple(const robo::string& _name, void(*_simple)(void), robo_time_us_t _period, bool _once = false)
-					: repeater(_name, simple_, _period), simple_(_simple, _once) {}
-			};
-
-			class ROBO_EXPORT repeat_uni : public repeater {
-				front::signal::uni uni_;
-			public:
-				repeat_uni(const robo::string& _name, void(*_uni)(void*), void* _context, robo_time_us_t _period, bool _once = false)
-					: repeater(_name, uni_, _period), uni_(_uni, _context, _once) {}
-			};
-
-			class ROBO_EXPORT repeat_lambda : public repeater {
-				front::signal::lambda lambda_;
-			public:
-				repeat_lambda(const robo::string& _name, lambda< void(void) >  _lambda, robo_time_us_t _period, bool _once = false)
-					:repeater(_name, lambda_, _period), lambda_(_lambda, _once) {}
-			};
-
-
-
-			class ROBO_EXPORT unimachin : public base {
-			public:
-			private:
-				enum class command { start, stop } command_;
-				enum class state { stopped, startup, run, shutdown, panic };
-				state state_;
-				void panic_(void);
-			protected:
-				virtual status do_startup(void) = 0;
-				virtual status do_run(void) = 0;
-				virtual status do_shutdown(void) = 0;
-				virtual void do_panic(void) = 0;
-				virtual bool do_start(void) {
-					command_ = command::start;
-					return true;
-				}
-				virtual void do_stop(void) {
-					command_ = command::stop;
-				}
-				virtual result run(void);
-			public:
-				unimachin(const robo::string& _name)
-					: base(_name)
-					, state_(state::stopped)
-				{
-				}
-			};
-
-
-			class ROBO_EXPORT  machine_lambda : public unimachin {
-				robo::lambda<status(void)>  do_startup_;
-				robo::lambda<status(void)>  do_run_;
-				robo::lambda<status(void)>  do_shutdown_;
-				robo::lambda<void(void)>  do_panic_;
-			protected:
-				virtual status do_startup(void) {
-					return do_startup_();
-				}
-				virtual status do_run(void) {
-					return do_run_();
-				}
-				virtual status do_shutdown(void) {
-					return do_shutdown_();
-				}
-				virtual void do_panic(void) {
-					do_panic_();
-				}
-
-			public:
-				machine_lambda(
-					const robo::string& _name
-					, robo::lambda<status(void)>  _do_startup
-					, robo::lambda<status(void)>  _do_run
-					, robo::lambda<status(void)>  _do_shutdown
-					, robo::lambda<void(void)>  _do_panic
-				)
-					: unimachin(_name)
-					, do_startup_(_do_startup)
-					, do_run_(_do_run)
-					, do_shutdown_(_do_shutdown)
-					, do_panic_(_do_panic)
-				{
-				}
-			};
-			*/
 		}
+#endif
 	}
 }
 #endif
-#endif
+

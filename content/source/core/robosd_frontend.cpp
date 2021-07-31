@@ -1,5 +1,4 @@
 #include "core/robosd_frontend.hpp"
-#if		ROBO_MODULE_ENABLED == 1
 #include "core/robosd_backend.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_system.hpp"
@@ -140,6 +139,7 @@ namespace robo {
 			return instance_;
 		}
 
+#if		ROBO_APP_MODULE_ENABLED == 1
 		bool contrltable::ivar::query_(void) {
 			ROBO_LBREAKN(begin_hook());
 			status_ = status::get;
@@ -348,8 +348,8 @@ namespace robo {
 		contrltable::ivar * contrltable::find_var(cstr _name){
 			return vars.find( fast_hash(_name) );
 		}
-		
+#endif
+
 	}
 }
-#endif
 

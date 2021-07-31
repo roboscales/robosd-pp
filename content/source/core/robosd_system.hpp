@@ -125,7 +125,7 @@ namespace robo {
 			static bool is_frontend(void);
 			static bool is_backend(void);
 			static void abort(void);
-#if ROBO_MODULE_ENABLED == 1
+#if ROBO_APP_MODULE_ENABLED == 1
 			static bool begin(void);
 			static void finish(void);
 			static bool start(void);

@@ -15,7 +15,7 @@
 
 #include "core/robosd_system_native.hpp"
 
-#if ROBO_MODULE_ENABLED  == 1
+#if ROBO_APP_MODULE_ENABLED  == 1
 namespace MODULE_NAME {
 	robo::app::module* MODULE_NAME_PREFIX(query)(void) {
 		return &module::instance();

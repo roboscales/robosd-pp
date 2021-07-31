@@ -6,7 +6,7 @@
 #include "core/robosd_common.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_system.hpp"
-#if ROBO_MODULE_ENABLED  == 1
+#if ROBO_APP_MODULE_ENABLED  == 1
 
 namespace robo {
 	namespace app {

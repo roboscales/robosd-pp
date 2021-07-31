@@ -20,7 +20,7 @@ using namespace mexo;
 
 #define MODULE_NAME_STR RT("lib.test")
 namespace test {
-#if ROBO_MODULE_ENABLED  == 1
+#if ROBO_APP_MODULE_ENABLED  == 1
 	class module : public robo::app::module {
 	protected:
 		virtual void frontend_loop(void) {};
@@ -518,24 +518,19 @@ namespace libtest
 					<< "RT_1= 1 2  0xff  3 4 5\n"
 					;
 			}
-#if ROBO_MODULE_ENABLED  == 1
+#if ROBO_APP_MODULE_ENABLED  == 1
 			class ddddd : public robo::frontend::idevagent {
 			public:
-				enum class icommand { external, service, stopped, fault, reset, none };
-				enum class istate { external, independed, service, stopped, fault, unknown, locked };
 				struct iaction {
 				};
 				struct ifeedback {
-				};
-				struct ideseired : public robo::frontend::idevagent::ideseired {
-				};
-				struct istatus : public robo::frontend::idevagent::istatus {
 				};
 				ddddd(void) :robo::frontend::idevagent() {}
 			};
 			
 			typedef robo::backend::devagent< ddddd > devagent;
-			
+			devagent::iaction front_action = {};
+			devagent::ifeedback front_feedback = {};
 			robo::backend::boardagent boardagent(RT("тестовая барда"), test::module::instance());
 
 			class bus : public  robo::backend::bus {
@@ -552,7 +547,7 @@ namespace libtest
 
 			bus bus_(RT("тестовая логическая шина"), &test::module::instance());
 
-			devagent agent(RT("тестовый агент"), boardagent );
+			devagent agent(RT("тестовый агент"), boardagent, front_action, front_feedback);
 			robo::backend::router router(RT("тестовый роутер"), test::module::instance());
 			
 			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {

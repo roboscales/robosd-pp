@@ -42,6 +42,10 @@ namespace mexo {
 			}
 
 		public:
+			pwm(void)
+			{
+			}
+
 			pwm(const deseired_t & _default)
 			{
 				C::dirrect(_default, duty_);

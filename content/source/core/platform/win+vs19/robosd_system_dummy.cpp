@@ -11,7 +11,7 @@ namespace robo {
 	void  system::env::abort(void) {
 		::abort();
 	}
-#if ROBO_MODULE_ENABLED == 1
+#if ROBO_APP_MODULE_ENABLED == 1
 	bool system::env::start(void) {
 		return true;
 	}
@@ -76,7 +76,7 @@ namespace robo {
 	void system::env::sleep(void) {
 	}
 
-#if ROBO_MODULE_ENABLED == 1
+#if ROBO_APP_MODULE_ENABLED == 1
 	bool system::env::begin(void) {
 		return true;
 	}
