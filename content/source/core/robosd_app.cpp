@@ -466,27 +466,4 @@ namespace robo {
 
 	}
 	#endif
-
-	int hash(cstr _src, int _begin) {
-		const int p = 15;
-		const int m = 10009;
-		int hash_value = _begin;
-		int p_pow = 1;
-		const char_t* c;
-		for (c = _src; *c; c++) {
-			hash_value = (hash_value + (*c - 'a' + 1) * p_pow) % m;
-			p_pow = (p_pow * p) % m;
-		}
-		return hash_value;
-
-	}
-
-	int fast_hash(cstr _src, int _begin) {
-		unsigned short  x = (unsigned short)_begin;
-		const char_t* c;
-		for (c = _src; *c; c++) {
-			x += 44111 * (*c);
-		}
-		return (int)x;
-	}
 }
