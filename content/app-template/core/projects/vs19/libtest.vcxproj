@@ -23,7 +23,6 @@
     <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_ini.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_string.cpp" />
-    <ClCompile Include="..\..\..\..\source\mexo\ps.cpp" />
     <ClCompile Include="..\..\..\..\source\net\robosd_net_trafic.cpp" />
     <ClCompile Include="..\..\..\reference\json-ref\jsonsl.c" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp" />
@@ -34,6 +33,7 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\math.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp" />
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\ps.cpp" />
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -44,7 +44,6 @@
     <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_tran.h" />
-    <ClInclude Include="..\..\..\..\source\mexo\ps.hpp" />
     <ClInclude Include="..\..\..\..\source\net\robosd_net_trafic.hpp" />
     <ClInclude Include="..\..\..\reference\json-ref\jsonsl.h" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_app.hpp" />
@@ -52,8 +51,9 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp" />
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp" />
     <ClInclude Include="..\..\source\platform\win+vs19\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -146,6 +146,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions); _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -161,6 +162,7 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -178,6 +180,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -197,6 +200,7 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

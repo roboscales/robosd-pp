@@ -44,7 +44,7 @@ namespace robo {
             virtual R operator ()(Args... args) {
                 return lambda_(args...);
             }
-            lambda(::robo::lambda< R(Args... args) > _lambda)
+            lambda(const ::robo::lambda< R(Args... args) > &  _lambda)
                 : lambda_(_lambda) {
             }
         };

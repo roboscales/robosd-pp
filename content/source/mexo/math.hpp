@@ -2,13 +2,43 @@
 #define mexo_math_hpp
 #include "mexo/mexo.hpp" 
 #include <limits>  
-
+#include <math.h>
 namespace mexo {
 	constexpr signal_t pi = robo::pi<signal_t>;
 	constexpr signal_t one_div_sqrt3 = robo::one_div_sqrt3<signal_t>;
 	constexpr signal_t sqrt3_div_2 = robo::sqrt3_div_2<signal_t>;
 	
-		
+	template <typename F, typename T> struct fdc {
+		struct config_s {
+			T lo;
+			T up;
+			F scale;
+		} config;
+		iblock::satstate dirrect(const F & _float, T & _digit) {
+			F tmp = _float * config.scale;
+			if (tmp > ((F)0) ) tmp += ((F)0.5);
+			else
+				if (tmp < ((F)0)) tmp -= ((F)0.5);
+
+			_digit = (T)tmp;
+
+			if (_digit >= config.up) {
+				_digit = config.up;
+				return iblock::satstate::up;
+			}
+			else if (tmp <= config.lo) {
+				_digit = config.lo;
+				return iblock::satstate::low;
+			}
+			else {
+				return iblock::satstate::none;
+			}
+		}
+		void revert(const T & _digit, F& _float) {
+			_float = _digit / config.scale;
+		}
+	};
+
 
 	template <typename A> struct range_s {
 		A lo;
@@ -17,18 +47,19 @@ namespace mexo {
 
 	template< typename A>  class  ramp {
 	public:
-		typedef typename A deseired_t;
-		typedef typename A actual_t;
+		typedef A deseired_t;
+		typedef A actual_t;
 
 		struct config_s {
 			iblock::config_s	block;
 			actual_t			rampGain;
 			range_s<actual_t>	range;
-			actual_t			default;
+			actual_t			def;
 		};
 
 		class math {
 		public:
+			
 			actual_t rampStep = 0;
 			actual_t actual = (actual_t)0;
 
@@ -61,6 +92,7 @@ namespace mexo {
 					}
 				}
 			}
+			
 		};
 
 		range_s<actual_t> standalone_range;
@@ -69,6 +101,7 @@ namespace mexo {
 		math math_;
 	protected:
 		iblock::satstate execute(const deseired_t & _deseired ) {
+			
 			const range_s<actual_t> & r = range.value() ;
 			math_.perform(_deseired, r );
 			if (math_.actual >= r.hi) {
@@ -80,7 +113,7 @@ namespace mexo {
 			else {
 				return  iblock::satstate::none;
 			}
-
+			return  iblock::satstate::none;
 		}
 	public:
 		const actual_t& actual(void) {
@@ -95,9 +128,9 @@ namespace mexo {
 
 		bool applay(const config_s& _config) {
 			math_.rampStep = _config.rampGain;
-			if ((_config.default > _config.range.lo) && (_config.default < _config.range.hi)) {
+			if ((_config.def > _config.range.lo) && (_config.def < _config.range.hi)) {
 				standalone_range = _config.range;
-				math_.actual = _config.default;
+				math_.actual = _config.def;
 				return true;
 			}
 			else {

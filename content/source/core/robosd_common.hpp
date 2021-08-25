@@ -69,24 +69,31 @@ namespace robo {
 	template<typename T>
 		constexpr T pi = T(3.1415926535897932385);
 
-	template<typename T>  T constexpr csqrt_helper(T x, T curr, T prev)
+	double constexpr csqrt_helper(double x, double curr, double prev)
 	{
-		return curr == prev
+		return curr == prev 
 			? curr
-			: csqrt_helper<T>(x, T(0.5) * (curr + x / curr), curr);
-	}
-	template<typename T>  T  constexpr csqrt(T x)
-	{
-		return x >= 0 && x < std::numeric_limits<double>::infinity()
-			? csqrt_helper<T>(x, x, 0)
-			: std::numeric_limits<T>::quiet_NaN();
+			: csqrt_helper(x, (curr + x / curr) / 2., curr);
 	}
 
+
+
+	template<typename T>  T  constexpr csqrt(T x)
+	{
+		double dx = (double)x;
+		double res = (x >= 0 && x < std::numeric_limits<double>::infinity())
+			? csqrt_helper(x, x, 0.)
+			: std::numeric_limits<double>::quiet_NaN();
+		return T(res);
+	}
+
+
+	
 	template<typename T>
 		constexpr T one_div_sqrt3 = T(1)/csqrt(T(3));
 
 	template<typename T>
-		constexpr T sqrt3_div_2 = csqrt(T(2))/T(2);
+		constexpr T sqrt3_div_2 = csqrt(T(3))/T(2);
 }
 
 

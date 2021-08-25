@@ -260,6 +260,8 @@ namespace robo {
 					return status::busy;
 				case state::ilocal::ready:
 					return tb[((int)actual_state_.remote * 5) + (int)actual_command_];
+				default:
+					return status::unknown;
 				}
 			}
 

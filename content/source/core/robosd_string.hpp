@@ -11,9 +11,10 @@
 namespace robo{
 	
 	typedef std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > string_base;
-	
+
 	class ROBO_EXPORT string 
-		: public  string_base {
+		: public  string_base 
+	{
 	public:
 		virtual ~string(void);
 		string(void);

@@ -122,7 +122,7 @@
 #define ROBO_RET(x, success, fault) if(!(x)) {robo_errlog(ROBO_NESTED_ERROR);return fault;} else {return success;}
 #endif
 #else
-#define ROBO_RET(x, success, fault) if( !(x) ) { return success;} else { return fault; }
+#define ROBO_RET(x, success, fault) if( x ) { return success;} else { return fault; }
 #endif
 
 #ifndef ROBO_LRET
@@ -205,7 +205,9 @@ return fault; \
 } else return success;
 #endif
 #else
+#ifndef ROBO_LRET_F
 #define ROBO_RET_F(x,success,fault,f,...) return (x)?(success):(fault)
+#endif
 #endif
 
 #ifndef ROBO_LRET_F

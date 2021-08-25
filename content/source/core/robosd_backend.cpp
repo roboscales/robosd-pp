@@ -764,7 +764,7 @@ namespace robo {
 			}
 			else {
 				if (current_->actual_status() == ivar::status::get) {
-					_tran->header.command = current_->addr();
+					_tran->header.command = (robo_tran_command_id_t)current_->addr();
 					_tran->size_actual = current_->length();
 					_tran->request = ROBO_TRAN_REQUEST_GET;
 					return query_result::success;

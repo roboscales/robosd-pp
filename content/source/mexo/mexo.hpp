@@ -4,6 +4,8 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_system.hpp"
+#include "mexo/led.hpp"
+
 #include <initializer_list> 
 #ifndef APP_MEXO_SLOT_COUNT
 #define APP_MEXO_SLOT_COUNT 16
@@ -25,9 +27,32 @@
 #define APP_MEXO_LONG_SIGNAL_T double
 #endif
 
+#ifndef MEXO_DEBUG_TP1_ENABLED
+#define MEXO_DEBUG_TP1_ENABLED 0
+#endif
+
 
 using namespace robo;
 namespace mexo {
+	struct tp_verb{
+		enum  { frontend = 1, backend = 2, priority = 3, loop =4};
+	};	
+#if MEXO_DEBUG_TP1_ENABLED == 1
+class tp_driver{
+//реализацию принудительно делегируем в perephery проекта
+	protected:
+		void on(void);
+		void off(void);
+};
+typedef led_s<tp_driver>  tp;
+
+#else
+
+
+typedef dummy_led  tp;
+
+#endif 
+
 	typedef APP_MEXO_SIGNAL_T signal_t;
 	typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
 	typedef APP_MEXO_PARAMETR_T parametr_t;
@@ -63,8 +88,49 @@ namespace mexo {
 					}
 				}
 			};
-			typedef ::robo::delegat::lambda<delegat, void> lambda;
-			typedef ::robo::delegat::simple<delegat, void> simple;
+
+			class lambda : public ::robo::delegat::lambda<delegat, void> {
+			public :
+				lambda(const ::robo::lambda< void(void)>& _lambda ) : ::robo::delegat::lambda<delegat, void>(_lambda) {}
+				lambda(slot::kind _kind, const ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_kind);
+				}
+				lambda(int _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index);
+				}
+				lambda(const int * _index, int _count, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index, _count);
+				}
+				template <size_t N>  lambda( int(&_index)[N] , const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index);
+				}
+				lambda(std::initializer_list<int> _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index);
+				}
+			};
+
+			class simple : public ::robo::delegat::simple<delegat, void> {
+			public:
+				simple(void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {}
+				simple(slot::kind _kind, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_kind);
+				}
+				simple(int _index, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index);
+				}
+				simple(const int* _index, int _count, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index, _count);
+				}
+				template <size_t N>  simple(int(&_index)[N], void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index);
+				}
+				simple(std::initializer_list<int> _index, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index);
+				}
+			};
+
+			//typedef delegat_t< ::robo::delegat::lambda<delegat, void>, ::robo::lambda< void(void)> > lambda;
+			//typedef delegat_t < ::robo::delegat::simple<delegat, void>, void (*)(void) >  simple;
 		private:
 			friend class machine;
 			friend class slots;
@@ -178,7 +244,7 @@ namespace mexo {
 			const T& value;
 
 			bool operator == (const T& _value) {
-				return value_ == _value;
+				return value == _value;
 			}
 
 			output_t(const T& _value) : value(_value) {}
@@ -392,7 +458,7 @@ namespace mexo {
 	protected: 
 	public:
 		//S - это старая добрая сишная структура
-		typedef typename S config_s;
+		typedef  S config_s;
 		block_t(isubsystem & _subsystem, cstr  _name, config_s& _config) : iblock (_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
 		virtual bool do_reconfig(void) {
 			return applay(reinterpret_cast<config_s&> (iblock::config) );
@@ -418,7 +484,7 @@ namespace mexo {
 		iblock::output_t<iblock::satstate> satstate;
 
 		controller_block_t( isubsystem& _subsystem, cstr  _name, config_s & _config)
-			: block_t<A::config_s>(_subsystem, _name, _config)
+			: block_t<config_s>(_subsystem, _name, _config)
 			, deseired(standalone_deseired)
 			, master_satstate(standalone_master_satstate_)
 			, actual(A::actual() )

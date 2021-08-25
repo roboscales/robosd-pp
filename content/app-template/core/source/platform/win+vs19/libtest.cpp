@@ -800,48 +800,19 @@ namespace libtest
 			Assert::IsTrue(success);
 		}
 
-		struct float_to_int16 {
-			struct config_s {
-				int16_t lo;
-				int16_t up;
-				float scale;
-			} config;
-			iblock::satstate dirrect(float _deseired, int16_t& _duty) {
-				float tmp = _deseired * config.scale;
-				if (tmp > 0.) tmp += 0.5f;
-				else
-					if (tmp < 0.) tmp -= 0.5f;
-				
-				_duty = (int16_t)tmp;
-				
-				if (_duty >= config.up) {
-					_duty = config.up;
-					return iblock::satstate::up;
-				}
-				else if (tmp <= config.lo) {
-					_duty = config.lo;
-					return iblock::satstate::low;
-				}
-				else {
-					return iblock::satstate::none;
-				}
-			}
-			void revert(int16_t _duty, float& _actual) {
-				_actual = _duty / config.scale;
-			}
-		};
+		
 
 		class fake_dc_periphery  {
 		public:
 			typedef signal_t deseired_t;
 			typedef int16_t actual_t;
 		private:
-			float_to_int16 	float_to_int16_;
+			fdc<float,int16_t> 	float_to_int16_;
 		public:
 			int16_t duty;
 			struct config_s {
 				::mexo::iblock::config_s block;
-				float_to_int16::config_s converter;
+				fdc<float, int16_t>::config_s converter;
 			};
 		protected:
 			static void boot_begin(void) {}
@@ -1006,7 +977,7 @@ namespace libtest
 			dcv.standalone_deseired = 12.f;
 			dc.on();
 			
-			for (int i = 0; i < 16; ++i) {
+			for (int i = 0; i < 1000000000; ++i) {
 				::mexo::machine::priority_loop();
 				::mexo::machine::backend_loop();
 				::mexo::machine::frontend_loop();

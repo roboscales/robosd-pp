@@ -1,6 +1,7 @@
 #include "mexo/mexo.hpp"
 #include "core/robosd_log.hpp"
 namespace mexo {
+	
 	machine machine::instance_;
 	machine::machine(void) 
 		: slots_ref_(slots_())
@@ -18,10 +19,14 @@ namespace mexo {
 
 	}
 	void machine::priority_loop_(void) {
+		tp::on(tp_verb::loop);
+		tp::on(tp_verb::priority);
 		system::fall f__;
 		slots_ref_.priority.execute();
+		tp::off(tp_verb::priority);
 	}
 	void machine::backend_loop_(void) {
+		tp::on(tp_verb::backend);
 		system::fall f__;
 		slots_ref_.backend.execute();
 		slots_ref_.periodic[slot_index_]. execute();
@@ -29,9 +34,13 @@ namespace mexo {
 		if (slot_index_ == slot_count) {
 			slot_index_ = 0;
 		}
+		tp::off(tp_verb::backend);
+		tp::off(tp_verb::loop);
 	}
 	void machine::frontend_loop_(void) {
+		tp::on(tp_verb::frontend);
 		slots_ref_.frontend.execute();
+		tp::off(tp_verb::frontend);
 	}
 	machine::slots& machine::slots_(void) {
 		static machine::slots slots__;
@@ -308,4 +317,21 @@ namespace mexo {
 
 	}
 
+}
+
+#include "mexo/mexo.h"
+void mexo_begin(void){
+	mexo::machine::begin();
+}
+void mexo_start(void){
+	mexo::machine::start();
+}
+void mexo_priority_loop(void){
+	mexo::machine::priority_loop();
+}
+void mexo_backend_loop(void){
+	mexo::machine::backend_loop();
+}
+void mexo_frontend_loop(){
+	mexo::machine::frontend_loop();
 }

@@ -2,11 +2,6 @@
 #include "core/robosd_log.hpp"
 #include "core/robosd_system.hpp"
 
-//#include "core/robosd_ini.h"
-
-
-
-
 namespace robo{	
 
 	char_t string_buffer_frontend[ROBO_STRING_BUFFER_SIZE];
@@ -16,7 +11,7 @@ namespace robo{
 	}
 	
 	string::string(void) : string_base() {
-}
+	}
 
 	
 	string::string(const string &  _src) : string_base(_src) {
@@ -99,6 +94,5 @@ namespace robo{
 		return false;
 #endif
 	}
-
 }
 

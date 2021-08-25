@@ -54,17 +54,17 @@
     <ClCompile Include="..\..\..\reference\json-ref\jsonsl.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp">
-      <Filter>Исходные файлы\mexo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\source\mexo\ps.cpp">
-      <Filter>Исходные файлы\mexo</Filter>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_convert.cpp">
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\math.cpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_convert.cpp">
-      <Filter>Исходные файлы</Filter>
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\ps.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -110,17 +110,17 @@
     <ClInclude Include="..\..\..\reference\json-ref\jsonsl.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp">
-      <Filter>Исходные файлы\mexo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\source\mexo\ps.hpp">
-      <Filter>Исходные файлы\mexo</Filter>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_convert.hpp">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_convert.hpp">
-      <Filter>Исходные файлы</Filter>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
