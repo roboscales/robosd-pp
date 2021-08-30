@@ -342,11 +342,13 @@ namespace robo {
 				switch (_msg->tran.request) {
 				case ROBO_TRAN_REQUEST_GET:
 				case ROBO_TRAN_EXCANGE:
+				case ROBO_TRAN_REBOOT_ME:
 					request_begin_us_ = system::env::time_us();
 					timeout_us_ = default_timeout_us_;
 					proto_res = post(_msg);
 					break;
 				case ROBO_TRAN_REQUEST_PUT:
+					//todo разные таймауты??
 					request_begin_us_ = system::env::time_us();
 					timeout_us_ = default_timeout_us_;
 					proto_res = post(_msg);
