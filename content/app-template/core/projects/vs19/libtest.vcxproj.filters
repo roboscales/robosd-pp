@@ -39,9 +39,6 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_app.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_system_dummy.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -65,6 +62,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\ps.cpp">
       <Filter>Исходные файлы\mexo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_dummy.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_std.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\core\platform\win+vs19\robosd-system-win.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\net\robosd_serial.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\source\net\robosd_flow.cpp">
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +133,18 @@
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp">
       <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_devagent_common.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\net\robosd_serial.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\net\robosd_ring_buf.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\net\robosd_flow.hpp">
+      <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

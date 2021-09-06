@@ -4,7 +4,8 @@
 #include "robosd_app_tuning.hpp"
 #include "robosd_target.hpp"
 #include <limits>
-#ifndef ROBO_TYPE_RANDOM 
+
+#ifndef ROBO_TYPE_RANDOM
 #define ROBO_TYPE_RANDOM int
 #endif 
 
@@ -61,25 +62,23 @@ namespace robo {
 	bool ROBO_EXPORT active(void);
 	void ROBO_EXPORT finish(void);*/
 
-	int ROBO_EXPORT hash( cstr _src, int _begin = 0);
+	int ROBO_EXPORT hash(cstr _src, int _begin = 0);
 	int ROBO_EXPORT fast_hash(cstr _src, int _begin = 0);
-	void ROBO_EXPORT crash(char const * _file, char const * _function, int _line);
+	void ROBO_EXPORT crash(char const* _file, char const* _function, int _line);
 	enum class result { complete, resume, panic };
 
 	template<typename T>
-		constexpr T pi = T(3.1415926535897932385);
+	constexpr T pi = T(3.1415926535897932385);
 
-	double constexpr csqrt_helper(double x, double curr, double prev)
-	{
-		return curr == prev 
+	double constexpr csqrt_helper(double x, double curr, double prev) {
+		return curr == prev
 			? curr
 			: csqrt_helper(x, (curr + x / curr) / 2., curr);
 	}
 
 
 
-	template<typename T>  T  constexpr csqrt(T x)
-	{
+	template<typename T>  T  constexpr csqrt(T x) {
 		double dx = (double)x;
 		double res = (x >= 0 && x < std::numeric_limits<double>::infinity())
 			? csqrt_helper(x, x, 0.)
@@ -88,12 +87,12 @@ namespace robo {
 	}
 
 
-	
-	template<typename T>
-		constexpr T one_div_sqrt3 = T(1)/csqrt(T(3));
 
 	template<typename T>
-		constexpr T sqrt3_div_2 = csqrt(T(3))/T(2);
+	constexpr T one_div_sqrt3 = T(1) / csqrt(T(3));
+
+	template<typename T>
+	constexpr T sqrt3_div_2 = csqrt(T(3)) / T(2);
 }
 
 
@@ -121,6 +120,14 @@ namespace robo {
 #define ROBO_EXPORT_FUNCTION_PREFIX RT("")
 #endif
 
+#ifndef ROBO_APP_SYSTEM_ENABLED
+#define ROBO_APP_SYSTEM_ENABLED 0
+#endif
+
+#ifndef ROBO_APP_NET_FLOW_ENABLED
+#define ROBO_APP_NET_FLOW_ENABLED 0
+#endif
+
 #define ROBO_APP_TYPE_NONE 0
 #define ROBO_APP_TYPE_DUMMY 1
 #define ROBO_APP_TYPE_NATIVE 2
@@ -130,7 +137,6 @@ namespace robo {
 #define ROBO_APP_TYPE_RASPBERRY 6
 #define ROBO_APP_TYPE_UBUNTU 7
 #define ROBO_APP_TYPE_ASTRA 8
-
+#define ROBO_APP_TYPE_SPECIFIC 9
 
 #endif
-

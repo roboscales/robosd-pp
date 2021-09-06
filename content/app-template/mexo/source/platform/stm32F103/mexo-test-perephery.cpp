@@ -105,7 +105,8 @@ namespace robo {
 	void system::env::sleep(void) {
 	}
 	
-	
+	void system::env::print(robo::log::verb _verb, cstr _format, va_list  _args){
+	}
 	void system::env::print( cstr  _s){
 /*		
 		transport_buffer * packet = transport_buffer_query();

@@ -1,11 +1,49 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
-#include "core/robosd_String.hpp"
+#include "core/robosd_string.hpp"
 #include <algorithm>
+
+namespace robo {
+	int hash(cstr _src, int _begin) {
+		const int p = 15;
+		const int m = 10009;
+		int hash_value = _begin;
+		int p_pow = 1;
+		const char_t* c;
+		for (c = _src; *c; c++) {
+			hash_value = (hash_value + (*c - 'a' + 1) * p_pow) % m;
+			p_pow = (p_pow * p) % m;
+		}
+		return hash_value;
+	}
+
+	int fast_hash(cstr _src, int _begin) {
+		unsigned short x = (unsigned short)_begin;
+		const char_t* c;
+		for (c = _src; *c; c++) {
+			x += 44111 * (*c);
+		}
+		return (int)x;
+	}
+	char const* fault_file_ = nullptr;
+	char const* fault_function_ = nullptr;
+	int fault_line = 0;
+
+	void crash(char const* _file, char const* _function, int _line) {
+		fault_file_ = _file;
+		fault_function_ = _function;
+		fault_line = _line;
+		#if ROBO_APP_ENV_ENABLED == 1
+		system::env::abort();
+		#else
+		while (true) {}
+		#endif
+	}
+}
 
 #if ROBO_APP_SYSTEM_ENABLED == 1
 
-#if ROBO_APP_ALLOC_ENABLED ==1
+#if ROBO_APP_ALLOC_ENABLED == 1
 #ifndef ROBO_SYSTEM_ALLOCATOR_WORD_TYPE
 #define ROBO_SYSTEM_ALLOCATOR_WORD_TYPE uint32_t
 #endif
@@ -24,33 +62,12 @@
 #endif
 
 namespace robo {
-	int hash(cstr _src, int _begin) {
-		const int p = 15;
-		const int m = 10009;
-		int hash_value = _begin;
-		int p_pow = 1;
-		const char_t* c;
-		for (c = _src; *c; c++) {
-			hash_value = (hash_value + (*c - 'a' + 1) * p_pow) % m;
-			p_pow = (p_pow * p) % m;
-		}
-		return hash_value;
-	}
 
-	int fast_hash(cstr _src, int _begin) {
-		unsigned short  x = (unsigned short)_begin;
-		const char_t* c;
-		for (c = _src; *c; c++) {
-			x += 44111 * (*c);
-		}
-		return (int)x;
-	}
-	
-#if ROBO_APP_ALLOC_ENABLED ==1
+	#if ROBO_APP_ALLOC_ENABLED == 1
 	class allocator {
 		friend class system;
 		typedef ROBO_SYSTEM_ALLOCATOR_WORD_TYPE word;
-		typedef ROBO_SYSTEM_ALLOCATOR_SIZE_TYPE size ;
+		typedef ROBO_SYSTEM_ALLOCATOR_SIZE_TYPE size;
 		enum { size_ = ROBO_SYSTEM_ALLOCATOR_SIZE, bits_ = ROBO_SYSTEM_ALLOCATOR_WORD_SIZE_BITS };
 		struct {
 			size_t useful = 0;
@@ -72,12 +89,12 @@ namespace robo {
 					size size;
 				};
 				word header;
-			} ;
-			void * memo(void) { return (void *)(&header + 1); }
+			};
+			void* memo(void) { return (void*)(&header + 1); }
 		};
 
-		word  memo_ [ size_ + 1 ];
-		block* top_ = reinterpret_cast<block *>(memo_);
+		word  memo_[size_ + 1];
+		block* top_ = reinterpret_cast<block*>(memo_);
 		static allocator instance_;
 		size memo_top_ = 0;
 		allocator(void) {
@@ -87,7 +104,7 @@ namespace robo {
 			size deseired = (size)(_sz >> bits_);
 			size tmp = deseired << bits_;
 			if (tmp < _sz) {
-				deseired++; //äàííûå íå âûðîâíåíû
+				deseired++; //Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð½Ðµ Ð²Ñ‹Ñ€Ð¾Ð²Ð½ÐµÐ½Ñ‹
 			}
 			return deseired + 1;
 		}
@@ -100,14 +117,14 @@ namespace robo {
 			statistic_.total.query += _sz;
 			statistic_.count.query++;
 
-			if ( size_ >= next_top) {
-				block* next_ = reinterpret_cast<block*>(memo_+ next_top);
+			if (size_ >= next_top) {
+				block* next_ = reinterpret_cast<block*>(memo_ + next_top);
 				next_->prev_offset = offset;
 				next_->size = 0;
 				top_->size = (size)_sz;
 				memo_top_ = next_top;
 				statistic_.useful += _sz;
-				statistic_.used += offset*sizeof(word);
+				statistic_.used += offset * sizeof(word);
 				statistic_.total.success += _sz;
 				statistic_.count.success++;
 				void* memo = top_->memo();
@@ -119,8 +136,8 @@ namespace robo {
 			}
 		}
 
-		void release_( block* _block ) {
-			size offset = offset_( _block->size );
+		void release_(block* _block) {
+			size offset = offset_(_block->size);
 
 			statistic_.useful -= _block->size;
 			statistic_.used -= offset * sizeof(word);
@@ -128,11 +145,11 @@ namespace robo {
 			_block->size = 0;
 		}
 
-		void release(void * _memo) {
+		void release(void* _memo) {
 			block* tmp = (block*)(((word*)_memo) - 1);
 
-			if ( tmp != top_- top_->prev_offset) {
-				//todo ïðîâåðèòü
+			if (tmp != top_ - top_->prev_offset) {
+				//todo Ð¿Ñ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ
 				release_(tmp);
 			}
 			else {
@@ -144,7 +161,7 @@ namespace robo {
 					memo_top_ = (size)(reinterpret_cast<word*>(top_) - memo_);
 					if (memo_top_ == 0) break;
 					tmp = tmp - tmp->prev_offset;
-				} while ( tmp->size == 0);
+				} while (tmp->size == 0);
 			}
 		}
 
@@ -161,13 +178,13 @@ namespace robo {
 	};
 
 	allocator allocator::instance_;
-#endif
+	#endif
 
-	void *  system::enter_() {
-#if ROBO_APP_ENV_ENABLED ==1
+	void* system::enter_() {
+		#if ROBO_APP_ENV_ENABLED == 1
 		if (state_ == state::enabled) {
 			if (env::is_frontend()) {
-				void *context_ = env::enter();
+				void* context_ = env::enter();
 				guest_count_++;
 				return context_;
 			}
@@ -178,12 +195,12 @@ namespace robo {
 				lock_count_++;
 			}
 		}
-#endif
+		#endif
 		return nullptr;
 	}
 
-	void system::leave_(void * context_) {
-#if ROBO_APP_ENV_ENABLED ==1
+	void system::leave_(void* context_) {
+		#if ROBO_APP_ENV_ENABLED == 1
 		if (state_ == state::enabled) {
 			if (env::is_frontend()) {
 				guest_count_--;
@@ -198,7 +215,7 @@ namespace robo {
 				}
 			}
 		}
-#endif
+		#endif
 	}
 
 	system::guard::guard(void) {
@@ -208,29 +225,31 @@ namespace robo {
 	system::guard::~guard(void) {
 		system::instance_.leave_(context_);
 	}
-	
-	void* system::critical_enter_(void){
-#if ROBO_APP_ENV_ENABLED == 1
-		//þûñòðûì ïðîöåññàì ñäåñü äåëàòü íå÷åãî - ýòî ðàçáîðêè ìåæäó ïîòîêàìè "ôðîíòêíä"
+
+	void* system::critical_enter_(void) {
+		#if ROBO_APP_ENV_ENABLED == 1
+		//Ð±Ñ‹ÑÑ‚Ñ€Ñ‹Ð¼ Ð¿Ñ€Ð¾Ñ†ÐµÑÑÐ°Ð¼ ÑÐ´ÐµÑÑŒ Ð´ÐµÐ»Ð°Ñ‚ÑŒ Ð½ÐµÑ‡ÐµÐ³Ð¾ - ÑÑ‚Ð¾ Ñ€Ð°Ð·Ð±Ð¾Ñ€ÐºÐ¸ Ð¼ÐµÐ¶Ð´Ñƒ Ð¿Ð¾Ñ‚Ð¾ÐºÐ°Ð¼Ð¸ "Ñ„Ñ€Ð¾Ð½Ñ‚ÐºÐ½Ð´"
 		ROBO_APP_ASSERT(env::is_frontend())
-		return system::env::critical_enter();
-#else 
+			return system::env::critical_enter();
+		#else
 		return nullptr;
-#endif
-	}
-	void system::critical_leave_(void* _context){
-#if ROBO_APP_ENV_ENABLED == 1
-		ROBO_APP_ASSERT(env::is_frontend())
-		system::env::critical_leave(_context);
-#else
-		ROBO_UNUSED(_context);
-#endif
+		#endif
 	}
 
-	system::critical::critical(void){
+	void system::critical_leave_(void* _context) {
+		#if ROBO_APP_ENV_ENABLED == 1
+		ROBO_APP_ASSERT(env::is_frontend())
+			system::env::critical_leave(_context);
+		#else
+		ROBO_UNUSED(_context);
+		#endif
+	}
+
+	system::critical::critical(void) {
 		context_ = system::instance_.critical_enter_();
 	}
-	system::critical::~critical(void){
+
+	system::critical::~critical(void) {
 		system::instance_.critical_leave_(context_);
 	}
 
@@ -242,37 +261,39 @@ namespace robo {
 		state_ = state::unknown;
 	}
 
-#if ROBO_APP_ENV_ENABLED == 1
+	#if ROBO_APP_ENV_ENABLED == 1
+
 	system::lazzyboy::lazzyboy(void)
-		: sleep_us_(system::env::time_us()) {
+		: sleep_us_(system::env::time_us()) {}
+
+	robo::time_us_t system::lazzyboy::idle_us(void) {
+		return env::time_us() - sleep_us_;
 	}
-	robo::time_us_t	 system::lazzyboy::idle_us(void) {
-		return  env::time_us() - sleep_us_;
-	}
-#else
+
+	#else
 	system::lazzyboy::lazzyboy(void)
-		: sleep_us_(0) {
-	}
+		: sleep_us_(0) {}
 	robo::time_us_t	 system::lazzyboy::idle_us(void) {
 		return  0;
 	}
-#endif
-	system::lazzyboy::~lazzyboy(void) {
-	}
+	#endif
+
+	system::lazzyboy::~lazzyboy(void) {}
 
 
 	system::fall::fall(void) {
-#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_ENV_ENABLED == 1
 		env::fall();
-#endif
+		#endif
 	}
 
 	system::fall::~fall(void) {
-#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_ENV_ENABLED == 1
 		env::comeback();
-#endif
+		#endif
 	}
-#if ROBO_APP_ALLOC_ENABLED == 1
+
+	#if ROBO_APP_ALLOC_ENABLED == 1
 	void* system::mem_alloc_(size_t _sz) {
 		void* ptr;
 		{
@@ -290,85 +311,74 @@ namespace robo {
 		ROBO_APP_ASSERT(ptr != nullptr);
 		memstat_.total.size += _sz;
 		memstat_.used.size += _sz;
-		memstat_.total.count ++;
-		memstat_.used.count ++;
+		memstat_.total.count++;
+		memstat_.used.count++;
 		return ptr;
 	}
-	
+
 
 	void system::mem_free_(void* _memo) {
 		guard g__;
 		size_t sz = allocator::instance_.owned(_memo);
 		if (sz > 0) {
-			allocator::instance_.release( _memo );
+			allocator::instance_.release(_memo);
 		}
 		else {
+			ROBO_APP_ASSERT(system::env::is_frontend());
 			_memo = (void*)(((size_t*)_memo) - 1);
 			sz = *((size_t*)_memo);
-			env::mem_free( _memo );
+			env::mem_free(_memo);
 		}
 		memstat_.used.size -= sz;
 		memstat_.used.count--;
 	}
-#endif
+	#endif
 
-	char const* fault_file_ = nullptr;
-	char const* fault_function_ = nullptr;
-	int fault_line = 0;
-
-	void crash(char const* _file, char const* _function, int _line) {
-		fault_file_ = _file;
-		fault_function_ = _function;
-		fault_line = _line;
-#if ROBO_APP_ENV_ENABLED == 1
-		system::env::abort();
-#else
-		while (true) {}
-#endif
-	}
-	void system::printf(  cstr _format, va_list _args){
-#if ROBO_APP_ENV_ENABLED == 1		
+	void system::printf(cstr _format, va_list _args) {
+		#if ROBO_APP_ENV_ENABLED == 1
 		string tmp;
-		tmp.format(_format,_args);
+		tmp.format(_format, _args);
 		env::print(tmp.c_str());
-#endif
+		#endif
 	}
-	void system::printf(  cstr _format, ...){
+
+	void system::printf(cstr _format, ...) {
 		va_list args;
 		va_start(args, _format);
-		printf(_format,args);
+		printf(_format, args);
 		va_end(args);
 	}
-	size_t system::sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...){
+
+	size_t system::sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...) {
 		va_list args;
 		va_start(args, _format);
 		size_t ret = 0;
-#if ROBO_APP_ENV_ENABLED == 1		
-		ret = env::sprintf(_dst,_max_sz,_format,args);
-#endif
+		#if ROBO_APP_ENV_ENABLED == 1
+		ret = env::sprintf(_dst, _max_sz, _format, args);
+		#endif
 		va_end(args);
 		return ret;
 	}
 
 	system system::instance_;
 }
+
 void* operator new(size_t size) {
-#if ROBO_APP_ALLOC_ENABLED == 1
+	#if ROBO_APP_ALLOC_ENABLED == 1
 	return robo::system::mem::alloc(size);
-#else
+	#else
 	return malloc(size);
-#endif
+	#endif
 }
+
 void operator delete(void* ptr) {
-#if ROBO_APP_ALLOC_ENABLED == 1
+	#if ROBO_APP_ALLOC_ENABLED == 1
 	robo::system::mem::free(ptr);
-#else
+	#else
 	free(ptr);
-#endif
+	#endif
 
 }
-
-
 
 
 #endif

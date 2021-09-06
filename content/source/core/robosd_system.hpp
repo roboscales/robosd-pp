@@ -1,6 +1,7 @@
 #ifndef  robo_system_hpp
 #define  robo_system_hpp
 #include "core/robosd_common.hpp"
+#include "core/robosd_log.hpp"
 
 
 
@@ -20,7 +21,17 @@
 #define ROBO_APP_ALLOC_TYPE  ROBO_APP_TYPE_NONE
 #endif
 
+#ifndef ROBO_APP_PRINT_TYPE
+#define ROBO_APP_PRINT_TYPE ROBO_APP_TYPE_NONE
+#endif
 
+#ifndef ROBO_APP_LOG_PRINT_TYPE
+#define ROBO_APP_LOG_PRINT_TYPE ROBO_APP_TYPE_NONE
+#endif
+
+#ifndef ROBO_APP_FORMATING_TYPE
+#define ROBO_APP_FORMATING_TYPE  ROBO_APP_TYPE_NONE
+#endif
 
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
@@ -30,7 +41,7 @@
 #if ROBO_APP_SYSTEM_ENABLED  == 1
 namespace robo {
 	class system {
-#if ROBO_APP_ALLOC_ENABLED ==1
+		#if ROBO_APP_ALLOC_ENABLED ==1
 	public:
 		struct mem {
 			struct stat {
@@ -49,29 +60,29 @@ namespace robo {
 		static mem::stat& get_mem_statistic(void) { guard g__; return instance_.memstat_; }
 	private:
 		mem::stat memstat_;
-#endif
+		#endif
 	private:
 		enum  class state { enabled = 178, unknown = -178 };
 		state state_ = state::unknown;
-#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_ENV_ENABLED == 1
 		int lock_count_ = 0;
 		int guest_count_ = 0;
-#endif
+		#endif
 		static system instance_;
-		void *  enter_(void);
-		void leave_(void * context_);
+		void* enter_(void);
+		void leave_(void* context_);
 		void* critical_enter_(void);
 		void critical_leave_(void* _context);
 
-#if ROBO_APP_ALLOC_ENABLED == 1
+		#if ROBO_APP_ALLOC_ENABLED == 1
 		void* mem_alloc_(size_t _sz);
 		void mem_free_(void* _memo);
-#endif
+		#endif
 		friend class critical;
 		system(void);
 		~system(void);
 	public:
-		//останавливает ядро системы
+		//РѕСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЏРґСЂРѕ СЃРёСЃС‚РµРјС‹
 		class ROBO_EXPORT guard {
 			void* context_;
 		public:
@@ -96,13 +107,13 @@ namespace robo {
 		};
 
 		class ROBO_EXPORT critical {
-			void * context_;
+			void* context_;
 		public:
 			critical(void);
 			~critical(void);
 		};
 
-#if ROBO_APP_ENV_ENABLED ==1
+		#if ROBO_APP_ENV_ENABLED ==1
 		class  env {
 			friend class guard;
 			friend class fall;
@@ -117,15 +128,15 @@ namespace robo {
 			static void unlock(void);
 			static void fall(void);
 			static void comeback(void);
-#if ROBO_APP_ALLOC_ENABLED ==1
+			#if ROBO_APP_ALLOC_ENABLED ==1
 			static void* mem_alloc(size_t _sz);
 			static void mem_free(void* _memo);
-#endif
+			#endif
 		public:
 			static bool is_frontend(void);
 			static bool is_backend(void);
 			static void abort(void);
-#if ROBO_APP_MODULE_ENABLED == 1
+			#if ROBO_APP_MODULE_ENABLED == 1
 			static bool begin(void);
 			static void finish(void);
 			static bool start(void);
@@ -134,39 +145,60 @@ namespace robo {
 			static result shutdown(void);
 			static void frontend_loop(void);
 			static void backend_loop(void);
-#endif
+			#endif
 			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
 			static time_ms_t time_ms(void);
 			static random_t rand(random_t _max);
 			static void wakeup(void);
 			static time_us_t period_us(void);
-			static void sleep(void); //вернуть контекст
+			static void sleep(void); //РІРµСЂРЅСѓС‚СЊ РєРѕРЅС‚РµРєСЃС‚
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
-			static void print( cstr  _s);
+			static void print(cstr  _s);
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			static void print(robo::log::verb _verb, cstr _format, va_list  _args);
+			#endif
 		};
-#endif
-		static void printf( cstr _format, va_list _args);
-		static void printf( cstr _format, ...);
+		#endif
+		static void printf(cstr _format, va_list _args);
+		static void printf(cstr _format, ...);
 		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...);
 
-#if ROBO_APP_INI_ENABLED ==1
+		#if ROBO_APP_INI_ENABLED ==1
 		struct ini {
 			static bool begin(cstr _ini);
 			static void finish(void);
 			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 		};
-#endif
-#if ROBO_APP_LIB_ENABLED ==1
+		#endif
+		#if ROBO_APP_LIB_ENABLED ==1
 		struct lib {
-			static void * proc_get(void* _handle, cstr _proc_name);
+			static void* proc_get(void* _handle, cstr _proc_name);
 			static bool exists(cstr _proc_name);
 			static void* load(cstr _lib_name);
 			static void free(void* _instance);
 		};
-#endif
+		#endif
 
 	};
 }
 #endif
+#endif
+#if ROBO_APP_SYSTEM_ENABLED == 1
+#define guard__ ::robo::system::guard g__
+#define fall__ ::robo::system::fall f__
+#define critical__ ::robo::system::critical c__
+#if ROBO_APP_ENV_ENABLED == 1
+#define is_frontend__ ::robo::system::env::is_frontend()
+#define is_backend__ ::robo::system::env::is_backend()
+#else
+#define is_frontend__ true
+#define is_backend__ true
+#endif
+#else
+#define guard__
+#define fall__ 
+#define is_frontend__ true
+#define is_backend__ true
+#define critical__
 #endif

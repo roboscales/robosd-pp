@@ -2,6 +2,7 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_ini.hpp"
+#include "core/robosd_backend.hpp"
 
 #ifndef ROBO_APP_TRACE_ENABLED
 #define ROBO_APP_TRACE_ENABLED 0
@@ -10,10 +11,9 @@
 namespace robo {
 	#if ROBO_APP_MODULE_ENABLED  == 1
 	namespace app {
-		node::node(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this,0) {
-		}
-		
-		node::node(cstr _name, node* _owner) : ref_(*this), own_ref_(*this,0), owner_(nullptr), index_ref_(*this,0) {
+		node::node(void) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this, 0) {}
+
+		node::node(cstr _name, node* _owner) : ref_(*this), own_ref_(*this, 0), owner_(nullptr), index_ref_(*this, 0) {
 			ROBO_ALARMN(init(_name, _owner));
 		}
 
@@ -28,21 +28,21 @@ namespace robo {
 		}
 
 
-		bool node::do_load(void) { 
+		bool node::do_load(void) {
 			alias_.tryload(name_, RT("ALIAS"));
-			return true; 
-		};
-		
-		void node::do_clean(void) { 
-			alias_.clear(); 
+			return true;
 		};
 
-		
+		void node::do_clean(void) {
+			alias_.clear();
+		};
+
+
 		bool node::init(cstr _name, node* _owner) {
 			actual_state_ = state::unknown;
-			if(_name) {
+			if (_name) {
 				store_name_ = _name;
-				name_ = store_name_; 
+				name_ = store_name_;
 			}
 
 			if (owner_ != nullptr) {
@@ -52,9 +52,9 @@ namespace robo {
 			owner_ = _owner;
 
 			if (owner_ != nullptr) {
-				ROBO_LBREAKN(name_!=nullptr)
-				ROBO_LBREAKN(own_ref_.set_key( hash(name_) ))
-				ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
+				ROBO_LBREAKN(name_ != nullptr)
+					ROBO_LBREAKN(own_ref_.set_key(hash(name_)))
+					ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
 				ref_.attach_to(owner_->disabled_);
 			}
 			actual_state_ = state::clean;
@@ -67,13 +67,13 @@ namespace robo {
 			}
 			return true;
 		}
-		
+
 		void node::path(string& _path) {
 			if (_path.length() > 0)
 				_path.format(RT("%s/%s"), name_, _path.c_str());
 			else
 				_path = name_;
-			if (owner_ && owner_ != & machine::root() ) owner_->path(_path);
+			if (owner_ && owner_ != &machine::root()) owner_->path(_path);
 		}
 
 		bool node::load(void) {
@@ -91,7 +91,7 @@ namespace robo {
 			ROBO_LBREAKN(disabled_.count() == 0)
 
 
-			robo_applog("node '%s' is loaded", alias());
+				robo_applog("node '%s' is loaded", alias());
 			actual_state_ = state::stopped;
 			return true;
 		}
@@ -111,7 +111,7 @@ namespace robo {
 			}
 			ROBO_LBREAKN(stopped_.count() == 0)
 
-			ROBO_LBREAKN(do_node_start());
+				ROBO_LBREAKN(do_node_start());
 
 			if (owner_)
 				ref_.attach_to(owner_->startupped_);
@@ -130,7 +130,7 @@ namespace robo {
 
 		result node::node_startup(void) {
 			ref* r = startupped_.first();
-			
+
 			while (r) {
 				node& c = r->owner();
 				r = r->next();
@@ -141,18 +141,18 @@ namespace robo {
 			}
 
 			if (startupped_.count() == 0) {
-				switch(do_node_startup()){
+				switch (do_node_startup()) {
 				case result::complete:
-					if (owner_)
-						ref_.attach_to(owner_->active_);
-					robo_applog("node '%s' is started", alias());
-					actual_state_ = state::execute;
-					return result::complete;
+				if (owner_)
+					ref_.attach_to(owner_->active_);
+				robo_applog("node '%s' is started", alias());
+				actual_state_ = state::execute;
+				return result::complete;
 				case result::resume:
-					return result::resume;
+				return result::resume;
 				case result::panic:
-					panic();
-					return result::panic;
+				panic();
+				return result::panic;
 				}
 			}
 			return result::resume;
@@ -188,16 +188,16 @@ namespace robo {
 			if (shutdowned_.count() == 0) {
 				switch (do_node_shutdown()) {
 				case result::complete:
-					if (owner_)
-						ref_.attach_to(owner_->stopped_);
-					robo_applog("node %s is stopped", alias());
-					actual_state_ = state::stopped;
-					return result::complete;
+				if (owner_)
+					ref_.attach_to(owner_->stopped_);
+				robo_applog("node %s is stopped", alias());
+				actual_state_ = state::stopped;
+				return result::complete;
 				case result::resume:
-					return result::resume;
+				return result::resume;
 				case result::panic:
-					panic();
-					return result::panic;
+				panic();
+				return result::panic;
 				}
 			}
 			return result::resume;
@@ -218,15 +218,13 @@ namespace robo {
 			actual_state_ = state::clean;
 		}
 
-#if ROBO_APP_LIB_ENABLED == 1
-		wrapper::wrapper(void): ref_(*this,0) {
-		}
-		wrapper::~wrapper(void) {
-		}
+		#if ROBO_APP_LIB_ENABLED == 1
+		wrapper::wrapper(void) : ref_(*this, 0) {}
+		wrapper::~wrapper(void) {}
 
 		bool  wrapper::begin(cstr _key) {
 			wrapper* _wrapper = new wrapper();
-			if (!_wrapper->begin_(_key) ) {
+			if (!_wrapper->begin_(_key)) {
 				delete _wrapper;
 				ROBO_LBREAK();
 			}
@@ -234,11 +232,11 @@ namespace robo {
 				return true;
 			}
 		}
-		
+
 		void  wrapper::finish() {
 			if (handle_) {
 				if (module_) {
-					module_->init(nullptr,nullptr);
+					module_->init(nullptr, nullptr);
 					release_f module_release = (release_f)system::lib::proc_get(handle_, ROBO_EXPORT_FUNCTION_PREFIX RT("robo_module_release"));
 					if (module_release == 0) {
 						robo_errlog(" function 'robo_module_release' isn't  found in lib '%s'", lib_.c_str());
@@ -253,9 +251,9 @@ namespace robo {
 			}
 		}
 
-		
+
 		bool  wrapper::begin_(cstr  _key) {
-			ROBO_LBREAKN( lib_.load(RT("MODULES"), _key) );
+			ROBO_LBREAKN(lib_.load(RT("MODULES"), _key));
 
 			ref_.set_key(hash(lib_));
 
@@ -263,10 +261,10 @@ namespace robo {
 				ROBO_LBREAK_F("module isn't loaded (dupplicated lib names) %s", lib_.c_str());
 			}
 
-			ROBO_LBREAKN_F(system::lib::exists(lib_), "module isn't found  %s", lib_.c_str() );
+			ROBO_LBREAKN_F(system::lib::exists(lib_), "module isn't found  %s", lib_.c_str());
 
 			handle_ = system::lib::load(lib_);
-			ROBO_LBREAKN_F(handle_!=nullptr, "module '%s' isn't found  ", lib_.c_str() );
+			ROBO_LBREAKN_F(handle_ != nullptr, "module '%s' isn't found  ", lib_.c_str());
 
 			query_f module_query_;
 			module_query_ = (query_f)system::lib::proc_get(handle_, ROBO_EXPORT_FUNCTION_PREFIX RT("robo_module_query"));
@@ -274,15 +272,15 @@ namespace robo {
 				finish();
 				ROBO_LBREAK_F("function 'robo_module_query' isn't  found in lib '%s'", lib_.c_str());
 			}
-			
+
 			module_ = module_query_();
 			if (module_ == nullptr) {
 				finish();
 				ROBO_LBREAK_F("module is zero in lib '%s'", lib_.c_str());
 			}
 
-			
-			if ( !module_->init( nullptr,  &machine::root()) ) {
+
+			if (!module_->init(nullptr, &machine::root())) {
 				finish();
 				ROBO_LBREAK_F("module isn't init  from  lib  '%s'", lib_.c_str());
 			}
@@ -293,21 +291,17 @@ namespace robo {
 		}
 
 
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
-		bool machine::begin_(cstr _ini, log::print_f _print) {
-#else
 		bool machine::begin_(cstr _ini) {
-#endif
 			init(RT("app.machine"), nullptr);
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
-			log::begin(log::verb::detail_7, log::mask::disabled, _print);
-#endif
-			ROBO_LBREAKN( system::env::begin());
-			
-			robo_infolog("load from %s ", _ini);
-			ROBO_LBREAKN( system::ini::begin(_ini));
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			log::begin(log::verb::detail_7, log::mask::disabled);
+			#endif
+			ROBO_LBREAKN(system::env::begin());
 
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			robo_infolog("load from %s ", _ini);
+			ROBO_LBREAKN(system::ini::begin(_ini));
+
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::verb verb = log::verb::detail_1;
 			unsigned int mask = 0;
 			enum { mask_max_count = 32 };
@@ -319,7 +313,7 @@ namespace robo {
 				verb = (log::verb)tmp;
 			}
 
-			if ( ini::try_load_list(RT("SETTINGS"), RT("DEBUG_MASK_BITS"), (size_t)mask_max_count, masks, mask_count) ) {
+			if (ini::try_load_list(RT("SETTINGS"), RT("DEBUG_MASK_BITS"), (size_t)mask_max_count, masks, mask_count)) {
 				if (mask_count > 0) {
 					mask = 0;
 					for (size_t n = 0; n < mask_count; ++n) {
@@ -334,15 +328,14 @@ namespace robo {
 				mask = (unsigned int)-1;
 			}
 
+			robo::log::begin(verb, mask);
 
-			robo::log::begin(verb, mask, _print);
-			
-#endif
+			#endif
 			ROBO_LBREAKN(node::load());
-#if ROBO_APP_TRACE_ENABLED == 1
+			#if ROBO_APP_TRACE_ENABLED == 1
 			ROBO_BREAKN(robo::trace::begin());
-#endif
-			
+			#endif
+
 			return true;
 		}
 
@@ -364,8 +357,11 @@ namespace robo {
 					r->owner().module_->backend_loop();
 				}
 			}
+			backend::queue::poll();
+			backend::task::machine::execute();
+			backend::bus::perform();
 		}
-		
+
 		machine& machine::root() {
 			static machine instance_;
 			return instance_;
@@ -374,60 +370,60 @@ namespace robo {
 		void  machine::finish_() {
 			node::clean();
 			system::ini::finish();
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::finish();
-#endif
+			#endif
 			system::env::finish();
-#if APP_TRACE_ENABLED == 1
+			#if APP_TRACE_ENABLED == 1
 			trace::finish();
-#endif
+			#endif
 		}
 
 		void machine::machine_(void) {
 			if (req_state_ == req_state::stop) {
-				switch ( actual_state() ) {
+				switch (actual_state()) {
 				case state::stopped:
-					break;
+				break;
 				case state::startup:
 				case state::execute:
-					node::node_stop();
-					break;
+				node::node_stop();
+				break;
 				case state::shutdown:
-					node::node_shutdown();
-					break;
+				node::node_shutdown();
+				break;
 				default:
-					panic();
+				panic();
 				}
 			}
 			else {
-				switch ( actual_state() ) {
+				switch (actual_state()) {
 				case state::stopped:
-					node::node_start();
-					break;
+				node::node_start();
+				break;
 				case  state::startup:
-					node::node_startup();
-					break;
+				node::node_startup();
+				break;
 				case state::execute:
-					break;
+				break;
 				case state::shutdown:
-					node::node_shutdown();
-					break;
+				node::node_shutdown();
+				break;
 				default:
-					panic();
+				panic();
 				}
 			}
 			if (!terminated_)
-				terminated_ = ( actual_state() <= state::stopped );
+				terminated_ = (actual_state() <= state::stopped);
 		}
-		bool machine::terminated__(void) { 
+		bool machine::terminated__(void) {
 			system::guard g__;
-			return terminated_; 
+			return terminated_;
 		}
 
 		bool machine::start_(void) {
 
-			ROBO_LBREAKN_F( actual_state() > state::clean, "application is aborted!" );
-			ROBO_LBREAKN_F( system::env::start(),"application is aborted" );
+			ROBO_LBREAKN_F(actual_state() > state::clean, "application is aborted!");
+			ROBO_LBREAKN_F(system::env::start(), "application is aborted");
 			req_state_ = req_state::start;
 			return true;
 		}
@@ -441,8 +437,8 @@ namespace robo {
 			req_state_ = req_state::stop;
 			int modules_count = 0;
 			ROBO_LBREAKN(ini::load(RT("MODULES"), RT("COUNT"), modules_count));
-			for (int i = 0; i < modules_count; i++) {				
-				ROBO_LBREAKN_F(wrapper::begin(string(RT("M_%d"), i+1)),"modules loading is brake");
+			for (int i = 0; i < modules_count; i++) {
+				ROBO_LBREAKN_F(wrapper::begin(string(RT("M_%d"), i + 1)), "modules loading is brake");
 			}
 			terminated_ = false;
 			return true;
@@ -455,14 +451,14 @@ namespace robo {
 
 		void machine::do_clean(void) {
 			while (wrappers_.count()) {
-				wrapper * _module = & wrappers_.first()->owner();
+				wrapper* _module = &wrappers_.first()->owner();
 				_module->finish();
 				delete _module;
 			}
 			req_state_ = req_state::stop;
 			system::env::finish();
 		}
-#endif
+		#endif
 
 	}
 	#endif

@@ -1,165 +1,286 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
-#include <stdlib.h>
-#include <stdio.h>
+#include "core/robosd_string.hpp"
+#include "core/robosd_ini.hpp"
+#include <iostream>
+#include <io.h>
+#include <fcntl.h>
+#include <thread>
+#if ROBO_UNICODE_ENABLED
+#define UNICODE
+#endif
+
+#if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>
-
-#ifndef ROBO_APP_SYSTEM_DUMMY_ENABLED 
-#define ROBO_APP_SYSTEM_DUMMY_ENABLED  0
-#endif
-
-#ifndef ROBO_APP_INI_DUMMY_ENABLED 
-#define ROBO_APP_INI_DUMMY_ENABLED  0
-#endif
-
-
-#if ROBO_APP_SYSTEM_DUMMY_ENABLED == 1
 namespace robo {
-	bool bakend_flag_ = false;
+	typedef enum {
+		Black = 0,
+		Blue = 1,
+		Green = 2,
+		Cyan = 3,
+		Red = 4,
+		Magenta = 5,
+		Brown = 6,
+		LightGray = 7,
+		DarkGray = 8,
+		LightBlue = 9,
+		LightGreen = 10,
+		LightCyan = 11,
+		LightRed = 12,
+		LightMagenta = 13,
+		Yellow = 14,
+		White = 15
+	} consol_color_t;
 
-	bool system::env::start(void) {
+
+	void set_win_consol_color_(consol_color_t text, consol_color_t background) {
+		HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+		SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));
+	}
+	void system::env::print(robo::log::verb _verb, cstr _format, va_list _args) {
+		switch (_verb) {
+		case robo::log::verb::error:
+		set_win_consol_color_(LightRed, Black);
+		break;
+		case robo::log::verb::warning:
+		set_win_consol_color_(Yellow, Black);
+		break;
+		case robo::log::verb::info:
+		set_win_consol_color_(LightGreen, Black);
+		break;
+		case robo::log::verb::detail_1:
+		set_win_consol_color_(LightCyan, Black);
+		break;
+		case robo::log::verb::detail_2:
+		set_win_consol_color_(LightMagenta, Black);
+		break;
+		case robo::log::verb::detail_3:
+		set_win_consol_color_(LightGreen, Blue);
+		break;
+		case robo::log::verb::detail_4:
+		set_win_consol_color_(LightMagenta, Blue);
+		break;
+		case robo::log::verb::detail_5:
+		set_win_consol_color_(LightCyan, Blue);
+		break;
+		case robo::log::verb::detail_6:
+		set_win_consol_color_(White, Blue);
+		break;
+		case robo::log::verb::detail_7:
+		set_win_consol_color_(White, Blue);
+		break;
+		default:
+		set_win_consol_color_((consol_color_t)((int)_verb & 0xF),
+							  (consol_color_t)(((int)_verb & 0xF0) >> 4));
+		}
+
+		system::printf(_format, _args);
+		system::printf(RT("\n\r"));
+		set_win_consol_color_(White, Black);
+	}
+}
+#endif
+
+
+#if ROBO_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
+#ifndef ROBO_LOG_WIN_BUF_SIZE
+#define ROBO_LOG_WIN_BUF_SIZE 4096
+#endif
+
+namespace robo {
+	void system::env::print(cstr _s) {
+		#if ROBO_UNICODE_ENABLED == 1
+		_setmode(_fileno(stdout), _O_U8TEXT);
+		std::wcout << _s;
+
+		#else
+		SetConsoleOutputCP(CP_UTF8);
+		std::cout << _s;
+		#endif
+	}
+}
+#endif
+
+#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_WIN
+
+#include <windows.h>
+namespace robo {
+	#if ROBO_APP_MODULE_ENABLED == 1
+	time_us_t current_time_us_;
+	time_us_t current_time_ms_;
+	time_us_t period_us_;
+	LARGE_INTEGER tickCurrent_;
+	double us_per_tick_;
+	CRITICAL_SECTION critical_;
+	CRITICAL_SECTION guard_;
+	LARGE_INTEGER ticksPerSecond_;
+	LARGE_INTEGER tickNext_;
+	DWORD tick_per_period_;
+	time_us_t us_acc_ = 0;
+	DWORD  step_show_period_;
+	std::thread::id backend_thread_id_;
+	std::thread::id dummy_thread_id_;
+	time_us_t last_time_us_ = 0;
+	DWORD step_show_tick_ = 0;
+	bool init_ = false;
+	bool timer_setup_(void) {
+		ROBO_LBREAKN(::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), period_us_));
+		QueryPerformanceFrequency(&ticksPerSecond_);
+		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * period_us_ * ticksPerSecond_.QuadPart);
+		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
+		QueryPerformanceCounter(&tickCurrent_);
+		tickNext_.QuadPart = tickCurrent_.QuadPart + period_us_;
+		current_time_us_ = 0;
+		current_time_ms_ = 0;
+		us_acc_ = 0;
 		return true;
 	}
 
-	void system::env::stop(void) {
+
+	bool system::env::begin(void) {
+		InitializeCriticalSection(&critical_);
+		InitializeCriticalSection(&guard_);
+		return true;
 	}
+
+	void system::env::finish(void) {
+		DeleteCriticalSection(&critical_);
+		DeleteCriticalSection(&guard_);
+	}
+
+	bool system::env::start(void) {
+		ROBO_LBREAKN(timer_setup_());
+		time_ms_t ms;
+		ROBO_LBREAKN(::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms));
+		step_show_period_ = 1000 * ms / period_us_;
+		last_time_us_ = realtime_us();
+
+		return true;
+	}
+
+	void system::env::stop(void) {}
 
 	result system::env::startup(void) {
 		return result::complete;
 	}
-	
+
 	result system::env::shutdown(void) {
 		return result::complete;
 	}
+	void system::env::frontend_loop(void) {}
 
-	void system::env::frontend_loop(void) {
-	}
-	
 	void system::env::backend_loop(void) {
+		uint32_t tm = realtime_us();
+		us_acc_ += period_us_;
+		while (us_acc_ > 1000) {
+			us_acc_ -= 1000;
+			current_time_ms_++;
+		}
+		current_time_us_ += period_us_;
+
+		if (++step_show_tick_ == step_show_period_) {
+			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
+			step_show_tick_ = 0;
+		}
+
 	}
 
+	#endif
 
-	bool system::env::is_frontend(void) {
-		return bakend_flag_==false;
+	void system::env::abort(void) {
+		::abort();
 	}
-	bool system::env::is_backend(void) {
-		return bakend_flag_==true;
-	}
-	void* system::env::enter(void) {
+
+	void* system::env::critical_enter(void) {
+		if (init_) {
+			EnterCriticalSection(&critical_);
+		}
 		return nullptr;
 	}
+
+	void system::env::critical_leave(void* _context) {
+		ROBO_UNUSED(_context);
+		if (init_) {
+			LeaveCriticalSection(&critical_);
+		}
+
+	}
+
+	bool system::env::is_frontend(void) {
+		return backend_thread_id_ != std::this_thread::get_id();
+	}
+
+	bool system::env::is_backend(void) {
+		return backend_thread_id_ == std::this_thread::get_id();
+	}
+
+	void* system::env::enter(void) {
+		if (init_) {
+			EnterCriticalSection(&critical_);
+			EnterCriticalSection(&guard_);
+		}
+		return nullptr;
+	}
+
 	void system::env::leave(void* _context) {
 		ROBO_UNUSED(_context);
+		if (init_) {
+			LeaveCriticalSection(&critical_);
+			LeaveCriticalSection(&guard_);
+		}
 	}
+
 	void system::env::lock(void) {
+		if (init_) {
+			EnterCriticalSection(&guard_);
+		}
 	}
+
 	void system::env::unlock(void) {
+		if (init_) {
+			LeaveCriticalSection(&guard_);
+		}
 	}
+
 	void system::env::fall(void) {
-		bakend_flag_ = true;
+		time_us_t tm = realtime_us();
+		while (tm - last_time_us_ < period_us_) {
+			Sleep(0); //?
+			tm = realtime_us();
+		}
+		last_time_us_ = tm;
+		backend_thread_id_ = std::this_thread::get_id();
 	}
+
 	void system::env::comeback(void) {
-		bakend_flag_ = false;
+		backend_thread_id_ = dummy_thread_id_;
 	}
+
 	time_us_t system::env::time_us(void) {
-		return 0;
+		return current_time_us_;
 	}
+
 	time_us_t system::env::realtime_us(void) {
-		return 0;
+		QueryPerformanceCounter(&tickCurrent_);
+		double us = us_per_tick_ * tickCurrent_.LowPart;
+		return (time_us_t)(us);
 	}
+
 	time_ms_t system::env::time_ms(void) {
-		return 0;
+		return current_time_ms_;
 	}
+
 	random_t system::env::rand(random_t _max) {
-		return 0;
+		return (random_t)std::rand() % _max;
 	}
-	void system::env::wakeup(void) {
-	}
+
+	void system::env::wakeup(void) {}
+
 	time_us_t system::env::period_us(void) {
 		return 0;
 	}
-	void system::env::sleep(void) {
-	}
-	bool system::env::begin(void) {
-		return true;
-	}
-	void system::env::finish(void) {
-	}
 
-	void* system::env::mem_alloc(size_t _size) {
-		return malloc(_size);
-	}
-	void system::env::mem_free(void * _memo) {
-		free(_memo);
-	}
-
-	bool system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
-
-#if ROBO_UNICODE_ENABLED == 1
-		size_t sz = vswprintf_s(_dst, _max_sz, _format, _args);
-#else
-		size_t sz = vsprintf(_dst, _format, _args);
-#endif
-		if (sz < _max_sz-1) {
-			_dst[sz] = 0;
-		}
-		return sz < _max_sz-1;
-
-	}
-#if ROBO_APP_INI_ENABLED ==1
-	#if ROBO_APP_INI_DUMMY_ENABLED ==1 
-	cstr g_robo_ini_fn = nullptr;
-	bool system::ini::begin(cstr _ini) {
-		g_robo_ini_fn = _ini;
-		return true;
-	}
-	void system::ini::finish(void) {
-		g_robo_ini_fn = nullptr;
-	}
-	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
-		ROBO_LBREAKN_F(g_robo_ini_fn!=nullptr, "ini is't initialized")
-
-#if ROBO_UNICODE_ENABLED == 1
-		return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
-#else
-		return GetPrivateProfileStringA(_section, _key, _default, _value, (DWORD)_value_max, g_robo_ini_fn) > 0;
-#endif
-	}
-	#endif
-#endif
-
-#if ROBO_APP_LIB_ENABLED ==1
-#if ROBO_APP_LIB_DUMMY_ENABLED ==1
-	bool system::lib::proc_get(void* _handle, cstr _proc_name) {
-		return false;
-	}
-	bool system::lib::exists(cstr _proc_name) {
-		return false;
-	}
-	bool system::lib::load(cstr _proc_name, void*& _instance) {
-		return false;
-	}
-	void system::lib::free(void* _instance) {
-
-	}
-
-#endif
-#endif
-
-
-	char const* fault_file_ = nullptr;
-	char const* fault_function_ = nullptr;
-	int fault_line = 0;
-
-	void crash(char const* _file, char const* _function, int _line) {
-		fault_file_ = _file;
-		fault_function_ = _function;
-		fault_line = _line;
-		abort();
-	}
-
-
+	void system::env::sleep(void) {}
 
 }
 #endif
-

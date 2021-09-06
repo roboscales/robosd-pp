@@ -15,7 +15,7 @@ namespace robo {
 			enum class state { unknown = -2, panic = -1, clean = 0, stopped, startup, execute, shutdown };
 		private:
 			typedef  ::robo::list::unsorted<node> list;
-			typedef  ::robo::list::unique<node,int> map;
+			typedef  ::robo::list::unique<node, int> map;
 			typedef  list::ref ref;
 			typedef  map::ref mref;
 			robo::string store_name_;
@@ -34,28 +34,28 @@ namespace robo {
 			static map& index_(void);
 		protected:
 			map owned;
-			int id(void) { return index_ref_.key();  }
+			int id(void) { return index_ref_.key(); }
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual result do_node_startup(void) { return result::complete; }
 			virtual result do_node_shutdown(void) { return result::complete; }
 			virtual bool do_node_start(void) { return true; }
-			virtual void do_node_stop(void) { }
-			virtual void do_panic(void) { }
+			virtual void do_node_stop(void) {}
+			virtual void do_panic(void) {}
 			void panic(void);
 			result node_startup(void);
 			result node_shutdown(void);
 			bool node_start(void);
 			void node_stop(void);
 			bool init(cstr _name, node* _owner);
-			node(cstr _name, node* _owner);			
+			node(cstr _name, node* _owner);
 		public:
 			bool load(void);
 			void clean(void);
 			cstr name(void) { return name_; }
 			void path(string& _path);
-			state actual_state(void) {	return actual_state_; }
-			const cstr alias(void) { return alias_.length()== 0 ? name_ : alias_.c_str();  };
+			state actual_state(void) { return actual_state_; }
+			const cstr alias(void) { return alias_.length() == 0 ? name_ : alias_.c_str(); };
 
 			node(void);
 			virtual ~node(void);
@@ -63,21 +63,21 @@ namespace robo {
 			static node* find(cstr _path) { return index_().find(fast_hash(_path)); }
 		};
 
-		
+
 
 		class wrapper;
 		class machine;
 
-		class ROBO_EXPORT module: public node {
+		class ROBO_EXPORT module : public node {
 		protected:
 			friend class wrapper;
 			friend class machine;
 			virtual void frontend_loop(void) = 0;
 			virtual void backend_loop(void) = 0;
-			module(cstr _name) : node(_name,nullptr) {}
+			module(cstr _name) : node(_name, nullptr) {}
 		};
 
-#if ROBO_APP_LIB_ENABLED == 1
+		#if ROBO_APP_LIB_ENABLED == 1
 		class  ROBO_EXPORT wrapper {
 			friend class machine;
 
@@ -101,16 +101,12 @@ namespace robo {
 			static bool begin(cstr _key);
 			void finish(void);
 		};
-		
-		class  ROBO_EXPORT machine: public node {
+
+		class  ROBO_EXPORT machine : public node {
 		private:
 			friend class wrapper;
 			bool terminated_ = true;
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
-			bool begin_(cstr _ini, log::print_f _print);
-#else
 			bool begin_(cstr _ini);
-#endif
 			void finish_(void);
 			void stop_(void);
 			bool start_(void);
@@ -120,7 +116,7 @@ namespace robo {
 			void backend_loop_(void);
 			bool terminated__(void);
 
-			enum class req_state  { start, stop };
+			enum class req_state { start, stop };
 
 			req_state req_state_ = req_state::stop;
 			wrapper::map wrappers_;
@@ -133,22 +129,18 @@ namespace robo {
 
 		public:
 			static machine& root(void);
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
-			static inline bool begin(cstr _ini, log::print_f _print) { return root().begin_(_ini, _print); }
-#else
 			static inline bool begin(cstr _ini) { return root().begin_(_ini); }
-#endif
 
 			static inline void finish(void) { root().finish_(); }
 			static inline void  stop(void) { root().stop_(); };
-			static inline void  start(void) { root().start_(); };
+			static inline bool  start(void) { return root().start_(); };
 
 			static inline void  backend_loop(void) { root().backend_loop_(); };
 			static inline void  frontend_loop(void) { root().frontend_loop_(); };
 			static inline bool  terminated(void) { return root().terminated__(); }
 		};
 
-#endif
+		#endif
 	}
 }
 #endif

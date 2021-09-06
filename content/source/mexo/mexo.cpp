@@ -1,5 +1,6 @@
 #include "mexo/mexo.hpp"
 #include "core/robosd_log.hpp"
+#include "net/robosd_flow.hpp"
 namespace mexo {
 	
 	machine machine::instance_;
@@ -21,13 +22,13 @@ namespace mexo {
 	void machine::priority_loop_(void) {
 		tp::on(tp_verb::loop);
 		tp::on(tp_verb::priority);
-		system::fall f__;
+		fall__;
 		slots_ref_.priority.execute();
 		tp::off(tp_verb::priority);
 	}
 	void machine::backend_loop_(void) {
 		tp::on(tp_verb::backend);
-		system::fall f__;
+		fall__;
 		slots_ref_.backend.execute();
 		slots_ref_.periodic[slot_index_]. execute();
 		slot_index_++;
@@ -36,10 +37,12 @@ namespace mexo {
 		}
 		tp::off(tp_verb::backend);
 		tp::off(tp_verb::loop);
+		::robo::net::flow::machine::backend_poll();
 	}
 	void machine::frontend_loop_(void) {
 		tp::on(tp_verb::frontend);
 		slots_ref_.frontend.execute();
+		::robo::net::flow::machine::frontend_poll();
 		tp::off(tp_verb::frontend);
 	}
 	machine::slots& machine::slots_(void) {
@@ -114,31 +117,31 @@ namespace mexo {
 	}
 
 	void machine::slot::delegat::attach(slot::kind _kind) {
-		ROBO_APP_ASSERT(system::env::is_frontend());
+		ROBO_APP_ASSERT(is_frontend__);
 		ref* r = new ref(*this);
-		robo::system::guard g__;
+		guard__;
 		r->attach_to(machine::slots_()[_kind].delegats_);
 	}
 
 	void machine::slot::delegat::attach(int _index) {
-		ROBO_APP_ASSERT(system::env::is_frontend());
+		ROBO_APP_ASSERT(is_frontend__);
 		ref* r = new ref(*this);
-		robo::system::guard g__;
+		guard__;
 		r->attach_to(machine::slots_()[_index].delegats_);
 	}
 
 	void machine::slot::delegat::attach(ref & _ref, int _index) {
-		robo::system::guard g__;
+		guard__;
 		_ref.attach_to(machine::slots_()[_index].delegats_);
 	}
 	void machine::slot::delegat::attach(ref& _ref, slot::kind _kind) {
-		robo::system::guard g__;
+		guard__;
 		_ref.attach_to(machine::slots_()[_kind].delegats_);
 	}
 
 
 	node::node(void) : ref_(*this), map_ref_(*this, 0), name_(RT("root")), owner_(nullptr)/*, auto_enabled_(true)*/ {
-		ROBO_APP_ASSERT(system::env::is_frontend());
+		ROBO_APP_ASSERT(is_frontend__);
 	}
 
 	node& node::root_(void) {
@@ -273,7 +276,7 @@ namespace mexo {
 	}
 
 	void dev::switch_to(int _mode_id) {
-		ROBO_APP_ASSERT(system::env::is_backend());
+		ROBO_APP_ASSERT(is_backend__);
 		if (_mode_id != actual_mode_id_) {
 			if (actual_mode_id_ != idle_id) {
 				actual_mode_->stop();
@@ -302,14 +305,11 @@ namespace mexo {
 		}
 	}
 	void dev::backend__(void) {
-		ROBO_APP_ASSERT(system::env::is_backend());
-
-		robo::system::guard g__;
-
+		ROBO_APP_ASSERT(is_backend__);
+		guard__;
 		if (action_.mode != actual_mode_id_) {
 			switch_to(action_.mode);
 		}
-
 		if (action_.actual) {
 			action_.actual = false;
 			actual_mode_->applay_action();
@@ -331,7 +331,11 @@ void mexo_priority_loop(void){
 }
 void mexo_backend_loop(void){
 	mexo::machine::backend_loop();
+#if ROBO_APP_NET_FLOW_ENABLED==1	
+#endif
 }
 void mexo_frontend_loop(){
 	mexo::machine::frontend_loop();
+#if ROBO_APP_NET_FLOW_ENABLED==1	
+#endif
 }

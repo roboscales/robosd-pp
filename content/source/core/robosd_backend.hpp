@@ -13,6 +13,7 @@
 #include "core/robosd_system.hpp"
 namespace robo {
 	namespace backend {
+
 		class ROBO_EXPORT task {
 		public:
 			typedef list::pool < task, time_us_t > pool;
@@ -35,7 +36,10 @@ namespace robo {
 			inline time_us_t sleep_timeout(void) { return ref_.key(); }
 			virtual  result  execute(void) = 0;
 		public:
+
+			/** \brief	The name. */
 			string name;
+
 			class ROBO_EXPORT machine {
 				friend class task;
 				pool disabled_;
@@ -52,7 +56,6 @@ namespace robo {
 			public:
 				static inline void execute(void) { instance().execute_(); };
 			};
-
 			bool start(bool _suspended);
 			bool stop(void);
 			task(void);
@@ -94,7 +97,7 @@ namespace robo {
 				static void restart() { instance().restart_(); }
 			};
 		};
-			
+
 		class ROBO_EXPORT queue : public signal {
 			void poll_(void);
 			void post_(signal::performer* _performer, signal::performer::priority _priority);
@@ -116,14 +119,13 @@ namespace robo {
 			enum { default_period_us = 1000 };
 			repeater(time_us_t _period = default_period_us)
 				: performer(false)
-				, period_(_period)
-			{}
+				, period_(_period) {}
 			void start(void) { timer::core::start(this, period_); }
 			void start(time_us_t _period) { period_ = _period;  start(); }
 			void stop(void) { timer::core::stop(this, period_); }
 		};
 
-#if ROBO_APP_MODULE_ENABLED  == 1
+		#if ROBO_APP_MODULE_ENABLED  == 1
 
 		class boardagent;
 
@@ -145,9 +147,9 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			mode actual_mode(void) { return mode_;  }
+			mode actual_mode(void) { return mode_; }
 			virtual record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
-			router(cstr _name, app::module & _owner);
+			router(cstr _name, app::module& _owner);
 		};
 
 
@@ -193,9 +195,9 @@ namespace robo {
 				virtual void confirm(robo_tran_p _tran) = 0;
 				query_result query(msg* _msg);
 			};
-			typedef frontend::idevagent::istate state;
-			typedef frontend::idevagent::icommand command;
-			typedef frontend::idevagent::istatus status;
+			typedef common::idevagent::istate state;
+			typedef common::idevagent::icommand command;
+			typedef common::idevagent::istatus status;
 
 		private:
 			boardagent& boardagent_;
@@ -214,7 +216,7 @@ namespace robo {
 			virtual void uppdate_feedback(void) {};
 
 			bool exchabge_enabled(void) { return actual_state_.local > state::ilocal::disabled; }
-			bool configure_complete(void) { 
+			bool configure_complete(void) {
 				ROBO_LBREAKN(actual_state_.local == state::ilocal::configure);
 				actual_state_.local = state::ilocal::ready;
 				return true;
@@ -227,7 +229,7 @@ namespace robo {
 			itrafic trafic;
 
 			const dev_id_t& dev_id(void) { return dev_id_; };
-			void dev_set_id(uint8_t _addr) { dev_id_.address =_addr; };
+			void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 
 			stream::query_result query(stream::msg* _msg);
 
@@ -253,22 +255,21 @@ namespace robo {
 				};
 				switch (actual_state_.local) {
 				case state::ilocal::unknown:
-					return status::unknown;
+				return status::unknown;
 				case state::ilocal::disabled:
-					return status::disabled;
+				return status::disabled;
 				case state::ilocal::configure:
-					return status::busy;
+				return status::busy;
 				case state::ilocal::ready:
-					return tb[((int)actual_state_.remote * 5) + (int)actual_command_];
+				return tb[((int)actual_state_.remote * 5) + (int)actual_command_];
 				default:
-					return status::unknown;
+				return status::unknown;
 				}
 			}
 
-			command actual_command(void) { return actual_command_;  };
+			command actual_command(void) { return actual_command_; };
 			state::ilocal local_state(void) { return  actual_state_.local; };
 			state::iremote remote_state(void) { return  actual_state_.remote; };
-
 		};
 
 		class ROBO_EXPORT bus : public app::node {
@@ -313,9 +314,9 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			//короткий id
+			//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ id
 			int id(void) { return index_ref_.key(); }
-			//todo подпорка для busmarshal
+			//todo пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ busmarshal
 			msg* current_msg(void) { return current_msg_; };
 			itrafic trafic;
 			virtual msg* get_msg(void) = 0;
@@ -327,31 +328,47 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent {
+		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent, public ::robo::frontend::shared {
 		public:
-			typedef typename ::robo::frontend::devagent<D>::iaction iaction;
-			typedef typename ::robo::frontend::devagent<D>::ifeedback ifeedback;
-			iaction action;
-			ifeedback feedback;
+			typedef typename D::iaction A;
+			typedef typename D::ifeedback F;
+			A goal;
+			typename F::ipresent  present;
+		private:
+			const void* action_addr_begin_;
+			const void* action_addr_end_;
+			const void* feedback_addr_begin_;
+			const void* feedback_addr_end_;
+		protected:
+			virtual bool is_my_action(void* _begin, void* _end) {
+				return _begin <= action_addr_begin_ && action_addr_end_ <= _end;
+			};
+			virtual bool is_my_feedback(void* _begin, void* _end) {
+				return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
+			};
 
 			virtual void apply_action(void) {
-				perform_command( ::robo::frontend::devagent<D>::front.action.command ) ;
-				feedback.status = actual_status();
-				action.deseired = ::robo::frontend::devagent<D>::front.action.deseired;
-				if (feedback.status == status::dirrect ) {
-					action.required = action.deseired;
-				} 
+				perform_command(::robo::frontend::devagent<D>::front.action.command);
+				present.status = actual_status();
+				if (present.status == status::dirrect) {
+					goal = ::robo::frontend::devagent<D>::front.action;
+				}
+				//action.deseired = ::robo::frontend::devagent<D>::front.action.deseired;
 			}
 
 			virtual void uppdate_feedback(void) {
-				feedback.status = actual_status();
-				::robo::frontend::devagent<D>::front.feedback = feedback;
-				::robo::frontend::devagent<D>::front.action.required = action.required;
+				present.status = actual_status();
+				::robo::frontend::devagent<D>::front.feedback.present = present;
+				::robo::frontend::devagent<D>::front.feedback.goal = goal;
 			}
-
-			devagent(cstr _name, boardagent& _boardagent, iaction& _action, ifeedback& _feedback) :
+		public:
+			devagent(cstr _name, boardagent& _boardagent, A& _action, F& _feedback) :
 				::robo::frontend::devagent<D>(_action, _feedback)
-				, ::robo::backend::idevagent(_name, _boardagent) {}
+				, ::robo::backend::idevagent(_name, _boardagent)
+				, action_addr_begin_((void*)&::robo::frontend::devagent<D>::front.action)
+				, action_addr_end_((void*)((uint8_t*)action_addr_begin_ + sizeof(A) / sizeof(uint8_t)))
+				, feedback_addr_begin_((void*)&::robo::frontend::devagent<D>::front.feedback)
+				, feedback_addr_end_((void*)((uint8_t*)feedback_addr_begin_ + sizeof(F) / sizeof(uint8_t))) {}
 		};
 
 		class boardagent : public app::node {
@@ -365,11 +382,11 @@ namespace robo {
 			boardagent(cstr _name, app::module& _owner) :app::node(_name, &_owner) {};
 		};
 
-		class contrltable : public idevagent:: stream, frontend::contrltable{
+		class contrltable : public idevagent::stream, frontend::contrltable {
 		private:
 			int command_;
 		public:
-			class ivar : public frontend ::contrltable :: ivar {
+			class ivar : public frontend::contrltable::ivar {
 				friend class contrltable;
 				typedef ::robo::list::unsorted<ivar> queue;
 				typedef queue::ref ref;
@@ -383,15 +400,16 @@ namespace robo {
 				contrltable& owner(void) { return (contrltable&)frontend::contrltable::ivar::owner(); }
 			};
 
-			
-			template<  typename T> class var : public frontend::contrltable::var< ivar, T>  {
+
+			template<  typename T> class var_t : public frontend::contrltable::var_t< ivar, T> {
 			public:
-				typedef frontend::contrltable::var< ivar, T> B;
-				typedef frontend::contrltable::ivar::delegat delegat; 
+				typedef frontend::contrltable::var_t< ivar, T> B;
+				typedef frontend::contrltable::ivar::delegat delegat;
 			protected:
-				struct {
-					T local;
-					T remote;
+				struct iactual {
+					T& local;
+					T& remote;
+					iactual(T& _local, T& _remote) : local(_local), remote(_remote) {}
 				} actual;
 			public:
 
@@ -400,7 +418,7 @@ namespace robo {
 				}
 				bool post(delegat& _delegat) {
 					ROBO_LRET(B::post(_delegat));
-				}			
+				}
 
 				bool post(const T& _value) {
 					actual.local = _value;
@@ -410,58 +428,63 @@ namespace robo {
 				bool post(const T& _value, delegat& _delegat) {
 					actual.local = _value;
 					ROBO_LRET(B::post(_delegat));
-				}			
-				
+				}
+
 				result try_post(const T& _value) {
-					actual.local  = _value;
-					if(  actual.remote != _value  ){
-						ROBO_RET(B::post(),result::resume,result::panic);
-					} else {
+					actual.local = _value;
+					if (actual.remote != _value) {
+						ROBO_RET(B::post(), result::resume, result::panic);
+					}
+					else {
 						return result::complete;
 					}
 				}
 
 				result try_post(const T& _value, delegat& _delegat) {
-					actual.local  = _value;
-					if(  actual.remote != _value  ){
-						ROBO_RET(B::post(_delegat),result::resume,result::panic);
-					} else {
+					actual.local = _value;
+					if (actual.remote != _value) {
+						ROBO_RET(B::post(_delegat), result::resume, result::panic);
+					}
+					else {
 						return result::complete;
-					}				
+					}
 				}
 
-				
 				bool query(void) {
-					ROBO_LRET( B::query() );
+					ROBO_LRET(B::query());
 				}
-				
+
 				bool query(delegat& _delegat) {
-					ROBO_LRET(B::query(_delegat) );
-				}				
-
-				static var & create_var( cstr _path, cstr _name ) {
-					var * v = dynamic_cast<var *>(ivar::create_var(_path, _name));
-					ROBO_APP_ASSERT(v!=nullptr)
-					return *v;
+					ROBO_LRET(B::query(_delegat));
 				}
 
-				const T & value(void) { 
-					if(system::env::is_backend()){
+				static var_t& create_var(cstr _path, cstr _name) {
+					var_t* v = dynamic_cast<var_t*>(ivar::create_var(_path, _name));
+					ROBO_APP_ASSERT(v != nullptr)
+						return *v;
+				}
+
+				const T& value(void) {
+					if (system::env::is_backend()) {
 						return actual.remote;
-					} else {
+					}
+					else {
 						return B::front.remote;
 					}
 				}
 
-				operator const T & (void) { 
-						return actual.remote;
+				operator const T& (void) {
+					return actual.remote;
 				}
 
-				var(contrltable& _contrltable, cstr _name) 
-					: frontend::contrltable::var< ivar, T>(
+				var_t(contrltable& _contrltable, cstr _name, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
+					: frontend::contrltable::var_t< ivar, T>(
 						_contrltable
 						, _contrltable.find_record_ref(_name)
-					) {
+						, _front_local
+						, _front_remote
+						)
+					, actual(_actual_local, _actual_remote) {
 					ROBO_VBREAKN_F(sizeof(T) == B::length(), "error typecast for var '%s/%s' ", B::owner().alias(), ivar::name());
 					B::begin();
 				};
@@ -475,13 +498,13 @@ namespace robo {
 							actual.local = B::front.local;
 						}
 						else {
-							B::front.local = actual.local ;
+							B::front.local = actual.local;
 						}
 					}
-					std::copy_n((uint8_t*)(&actual.local), B::length() , _dst);
+					std::copy_n((uint8_t*)(&actual.local), B::length(), _dst);
 					return true;
 				}
-				
+
 				virtual bool decode(uint8_t* _src) {
 					std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
 					{
@@ -490,90 +513,118 @@ namespace robo {
 					}
 					return true;
 				}
-				
-		};
-			
-		template<  typename T> class fvar : public var<T>  {
-			converter * converter_  = nullptr;
+
+			};
+
+			template< typename T> class var : public  var_t<T> {
+			private:
+				struct {
+					T local;
+					T remote;
+				} front_;
+				struct {
+					T local;
+					T remote;
+				} actual_;
 			public:
-				typedef var<T> B;
-				bool set_converter(cstr _name){
-					converter_ = dynamic_cast<converter *>( app::node::find(_name));
+				var(contrltable& _contrltable, cstr _name)
+					: var_t<T>(_contrltable, _name, front_.local, front_.remote, actual_.local, actual_.remote) {};
+			};
+
+
+			template<  typename T> class fvar_t : public var_t<T> {
+				converter* converter_ = nullptr;
+			public:
+				typedef var_t<T> B;
+				bool set_converter(cstr _name) {
+					converter_ = dynamic_cast<converter*>(app::node::find(_name));
 					return converter_ != nullptr;
 				}
 
-				bool set_converter(converter * _converter){					
+				bool set_converter(converter* _converter) {
 					converter_ = _converter;
 					return converter_ != nullptr;
 				}
 
-				fvar(contrltable& _contrltable, cstr _name, cstr _converter = nullptr) 
-					: var< T>(
-						_contrltable
-						, _name
-					) 
-				{
-					if(_converter != nullptr) {
+				fvar_t(
+					contrltable& _contrltable
+					, cstr _name
+					, cstr _converter
+					, T& _front_local
+					, T& _front_remote
+					, T& _actual_local
+					, T& _actual_remote
+				) : var_t< T>(
+					_contrltable
+					, _name
+					, _front_local
+					, _front_remote
+					, _actual_local
+					, _actual_remote
+					) {
+					if (_converter != nullptr) {
 						set_converter(_converter);
 					}
 				};
-				
+
 
 				result try_load(cstr _section, cstr _key) {
-					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);			
-					if( B::actual.local != B::actual.remote )	{
-						ROBO_RET(B::post(),result::resume,result::panic);
-					} else {
+					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);
+					if (B::actual.local != B::actual.remote) {
+						ROBO_RET(B::post(), result::resume, result::panic);
+					}
+					else {
 						return result::complete;
 					}
 				}
-				
-				typedef frontend::contrltable::ivar::delegat delegat; 
-				result try_load( cstr _section, cstr _key, delegat& _delegat) {
-					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);			
-					if( B::actual.local != B::actual.remote )	{
-						ROBO_RET(B::post(_delegat),result::resume,result::panic);
-					} else {
+
+				typedef frontend::contrltable::ivar::delegat delegat;
+				result try_load(cstr _section, cstr _key, delegat& _delegat) {
+					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);
+					if (B::actual.local != B::actual.remote) {
+						ROBO_RET(B::post(_delegat), result::resume, result::panic);
+					}
+					else {
 						return result::complete;
 					}
 				}
-				
-				template <typename U> float  to_float( U _src){  return converter_==nullptr? 0.f  : converter_->to_float(_src); }
-				result try_post_min(void){
-					if(converter_){
-						if( fabs( B::acual.remote - converter_->min() ) > converter_->eps() ){
-							B::acual.local  = converter_->min();
-							ROBO_RET(B::post(),result::resume,result::panic);
+
+				template <typename U> float  to_float(U _src) { return converter_ == nullptr ? 0.f : converter_->to_float(_src); }
+				result try_post_min(void) {
+					if (converter_) {
+						if (fabs(B::acual.remote - converter_->min()) > converter_->eps()) {
+							B::acual.local = converter_->min();
+							ROBO_RET(B::post(), result::resume, result::panic);
 						}
 					}
 					return result::complete;
 				}
 
-				result try_post_max(void){
-					if(converter_){
-						if( fabs( B::actual.remote - converter_->max()) > converter_->eps() ){
-							B::actual.local  = converter_->max();
-							ROBO_RET(B::post(),result::resume,result::panic);
+				result try_post_max(void) {
+					if (converter_) {
+						if (fabs(B::actual.remote - converter_->max()) > converter_->eps()) {
+							B::actual.local = converter_->max();
+							ROBO_RET(B::post(), result::resume, result::panic);
 						}
 					}
 					return result::complete;
 				}
 
-				result try_post_min(delegat& _delegat){
-					if(converter_){
-						if( fabs( B::actual.remote - converter_->min() ) > converter_->eps() ){
-							B::actual.local  = converter_->min();
-							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+				result try_post_min(delegat& _delegat) {
+					if (converter_) {
+						if (fabs(B::actual.remote - converter_->min()) > converter_->eps()) {
+							B::actual.local = converter_->min();
+							ROBO_RET(B::post(_delegat), result::resume, result::panic);
 						}
 					}
 					return result::complete;
 				}
-				converter * conv(void){ return converter_; }
-				result try_post_max(delegat& _delegat){
-					if(converter_){
-						if( fabs( B::actual.remote - converter_->max() ) > converter_->eps() ){
-							B::actual.local  = converter_->max();
-							ROBO_RET(B::post(_delegat),result::resume,result::panic);
+				converter* conv(void) { return converter_; }
+				result try_post_max(delegat& _delegat) {
+					if (converter_) {
+						if (fabs(B::actual.remote - converter_->max()) > converter_->eps()) {
+							B::actual.local = converter_->max();
+							ROBO_RET(B::post(_delegat), result::resume, result::panic);
 						}
 					}
 					return result::complete;
@@ -581,28 +632,32 @@ namespace robo {
 
 
 				result try_post(const T& _value) {
-					if(converter_){
-						B::actual.local  = _value;
-						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
-							ROBO_RET(B::post(),result::resume,result::panic);
-						} else {
+					if (converter_) {
+						B::actual.local = _value;
+						if (fabs(B::actual.remote - _value) > converter_->eps()) {
+							ROBO_RET(B::post(), result::resume, result::panic);
+						}
+						else {
 							return result::complete;
 						}
-					}else{
-							return B::try_post(_value);;
+					}
+					else {
+						return B::try_post(_value);;
 					}
 				}
 
 				result try_post(const T& _value, delegat& _delegat) {
-					if(converter_){
-						B::actual.local  = _value;
-						if( fabs( B::actual.remote - _value ) > converter_->eps() ){
-							ROBO_RET(B::post(_delegat),result::resume,result::panic);
-						} else {
+					if (converter_) {
+						B::actual.local = _value;
+						if (fabs(B::actual.remote - _value) > converter_->eps()) {
+							ROBO_RET(B::post(_delegat), result::resume, result::panic);
+						}
+						else {
 							return result::complete;
 						}
-					}else{
-							return B::try_post(_value,_delegat);;
+					}
+					else {
+						return B::try_post(_value, _delegat);;
 					}
 				}
 
@@ -614,81 +669,83 @@ namespace robo {
 							B::actual.local = B::front.local;
 						}
 						else {
-							B::front.local = B::actual.local ;
+							B::front.local = B::actual.local;
 						}
 					}
-					if(converter_){
+					if (converter_) {
 						//robo::system::printf (RT("convert '%s/%s' %f\n\r"), B::owner().own_agent().alias(), B::name(), B::actual.local);
-						switch(B::length()){
-							case 1:
-							{
-								uint8_t tmp = converter_->to_u8( B::actual.local);
-								std::copy_n(&tmp, 1, _dst);
-							}
-								break;
-							case 2:
-							{
-								uint16_t tmp = converter_->to_u16(B::actual.local);
-								std::copy_n((uint8_t*)(&tmp), 2, _dst);
-							}
-								break;
-							case 4:
-							{
-								uint32_t tmp = converter_->to_u32(B::actual.local);
-								std::copy_n((uint8_t*)(&tmp), 4, _dst);
-							}
-								break;								
-							default:
-								return false;
+						switch (B::length()) {
+						case 1:
+						{
+							uint8_t tmp = converter_->to_u8(B::actual.local);
+							std::copy_n(&tmp, 1, _dst);
 						}
-					} else {
-						switch(B::length()){
-							case 1:
-							{
-								uint8_t tmp = (uint8_t)B::actual.local;
-								std::copy_n(&tmp, 1, _dst);
-							}
-								break;
-							case 2:
-							{
-								uint16_t tmp = (uint16_t)(B::actual.local);
-								std::copy_n((uint8_t*)(&tmp), 2, _dst);
-							}
-								break;
-							case 4:
-							{
-								uint32_t tmp = (uint32_t)(B::actual.local);
-								std::copy_n((uint8_t*)(&tmp), 4 , _dst);
-							}
-								break;
-							default:
-								std::copy_n((uint8_t*)(&B::actual.local), B::length() , _dst);
-								
+						break;
+						case 2:
+						{
+							uint16_t tmp = converter_->to_u16(B::actual.local);
+							std::copy_n((uint8_t*)(&tmp), 2, _dst);
+						}
+						break;
+						case 4:
+						{
+							uint32_t tmp = converter_->to_u32(B::actual.local);
+							std::copy_n((uint8_t*)(&tmp), 4, _dst);
+						}
+						break;
+						default:
+						return false;
+						}
+					}
+					else {
+						switch (B::length()) {
+						case 1:
+						{
+							uint8_t tmp = (uint8_t)B::actual.local;
+							std::copy_n(&tmp, 1, _dst);
+						}
+						break;
+						case 2:
+						{
+							uint16_t tmp = (uint16_t)(B::actual.local);
+							std::copy_n((uint8_t*)(&tmp), 2, _dst);
+						}
+						break;
+						case 4:
+						{
+							uint32_t tmp = (uint32_t)(B::actual.local);
+							std::copy_n((uint8_t*)(&tmp), 4, _dst);
+						}
+						break;
+						default:
+						std::copy_n((uint8_t*)(&B::actual.local), B::length(), _dst);
+
 						}
 					}
 					return true;
 				}
-				
+
 				virtual bool decode(uint8_t* _src) {
 					//std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
-					if(converter_){
-						switch(B::length()){
-							case 1:
-								B::actual.remote= (T)converter_->to_float( *(uint8_t *)_src);
-								break;
-							case 2:
-								B::actual.remote= (T)converter_->to_float( *(uint16_t *)_src);
-								break;
-							case 4:
-								B::actual.remote= (T)converter_->to_float( *(uint32_t *)_src);
-								break;								
-							default:
-								return false;
+					if (converter_) {
+						switch (B::length()) {
+						case 1:
+						B::actual.remote = (T)converter_->to_float(*(uint8_t*)_src);
+						break;
+						case 2:
+						B::actual.remote = (T)converter_->to_float(*(uint16_t*)_src);
+						break;
+						case 4:
+						B::actual.remote = (T)converter_->to_float(*(uint32_t*)_src);
+						break;
+						default:
+						return false;
 						}
-					} else {						
-						std::copy_n( _src, B::length() , (uint8_t*)(&B::actual.remote));
 					}
-					
+					else {
+						std::copy_n(_src, B::length(), (uint8_t*)(&B::actual.remote));
+					}
+
 					{
 						system::guard g__;
 						B::front.remote = B::actual.remote;
@@ -697,18 +754,38 @@ namespace robo {
 				}
 			};
 
+			template<typename T> class fvar : public  fvar_t< T> {
+			private:
+				struct {
+					T local;
+					T remote;
+				} front_;
+				struct {
+					T local;
+					T remote;
+				} actual_;
+			public:
+				/*
+				fvar(contrltable& _contrltable, const record& _instance)
+					: fvar_t<T>(_contrltable, _instance, front_.local, front_.remote, actual_.local, actual_.remote) {
+				}
+				*/
+				fvar(contrltable& _contrltable, cstr _name, cstr _converter = nullptr)
+					: fvar_t<T>(_contrltable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
+			};
+
 			virtual query_result query(robo_tran_p _tran);
 			virtual void confirm(robo_tran_p _tran);
 			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
 			contrltable(idevagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
 			bool query(void);
-			bool query(frontend::contrltable::ivar::delegat & _delegat);
+			bool query(frontend::contrltable::ivar::delegat& _delegat);
 			bool ready(void);
 		private:
 			ivar::queue queue_;
 			ivar* current_ = nullptr;
 		};
-				
+
 		namespace process {
 			class base;
 			class ROBO_EXPORT controller : public task {
@@ -739,7 +816,7 @@ namespace robo {
 				bool continue_sleep(void) { return  task::continue_sleep(); }
 			};
 
-			class ROBO_EXPORT base: public app::node {
+			class ROBO_EXPORT base : public app::node {
 			private:
 				friend class controller;
 				time_us_t period_min_us_;
@@ -781,7 +858,7 @@ namespace robo {
 
 
 		}
-#endif
+		#endif
 	}
 }
 #endif

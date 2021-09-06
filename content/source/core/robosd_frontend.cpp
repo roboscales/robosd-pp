@@ -13,17 +13,14 @@ namespace robo {
 		, bus((uint8_t)_bus)
 		, dev((uint8_t)_dev)
 		, module((uint8_t)_module)
-		, servo((uint8_t)_servo)
-	{
+		, servo((uint8_t)_servo) {
 
 	}
 	dev_id_t::dev_id_t(void)
-		: value(0) {
-	};
+		: value(0) {};
 
 	dev_id_t::dev_id_t(const dev_id_t& _src)
-		: value(_src.value) {
-	};
+		: value(_src.value) {};
 	dev_id_t& dev_id_t::operator = (const dev_id_t& _src) {
 		value = _src.value;  return *this;
 	}
@@ -32,25 +29,38 @@ namespace robo {
 	}
 
 	signal::performer::performer(bool _once)
-		: ref_(*this,priority::normal)
-		, once_(_once)
-	{
-	}
+		: ref_(*this, priority::normal)
+		, once_(_once) {}
 
-	signal::performer::~performer(void) {
-	}
+	signal::performer::~performer(void) {}
 
 	bool signal::performer::attach_to(signal* _signal, priority _priority) {
 		ref_.set_key(_priority);
-		ROBO_LRET( ref_.attach_to(_signal->performers) )
+		ROBO_LRET(ref_.attach_to(_signal->performers))
 	}
 
 	void signal::performer::dettach(void) {
 		ref_.dettach();
 	}
 
-	signal::signal(void)  {
+	signal::signal(void) {}
+
+	void  signal::temporary::operator ()(void) {
+		if (status_ == status::run) {
+			lambda_();
+			status_ = status::disposal;
+			if (isfrontend_) {
+				frontend::queue::post(this, priority::lo);
+			}
+			else {
+				backend::queue::post(this, priority::lo);
+			}
+		}
+		else {
+			delete this;
+		}
 	}
+
 
 	void event::raise(void) {
 		event::performer::ref* _ref = performers.first();
@@ -86,10 +96,10 @@ namespace robo {
 			return inst_;
 		}
 
-	
-		
+
+
 		void timer::start_(void) {
-			::robo::backend::timer::core::start( &(execute_delegat_), period_);
+			::robo::backend::timer::core::start(&(execute_delegat_), period_);
 		}
 
 		void timer::stop_(void) {
@@ -103,17 +113,43 @@ namespace robo {
 
 		void timer::start(time_us_t _period) {
 			period_ = _period;
-			queue::post(&start_delegat_, signal::performer::priority::hi);
+			backend::queue::post(&start_delegat_, signal::performer::priority::hi);
 		}
 
 		void timer::stop(void) {
 			backend::queue::post(&stop_delegat_, signal::performer::priority::hi);
-		}		
+		}
+
+
+
+		void pulse::start_(void) {
+			::robo::backend::timer::core::start(&(execute_delegat_), period_);
+		}
+
+		void pulse::stop_(void) {
+			::robo::backend::timer::core::stop(&(execute_delegat_), period_);
+		}
+
+		void pulse::execute_(void) {
+			if (backend_performer_)(*(backend_performer_))();
+			backend_performer_ = nullptr;
+			queue::post(frontend_performer_, signal::performer::priority::hi);
+		}
+
+		void pulse::start(time_us_t _period) {
+			period_ = _period;
+			backend::queue::post(&start_delegat_, signal::performer::priority::hi);
+		}
+
+		void pulse::stop(void) {
+			backend::queue::post(&stop_delegat_, signal::performer::priority::hi);
+		}
+
 
 		void command::execute_(void) {
 			if (performer_ == nullptr) {
 				configure_();
-				ROBO_VBREAKN(performer_ != nullptr );
+				ROBO_VBREAKN(performer_ != nullptr);
 			};
 			(*performer_)(*this);
 		}
@@ -139,11 +175,11 @@ namespace robo {
 			return instance_;
 		}
 
-#if		ROBO_APP_MODULE_ENABLED == 1
+		#if		ROBO_APP_MODULE_ENABLED == 1
 		bool contrltable::ivar::query_(void) {
 			ROBO_LBREAKN(begin_hook());
 			status_ = status::get;
-			ROBO_LRET(rerquest() );
+			ROBO_LRET(rerquest());
 		}
 
 		bool contrltable::ivar::post_(void) {
@@ -154,7 +190,7 @@ namespace robo {
 
 		bool contrltable::ivar::query(void) {
 			reset_delegat();
-			ROBO_LRET( query_() );
+			ROBO_LRET(query_());
 		}
 
 		bool contrltable::ivar::post(void) {
@@ -174,7 +210,7 @@ namespace robo {
 			dynamic_delegat_ = nullptr;
 			ROBO_LRET(post_());
 		}
-		void contrltable::ivar::reset_delegat(void){
+		void contrltable::ivar::reset_delegat(void) {
 			if (dynamic_delegat_) {
 				delete dynamic_delegat_;
 				dynamic_delegat_ = nullptr;
@@ -184,7 +220,7 @@ namespace robo {
 		}
 		bool contrltable::ivar::query(robo::lambda<void(ivar&, bool)>& _lambda) {
 			reset_delegat();
-			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda) ;
+			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda);
 			static_delegat_ = dynamic_delegat_;
 			ROBO_LRET(query_());
 		}
@@ -196,29 +232,28 @@ namespace robo {
 		}
 
 
-		contrltable::ivar::ivar(contrltable& _contrltable, const record& _instance) 
+		contrltable::ivar::ivar(contrltable& _contrltable, const record& _instance)
 			: contrltable_(_contrltable)
 			, map_ref_(*this, 0)
-			, instance_(_instance)
-		{
-			map_ref_.set_key( fast_hash( instance_.name,0));
-			ROBO_ALARMN_F(map_ref_.attach_to(contrltable_.vars) , "eroor attach var '%s' to map ", instance_.name);
+			, instance_(_instance) {
+			map_ref_.set_key(fast_hash(instance_.name, 0));
+			ROBO_ALARMN_F(map_ref_.attach_to(contrltable_.vars), "eroor attach var '%s' to map ", instance_.name);
 		}
 
 		void contrltable::ivar::confirm(void) {
 			switch (status_) {
-				case status::put:
-					status_ = status::ready;
-					finish_hook();
-					query_();
-					break;
-				case status::get:
-					status_ = status::ready;
-					finish_hook();					
-					if (static_delegat_) (*static_delegat_) (*this, true);
-					break;
-				default:
-					ROBO_ALARM_F("error state for var '%s'", name());
+			case status::put:
+			status_ = status::ready;
+			finish_hook();
+			query_();
+			break;
+			case status::get:
+			status_ = status::ready;
+			finish_hook();
+			if (static_delegat_) (*static_delegat_) (*this, true);
+			break;
+			default:
+			ROBO_ALARM_F("error state for var '%s'", name());
 			}
 		}
 
@@ -226,29 +261,30 @@ namespace robo {
 			status tmp = status_;
 			status_ = status::panic;
 			if (static_delegat_) (*static_delegat_) (*this, false);
-			if( repeat_count_ > 0 ) {
+			if (repeat_count_ > 0) {
 				repeat_count_--;
 				finish_hook();
 				switch (tmp) {
 				case status::put:
-					robo_infolog("var '%s' sent again", name());
-					post_();
-					break;
+				robo_infolog("var '%s' sent again", name());
+				post_();
+				break;
 				case status::get:
-					robo_infolog("var '%s' query again", name());
-					query_();
-					break;
+				robo_infolog("var '%s' query again", name());
+				query_();
+				break;
 				default:
-					ROBO_ALARM_F("error state for var '%s'", name());
+				ROBO_ALARM_F("error state for var '%s'", name());
 				}
-			} else {
+			}
+			else {
 				finish_hook();
 			}
 		}
 
 		bool contrltable::ivar::begin_hook(void) {
 			ROBO_LBREAKN_F(hook_ == hook::free, "error hook state for var '%s'", name());
-			if ( system::env::is_frontend() ) {
+			if (system::env::is_frontend()) {
 				hook_ = hook::frontend;
 			}
 			else {
@@ -259,28 +295,27 @@ namespace robo {
 
 		void contrltable::ivar::finish_hook(void) {
 			if (system::env::is_frontend()) {
-				if(hook_ != hook::frontend){
-					robo_errlog("error hook state for var '%s'", name());					
+				if (hook_ != hook::frontend) {
+					robo_errlog("error hook state for var '%s'", name());
 				}
 			}
 			else {
-				if(hook_ != hook::backend){
+				if (hook_ != hook::backend) {
 					robo_errlog("error hook state for var '%s'", name());
 				}
 			}
 			hook_ = hook::free;
 		}
 
-		contrltable::contrltable(node& _owner, const record * _records, size_t _count) 
-			: node( RT("ct"), &_owner)
+		contrltable::contrltable(node& _owner, const record* _records, size_t _count)
+			: node(RT("ct"), &_owner)
 			, records_(_records)
-			, count_(_count){
-		}
+			, count_(_count) {}
 
-		contrltable::ivar * contrltable::ivar::create_var(cstr _path, cstr _name) {
-			app::node * _node = app::node::find(_path);
-			ROBO_BREAKN_F(_node,nullptr, "invalid path: '%s' ", _path);
-			contrltable* ct = dynamic_cast<contrltable *>(_node);
+		contrltable::ivar* contrltable::ivar::create_var(cstr _path, cstr _name) {
+			app::node* _node = app::node::find(_path);
+			ROBO_BREAKN_F(_node, nullptr, "invalid path: '%s' ", _path);
+			contrltable* ct = dynamic_cast<contrltable*>(_node);
 			ROBO_BREAKN_F(ct, nullptr, "invalid object '%s' ", _path);
 			return ct->create_var(_name);
 		}
@@ -289,27 +324,27 @@ namespace robo {
 		const contrltable::record* contrltable::find_record(cstr _name) {
 			const record* r = records_;
 			for (size_t i = 0; i < count_; ++i, ++r) {
-#if ROBO_UNICODE_ENABLED ==1
+				#if ROBO_UNICODE_ENABLED ==1
 				if (std::wcscmp(r->name, _name) == 0) {
 					return r;
 				}
-#else 
+				#else 
 				if (std::strcmp(r->name, _name) == 0) {
 					return r;
 				}
-#endif
+				#endif
 			}
 			return nullptr;
 		}
 
-		const contrltable::record & contrltable::find_record_ref(cstr _name) {
+		const contrltable::record& contrltable::find_record_ref(cstr _name) {
 			const record* r = find_record(_name);
 			ROBO_APP_ASSERT(r != nullptr);
 			return *r;
 		}
 
 		contrltable::ivar* contrltable::create_var(cstr _name) {
-			ivar* v = find_var( _name );
+			ivar* v = find_var(_name);
 			if (v) {
 				return v;
 			}
@@ -324,7 +359,7 @@ namespace robo {
 
 				v = f->create(*this, *_record);
 
-				ROBO_BREAKN_F(v, nullptr, "error create var '%s' with type '%s' ", _record->name, _record->type );
+				ROBO_BREAKN_F(v, nullptr, "error create var '%s' with type '%s' ", _record->name, _record->type);
 
 				return v;
 
@@ -336,19 +371,129 @@ namespace robo {
 			return fabrics_;;
 		}
 
-		contrltable::fabric::fabric(cstr _type) : ref_(*this,0) {
-			ref_.set_key( fast_hash(_type) );
-			ref_.attach_to( fabrics() );
+		contrltable::fabric::fabric(cstr _type) : ref_(*this, 0) {
+			ref_.set_key(fast_hash(_type));
+			ref_.attach_to(fabrics());
 		}
 
 		contrltable::fabric* contrltable::fabric::find(cstr _type) {
 			return fabrics().find(fast_hash(_type));
 		}
-		
-		contrltable::ivar * contrltable::find_var(cstr _name){
-			return vars.find( fast_hash(_name) );
+
+		contrltable::ivar* contrltable::find_var(cstr _name) {
+			return vars.find(fast_hash(_name));
 		}
-#endif
+		#endif
+
+
+		void shared::action::execute_(void) {
+			(owner_->*member_)();
+			{
+				system::guard g__;
+				tuple_->unuse_();
+				tuple_ = nullptr;
+			}
+		}
+
+
+		void shared::action::attach(tuple* _tuple) {
+			bool need = false;
+			{
+				system::guard g__;
+				if (tuple_ == nullptr) {
+					tuple_ = _tuple;
+					_tuple->use_();
+					need = true;
+				}
+			}
+			if (need) backend::queue::post(&run_, signal::performer::priority::hi);
+		}
+
+		void shared::tuple::unuse_(void) {
+			if (counter_ > 0) {
+				counter_--;
+				if (counter_ == 0) {
+					try_release_();
+				}
+			}
+		}
+
+		void shared::tuple::try_release_(void) {
+			if (counter_ == 0) {
+				if (on_complete_) {
+					frontend::queue::post(on_complete_, signal::performer::priority::hi);
+				}
+				on_complete_ = nullptr;
+				{
+					ref_.attach_to(shared::core_().pool_);
+				}
+			}
+		}
+
+
+		/*		void shared::core::complete_(tuple* _tuple) {
+					if (_tuple->complete_())
+						delete _tuple;
+				}*/
+
+		shared::tuple* shared::tuple::get(signal::performer* _on_complete) {
+			ROBO_APP_ASSERT(system::env::is_frontend());
+			tuple* ret;
+			{
+				system::guard g__;
+				ret = shared::core_().pool_.pop();
+			}
+			if (ret == nullptr) {
+				ret = new  tuple;
+			}
+			ret->on_complete_ = _on_complete;
+			return ret;
+		}
+		void shared::core::apply_action_(void* _begin, void* _end, signal::performer* _on_apply_action) {
+			tuple* t = tuple::get(_on_apply_action);
+			for (ref* r = shared::core_().list_.first(); r; r = r->next()) {
+				if (r->owner().is_my_action(_begin, _end)) {
+					r->owner().apply_action_.attach(t);
+				}
+			}
+			{
+				system::guard g__;
+				t->try_release_();
+			}
+		}
+
+		void shared::core::exchange_(void* _begin, void* _end, signal::performer* _on_exchange) {
+			tuple* t = tuple::get(_on_exchange);
+			for (ref* r = shared::core_().list_.first(); r; r = r->next()) {
+				if (r->owner().is_my_action(_begin, _end)) {
+					r->owner().exchange_.attach(t);
+				}
+			}
+			{
+				system::guard g__;
+				t->try_release_();
+			}
+		}
+
+
+		void shared::core::update_feedback_(void* _begin, void* _end, signal::performer* _on_update_feedback_) {
+			tuple* t = tuple::get(_on_update_feedback_);
+			for (ref* r = list_.first(); r; r = r->next()) {
+				if (r->owner().is_my_feedback(_begin, _end)) {
+					r->owner().update_feedback_.attach(t);
+				}
+			}
+			{
+				system::guard g__;
+				t->try_release_();
+			}
+		}
+
+		shared::core& shared::core_(void) {
+			static core core__;
+			return core__;
+		}
+
 
 	}
 }

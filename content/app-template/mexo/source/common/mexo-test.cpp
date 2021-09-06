@@ -50,6 +50,7 @@ dc dc_(hardware_subsystem, RT("dc"), dc_config); //2us
 		dcv_.standalone_deseired = 12.f;
 		
 	} //2.5us
+	ROBO_APP_ASSERT(0)
 });
 
 

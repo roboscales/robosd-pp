@@ -15,7 +15,7 @@
 
 
 #define ROBO_LOG_MASK_DISABLED 0
-#endif 
+#endif
 
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
@@ -34,7 +34,7 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_warninglog
-#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, robo::log::mask::disabled,RT(format),__VA_ARGS__) 
+#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, robo::log::mask::disabled,RT(format),__VA_ARGS__)
 #endif
 #endif
 #else
@@ -85,7 +85,7 @@
 #endif
 
 #ifndef ROBO_LBREAK
-#define ROBO_LBREAK() ROBO_BREAK(false) 
+#define ROBO_LBREAK() ROBO_BREAK(false)
 #endif
 
 #ifndef ROBO_VBREAK
@@ -111,11 +111,11 @@
 
 #ifndef ROBO_LBREAKN
 #define ROBO_LBREAKN(x) ROBO_BREAKN(x,false)
-#endif 
+#endif
 
 #ifndef ROBO_VBREAKN
 #define ROBO_VBREAKN(x) ROBO_BREAKN(x,ROBO_EMPTY_PARAM)
-#endif 
+#endif
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_RET
@@ -147,7 +147,7 @@
 {\
 	robo_errlog(f,__VA_ARGS__); \
 	return fault; \
-} 
+}
 #endif
 #else
 #define ROBO_BREAK_F(x,fault,f,...) if(!(x)) return fault;
@@ -181,7 +181,7 @@ if(!(x)){\
 if ( !( x ) ){\
 	robo_errlog(f,__VA_ARGS__); \
 	return fault; \
-} 
+}
 #endif
 #else
 #define ROBO_BREAKN_F(x,fault,f,...) if( !(x)) return fault;
@@ -211,7 +211,7 @@ return fault; \
 #endif
 
 #ifndef ROBO_LRET_F
-#define ROBO_LRET_F(x,f,...) ROBO_RET_F(x,true,false,f,__VA_ARGS__) 
+#define ROBO_LRET_F(x,f,...) ROBO_RET_F(x,true,false,f,__VA_ARGS__)
 #endif
 
 
@@ -223,27 +223,18 @@ namespace robo{
 		enum class verb { skip = -3, error = -2, warning = -1, info = 0, detail_1 = 1, detail_2 = 2, detail_3 = 3, detail_4 = 4, detail_5 = 5, detail_6 = 6, detail_7 = 7 };
 		struct mask {
 			enum {
-				disabled = 0 // выводить все
-				, app = 1 // выводить сообщения от модулей приложения - загрузился, стартовал, остановился
-				, net = 2 // выводить сообщения от сетевых модулей - получил/отправил
+				disabled = 0 // РІС‹РІРѕРґРёС‚СЊ РІСЃРµ
+				, app = 1 // РІС‹РІРѕРґРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёСЏ РѕС‚ РјРѕРґСѓР»РµР№ РїСЂРёР»РѕР¶РµРЅРёСЏ - Р·Р°РіСЂСѓР·РёР»СЃСЏ, СЃС‚Р°СЂС‚РѕРІР°Р», РѕСЃС‚Р°РЅРѕРІРёР»СЃСЏ
+				, net = 2 // РІС‹РІРѕРґРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёСЏ РѕС‚ СЃРµС‚РµРІС‹С… РјРѕРґСѓР»РµР№ - РїРѕР»СѓС‡РёР»/РѕС‚РїСЂР°РІРёР»
 			};
 		};
-		typedef  void ( * print_f)(verb _verb, cstr  _format , va_list  _args);
 
-		bool ROBO_EXPORT begin(verb _verb, unsigned int _mask, print_f _print);
+		bool ROBO_EXPORT begin(verb _verb, unsigned int _mask);
 		void ROBO_EXPORT finish(void);
 
 		void ROBO_EXPORT print( verb _verb, unsigned int _mask, cstr _format, ...);
 	}
-	
-#ifndef ROBO_TERMINAL_PRINT_ENABLED
-#define ROBO_TERMINAL_PRINT_ENABLED 0
-#endif
-#if ROBO_TERMINAL_PRINT_ENABLED == 1
-	namespace termial{
-		void ROBO_EXPORT print(robo::log::verb _verb,  cstr _format, va_list  _args);		
-	}
-#endif
+
 }
 #endif
 

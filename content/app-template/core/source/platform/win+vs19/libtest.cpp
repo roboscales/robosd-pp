@@ -1,4 +1,5 @@
 //#include "pch.h"
+
 #include "CppUnitTest.h"
 #include "core/robosd_list.hpp"
 #include "core/robosd_log.hpp"
@@ -16,23 +17,25 @@
 #include "mexo/mexo.hpp"
 #include "mexo/ps.hpp"
 #include "mexo/math.hpp"
+#include "core/robosd_devagent_common.hpp"
+
 using namespace mexo;
 
 #define MODULE_NAME_STR RT("lib.test")
 namespace test {
-#if ROBO_APP_MODULE_ENABLED  == 1
+	#if ROBO_APP_MODULE_ENABLED  == 1
 	class module : public robo::app::module {
 	protected:
 		virtual void frontend_loop(void) {};
 		virtual void backend_loop(void) {};
-		module(void) : robo::app::module(MODULE_NAME_STR ) {}
+		module(void) : robo::app::module(MODULE_NAME_STR) {}
 	public:
 		static module& instance(void) {
 			static module instance_;
 			return instance_;
 		}
 	};
-#endif
+	#endif
 };
 
 #define MODULE_NAME test
@@ -63,7 +66,7 @@ struct command {
 	struct content {
 		char timestamp[15];
 		char cmd[10];
-		int arm =1;
+		int arm = 1;
 		struct {
 			float x = 0.f;
 			float y = 0.f;
@@ -85,7 +88,7 @@ struct command {
 			rot.r = (float)::rand();
 			rot.p = (float)::rand();
 			rot.y = (float)::rand();
-			for (int i=0;i<5;i++) fingers[i] = (float) ::rand();
+			for (int i = 0; i < 5; i++) fingers[i] = (float) ::rand();
 		}
 		void	create_arm(void) {
 			const char* drmt =
@@ -110,222 +113,218 @@ command::content content_;
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-namespace libtest
-{
-	static  void print(robo::log::verb _verb, robo::cstr _format, va_list  _args) {
-		robo::char_t buf[255];
+/*
+*/
+namespace robo {
+	void system::env::print(cstr _str) {
+		Logger::WriteMessage(_str);
+	}
 
-#if ROBO_UNICODE_ENABLED == 1
+	void system::env::print(robo::log::verb _verb, robo::cstr _format, va_list  _args) {
+		robo::char_t buf[255];
+		CHAR buf2[255];
+		#if ROBO_UNICODE_ENABLED == 1
 		buf[vswprintf_s(buf, 255, _format, _args)] = 0;
-#else
+		#else
 		buf[vsprintf(buf, _format, _args)] = 0;
-#endif
+		#endif
+		//Logger::WriteMessage(L"–∏ —á–æ? –û–ß–ï–ù–¨ –ö–†–£–¢–û–ô –†–£–°–°–ö–ò–ô –¢–µ–ö—Å–¢!!! ");
 		Logger::WriteMessage(buf);
 		Logger::WriteMessage(RT("\n"));
 	}
+}
+namespace libtest {
 
 
-	TEST_CLASS(list)
-	{
-		class item{			
+	TEST_CLASS(list) {
+		class item {
 		public:
 			::robo::list::unsorted<item>::ref ref;
-			item(void) : ref(*this){}
-			operator ::robo::list::unsorted<item>::ref & (){ return ref; }
+			item(void) : ref(*this) {}
+			operator ::robo::list::unsorted<item>::ref& () { return ref; }
 		};
-		class sitem{			
+		class sitem {
 		public:
-			::robo::list::sorted<sitem,int>::ref ref;
-			operator ::robo::list::sorted<sitem,int>::ref & (){ return ref; }
+			::robo::list::sorted<sitem, int>::ref ref;
+			operator ::robo::list::sorted<sitem, int>::ref& () { return ref; }
 			typedef int priority_t;
-			sitem(void) : ref(*this,-1){}
+			sitem(void) : ref(*this, -1) {}
 		};
-		class uitem{			
+		class uitem {
 		public:
-			::robo::list::unique<uitem,int>::ref ref;
-			uitem(void) : ref(*this,-1){}
+			::robo::list::unique<uitem, int>::ref ref;
+			uitem(void) : ref(*this, -1) {}
 		};
-	public:
-		
-		TEST_METHOD(create)
-		{
-			item it;			
-			Assert::IsFalse(it.ref.attached());
-		}
+public:
 
-		TEST_METHOD(attach)
+	TEST_METHOD(create) {
+		item it;
+		Assert::IsFalse(it.ref.attached());
+	}
+
+	TEST_METHOD(attach) {
+		::robo::list::unsorted<item> list;
+		item it;
+		it.ref.attach_to(list);
+		Assert::IsTrue(it.ref.attached());
+		Assert::IsTrue(list.count() == 1);
+	}
+
+	TEST_METHOD(detach) {
+		::robo::list::unsorted<item> list;
+		item it;
+		it.ref.attach_to(list);
+		it.ref.dettach();
+		Assert::IsTrue(list.count() == 0);
+		Assert::IsFalse(it.ref.attached());
+	}
+
+	TEST_METHOD(move) {
+		::robo::list::unsorted<item> list;
+		::robo::list::unsorted<item> list2;
 		{
-			::robo::list::unsorted<item> list;
-			item it;			
+			item it;
 			it.ref.attach_to(list);
-			Assert::IsTrue(it.ref.attached());
 			Assert::IsTrue(list.count() == 1);
-		}
-
-		TEST_METHOD(detach)
-		{
-			::robo::list::unsorted<item> list;
-			item it;			
-			it.ref.attach_to(list);
-			it.ref.dettach();
+			it.ref.attach_to(list2);
 			Assert::IsTrue(list.count() == 0);
-			Assert::IsFalse(it.ref.attached());
+			Assert::IsTrue(list2.count() == 1);
 		}
 
-		TEST_METHOD(move)
+		Assert::IsTrue(list.count() == 0);
+		Assert::IsTrue(list2.count() == 0);
+
+	}
+
+	TEST_METHOD(finish) {
+		::robo::list::unsorted<item> list;
 		{
-			::robo::list::unsorted<item> list;
-			::robo::list::unsorted<item> list2;
-			{
-				item it;			
-				it.ref.attach_to(list);
-				Assert::IsTrue(list.count() == 1);
-				it.ref.attach_to(list2);
-				Assert::IsTrue(list.count() == 0);
-				Assert::IsTrue(list2.count() == 1);
+			item it[50];
+			for (int i = 0; i < 50; i++) {
+				it[i].ref.attach_to(list);
 			}
-	
-			Assert::IsTrue(list.count() == 0);
-			Assert::IsTrue(list2.count() == 0);
+			Assert::IsTrue(list.count() == 50);
 
 		}
 
-		TEST_METHOD(finish)
+
+		Assert::IsTrue(list.count() == 0);
+	}
+	TEST_METHOD(drop) {
+		::robo::list::unsorted<item> list;
 		{
-			::robo::list::unsorted<item> list;
-			{
-				item it[50];			
-				for(int i=0;i<50;i++){
-					it[i].ref.attach_to(list);
-				}				
-				Assert::IsTrue(list.count() == 50);
-
+			item it[50];
+			for (int i = 0; i < 50; i++) {
+				it[i].ref.attach_to(list);
 			}
-	
+			Assert::IsTrue(list.count() == 50);
 
-			Assert::IsTrue(list.count() == 0);
-		}
-		TEST_METHOD(drop)
-		{
-			::robo::list::unsorted<item> list;
-			{
-				item it[50];			
-				for(int i=0;i<50;i++){
-					it[i].ref.attach_to(list);
-				}				
-				Assert::IsTrue(list.count() == 50);
+			it[25].ref.dettach();
+			Assert::IsTrue(list.count() == 49);
+			it[0].ref.dettach();
+			Assert::IsTrue(list.count() == 48);
+			it[49].ref.dettach();
+			Assert::IsTrue(list.count() == 47);
 
-				it[25].ref.dettach();
-				Assert::IsTrue(list.count() == 49);
-				it[0].ref.dettach();
-				Assert::IsTrue(list.count() == 48);
-				it[49].ref.dettach();
-				Assert::IsTrue(list.count() == 47);
+			Assert::IsTrue(list.first() == &(it[1].ref));
+			Assert::IsTrue(list.last() == &(it[48].ref));
 
-				Assert::IsTrue( list.first() == &(it[1].ref) );
-				Assert::IsTrue( list.last() == &(it[48].ref) );
+			Assert::IsTrue(it[25].ref.prev() == nullptr);
+			Assert::IsTrue(it[25].ref.next() == nullptr);
+			Assert::IsTrue(it[0].ref.prev() == nullptr);
+			Assert::IsTrue(it[0].ref.next() == nullptr);
+			Assert::IsTrue(it[49].ref.prev() == nullptr);
+			Assert::IsTrue(it[49].ref.next() == nullptr);
 
-				Assert::IsTrue( it[25].ref.prev() == nullptr );
-				Assert::IsTrue( it[25].ref.next() == nullptr );
-				Assert::IsTrue( it[0].ref.prev() == nullptr );
-				Assert::IsTrue( it[0].ref.next() == nullptr );
-				Assert::IsTrue( it[49].ref.prev() == nullptr );
-				Assert::IsTrue( it[49].ref.next() == nullptr );
-
-				Assert::IsTrue( it[24].ref.next() == &(it[26].ref) );
-				Assert::IsTrue( it[26].ref.prev() == &(it[24].ref) );
+			Assert::IsTrue(it[24].ref.next() == &(it[26].ref));
+			Assert::IsTrue(it[26].ref.prev() == &(it[24].ref));
 
 
-				Assert::IsTrue( it[48].ref.next() == nullptr );
-				Assert::IsTrue( it[1].ref.prev() == nullptr );
-			}
-	
-
-			Assert::IsTrue(list.count() == 0);
+			Assert::IsTrue(it[48].ref.next() == nullptr);
+			Assert::IsTrue(it[1].ref.prev() == nullptr);
 		}
 
-		TEST_METHOD(sorted)
-		{
-			::robo::list::sorted<sitem,int> list;
-			{
-				sitem it[3];
-				it[0].ref.set_key(0);
-				it[1].ref.set_key(2);
-				it[2].ref.set_key(1);
-				it[0].ref.attach_to(list);
-				it[1].ref.attach_to(list);
-				it[2].ref.attach_to(list);
-				Assert::IsTrue( list.count() == 3);
-				Assert::IsTrue( it[0].ref.next() == &(it[2].ref) );
-				Assert::IsTrue( it[2].ref.next() == &(it[1].ref) );
-				Assert::IsTrue( it[1].ref.prev() == &(it[2].ref) );
-				Assert::IsTrue( it[2].ref.prev() == &(it[0].ref) );
-			}
-			Assert::IsTrue(list.count() == 0);
-		}
-		TEST_METHOD(unique)
-		{
-			::robo::list::unique<uitem,int> list;
-			{
-				uitem it[4];
-				it[0].ref.set_key(0);
-				it[1].ref.set_key(2);
-				it[2].ref.set_key(1);
-				it[3].ref.set_key(1);
-				Assert::IsTrue(it[0].ref.attach_to(list));
-				Assert::IsTrue(it[1].ref.attach_to(list));
-				Assert::IsTrue(it[2].ref.attach_to(list));
-				Assert::IsFalse(it[3].ref.attach_to(list));
-				Assert::IsTrue( list.count() == 3);
-				Assert::IsTrue( it[0].ref.next() == &(it[2].ref) );
-				Assert::IsTrue( it[2].ref.next() == &(it[1].ref) );
-				Assert::IsTrue( it[1].ref.prev() == &(it[2].ref) );
-				Assert::IsTrue( it[2].ref.prev() == &(it[0].ref) );
-			}
-			Assert::IsTrue(list.count() == 0);
-		}
-		TEST_METHOD(fifo)
-		{
-			::robo::queue::fifo<item> queue;
-			{
-				item it[3];
-				
-				queue.push( &it[0]);
-				queue.push( &it[1]);
-				queue.push( &it[2]);
 
-				Assert::IsTrue( queue.first() == &(it[0].ref) );
-				Assert::IsTrue( queue.last() == &(it[2].ref) );
-				Assert::IsTrue( queue.count() == 3);
+		Assert::IsTrue(list.count() == 0);
+	}
 
-			}
+	TEST_METHOD(sorted) {
+		::robo::list::sorted<sitem, int> list;
+		{
+			sitem it[3];
+			it[0].ref.set_key(0);
+			it[1].ref.set_key(2);
+			it[2].ref.set_key(1);
+			it[0].ref.attach_to(list);
+			it[1].ref.attach_to(list);
+			it[2].ref.attach_to(list);
+			Assert::IsTrue(list.count() == 3);
+			Assert::IsTrue(it[0].ref.next() == &(it[2].ref));
+			Assert::IsTrue(it[2].ref.next() == &(it[1].ref));
+			Assert::IsTrue(it[1].ref.prev() == &(it[2].ref));
+			Assert::IsTrue(it[2].ref.prev() == &(it[0].ref));
+		}
+		Assert::IsTrue(list.count() == 0);
+	}
+	TEST_METHOD(unique) {
+		::robo::list::unique<uitem, int> list;
+		{
+			uitem it[4];
+			it[0].ref.set_key(0);
+			it[1].ref.set_key(2);
+			it[2].ref.set_key(1);
+			it[3].ref.set_key(1);
+			Assert::IsTrue(it[0].ref.attach_to(list));
+			Assert::IsTrue(it[1].ref.attach_to(list));
+			Assert::IsTrue(it[2].ref.attach_to(list));
+			Assert::IsFalse(it[3].ref.attach_to(list));
+			Assert::IsTrue(list.count() == 3);
+			Assert::IsTrue(it[0].ref.next() == &(it[2].ref));
+			Assert::IsTrue(it[2].ref.next() == &(it[1].ref));
+			Assert::IsTrue(it[1].ref.prev() == &(it[2].ref));
+			Assert::IsTrue(it[2].ref.prev() == &(it[0].ref));
+		}
+		Assert::IsTrue(list.count() == 0);
+	}
+	TEST_METHOD(fifo) {
+		::robo::queue::fifo<item> queue;
+		{
+			item it[3];
+
+			queue.push(&it[0]);
+			queue.push(&it[1]);
+			queue.push(&it[2]);
+
+			Assert::IsTrue(queue.first() == &(it[0].ref));
+			Assert::IsTrue(queue.last() == &(it[2].ref));
+			Assert::IsTrue(queue.count() == 3);
+
+		}
+		Assert::IsTrue(queue.count() == 0);
+	}
+	TEST_METHOD(priority) {
+		::robo::queue::priority<sitem> queue;
+		{
+			sitem it[3];
+
+			queue.push(&it[0]);
+			queue.push(&it[1]);
+			queue.push(&it[2]);
+
+			it[0].ref.set_key(0);
+			it[1].ref.set_key(2);
+			it[2].ref.set_key(1);
+
+			Assert::IsTrue(queue.first() == &(it[0].ref));
+			Assert::IsTrue(queue.last() == &(it[1].ref));
+			Assert::IsTrue(queue.count() == 3);
+			while (queue.pop() != nullptr);
 			Assert::IsTrue(queue.count() == 0);
+
 		}
-		TEST_METHOD(priority)
-		{
-			::robo::queue::priority<sitem> queue;
-			{
-				sitem it[3];
-				
-				queue.push( &it[0]);
-				queue.push( &it[1]);
-				queue.push( &it[2]);
-
-				it[0].ref.set_key(0);
-				it[1].ref.set_key(2);
-				it[2].ref.set_key(1);
-
-				Assert::IsTrue( queue.first() == &(it[0].ref) );
-				Assert::IsTrue( queue.last() == &(it[1].ref) );
-				Assert::IsTrue( queue.count() == 3);
-				while( queue.pop() != nullptr );
-				Assert::IsTrue( queue.count() == 0);
-
-			}
-		}
+	}
 	};
-	TEST_CLASS(log)
-	{
+	TEST_CLASS(log) {
 		bool err_aram_(void) {
 			ROBO_ALARM();
 			ROBO_ALARMN(0);
@@ -335,27 +334,25 @@ namespace libtest
 		bool err_aram2_(void) {
 			ROBO_BREAKN(1, false);
 			ROBO_BREAKN_F(1, false, "error %d", 1);
-			ROBO_LBREAKN_F(0, "test %d error", -1);
+			ROBO_LBREAKN_F(0, "—Ä—É—Å—Å–∫–∏–π test %d error", -1);
 			return true;
 		}
 		void err_aram3_(void) {
 			ROBO_VBREAKN_F(1, "test error %d", 1);
 			ROBO_VBREAKN_F(0, "test %d error", -1);
 		}
-	public:
-		TEST_METHOD(err_aram)
-		{
-			robo::log::begin(robo::log::verb::detail_7, 0, print);
-			err_aram_(); ;
-			err_aram3_();
-			Assert::IsFalse(err_aram2_());
-		}
+public:
+	TEST_METHOD(err_aram) {
+		robo::log::begin(robo::log::verb::detail_7, 0);
+		err_aram_(); ;
+		err_aram3_();
+		Assert::IsFalse(err_aram2_());
+	}
 	};
 
-	TEST_CLASS(util){
-#if ROBO_APP_ALLOC_ENABLED ==1
-		TEST_METHOD(memo)
-		{
+	TEST_CLASS(util) {
+		#if ROBO_APP_ALLOC_ENABLED ==1
+		TEST_METHOD(memo) {
 			robo::system::mem::stat memstat0 = robo::system::get_mem_statistic();
 			enum { cnt = 100 };
 			void* ptrs[cnt] = {};
@@ -387,13 +384,12 @@ namespace libtest
 			robo::system::mem::stat memstat1 = robo::system::get_mem_statistic();
 			Assert::IsTrue(memstat0.used.size == memstat1.used.size);
 		}
-#endif
-		TEST_METHOD(string)
-		{
-			robo::log::begin(robo::log::verb::detail_7, 0, print);
-			robo::string * strings[4];
-			robo::string str1(RT("oppa %d %s"), 1974, RT("Í‡Í‡ˇ ÔÂÎÂÒÚ¸"));
-			robo::string str2; str2.format( RT("oppa %d %s"), 1974,  RT("Í‡Í‡ˇ ÔÂÎÂÒÚ¸"));
+		#endif
+		TEST_METHOD(string) {
+			robo::log::begin(robo::log::verb::detail_7, 0);
+			robo::string* strings[4];
+			robo::string str1(RT("oppa %d %s"), 1974, RT("–∫–∞–∫–∞—è –ø—Ä–µ–ª–µ—Å—Ç—å"));
+			robo::string str2; str2.format(RT("oppa %d %s"), 1974, RT("–∫–∞–∫–∞—è –ø—Ä–µ–ª–µ—Å—Ç—å"));
 			robo::string str3(str2);
 			robo::string str4; str4 = str1;
 			strings[0] = &str1;
@@ -407,18 +403,18 @@ namespace libtest
 				};
 			robo_infolog("%s", str4.c_str());
 
-			Assert::IsTrue(	ret	);
+			Assert::IsTrue(ret);
 
 
 			robo::string n(RT("-1.88855"));
 			double dn = 0.;
-			ROBO_ALARMN( n.to_number(dn) );
-			Assert::IsTrue( dn == -1.88855);
+			ROBO_ALARMN(n.to_number(dn));
+			Assert::IsTrue(dn == -1.88855);
 
 			float fn = 0.f;
 			ROBO_ALARMN(n.to_number(fn));
 			float err = -1.88855f - fn;
-			Assert::IsTrue( err<0.0001 && err>-0.0001);
+			Assert::IsTrue(err<0.0001 && err>-0.0001);
 
 			int in = 0;
 			ROBO_ALARMN(n.to_number(in));
@@ -429,18 +425,17 @@ namespace libtest
 
 		}
 
-		static void test_simple( robo::cstr _src, robo::string & dst) {
+		static void test_simple(robo::cstr _src, robo::string& dst) {
 			//dst.format(RT("copy %s"), src.c_str() );
 			dst = RT(" copy ");
 			dst += _src;
 		}
 
-		
-		static void test_void(void) {
-		}
 
-		static int test_void2(void * _instance) {
-			return *(int *)_instance + 1;
+		static void test_void(void) {}
+
+		static int test_void2(void* _instance) {
+			return *(int*)_instance + 1;
 		}
 		class member_test {
 		public:
@@ -448,16 +443,15 @@ namespace libtest
 				return _x * _x;
 			}
 		};
-		
-		TEST_METHOD(delegat)
-		{
-			
+
+		TEST_METHOD(delegat) {
+
 			//robo::delegat::simple< robo::delegat::base< void, robo::cstr, robo::string& >, void, robo::cstr , robo::string& > recorder(test_simple);
 			robo::delegat::ssimple< void, robo::cstr, robo::string& > recorder(test_simple);
-			
+
 			robo::string tmp;
 			robo::string tmp2;
-			recorder( RT("aaaa"), tmp);
+			recorder(RT("aaaa"), tmp);
 			test_simple(RT("aaaa"), tmp2);
 			Assert::IsTrue(tmp == tmp2);
 			Assert::IsTrue(tmp == RT(" copy aaaa"));
@@ -467,103 +461,180 @@ namespace libtest
 
 			int instance = 5;
 			robo::delegat::suni<int> test_void_2_(&instance, test_void2);
-			Assert::IsTrue(test_void_2_()==6);
+			Assert::IsTrue(test_void_2_() == 6);
 
 			member_test  member_test_;
-			robo::delegat::smember< member_test, int,int> member_test__(&member_test_, &member_test::run);
-			Assert::IsTrue(member_test_.run(5) == member_test__(5) );
+			robo::delegat::smember< member_test, int, int> member_test__(&member_test_, &member_test::run);
+			Assert::IsTrue(member_test_.run(5) == member_test__(5));
 
 		}
-#if ROBO_APP_INI_ENABLED == 1 
+		#if ROBO_APP_INI_ENABLED == 1 
 		TEST_METHOD(ini) {
-			robo::log::begin(robo::log::verb::detail_7, 0, print);
+			robo::log::begin(robo::log::verb::detail_7, 0);
 			{
 				std::ofstream ini(RT("E:\\~temp.ini"));
 				ini
 					<< "[SETTINGS]\n"
 					<< "PATAM1=1\n"
 					<< "PATAM1=2.0007\n"
-					<< "PATAM3=\"ﬁÒÛÔÓ‚ - Í‡Ò‡‚˜ËÍ!\"\n";
+					<< "PATAM3=\"–Æ—Å—É–ø–æ–≤ - –∫—Ä–∞—Å–∞–≤—á–∏–∫!\"\n";
 			}
 			robo::system::ini::begin(RT("E:\\~temp.ini"));
 			robo::string msg;
 			Assert::IsTrue(msg.load(RT("SETTINGS"), RT("PATAM3")));
-			robo_infolog("%s",msg.c_str());
+			robo_infolog("%s", msg.c_str());
 
 		}
-#if ROBO_APP_LIB_ENABLED == 1 
+		#if ROBO_APP_LIB_ENABLED == 1 
 		TEST_METHOD(app) {
 			{
 				std::ofstream ini(RT("E:\\~temp.ini"));
 				ini
 					<< "[SETTINGS]\n"
 					<< "DEBUG_VERB=7\n"
-					<< "DEBUG_MASK_BITS=0 1 2 3\n"					
+					<< "TIMER_PERIOD_US=500\n"
+					<< "TIMER_SHOW_PERIOD_MS=10000\n"
+					<< "DEBUG_MASK_BITS=0 1 2 3\n"
 					<< "[MODULES]\n"
 					<< "COUNT=1\n"
 					<< "M_1=\"lib.test\"\n"
-					<< "[ÚÂÒÚÓ‚‡ˇ ÎÓ„Ë˜ÂÒÍ‡ˇ ¯ËÌ‡]\n"
+					<< "[—Ç–µ—Å—Ç–æ–≤–∞—è –ª–æ–≥–∏—á–µ—Å–∫–∞—è —à–∏–Ω–∞]\n"
 					<< "BUS_ID=1\n"
 					<< "DEFAULT_TIMEOUT_US=200\n"
-					<< "[ÚÂÒÚÓ‚‡ˇ ·‡‰‡]\n"
+					<< "[—Ç–µ—Å—Ç–æ–≤–∞—è –±–∞—Ä–¥–∞]\n"
 					<< "REQUEST_PAUSE_US=2000]\n"
-					<< "[ÚÂÒÚÓ‚˚È ‡„ÂÌÚ]\n"
-					<< "ALIAS=\"ÓıÂÌÂÚ¸ Ì‡ ÒÍÓÎ¸ÍÓ ÚÂÒÚÓ‚˚È ‡„ÂÌÚ\"\n"
-					<< "BUS_NAME=\"lib.test/ÚÂÒÚÓ‚‡ˇ ÎÓ„Ë˜ÂÒÍ‡ˇ ¯ËÌ‡\"\n"
-					<< "ROUTER_NAME=\"lib.test/ÚÂÒÚÓ‚˚È ÓÛÚÂ\"\n"
+					<< "[—Ç–µ—Å—Ç–æ–≤—ã–π –∞–≥–µ–Ω—Ç]\n"
+					<< "ALIAS=\"–æ—Ö—Ä–µ–Ω–µ—Ç—å –Ω–∞ —Å–∫–æ–ª—å–∫–æ —Ç–µ—Å—Ç–æ–≤—ã–π –∞–≥–µ–Ω—Ç\"\n"
+					<< "BUS_NAME=\"lib.test/—Ç–µ—Å—Ç–æ–≤–∞—è –ª–æ–≥–∏—á–µ—Å–∫–∞—è —à–∏–Ω–∞\"\n"
+					<< "ROUTER_NAME=\"lib.test/—Ç–µ—Å—Ç–æ–≤—ã–π —Ä–æ—É—Ç–µ—Ä\"\n"
 					<< "BOARD_DEV_ID=0\n"
 					<< "BOARD_ADDRESS=0x0A\n"
-					<< "[ÚÂÒÚÓ‚˚È ÓÛÚÂ]\n"
+					<< "ENABLED=1\n"
+					<< "[—Ç–µ—Å—Ç–æ–≤—ã–π —Ä–æ—É—Ç–µ—Ä]\n"
 					<< "ROUT_TABLE_SIZE=1\n"
 					<< "RT_1= 1 2  0xff  3 4 5\n"
 					;
 			}
-#if ROBO_APP_MODULE_ENABLED  == 1
-			class ddddd : public robo::frontend::idevagent {
+			#if ROBO_APP_MODULE_ENABLED  == 1
+			class ddddd : public robo::common::idevagent {
+			protected:
+				void upplay_action(void) {};
+				void uppdate_feedback(void) {};
 			public:
 				struct iaction {
+					robo::common::idevagent::icommand command;
 				};
 				struct ifeedback {
+					iaction goal;
+					struct ipresent {
+						robo::common::idevagent::istatus status;
+					} present;
 				};
-				ddddd(void) :robo::frontend::idevagent() {}
+
+				ddddd(void) :robo::common::idevagent() {}
 			};
-			
+
 			typedef robo::backend::devagent< ddddd > devagent;
 			devagent::iaction front_action = {};
 			devagent::ifeedback front_feedback = {};
-			robo::backend::boardagent boardagent(RT("ÚÂÒÚÓ‚‡ˇ ·‡‰‡"), test::module::instance());
+			robo::backend::boardagent boardagent(RT("—Ç–µ—Å—Ç–æ–≤–∞—è –±–∞—Ä–¥–∞"), test::module::instance());
 
 			class bus : public  robo::backend::bus {
 			public:
 				virtual bool post(msg* _msg) { return false; };
 				virtual void cancel(void) {};
 				virtual bool ready(void) { return false; };
-				virtual msg* get_msg(void) { return 0;  };
-				virtual void  release_msg(msg*) { };
+				virtual msg* get_msg(void) { return 0; };
+				virtual void  release_msg(msg*) {};
 
-				bus( robo::cstr _name, robo::app::module* _module): robo::backend::bus( _name, _module){
-				}
+				bus(robo::cstr _name, robo::app::module* _module) : robo::backend::bus(_name, _module) {}
 			};
 
-			bus bus_(RT("ÚÂÒÚÓ‚‡ˇ ÎÓ„Ë˜ÂÒÍ‡ˇ ¯ËÌ‡"), &test::module::instance());
+			bus bus_(RT("—Ç–µ—Å—Ç–æ–≤–∞—è –ª–æ–≥–∏—á–µ—Å–∫–∞—è —à–∏–Ω–∞"), &test::module::instance());
 
-			devagent agent(RT("ÚÂÒÚÓ‚˚È ‡„ÂÌÚ"), boardagent, front_action, front_feedback);
-			robo::backend::router router(RT("ÚÂÒÚÓ‚˚È ÓÛÚÂ"), test::module::instance());
-			
-			if (robo::app::machine::begin(RT("E:\\~temp.ini"), print)) {
-				robo::app::machine::start();
+			devagent agent(RT("—Ç–µ—Å—Ç–æ–≤—ã–π –∞–≥–µ–Ω—Ç"), boardagent, front_action, front_feedback);
+			robo::backend::router router(RT("—Ç–µ—Å—Ç–æ–≤—ã–π —Ä–æ—É—Ç–µ—Ä"), test::module::instance());
+
+			if (robo::app::machine::begin(RT("E:\\~temp.ini")) && robo::app::machine::start()) {
+				robo::frontend::pulse p(
+					new robo::signal::temporary(
+						[] {
+							robo::system::printf(RT("\t%d\tPULSE FRONTEND! is bakend? - %s\n"), system::env::realtime_us(), robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+						}
+					),
+					new robo::signal::temporary(
+						[] {
+							robo::system::printf(RT("\t%2.2f\tPULSE BACKEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+						}
+					)
+							);
+				p.start(2000000);
+
+				signal::simple tmd([] {
+					robo::system::printf(RT("\t%2.2f\t TIMER BACKEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+								   });
+				backend::timer::core::start(&tmd, 500000);
+
+				signal::simple tmd2([] {
+					robo::system::printf(RT("\t%2.2f\tTIMER FRONTEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+									});
+
+				frontend::timer tm2(tmd2);
+				tm2.start(1000000);
+
+				signal::simple tmd3([] {
+					robo::system::printf(RT("\t%2.2f\t FLOOD BACKEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+									});
+				backend::timer::core::start(&tmd3, 100000);
+
+				signal::simple tmd4([] {
+					robo::system::printf(RT("\t%2.2f\tFLOOD FRONTEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+									});
+
+				frontend::timer tm4(tmd4);
+				tm2.start(50000);
+
+				robo::delegat::simple< backend::repeater, void > r([] {
+					robo::system::printf(RT("\t%2.2f\tREPEATER FLOOD BACKEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+																   });
+				r.start(200000);
+
+
+				robo::delegat::simple< frontend::repeater, void > r2([] {
+					robo::system::printf(RT("\t%2.2f\tREPEATER FLOOD FRONTEND! is bakend? - %s\n"), 1.0 * system::env::realtime_us() / 1000000, robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+																	 });
+				r2.start(200000);
+
 				std::thread backend_thrd([] {
 					while (!robo::app::machine::terminated()) {
 						robo::app::machine::backend_loop();
-						Sleep(10);
 					}
-				});
-				std::thread stop_thrd([] {
-					Sleep(3000);
-					robo::app::machine::stop();					
-				});
-				while ( !robo::app::machine::terminated() ) {
+										 });
+
+				devagent::iaction* ptr = &front_action;
+				robo::signal::simple s([] {
+					robo_errlog("zbs");
+									   });
+
+
+
+				std::thread stop_thrd([ptr, &s] {
+					robo::frontend::shared::exchange(*ptr, &s);
+
+					robo::backend::queue::post(new robo::signal::temporary(
+						[] {
+							robo::system::printf(RT("is bakend? - %s"), robo::system::env::is_backend() ? RT("–î–ê!") : RT("–ù–ï–¢!"));
+						}
+					), robo::signal::performer::priority::lo);
+					Sleep(1000);
+					robo::frontend::shared::exchange(*ptr, &s);
+					Sleep(10000);
+					robo::app::machine::stop();
+									  });
+
+				while (!robo::app::machine::terminated()) {
 					robo::app::machine::frontend_loop();
+					frontend::queue::poll();
 					Sleep(10);
 				}
 				stop_thrd.join();
@@ -571,38 +642,36 @@ namespace libtest
 			}
 
 			robo::app::machine::finish();
-		#endif
+			#endif
 		}
-#endif
-#endif
-		
-		
+		#endif
+		#endif
+
+
 		static void pop_callback(jsonsl_t jsn,
-			jsonsl_action_t action,
-			struct jsonsl_state_st* state,
-			const char* buf)
-		{
+								 jsonsl_action_t action,
+								 struct jsonsl_state_st* state,
+								 const char* buf) {
 			static char key[20];
 			static bool is_rot_ = false;
 			static bool is_pos_ = false;
 			static bool is_finger_ = false;
 			if (
 				((state->special_flags & JSONSL_SPECIALf_UNSIGNED) == JSONSL_SPECIALf_UNSIGNED)
-			||
+				||
 				((state->special_flags & JSONSL_SPECIALf_UNSIGNED) == JSONSL_SPECIALf_UNSIGNED)
-			||
+				||
 				((state->special_flags & JSONSL_SPECIALf_FLOAT) == JSONSL_SPECIALf_FLOAT)
-			||
+				||
 				((state->special_flags & JSONSL_SPECIALf_EXPONENT) == JSONSL_SPECIALf_EXPONENT)
-				)
-			{
+				) {
 				const char* s = buf - (state->pos_cur - state->pos_begin);
-					if (strcmp(key, "arm") == 0) {
-						content_.arm = atoi(s);
-					}
+				if (strcmp(key, "arm") == 0) {
+					content_.arm = atoi(s);
+				}
 				if (strcmp(key, "x") == 0) {
 					if (is_pos_) {
-						content_.pos.x = (float) atof(s);
+						content_.pos.x = (float)atof(s);
 					}
 					else {
 						content_.error = true;
@@ -656,8 +725,8 @@ namespace libtest
 					content_.fingers[counter++] = (float)atof(s);
 				}
 			}
-			if(!is_finger_)
-			key[0] = 0;
+			if (!is_finger_)
+				key[0] = 0;
 			switch (state->type) {
 			case JSONSL_T_HKEY:
 			case JSONSL_T_LIST:
@@ -680,35 +749,208 @@ namespace libtest
 				const char* s = buf - (state->pos_cur - state->pos_begin) + 1;
 				char* d = nullptr;
 				if (strcmp(key, "timestamp") == 0) {
-					 d = content_.timestamp;
+					d = content_.timestamp;
 				}
 				else if (key, "command") {
 					d = content_.cmd;
-				} 
+				}
 				if (d) {
 					for (size_t i = state->pos_begin + 1; i < state->pos_cur; ++i, ++s, ++d) *d = *s;		*d = 0;
 				}
 			}
-				break;
+			break;
 			}
 		}
 		TEST_METHOD(json) {
 			command::content c;
-			c.create_arm();			
+			c.create_arm();
 			//const char* arm = "{ \"a\": \"arma aram\" }";
-			jsonsl_t parser =  jsonsl_new(100);
+			jsonsl_t parser = jsonsl_new(100);
 			parser->action_callback_POP = pop_callback;
 			jsonsl_enable_all_callbacks(parser);
 			jsonsl_feed(parser, c.buf, (size_t)strlen(c.buf));
 			jsonsl_destroy(parser);
-			
+
 		}
 
 	};
 
+	enum { joint_count = 8, coord_count = 6 };
+	enum { Z1 = 0, YAW2 = 1, YAW3 = 2, ROLL4 = 3, PITHCH5 = 4, ROLL6 = 5, PITHC7 = 6, PITCH8 = 7 };
+	static  const robo::cstr actuator_names[joint_count] = { RT("Z1"), RT("YAW2"), RT("YAW3"), RT("ROLL4"), RT("PITHCH5"), RT("ROLL6"), RT("PITHC7"), RT("PITCH8") };
 
-	TEST_CLASS(mexo)
-	{
+	struct frontend_content {
+
+		struct joint {
+
+			struct data {
+				int mode;
+				float voltage;
+				float current;
+				float speed;
+				float position;
+			};
+
+			struct iaction : public data {
+				robo::common::idevagent::icommand command;
+				int mode;
+			} action;
+
+
+
+			struct ifeedback {
+				iaction goal;
+				struct ipresent : public data {
+					robo::common::idevagent::istatus status;
+					int mode;
+				} present;
+			} feedback;
+
+		};
+
+		joint joints[joint_count];
+
+		union ihuman {
+			struct {
+				union {
+					struct {
+						float x;
+						float y;
+						float z;
+					};
+					float position[3];
+				};
+				union {
+					struct {
+						float yaw;
+						float pitch;
+						float roll;
+					};
+					float angle[3];
+				};
+			};
+			float values[coord_count];
+		};
+
+		struct iaction {
+			int process;
+			struct {
+				struct {
+					ihuman speed;
+					ihuman position;
+				}desired;
+
+				struct {
+					ihuman speed;
+					ihuman position;
+				}preview;
+
+			} human;
+		} action;
+
+		struct ifeedback {
+			int status;
+			struct {
+				struct {
+					ihuman speed;
+					ihuman position;
+				} actual;
+				struct {
+					ihuman speed;
+					ihuman position;
+				} model;
+				struct {
+					ihuman speed;
+					ihuman position;
+				} preview;
+			} human;
+			struct {
+				struct {
+					float speed[joint_count];
+					float position[joint_count];
+				} model;
+				struct {
+					float speed[joint_count];
+					float position[joint_count];
+				} preview;
+			} actuator;
+		}feedback;
+
+	};
+
+
+	TEST_CLASS(front) {
+
+		//common
+
+		//backend
+		/*template < typename T > class shared {
+		public:
+			typedef typename T::iaction iaction;
+			typedef typename T::ifeedback ifeedback;
+		public:
+			struct ifront {
+				iaction& action;
+				ifeedback& feedback;
+				ifront(iaction& _action, ifeedback& _feedback)
+					: action(_action)
+					, feedback(_feedback) {
+				}
+			} front;
+			iaction action;
+			ifeedback feedback;
+			shared(
+				iaction& _action
+				, ifeedback& _feedback
+			) : front(_action, _feedback){
+				std::memset(&ifront.action, 0, sizeof (iaction) );
+				std::memset(&ifront.feedback, 0, sizeof(ifeedback));
+				std::memset(&oper, 0, sizeof(ioper));
+			}
+		};*/
+		class backend;
+
+		class frontend {
+			friend class backend;
+			frontend_content content_;
+		public:
+			frontend(void) {};
+		};
+
+
+		class backend : public  robo::app::module {
+			class joint : public robo::backend::boardagent {
+				friend class backend;
+				robo::backend::devagent<frontend_content::joint> instance_;
+				joint(int _index, robo::app::module& _owner, frontend_content& _content)
+					: robo::backend::boardagent(actuator_names[_index], _owner), instance_(
+						actuator_names[_index]
+						, *this
+						, _content.joints[_index].action
+						, _content.joints[_index].feedback
+					) {}
+			};
+			joint z1_;
+			joint yaw2_;
+			joint yaw3_;
+			joint roll4_;
+			joint pitch5_;
+			joint roll6_;
+		public:
+			backend(frontend& _frontend)
+				: robo::app::module(RT("backend"))
+				, z1_(0, *this, _frontend.content_)
+				, yaw2_(1, *this, _frontend.content_)
+				, yaw3_(1, *this, _frontend.content_)
+				, roll4_(1, *this, _frontend.content_)
+				, pitch5_(1, *this, _frontend.content_)
+				, roll6_(1, *this, _frontend.content_) {}
+		};
+
+		TEST_METHOD(test_machine) {};
+	};
+
+	TEST_CLASS(mexo) {
 		bool result = false;
 		TEST_METHOD(test_machine) {
 			union {
@@ -723,7 +965,7 @@ namespace libtest
 				int arr[::mexo::machine::slot_count + 5];
 			} flags;
 
-			static int samples[::mexo::machine::slot_count + 5] = {1, 1, 16, 16, 16
+			static int samples[::mexo::machine::slot_count + 5] = { 1, 1, 16, 16, 16
 				, 4  //0
 				, 2  //1
 				, 2  //2
@@ -743,25 +985,25 @@ namespace libtest
 			};
 			::mexo::machine::slot::lambda begin([&flags] {
 				flags.begin++;
-				});
+												});
 			::mexo::machine::slot::lambda begin2([this] {
 				this->result = true;
-				});
+												 });
 			::mexo::machine::slot::lambda start([&flags] {
 				flags.start++;
-				});
+												});
 			::mexo::machine::slot::lambda priority([&flags] {
 				flags.priority++;
-				});
+												   });
 			::mexo::machine::slot::lambda frontend([&flags] {
 				flags.frontend++;
-				});
+												   });
 			::mexo::machine::slot::lambda backend([&flags] {
 				flags.backend++;
-				});
+												  });
 			::mexo::machine::slot::lambda slots([&flags] {
-				flags.slots[ ::mexo::machine::slot_index() ]++;
-				});
+				flags.slots[::mexo::machine::slot_index()]++;
+												});
 
 
 			begin.attach(::mexo::machine::slot::kind::begin);
@@ -773,7 +1015,7 @@ namespace libtest
 			slots.attach(0);
 			int a[] = { 0,1,2,3 };
 			slots.attach(a);
-			slots.attach({0,4,8,12});
+			slots.attach({ 0,4,8,12 });
 			for (int i = 0; i < ::mexo::machine::slot_count; i++) {
 				slots.attach(i);
 			}
@@ -791,8 +1033,8 @@ namespace libtest
 			bool success = true;
 			const int* src = samples;
 			int* dst = flags.arr;
-			for (int i = 0; i < ::mexo::machine::slot_count + 5; ++i, ++src,++dst) {
-				if ( *src != *dst) {
+			for (int i = 0; i < ::mexo::machine::slot_count + 5; ++i, ++src, ++dst) {
+				if (*src != *dst) {
 					success = false;
 					break;
 				}
@@ -800,14 +1042,14 @@ namespace libtest
 			Assert::IsTrue(success);
 		}
 
-		
 
-		class fake_dc_periphery  {
+
+		class fake_dc_periphery {
 		public:
 			typedef signal_t deseired_t;
 			typedef int16_t actual_t;
 		private:
-			fdc<float,int16_t> 	float_to_int16_;
+			fdc<float, int16_t> 	float_to_int16_;
 		public:
 			int16_t duty;
 			struct config_s {
@@ -817,18 +1059,18 @@ namespace libtest
 		protected:
 			static void boot_begin(void) {}
 			static bool do_boot(void) { return true; }
-			void boot_complete(actual_t _duty) { duty  = _duty;  }
+			void boot_complete(actual_t _duty) { duty = _duty; }
 
-			static void shutdown_begin(void) {  }
+			static void shutdown_begin(void) {}
 			static bool do_shutdown(void) { return true; }
-			static void shutdown_complete(void) {  }
+			static void shutdown_complete(void) {}
 
-			void do_run(actual_t _duty) { duty = _duty;  }
+			void do_run(actual_t _duty) { duty = _duty; }
 
 			iblock::satstate dirrect(deseired_t _deseired, actual_t& _duty) {
 				return float_to_int16_.dirrect(_deseired, _duty);
 			}
-			void revert(actual_t _duty, deseired_t & _actual) {
+			void revert(actual_t _duty, deseired_t& _actual) {
 				float_to_int16_.revert(_duty, _actual);
 			}
 			bool applay(const config_s& _config) {
@@ -856,84 +1098,84 @@ namespace libtest
 			void shutdown_complete(void) {  }
 		};*/
 
-/*
-		class actuator: public dev {
-		public:
-			struct action : public dev::action {
-				signal_t voltage = (signal_t)0;
-				signal_t current = (signal_t)0;
-				signal_t speed = (signal_t)0;
-				long_signal_t position = (long_signal_t)0;
-				long_signal_t force = (long_signal_t)0;
-				struct {
-					signal_t voltage = (signal_t)0;
-					signal_t current = (signal_t)0;
-					signal_t speed = (signal_t)0;
-					struct {
-						long_signal_t lo = (long_signal_t)0;
-						long_signal_t hi = (long_signal_t)0;
-					} position;
-					struct {
-						long_signal_t lo = (long_signal_t)0;
-						long_signal_t hi = (long_signal_t)0;
-					} forsces;
-				} lim;
-			} action_inst;
-			struct snapshot : public dev::snapshot {
-				signal_t voltage = (signal_t)0;
-				signal_t current = (signal_t)0;
-				signal_t speed = (signal_t)0;
-				long_signal_t position = (long_signal_t)0;
-				long_signal_t force = (long_signal_t)0;
-			} snapshot_inst;
+		/*
+				class actuator: public dev {
+				public:
+					struct action : public dev::action {
+						signal_t voltage = (signal_t)0;
+						signal_t current = (signal_t)0;
+						signal_t speed = (signal_t)0;
+						long_signal_t position = (long_signal_t)0;
+						long_signal_t force = (long_signal_t)0;
+						struct {
+							signal_t voltage = (signal_t)0;
+							signal_t current = (signal_t)0;
+							signal_t speed = (signal_t)0;
+							struct {
+								long_signal_t lo = (long_signal_t)0;
+								long_signal_t hi = (long_signal_t)0;
+							} position;
+							struct {
+								long_signal_t lo = (long_signal_t)0;
+								long_signal_t hi = (long_signal_t)0;
+							} forsces;
+						} lim;
+					} action_inst;
+					struct snapshot : public dev::snapshot {
+						signal_t voltage = (signal_t)0;
+						signal_t current = (signal_t)0;
+						signal_t speed = (signal_t)0;
+						long_signal_t position = (long_signal_t)0;
+						long_signal_t force = (long_signal_t)0;
+					} snapshot_inst;
 
-			enum {
-				voltage_id = 1
-				, current_id = 2
-				, speed_id = 3
-				, position_id =4
-			};
+					enum {
+						voltage_id = 1
+						, current_id = 2
+						, speed_id = 3
+						, position_id =4
+					};
 
-			ps::voltage & psv;
+					ps::voltage & psv;
 
-			class mode : ::mexo::dev::mode {
+					class mode : ::mexo::dev::mode {
 
-			public:
-				virtual void do_start(void) { owner().psv.on(); };
-				virtual void do_stop(void) { owner().psv.off();  };
+					public:
+						virtual void do_start(void) { owner().psv.on(); };
+						virtual void do_stop(void) { owner().psv.off();  };
 
-				actuator& owner() { return (actuator&) ::mexo::dev::mode::owner(); };
-				mode(int _id, cstr _name, dev& _dev) : ::mexo::dev::mode(_id, _name, _dev) {};
-			};
-			
-			class voltage_mode : mode {
-			private:
-				signal_t deseired__ =(signal_t)0;
-				::mexo::iblock::output_t<signal_t>  deseired_;
-			protected:
-				virtual void do_start(void) {
-					owner().psv.deseired.link_to(&deseired_);
-					deseired__ = owner().action_inst.voltage;
-					mode::do_start();
+						actuator& owner() { return (actuator&) ::mexo::dev::mode::owner(); };
+						mode(int _id, cstr _name, dev& _dev) : ::mexo::dev::mode(_id, _name, _dev) {};
+					};
+
+					class voltage_mode : mode {
+					private:
+						signal_t deseired__ =(signal_t)0;
+						::mexo::iblock::output_t<signal_t>  deseired_;
+					protected:
+						virtual void do_start(void) {
+							owner().psv.deseired.link_to(&deseired_);
+							deseired__ = owner().action_inst.voltage;
+							mode::do_start();
+						};
+						virtual void applay_action(void) {
+							deseired__ = owner().action_inst.voltage;
+						}
+					public:
+						voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), deseired_(deseired__){};
+					} voltage_mode_;
+
+		//					: voltage(voltage_id, RT("voltage"), _owner)
+		//					, current(current_id, RT("current"), _owner)
+		//					, speed(speed_id, RT("speed"), _owner)
+		//					, position(position_id, RT("position"), _owner)
+		//
+					actuator(cstr  _name, ::mexo::ps::voltage& _psv)
+						: dev(_name,  action_inst, snapshot_inst),  psv(_psv), voltage_mode_(*this){
+					}
+
 				};
-				virtual void applay_action(void) {
-					deseired__ = owner().action_inst.voltage;
-				}
-			public:
-				voltage_mode(dev& _dev) : mode(voltage_id, RT("voltage"), _dev), deseired_(deseired__){};
-			} voltage_mode_;
-
-//					: voltage(voltage_id, RT("voltage"), _owner)
-//					, current(current_id, RT("current"), _owner)
-//					, speed(speed_id, RT("speed"), _owner)
-//					, position(position_id, RT("position"), _owner)
-//					
-			actuator(cstr  _name, ::mexo::ps::voltage& _psv)
-				: dev(_name,  action_inst, snapshot_inst),  psv(_psv), voltage_mode_(*this){
-			}
-
-		};
-		*/
+				*/
 		TEST_METHOD(ps) {
 			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
 			fake_dc::config_s dc_config = {
@@ -941,7 +1183,7 @@ namespace libtest
 				,{ //converter
 					-4095
 					, 4095
-					, 4095./12.
+					, 4095. / 12.
 				}
 			};
 			voltage::config_s dcv_config = {
@@ -976,14 +1218,14 @@ namespace libtest
 			//a_1.action_inst.mode = actuator::voltage_id;
 			dcv.standalone_deseired = 12.f;
 			dc.on();
-			
-			for (int i = 0; i < 1000000000; ++i) {
+
+			for (int i = 0; i < 1000; ++i) {
 				::mexo::machine::priority_loop();
 				::mexo::machine::backend_loop();
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(dc.actual.value >4000 && dc.actual.value < 4096);
+			Assert::IsTrue(dc.actual.value > 4000 && dc.actual.value < 4096);
 			Assert::IsTrue(dcv.actual.value > 11.f && dcv.actual.value < 12.1f);
 		}
 	};

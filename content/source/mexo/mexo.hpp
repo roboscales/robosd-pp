@@ -314,8 +314,10 @@ typedef dummy_led  tp;
 	class prioritet_subsystem : public subsystem {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority); };
-		virtual void do_stop(void) { robo::system::guard g__; ref_.dettach(); };
+		virtual void do_start(void) { 
+			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority); 
+		};
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
 	public:
 		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart,_owner), ref_(*this) {};
 	};
@@ -323,8 +325,8 @@ typedef dummy_led  tp;
 	class frontend_subsystem : public subsystem {
 		machine::slot::delegat::ref ref_;
 	public:
-		virtual void do_start(void) { robo::system::guard g__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
-		virtual void do_stop(void) { robo::system::guard g__; ref_.dettach(); };
+		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
 		frontend_subsystem(cstr  _name, bool _autostart,  node* _owner = nullptr) : subsystem(_name, _autostart,  _owner), ref_(*this) {};
 	};
 
