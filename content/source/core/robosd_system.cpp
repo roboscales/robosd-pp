@@ -229,8 +229,8 @@ namespace robo {
 	void* system::critical_enter_(void) {
 		#if ROBO_APP_ENV_ENABLED == 1
 		//быстрым процессам сдесь делать нечего - это разборки между потоками "фронткнд"
-		ROBO_APP_ASSERT(env::is_frontend())
-			return system::env::critical_enter();
+		ROBO_APP_ASSERT(env::is_frontend());
+		return system::env::critical_enter();
 		#else
 		return nullptr;
 		#endif
@@ -238,8 +238,8 @@ namespace robo {
 
 	void system::critical_leave_(void* _context) {
 		#if ROBO_APP_ENV_ENABLED == 1
-		ROBO_APP_ASSERT(env::is_frontend())
-			system::env::critical_leave(_context);
+		ROBO_APP_ASSERT(env::is_frontend());
+		system::env::critical_leave(_context);
 		#else
 		ROBO_UNUSED(_context);
 		#endif

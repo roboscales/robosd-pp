@@ -67,7 +67,7 @@ public:
 	virtual ~ring_t(){
 		clear();
 	}
-	bool put(DATA_T * _data, unsigned _count){
+	bool put(const DATA_T * _data, unsigned _count){
 		if (SIZE - count() >= _count){
 			while (_count--)
 				put(*_data++);

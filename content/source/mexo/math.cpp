@@ -1,5 +1,6 @@
 #include "mexo/math.hpp"
 namespace mexo {
+	/*
 	signal2ph_s& operator >> (const signal3ph_s& _s3, signal2ph_s& _s2) {
 		_s2.cross = ( signal_t(2) * _s3.B + _s3.A) * one_div_sqrt3;
 		_s2.lateral = _s3.A;
@@ -21,6 +22,6 @@ namespace mexo {
 		_dst.lateral = _src.lateral * cos_ + _src.cross * sin_;
 		_dst.lateral = -_src.lateral * sin_ + _src.cross * cos_;
 	}
-		
 
+*/
 }

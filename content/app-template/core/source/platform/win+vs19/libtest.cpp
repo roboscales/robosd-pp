@@ -1046,36 +1046,38 @@ public:
 
 		class fake_dc_periphery {
 		public:
-			typedef signal_t deseired_t;
-			typedef int16_t actual_t;
+			typedef signal_t input_t;
+			typedef int16_t duty_t;
+			typedef duty_t output_t;
 		private:
-			fdc<float, int16_t> 	float_to_int16_;
+			fdc<float, duty_t> 	float_to_int16_;
 		public:
 			int16_t duty;
 			struct config_s {
 				::mexo::iblock::config_s block;
-				fdc<float, int16_t>::config_s converter;
+				range_s<duty_t> range;
+				float scale;
 			};
 		protected:
 			static void boot_begin(void) {}
 			static bool do_boot(void) { return true; }
-			void boot_complete(actual_t _duty) { duty = _duty; }
+			void boot_complete(duty_t _duty) { duty = _duty; }
 
 			static void shutdown_begin(void) {}
 			static bool do_shutdown(void) { return true; }
 			static void shutdown_complete(void) {}
 
-			void do_run(actual_t _duty) { duty = _duty; }
+			void do_run(duty_t _duty) { duty = _duty; }
 
-			iblock::satstate dirrect(deseired_t _deseired, actual_t& _duty) {
-				return float_to_int16_.dirrect(_deseired, _duty);
+			iblock::satstate dirrect(const input_t& _deseired, const range_s<output_t>& _range, duty_t& _duty) {
+				return float_to_int16_.dirrect(_deseired, _range, _duty);
 			}
-			void revert(actual_t _duty, deseired_t& _actual) {
+			void revert(duty_t _duty, input_t& _actual) {
 				float_to_int16_.revert(_duty, _actual);
 			}
 			bool applay(const config_s& _config) {
-				if (_config.converter.lo < _config.converter.up && _config.converter.scale > 1.f / 32767) {
-					float_to_int16_.config = _config.converter;
+				if (_config.scale > 1.f / 32767) {
+					float_to_int16_.scale = _config.scale;
 					return true;
 				}
 				else {
@@ -1180,20 +1182,20 @@ public:
 			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
 			fake_dc::config_s dc_config = {
 				{0} //block
-				,{ //converter
+				,{ //range
 					-4095
 					, 4095
-					, 4095. / 12.
 				}
+				, 4095. / 12.
 			};
 			voltage::config_s dcv_config = {
-				{0} //block
-				, 0.8f
+				{ 0 } //block
 				,{ //
 					-12.f
 					, 12.f
 				}
-				, 0.f
+				, 0.8f
+					, 0.f
 			};
 			fake_dc dc(hardware_subsystem, RT("dc"), dc_config);
 			voltage dcv(hardware_subsystem, RT("dcv"), dcv_config);
@@ -1216,7 +1218,7 @@ public:
 			//hardware_subsystem
 			//a_1.action_inst.voltage = 1.f;
 			//a_1.action_inst.mode = actuator::voltage_id;
-			dcv.standalone_deseired = 12.f;
+			dcv.standalone_input = 12.f;
 			dc.on();
 
 			for (int i = 0; i < 1000; ++i) {
@@ -1225,8 +1227,8 @@ public:
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(dc.actual.value > 4000 && dc.actual.value < 4096);
-			Assert::IsTrue(dcv.actual.value > 11.f && dcv.actual.value < 12.1f);
+			Assert::IsTrue(dc.output.value > 4000 && dc.output.value < 4096);
+			Assert::IsTrue(dcv.output.value > 11.f && dcv.output.value < 12.1f);
 		}
 	};
 

@@ -40,10 +40,22 @@
 
 #if ROBO_APP_SYSTEM_ENABLED  == 1
 namespace robo {
+	/*!
+	 *  Функции аппаратного окружения (system::env), которые требуют отдельной реализации для каждой платформы или ОС
+	 *  и их обертки (system).
+	 *  Работа разбита на два максимально развязанных уровня- frontend и backend, которые взаимодействуют посредством
+	 *  очередей , через которые проходят сообщения, содержащие обработчики.
+	 *  backend работает вне контекста ОС, в реальном времени. Прерывать ее можно только на самое короткое
+	 *  время. например, чтобы поставить сообщение в очередь.
+	 */
 	class system {
+		/*!
+		 *  Выделение памяти. Для
+		 */
 		#if ROBO_APP_ALLOC_ENABLED ==1
 	public:
 		struct mem {
+			//статистика
 			struct stat {
 				struct {
 					int size = 0;
@@ -82,62 +94,165 @@ namespace robo {
 		system(void);
 		~system(void);
 	public:
-		//останавливает ядро системы
+		/*!
+		*  если выполняется в контексте backend - все конкурирующие потоки frontend ( в контекесте ОС )
+		*  если выполняется в контексте frontend  - останавливает поток backend  и все конкурирующие потоки frontend ( в контекесте ОС )
+		*/
 		class ROBO_EXPORT guard {
 			void* context_;
 		public:
 			guard(void);
 			~guard(void);
 		};
-
-		class ROBO_EXPORT lazzyboy {
-			time_us_t	 sleep_us_;
-		public:
-			lazzyboy(void);
-			~lazzyboy(void);
-			time_us_t	 idle_us(void);
-		};
-
-		enum class context { backend, frontend };
-
-		class ROBO_EXPORT fall {
-		public:
-			fall(void);
-			~fall(void);
-		};
-
+		/*!
+		 *  если выполняется в контексте frontend  - останавливает все конкурирующие потоки frontend ( в контекесте ОС )
+		 *  в backend ни вкоем случае запукать нельзя!
+		 */
 		class ROBO_EXPORT critical {
 			void* context_;
 		public:
 			critical(void);
 			~critical(void);
 		};
+		/*!
+		 *  замеряем время от создания объекта
+		 */
+		class ROBO_EXPORT lazzyboy {
+			time_us_t	 sleep_us_;
+		public:
+			lazzyboy(void);
+			~lazzyboy(void);
+			/*!
+			 *  Resets the lazzyboy.
+			 *
+			 *      @return теперь время отсчитывается от момента вызова reset
+			 */
+			time_us_t	 reset(void);
+			/*!
+			 *  Idles the us.
+			 *
+			 *      @return время от создания объекта или от сброса
+			 */
+			time_us_t	 idle_us(void);
+		};
+
+		enum class context { backend, frontend };
+		/*!
+		 *  Данный поток обозначает себя, как backend
+		 */
+		class ROBO_EXPORT fall {
+		public:
+			fall(void);
+			~fall(void);
+		};
 
 		#if ROBO_APP_ENV_ENABLED ==1
+		/*!
+		 *  Это специфичные функции для аппаратуры и компилятора
+		 */
 		class  env {
 			friend class guard;
 			friend class fall;
 			friend class system;
 
+			/*!
+			 *  Заходим в критическую секцию
+			 *
+			 *      @return возвращает контекст - указатель на специфическую структуру (опционно). ее надо вернуть в critical_leave
+			 */
 			static void* critical_enter(void);
+
+			/*!
+			 *  Покидаем критическую секцию.
+			 *
+			 *      @param in _context - эту структуру выдает critical_enter
+			 */
 			static void critical_leave(void* _context);
 
+			/*!
+			 *  Блокируем backend
+			 *
+			 *      @return возвращает контекст - указатель на специфическую структуру (опционно). ее надо вернуть в leave
+			 */
 			static void* enter(void);
+
+			/*!
+			 *  Освобождаем backend
+			 *
+			 *      @param in _context  _context - эту структуру выдает critical_enter
+			 */
 			static void leave(void* _context);
+
+			/*!
+			 *  Защищаем  backend - ни кто его не остановит!
+			 */
 			static void lock(void);
+
+			/*!
+			 *  Теперь  backend можно приостановить
+			 */
 			static void unlock(void);
+
+			/*!
+			 *  поток обозначает, что он реализует backend
+			 */
 			static void fall(void);
+
+			/*!
+			 *  поток обозначает, что он перестал реализовать backend
+			 */
 			static void comeback(void);
+
 			#if ROBO_APP_ALLOC_ENABLED ==1
+
+			/*!
+			 *  специфическая функция выделения памяти в куче. Работает по разному для backend и frontend
+			 *
+			 *      @param [in] _sz
+			 *
+			 *      @return возвращает указатель на выделеную память. Не смогли вызвать - возвращаем null
+			 */
 			static void* mem_alloc(size_t _sz);
+			/*!
+			 *  специфическая функция освобождения памяти в куче
+			 *
+			 *      @param [in,out] _memo
+			 */
 			static void mem_free(void* _memo);
 			#endif
 		public:
+
+			/*!
+			 *  Returns true if the env is frontend.
+			 *
+			 *      @return True if frontend. False if not.
+			 */
 			static bool is_frontend(void);
+
+			/*!
+			 *  Returns true if the env is backend.
+			 *
+			 *      @return True if backend. False if not.
+			 */
 			static bool is_backend(void);
+
+			/*!
+			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
+			 */
 			static void abort(void);
 			#if ROBO_APP_MODULE_ENABLED == 1
+
+			/*!
+			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
+			 *  Здесь следует проводить инициализацию аппаратуры и специфичного ПО
+			 *
+			 *      @return возвращает true, если норм
+			 */
 			static bool begin(void);
+
+			/*!
+			 *  Finishes the env. Завершения работы аппаратуры  и специфичного ПО
+			 */
 			static void finish(void);
 			static bool start(void);
 			static void stop(void);

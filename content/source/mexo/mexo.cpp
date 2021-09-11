@@ -37,12 +37,16 @@ namespace mexo {
 		}
 		tp::off(tp_verb::backend);
 		tp::off(tp_verb::loop);
+		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::backend_poll();
+		#endif
 	}
 	void machine::frontend_loop_(void) {
 		tp::on(tp_verb::frontend);
 		slots_ref_.frontend.execute();
+		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::frontend_poll();
+		#endif
 		tp::off(tp_verb::frontend);
 	}
 	machine::slots& machine::slots_(void) {

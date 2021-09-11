@@ -7,3 +7,4 @@
 /content/app-template/reference
 *.sdf
 *.suo
+/content/app-template/mexo/projects/STM32F405-omega/MDK-ARM/mexo-test

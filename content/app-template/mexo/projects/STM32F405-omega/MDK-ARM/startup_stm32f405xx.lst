@@ -830,9 +830,9 @@ ARM Macro Assembler    Page 13
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --depend=mexo
 -test\startup_stm32f405xx.d -omexo-test\startup_stm32f405xx.o -I.\RTE\_mexo-tes
-t -IC:\Users\anyus\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include -
+t -IC:\Users\anyus\AppData\Local\Arm\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include -
 IC:\Users\anyus\AppData\Local\Arm\Packs\Keil\STM32F4xx_DFP\2.15.0\Drivers\CMSIS
-\Device\ST\STM32F4xx\Include --predefine="__UVISION_VERSION SETA 534" --predefi
+\Device\ST\STM32F4xx\Include --predefine="__UVISION_VERSION SETA 535" --predefi
 ne="_RTE_ SETA 1" --predefine="STM32F405xx SETA 1" --predefine="_RTE_ SETA 1" -
 -list=startup_stm32f405xx.lst startup_stm32f405xx.s
 

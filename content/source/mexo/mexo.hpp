@@ -34,24 +34,24 @@
 
 using namespace robo;
 namespace mexo {
-	struct tp_verb{
-		enum  { frontend = 1, backend = 2, priority = 3, loop =4};
-	};	
-#if MEXO_DEBUG_TP1_ENABLED == 1
-class tp_driver{
-//реализацию принудительно делегируем в perephery проекта
+	struct tp_verb {
+		enum { frontend = 1, backend = 2, priority = 3, loop = 4 };
+	};
+	#if MEXO_DEBUG_TP1_ENABLED == 1
+	class tp_driver {
+		//СЂРµР°Р»РёР·Р°С†РёСЋ РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РґРµР»РµРіРёСЂСѓРµРј РІ perephery РїСЂРѕРµРєС‚Р°
 	protected:
 		void on(void);
 		void off(void);
-};
-typedef led_s<tp_driver>  tp;
+	};
+	typedef led_s<tp_driver>  tp;
 
-#else
+	#else
 
 
-typedef dummy_led  tp;
+	typedef dummy_led  tp;
 
-#endif 
+	#endif 
 
 	typedef APP_MEXO_SIGNAL_T signal_t;
 	typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
@@ -63,23 +63,23 @@ typedef dummy_led  tp;
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin= slot_count, start, priority, backend, frontend };
+			enum class kind { begin = slot_count, start, priority, backend, frontend };
 			class delegat : public ::robo::delegat::base<void> {
 			public:
 				typedef list::unsorted<delegat> list;
 				typedef list::ref ref;
 				virtual ~delegat(void) {}
-				void attach( slot::kind _kind );
-				static void attach( ref & _ref, int _index);
+				void attach(slot::kind _kind);
+				static void attach(ref& _ref, int _index);
 				static void attach(ref& _ref, slot::kind _kind);
 				void attach(int _index);
 
 				void attach(const int* _index, int _count) {
-					for (int i = 0; i < _count; ++i,++_index) {
-						attach( *_index );
+					for (int i = 0; i < _count; ++i, ++_index) {
+						attach(*_index);
 					}
 				}
-				template <size_t N> void attach(int (&index)[N]) {
+				template <size_t N> void attach(int(&index)[N]) {
 					attach(index, N);
 				}
 				void attach(std::initializer_list<int> _index) {
@@ -90,18 +90,18 @@ typedef dummy_led  tp;
 			};
 
 			class lambda : public ::robo::delegat::lambda<delegat, void> {
-			public :
-				lambda(const ::robo::lambda< void(void)>& _lambda ) : ::robo::delegat::lambda<delegat, void>(_lambda) {}
+			public:
+				lambda(const ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {}
 				lambda(slot::kind _kind, const ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
 					attach(_kind);
 				}
 				lambda(int _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
 					attach(_index);
 				}
-				lambda(const int * _index, int _count, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+				lambda(const int* _index, int _count, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
 					attach(_index, _count);
 				}
-				template <size_t N>  lambda( int(&_index)[N] , const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+				template <size_t N>  lambda(int(&_index)[N], const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
 					attach(_index);
 				}
 				lambda(std::initializer_list<int> _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
@@ -111,20 +111,20 @@ typedef dummy_led  tp;
 
 			class simple : public ::robo::delegat::simple<delegat, void> {
 			public:
-				simple(void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {}
-				simple(slot::kind _kind, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+				simple(void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {}
+				simple(slot::kind _kind, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
 					attach(_kind);
 				}
-				simple(int _index, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+				simple(int _index, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
 					attach(_index);
 				}
-				simple(const int* _index, int _count, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+				simple(const int* _index, int _count, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
 					attach(_index, _count);
 				}
-				template <size_t N>  simple(int(&_index)[N], void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+				template <size_t N>  simple(int(&_index)[N], void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
 					attach(_index);
 				}
-				simple(std::initializer_list<int> _index, void (* _lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
+				simple(std::initializer_list<int> _index, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
 					attach(_index);
 				}
 			};
@@ -145,9 +145,9 @@ typedef dummy_led  tp;
 			friend class machine;
 			slot begin;
 			slot start;
-#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+			#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 			slot priority;
-#endif
+			#endif
 			slot backend;
 			slot frontend;
 			slot periodic[slot_count];
@@ -158,14 +158,14 @@ typedef dummy_led  tp;
 		};
 
 	private:
-		slots & slots_ref_;
+		slots& slots_ref_;
 		int slot_index_;
-		static slots & slots_(void);
+		static slots& slots_(void);
 		void begin_(void);
 		void start_(void);
-#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		void priority_loop_(void);
-#endif
+		#endif
 		void backend_loop_(void);
 		void frontend_loop_(void);
 		static machine instance_;
@@ -174,25 +174,25 @@ typedef dummy_led  tp;
 		~machine(void);
 		static void begin(void) { instance_.begin_(); }
 		static void start(void) { instance_.start_(); }
-#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		static void priority_loop(void) { instance_.priority_loop_(); }
-#endif
+		#endif
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
 		static int slot_index(void) { return instance_.slot_index_; }
 	};
 	class node {
 	public:
-		typedef robo::list::unique<node,int> map;
+		typedef robo::list::unique<node, int> map;
 		typedef map::ref map_ref;
 		typedef robo::list::unsorted<node> list;
 		typedef list::ref ref;
-		enum class state { configure, ready, fault} ;
+		enum class state { configure, ready, fault };
 	private:
 		ref ref_;
 		list childs_;
 		map_ref map_ref_;
-		
+
 		cstr name_;
 		node* owner_;
 
@@ -204,15 +204,15 @@ typedef dummy_led  tp;
 		static map& map_(void);
 	protected:
 		list& childs(void) { return childs_; }
-//		virtual void do_enable(void) {};
-//		virtual void do_disable(void) {};
+		//		virtual void do_enable(void) {};
+		//		virtual void do_disable(void) {};
 		virtual bool do_reconfig(void) { return true; };
 	public:
-		node* owner() { return owner_;  };
+		node* owner() { return owner_; };
 		cstr name(void) { return name_; };
 
 		static bool begin(void);
-			
+
 		bool reconfig(void);
 
 		node(cstr _name, /*bool _auto_enabled,*/ node* _owner = nullptr);
@@ -220,8 +220,8 @@ typedef dummy_led  tp;
 		static node* find(int _key) {
 			return map_().find(_key);
 		}
-//		void enable(bool _hand = false);
-//		void disable(void);
+		//		void enable(bool _hand = false);
+		//		void disable(void);
 		bool enabled(void) { return state_ == state::ready; };
 	};
 	class isubsystem;
@@ -267,7 +267,7 @@ typedef dummy_led  tp;
 			}
 		};
 
-		enum class satstate { none,  both, low, up };
+		enum class satstate { none, both, low, up };
 
 	protected:
 
@@ -277,7 +277,7 @@ typedef dummy_led  tp;
 	};
 
 
-	class isubsystem : public node{
+	class isubsystem : public node {
 		friend class iblock;
 	public:
 		typedef robo::list::unsorted<isubsystem> list;
@@ -292,6 +292,7 @@ typedef dummy_led  tp;
 		virtual void do_stop(void) = 0;
 		isubsystem(cstr  _name, bool _autostart, node* _owner = nullptr);
 		void execute(void);
+	public:
 		void  start(void);
 		void stop(void);
 		virtual bool do_reconfig(void) {
@@ -299,7 +300,6 @@ typedef dummy_led  tp;
 			if (autostart_) start();
 			return true;
 		}
-	public:
 	};
 
 	class subsystem : public isubsystem, public machine::slot::delegat {
@@ -314,12 +314,20 @@ typedef dummy_led  tp;
 	class prioritet_subsystem : public subsystem {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) { 
-			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority); 
+		virtual void do_start(void) {
+			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority);
 		};
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
 	public:
-		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart,_owner), ref_(*this) {};
+		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
+	};
+
+	class backend_subsystem : public subsystem {
+		machine::slot::delegat::ref ref_;
+	public:
+		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend); };
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
+		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
 	};
 
 	class frontend_subsystem : public subsystem {
@@ -327,7 +335,7 @@ typedef dummy_led  tp;
 	public:
 		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		frontend_subsystem(cstr  _name, bool _autostart,  node* _owner = nullptr) : subsystem(_name, _autostart,  _owner), ref_(*this) {};
+		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
 	};
 
 
@@ -347,7 +355,7 @@ typedef dummy_led  tp;
 				(*pref)->dettach();
 			}
 		};
-		periodic_subsystem(cstr  _name, bool _autostart,  std::initializer_list<int> _index, node* _owner = nullptr) : subsystem(_name, _autostart, _owner) {
+		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : subsystem(_name, _autostart, _owner) {
 			ref_count_ = _index.end() - _index.begin() + 1;
 			refs_ = new machine::slot::delegat::ref * [ref_count_];
 			machine::slot::delegat::ref** pref = refs_;
@@ -368,9 +376,9 @@ typedef dummy_led  tp;
 	class dev : public node {
 		friend class mode;
 	protected:
-		virtual void on_idle(void) { };
+		virtual void on_idle(void) {};
 	public:
-		enum { idle_id = 0 };	 	
+		enum { idle_id = 0 };
 		struct action {
 			bool actual;
 			int mode = idle_id;
@@ -392,18 +400,18 @@ typedef dummy_led  tp;
 			ref ref_;
 		protected:
 			dev& owner() { return *((dev*)node::owner()); };
-			virtual void applay_action(void) { };
-			virtual void do_start(void) { };
-			virtual void do_stop(void) { };
+			virtual void applay_action(void) {};
+			virtual void do_start(void) {};
+			virtual void do_stop(void) {};
 		public:
 			mode(int _index, cstr  _name, dev& _dev);
 		};
 
 		class idle_mode : public mode {
 		protected:
-			virtual void do_start(void) { };
-			virtual void do_stop(void) { };
-			virtual	void do_execute(void) { };
+			virtual void do_start(void) {};
+			virtual void do_stop(void) {};
+			virtual	void do_execute(void) {};
 
 		public:
 			virtual	void operator()(void) {};
@@ -420,12 +428,12 @@ typedef dummy_led  tp;
 		int actual_mode_id_;
 		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
 		::mexo::machine::slot::delegat::ref  backend_ref_;
-		action &  action_;
-		snapshot & snapshot_;
+		action& action_;
+		snapshot& snapshot_;
 		void backend__(void);
 	};
 
-	
+
 
 	/*
 	class tandem_subsystem : public node {
@@ -457,66 +465,123 @@ typedef dummy_led  tp;
 
 
 	template < typename S > class block_t : public  iblock {
-	protected: 
+	protected:
 	public:
-		//S - это старая добрая сишная структура
+		//S - СЌС‚Рѕ СЃС‚Р°СЂР°СЏ РґРѕР±СЂР°СЏ СЃРёС€РЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР°
 		typedef  S config_s;
-		block_t(isubsystem & _subsystem, cstr  _name, config_s& _config) : iblock (_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
+		block_t(isubsystem& _subsystem, cstr  _name, config_s& _config) : iblock(_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
 		virtual bool do_reconfig(void) {
-			return applay(reinterpret_cast<config_s&> (iblock::config) );
+			return applay(reinterpret_cast<config_s&> (iblock::config));
 		}
 
-		virtual bool applay( const  config_s & _config ) = 0;
+		virtual bool applay(const  config_s& _config) = 0;
 	};
-	
+
+
+	template <typename A> struct range_s {
+		A low;
+		A hi;
+	};
 
 	template < typename A> class controller_block_t : public  block_t<typename A::config_s>, public A {
 	protected:
-		iblock::satstate standalone_master_satstate_ = iblock::satstate::none;
 		iblock::satstate satstate_ = iblock::satstate::none;
 	public:
-		typedef  typename A::deseired_t deseired_t;
-		typedef  typename A::actual_t actual_t;
+		typedef  typename A::input_t input_t;
+		typedef  typename A::output_t output_t;
 		typedef  typename A::config_s config_s;
 
-		deseired_t standalone_deseired;
-		iblock::input_t<deseired_t> deseired;
+		input_t standalone_input;
+		iblock::input_t<input_t> input;
+
+		iblock::satstate standalone_master_satstate = iblock::satstate::none;
 		iblock::input_t<iblock::satstate> master_satstate;
-		iblock::output_t<actual_t> actual;
+
+		range_s<output_t> standalone_range = {};
+		iblock::input_t<range_s<output_t>> range;
+
+		iblock::output_t<output_t> output;
 		iblock::output_t<iblock::satstate> satstate;
 
-		controller_block_t( isubsystem& _subsystem, cstr  _name, config_s & _config)
+
+		controller_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
 			: block_t<config_s>(_subsystem, _name, _config)
-			, deseired(standalone_deseired)
-			, master_satstate(standalone_master_satstate_)
-			, actual(A::actual() )
-			, satstate(satstate_)
-		{
-			standalone_deseired = {};
+			, input(standalone_input)
+			, master_satstate(standalone_master_satstate)
+			, range(standalone_range)
+			, output(A::output_value())
+			, satstate(satstate_) {
+			standalone_input = {};
 		}
 
-		virtual bool applay(const config_s & _config) {				
-			return A::applay(_config);
+		virtual bool applay(const config_s& _config) {
+			standalone_range = ((const typename A::config_s&)_config).range;
+			ROBO_LBREAKN(standalone_range.low <= standalone_range.hi);
+			ROBO_LRET(A::applay(_config));
 		}
 
 		virtual void execute(void) {
-			iblock::satstate local = A::execute( deseired.value() );
-			iblock::satstate master = master_satstate.value();
-			if (master == iblock::satstate::none) {
-				satstate_ = local;
-			}
-			else {
-				satstate_ =  master;
-			}
+			satstate_ = A::execute(input.value(), master_satstate.value(), range.value());
 		}
 
-		template < typename M> void link_to(M & _controller) {
-			deseired.link_to( &_controller.actual );
+		template < typename M> void link_to(M& _controller) {
+			input.link_to(&_controller.output);
 			master_satstate.link_to(&_controller.satstate);
 		}
 
 	};
 
-	
+	template < typename A> class sence_block_t : public  block_t<typename A::config_s>, public A {
+	public:
+		typedef  typename A::output_t output_t;
+		typedef  typename A::config_s config_s;
+
+		iblock::output_t<output_t> output;
+
+
+		sence_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
+			: block_t<config_s>(_subsystem, _name, _config)
+			, output(A::output_value()) {}
+
+		virtual bool applay(const config_s& _config) {
+			ROBO_LRET(A::applay(_config));
+		}
+
+		virtual void execute(void) {
+			A::update_output();
+			A::query();
+		}
+
+	};
+	template < typename A> class atom_block_t : public  block_t<typename A::config_s>, public A {
+	public:
+		typedef  typename A::output_t output_t;
+		typedef  typename A::input_t input_t;
+		typedef  typename A::config_s config_s;
+
+		iblock::output_t<output_t> output;
+		input_t standalone_input;
+		iblock::input_t<input_t> input;
+
+
+		atom_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
+			: block_t<config_s>(_subsystem, _name, _config)
+			, output(A::output_value())
+			, input(standalone_input) {
+			standalone_input = {};
+		}
+
+		virtual bool applay(const config_s& _config) {
+			ROBO_LRET(A::applay(_config));
+		}
+
+		virtual void execute(void) {
+			input_t tmp = input.value();
+			A::execute(tmp);
+		}
+
+	};
+
+
 }
 #endif

@@ -16,6 +16,9 @@
     <Filter Include="Исходные файлы\mexo">
       <UniqueIdentifier>{d6709c03-e61e-458d-9eb2-6a88f2a8240d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="freemaster">
+      <UniqueIdentifier>{77267b57-1dea-4de8-8743-c0425e76eff1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp">
@@ -78,6 +81,9 @@
     <ClCompile Include="..\..\..\..\source\net\robosd_flow.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.cpp">
+      <Filter>freemaster</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -106,12 +112,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp">
       <Filter>Исходные файлы</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\source\core\robosd_frontend.hpp">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp">
-      <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\source\core\robosd_tran.h">
       <Filter>Исходные файлы</Filter>
@@ -144,6 +144,18 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\source\net\robosd_flow.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.hpp">
+      <Filter>freemaster</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_frontend.hpp">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

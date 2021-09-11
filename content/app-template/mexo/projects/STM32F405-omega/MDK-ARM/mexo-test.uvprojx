@@ -327,7 +327,7 @@
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
             <uGnu>0</uGnu>
-            <useXO>0</useXO>
+            <useXO>1</useXO>
             <v6Lang>3</v6Lang>
             <v6LangP>9</v6LangP>
             <vShortEn>0</vShortEn>
@@ -520,6 +520,11 @@
               <FileName>ps.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\mexo\ps.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>adc.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\adc.hpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -2483,6 +2488,41 @@
               <FileName>startup_stm32f405xx.s</FileName>
               <FileType>2</FileType>
               <FilePath>.\startup_stm32f405xx.s</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>robosd++/net</GroupName>
+          <Files>
+            <File>
+              <FileName>robosd_flow.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_flow.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_flow.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_flow.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_flow_id.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_flow_id.h</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_ring_buf.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_ring_buf.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_serial.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_serial.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_serial.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_serial.hpp</FilePath>
             </File>
           </Files>
         </Group>

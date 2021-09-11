@@ -2,10 +2,11 @@
 #define mexo_ps_hpp
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
+#include "mexo/adc.hpp"
 
 namespace mexo {
 	namespace ps {
-		
+
 		class  control {
 		public:
 			enum class command { on = 1, off = 0 };
@@ -23,35 +24,31 @@ namespace mexo {
 			virtual ~control(void) {}
 		};
 
-		template < typename C > class pwm 
+		template < typename C > class pwm
 			: public ps::control
-			, public C
-		{
+			, public C {
 		public:
-			typedef typename C::deseired_t deseired_t;
-			typedef typename C::actual_t actual_t;
+			typedef typename C::input_t input_t;
+			typedef typename C::output_t output_t;
 			typedef typename C::config_s  config_s;
 		private:
-			actual_t duty_;
+			output_t duty_;
 		public:
-			void loockup(deseired_t& _actual) {
-				C::revert(duty_, _actual);
+			void loockup(input_t& _output) {
+				C::revert(duty_, _output);
 			}
-			actual_t & actual(void) {
+			output_t& output_value(void) {
 				return duty_;
 			}
 
 		public:
-			pwm(void)
-			{
-			}
+			pwm(void) {}
 
-			pwm(const deseired_t & _default)
-			{
+			pwm(const input_t& _default) {
 				C::dirrect(_default, duty_);
 			}
-			
-			bool applay(const config_s & _config) {
+
+			bool applay(const config_s& _config) {
 				if (C::applay(_config)) {
 					enable();
 					return true;
@@ -61,57 +58,59 @@ namespace mexo {
 				}
 			}
 
-			iblock::satstate  execute(const deseired_t & _deseired) {
-				iblock::satstate satstate = iblock::satstate::none;
+			iblock::satstate  execute(const input_t& _input, const iblock::satstate _master_sat, const range_s<output_t>& _range) {
+				if (_master_sat == iblock::satstate::both) return iblock::satstate::both;
+				iblock::satstate satstate = iblock::satstate::both;
 				switch (status_) {
 				case status::off:
-					if (command_ == command::on) {
-						C::boot_begin();
-						status_ = status::boot;
-					}
-					else {
-						break;
-					}
+				if (command_ == command::on) {
+					C::boot_begin();
+					status_ = status::boot;
+				}
+				else {
+					break;
+				}
 
 				case status::boot:
-					if (C::do_boot()) {
-						satstate = C::dirrect(_deseired, duty_);
-						C::boot_complete(duty_);
-						status_ = status::on;
-					}
-					else {
-						break;
-					}
-				case status::on:
-					if (command_ == command::on) {
-						satstate = C::dirrect(_deseired, duty_);
-						C::do_run(duty_);
-						break;
-					}
-					else {
-						status_ = status::shutdown;
-						C::shutdown_begin();
-					}
-				case status::shutdown:
-					if (C::do_shutdown()) {
-						C::shutdown_complete();
-						status_ = status::off;
-					}
-					else {
-						break;
-					}
-				case status::configure:
-					satstate = iblock::satstate::both;
+				if (C::do_boot()) {
+					C::dirrect(_input, _range, duty_);
+					C::boot_complete(duty_);
+					status_ = status::on;
+				}
+				else {
 					break;
+				}
+				case status::on:
+				if (command_ == command::on) {
+					satstate = C::dirrect(_input, _range, duty_);
+					C::do_run(duty_);
+					break;
+				}
+				else {
+					status_ = status::shutdown;
+					C::shutdown_begin();
+				}
+				case status::shutdown:
+				if (C::do_shutdown()) {
+					C::shutdown_complete();
+					status_ = status::off;
+				}
+				else {
+					break;
+				}
+				case status::configure:
+				break;
 				}
 
 				return satstate;
 
 			}
-		};		
+		};
 
+		typedef controller_block_t< ramp< signal_t > > voltage;
+		typedef atom_block_t< filter< signal_t, signal_t > > filter;
+		typedef controller_block_t<  quazzy_adapt<signal_t, signal_t, signal_t> > current;
 
-		//typedef controller_block_t< ramp< signal_t > > voltage;
 		/*
 		namespace inverter {
 			class voltage {
@@ -182,13 +181,13 @@ namespace mexo {
 
 				public:
 					const signal2ph_s& current() { return current_.dq; };
-					
+
 					virtual void perform(void) {
 						voltage::math::perform();
 						current_.ABC >> current_.ab;
 						transform_.forward(current_.ab, current_.dq);
 					}
-					
+
 					math(signal2ph_s& _voltage_dq, signal3ph_s& _current_ABC)
 						: voltage::math(_voltage_dq), current_(_current_ABC) {}
 				};
@@ -215,7 +214,7 @@ namespace mexo {
 
 		template <typename current_t = void> class  inverter {
 			transform transform_;
-			//это для отладки
+			//пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		public:
 			const signal3ph_s& voltage() { return voltage_.ABC_ };
 			virtual void update(void) {

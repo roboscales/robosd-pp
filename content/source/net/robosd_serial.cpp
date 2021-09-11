@@ -71,7 +71,7 @@ namespace robo {
 			return 0;
 		}
 
-		bool serial_dummy::put(uint8_t* /*_data*/, size_t /*_max_size*/) {
+		bool serial_dummy::put(const  uint8_t* /*_data*/, size_t /*_max_size*/) {
 			return true;
 		}
 

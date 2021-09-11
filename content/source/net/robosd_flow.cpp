@@ -28,7 +28,7 @@ namespace robo {
 				ROBO_APP_ASSERT(port_.performer_index_[suba_] == 0);
 				port_.performer_index_[suba_] = this;
 			}
-			bool performer::send(const uint8_t* _data, size_t _size) {
+			bool performer::put_answer(const uint8_t* _data, size_t _size) {
 				msg* m = port_.query();
 				ROBO_LBREAKN(m);
 				ROBO_LBREAKN(m->put(_data, _size));
@@ -36,14 +36,25 @@ namespace robo {
 				{
 					guard__;
 					if (*p != nullptr) {
-						m->release_();
-						return false;
+						(*p)->release_();
 					}
-					else {
-						*p = m;
-					}
+					*p = m;
 				}
 				return true;
+			}
+			bool performer::put_answer(msg* _m) {
+				msg** p = port_.outcomm_ + answ_suba_;
+				{
+					guard__;
+					if (*p != nullptr) {
+						(*p)->release_();
+					}
+					*p = _m;
+				}
+				return true;
+			}
+			msg* performer::msg_query(void) {
+				return port_.query();
 			}
 			size_t performer::max_size(void) {
 				return port_.max_size();
@@ -87,6 +98,30 @@ namespace robo {
 				}
 			}
 
+			bool msg::put(const uint8_t* _data, size_t _offset, size_t _size) {
+				if (_size + _offset <= size_) {
+					std::copy_n(_data, _size, data_ + _offset);
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+
+			bool msg::put(iserial& _serial, size_t _offset, size_t _size) {
+				if (_size + _offset <= size_) {
+					_serial.get(data_ + _offset, _size);
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
+
+			void msg::set_size(size_t _size) {
+				ROBO_APP_ASSERT(_size <= port_.max_size());
+				size_ = _size;
+			}
 			bool port::put(uint8_t _suba, msg* _msg) {
 				if (_suba < suba_count_) {
 					performer* pfr = performer_index_[_suba];
@@ -103,7 +138,8 @@ namespace robo {
 							pfr->request_ = (_msg != nullptr) ? performer::request::put : performer::request::get;
 						}
 						else {
-							_msg->release();
+							if (_msg)
+								_msg->release();
 						}
 					}
 				}
@@ -147,7 +183,7 @@ namespace robo {
 			void machine::frontend_poll(void) {
 				performer* pfr;
 				{
-					critical__;
+					guard__;
 					pfr = instance_().frontend_list_.pop();
 				}
 				if (pfr) {
@@ -163,6 +199,63 @@ namespace robo {
 				if (pfr) {
 					run_(pfr);
 				}
+			}
+
+			void serial_proto::execute(void) {
+
+				size_t out_available;
+				size_t out_total = 0;
+				size_t in_size = in_msg ? in_msg->size() : 0;
+				size_t out_max_size = max_size();
+				const uint8_t* in_data = in_msg->data();
+				size_t in_space = remote_.space();
+				if (in_size) {
+					size_t in_data_size = in_size - 1;
+					uint8_t cmd = *in_data;
+					if (cmd == 0xBB) {
+						if (in_space >= in_data_size) {
+							if (in_data_size) {
+								remote_.put(in_msg->data() + 1, in_data_size);
+							}
+							return;
+						}
+					}
+					else if (cmd == 0xAA) {
+						remote_.reset();
+						local_.reset();
+						declared_count_ = 0;
+					}
+				}
+
+				out_available = remote_.available();
+				if (out_available >= declared_count_) {
+					out_total = declared_count_;
+					msg* m = msg_query();
+					if (m) {
+						if (out_total > 0) {
+							ROBO_VBREAKN(m);
+							m->set_size(out_total + 1);
+							m->put(remote_, 1, out_total);
+						}
+						else {
+							m->set_size(1);
+						}
+						declared_count_ = out_available - declared_count_;
+						if (in_space > 0xF)
+							in_space = 0xF;
+						if (declared_count_ > 0xF)
+							declared_count_ = 0xF;
+						if (declared_count_ > out_max_size - 1)
+							declared_count_ = out_max_size - 1;
+						uint8_t header = (uint8_t)((in_space << 4) + declared_count_);
+						m->put(&header, 0, 1);
+						put_answer(m);
+						return;
+					}
+				}
+				remote_.reset();
+				local_.reset();
+				declared_count_ = 0;
 			}
 
 		}

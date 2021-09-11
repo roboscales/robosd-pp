@@ -3,6 +3,7 @@
 #include <cstdio>
 #include "main.h"
 #include "tim.h"
+#include "adc.h"
 #include "mexo-test.hpp"
 
 namespace robo {
@@ -137,6 +138,12 @@ namespace robo {
 		
 	}
 	
+	#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+	void system::env::print(robo::log::verb _verb, cstr _format, va_list  _args){
+	}
+	#endif
+
+	
 #if ROBO_APP_ALLOC_ENABLED == 1
 	void* system::env::mem_alloc(size_t _size) {
 		return malloc(_size);
@@ -177,14 +184,19 @@ namespace mexo{
 	);
 
 }
+current_adc::native_t current_adc::sence[2];
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
+	current_adc::sence[0] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1); // читаем полученное значение в переменную adc	
+	current_adc::sence[1] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2); // читаем полученное значение в переменную adc
+	HAL_ADCEx_InjectedStart(&hadc1); // запускаем преобразование сигнала ј÷ѕ
+
 	tick_();
 	::mexo::machine::priority_loop();
 	::mexo::machine::backend_loop();
 };
 
-void pwm::boot_complete(actual_t _duty){
+void pwm::boot_complete(duty_t _duty){
 	TIM1->CCR1 = 0;
 	TIM1->CCR2 = 0;
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -200,7 +212,7 @@ void pwm::shutdown_begin(void){
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
 }
 
-void pwm::do_run(actual_t _duty){
+void pwm::do_run(duty_t _duty){
 	if(_duty>0){
 		TIM1->CCR1 = (uint32_t)_duty;
 		TIM1->CCR2 = 0;
@@ -217,6 +229,13 @@ dc::config_s dc_config = {
 	,{ //converter
 		-MAX_PWM
 		, MAX_PWM
-		, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12
 	}
+	, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12
+};
+
+current_sensor_t::config_s current_sensor_config = {
+	{0} //block
+	,{0,1}
+	,{5.f/4096, -5.f/4096}
+	,10	
 };
