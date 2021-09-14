@@ -2,12 +2,11 @@
 #include "core/robosd_log.hpp"
 #include "net/robosd_flow.hpp"
 namespace mexo {
-	
+
 	machine machine::instance_;
-	machine::machine(void) 
+	machine::machine(void)
 		: slots_ref_(slots_())
-		, slot_index_(0){
-	}
+		, slot_index_(0) {}
 	machine::~machine(void) {
 
 	}
@@ -30,7 +29,7 @@ namespace mexo {
 		tp::on(tp_verb::backend);
 		fall__;
 		slots_ref_.backend.execute();
-		slots_ref_.periodic[slot_index_]. execute();
+		slots_ref_.periodic[slot_index_].execute();
 		slot_index_++;
 		if (slot_index_ == slot_count) {
 			slot_index_ = 0;
@@ -54,35 +53,35 @@ namespace mexo {
 		return slots__;
 	}
 	machine::slot& machine::slots::operator [] (machine::slot::kind _kind) {
-		switch (_kind){
-		case slot::kind::begin: 
-			return begin;
-			break;
-		case slot::kind::start: 
-			return start;
-			break;
-#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		switch (_kind) {
+		case slot::kind::begin:
+		return begin;
+		break;
+		case slot::kind::start:
+		return start;
+		break;
+		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		case slot::kind::priority:
-			return priority;
-			break;
-#endif
+		return priority;
+		break;
+		#endif
 		case slot::kind::backend:
-			return backend;
-			break;
+		return backend;
+		break;
 		case slot::kind::frontend:
-			return frontend;
-			break;
+		return frontend;
+		break;
 		default:
-			ROBO_APP_CRASH();
-			return dummy;
+		ROBO_APP_CRASH();
+		return dummy;
 		}
 	}
 	void  machine::slots::free(void) {
 		begin.free();
 		start.free();
-#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		priority.free();
-#endif
+		#endif
 		backend.free();
 		frontend.free();
 		dummy.free();
@@ -101,11 +100,9 @@ namespace mexo {
 		}
 	}
 
-	machine::slot::slot(void) {
-	}
+	machine::slot::slot(void) {}
 
-	machine::slot::~slot(void) {
-	}
+	machine::slot::~slot(void) {}
 
 	void machine::slot::execute(void) {
 		for (delegat::ref* r = delegats_.first(); r; r = r->next()) {
@@ -115,7 +112,7 @@ namespace mexo {
 
 	void machine::slot::free(void) {
 		delegat::ref* r;
-		while ( ( r = delegats_.first() ) != nullptr ){
+		while ((r = delegats_.first()) != nullptr) {
 			delete r;
 		}
 	}
@@ -134,7 +131,7 @@ namespace mexo {
 		r->attach_to(machine::slots_()[_index].delegats_);
 	}
 
-	void machine::slot::delegat::attach(ref & _ref, int _index) {
+	void machine::slot::delegat::attach(ref& _ref, int _index) {
 		guard__;
 		_ref.attach_to(machine::slots_()[_index].delegats_);
 	}
@@ -167,7 +164,7 @@ namespace mexo {
 		state_ = state::ready;
 		return true;
 	}
-	
+
 	/*void node::enable(bool _hand) {
 		if (auto_enabled_ || _hand) {
 			for (ref* r = childs_.first(); r; r = r->next()) {
@@ -188,7 +185,7 @@ namespace mexo {
 	node::node(cstr _name, /*bool _auto_enabled,*/ node* _owner) : ref_(*this), map_ref_(*this, 0)
 		, name_(_name)
 		, owner_(_owner == nullptr ? &root_() : _owner)
-	//	, auto_enabled_(_auto_enabled) 
+		//	, auto_enabled_(_auto_enabled) 
 	{
 		int key;
 		if (_owner) {
@@ -209,10 +206,10 @@ namespace mexo {
 		return  root_().reconfig();
 	}
 
-	isubsystem::isubsystem(cstr  _name, bool _autostart, node* _owner) : node(_name, _owner), ref_(*this), autostart_(_autostart)  {
+	isubsystem::isubsystem(cstr  _name, bool _autostart, node* _owner) : node(_name, _owner), ref_(*this), autostart_(_autostart) {
 		isubsystem* m = dynamic_cast<isubsystem*>(_owner);
 		if (m != nullptr) {
-			ref_.attach_to(m->childs_);			
+			ref_.attach_to(m->childs_);
 		}
 	}
 
@@ -225,6 +222,14 @@ namespace mexo {
 		}
 	}
 
+	bool isubsystem::do_reconfig(void) {
+		ROBO_LBREAKN(node::do_reconfig());
+		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
+			ROBO_LBREAKN(r->owner().reconfig());
+		}
+		if (autostart_) start();
+		return true;
+	}
 	void isubsystem::start(void) {
 		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
 			r->owner().start();
@@ -239,16 +244,16 @@ namespace mexo {
 		do_stop();
 	}
 
-	iblock::iblock(isubsystem& _subsystem, cstr  _name, config_s& _config)
+	iblock::iblock(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present)
 		: node(_name, &_subsystem)
 		, ref_(*this)
-		, config(_config) {
-			ref_.attach_to(_subsystem.blocks_);
+		, config_(_config)
+		, present_(_present) {
+		ref_.attach_to(_subsystem.blocks_);
 	};
 
-	subsystem::subsystem(cstr  _name, bool _autostart, node* _owner) : isubsystem(_name, _autostart, _owner) {
-	};
-	
+	subsystem::subsystem(cstr  _name, bool _autostart, node* _owner) : isubsystem(_name, _autostart, _owner) {};
+
 	void subsystem::operator()(void) {
 		isubsystem::execute();
 	}
@@ -274,8 +279,7 @@ namespace mexo {
 		, backend_(this, &dev::backend__)
 		, backend_ref_(backend_)
 		, action_(_action)
-		, snapshot_(_snapshot)
-	{
+		, snapshot_(_snapshot) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend);
 	}
 
@@ -292,7 +296,7 @@ namespace mexo {
 			}
 			else {
 				mode* m = modes_.find(_mode_id);
-				if (m == nullptr || ! m->enabled() ) {
+				if (m == nullptr || !m->enabled()) {
 					actual_mode_ = &idle;
 					actual_mode_id_ = idle_id;
 				}
@@ -324,22 +328,22 @@ namespace mexo {
 }
 
 #include "mexo/mexo.h"
-void mexo_begin(void){
+void mexo_begin(void) {
 	mexo::machine::begin();
 }
-void mexo_start(void){
+void mexo_start(void) {
 	mexo::machine::start();
 }
-void mexo_priority_loop(void){
+void mexo_priority_loop(void) {
 	mexo::machine::priority_loop();
 }
-void mexo_backend_loop(void){
+void mexo_backend_loop(void) {
 	mexo::machine::backend_loop();
-#if ROBO_APP_NET_FLOW_ENABLED==1	
-#endif
+	#if ROBO_APP_NET_FLOW_ENABLED==1	
+	#endif
 }
-void mexo_frontend_loop(){
+void mexo_frontend_loop() {
 	mexo::machine::frontend_loop();
-#if ROBO_APP_NET_FLOW_ENABLED==1	
-#endif
+	#if ROBO_APP_NET_FLOW_ENABLED==1	
+	#endif
 }

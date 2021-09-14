@@ -4,8 +4,11 @@
 #include "main.h"
 #include "tim.h"
 #include "adc.h"
+#include "can.h"
 #include "mexo-test.hpp"
-
+#include "net/robosd_serial.hpp"
+#include "net/robosd_flow.hpp"
+#include "net/robosd_flow_id.h"
 namespace robo {
 
 	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_KEIL
@@ -180,6 +183,9 @@ namespace mexo{
 		machine::slot::kind::start
 		, [] {
 				HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);	
+				HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+				HAL_CAN_Start(&hcan1);
+
 		}
 	);
 
@@ -224,18 +230,120 @@ void pwm::do_run(duty_t _duty){
 
 #define MAX_PWM ((int)(PWM_PERIOD * 0.98))
 
-dc::config_s dc_config = {
-	{0} //block
-	,{ //converter
-		-MAX_PWM
-		, MAX_PWM
+dc_power_supply_b::config_s dc_power_supply_config = {
+	{//controller block;
+		{0} //ref
+		,{//stabdalone
+			{ //converter
+			-MAX_PWM
+			, MAX_PWM
+			}
+			, 0 //defalt
+		} 
 	}
-	, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12
+	, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12  //gain
 };
 
-current_sensor_t::config_s current_sensor_config = {
-	{0} //block
-	,{0,1}
-	,{5.f/4096, -5.f/4096}
-	,10	
+current_sensor_b::config_s current_sensor_config = {
+	{
+		{0} //sence_block
+	}
+	,{0,1} //index
+	,{5.f/4096, -5.f/4096} //scale
+	,10	// init_count_shift -1024 точек
 };
+
+
+void  flow_set_addr( uint8_t _addr){
+	//volatile uint32_t tmp = rdk_store_array[0];
+	if (_addr > 0 && _addr < 16){
+		CAN_FilterTypeDef canFilterConfig={0};
+		for(int i=0;i<13;i++){
+			canFilterConfig.FilterActivation = CAN_FILTER_DISABLE;
+			canFilterConfig.FilterBank = i;
+			HAL_CAN_ConfigFilter(&hcan1, &canFilterConfig);
+		}
+		canFilterConfig.FilterMode = 	CAN_FILTERMODE_IDMASK;
+		canFilterConfig.FilterScale =  CAN_FILTERSCALE_32BIT;
+
+		canFilterConfig.FilterMaskIdHigh = 0xDF0<<5;
+		canFilterConfig.FilterMaskIdLow = 0;
+
+		canFilterConfig.FilterIdHigh = _addr<<4<<5;
+		canFilterConfig.FilterIdLow =  0;
+		canFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
+		canFilterConfig.FilterBank = 14;
+
+		
+		HAL_CAN_ConfigFilter(&hcan1, &canFilterConfig);
+
+
+		canFilterConfig.FilterMode = 	CAN_FILTERMODE_IDMASK;
+		canFilterConfig.FilterScale =  CAN_FILTERSCALE_32BIT;
+
+		canFilterConfig.FilterMaskIdHigh = 0xDF0<<5;
+		canFilterConfig.FilterMaskIdLow = 0;
+
+		canFilterConfig.FilterIdHigh = 0x0<<4<<5;
+		canFilterConfig.FilterIdLow =  0;
+		canFilterConfig.FilterActivation = CAN_FILTER_ENABLE;
+		canFilterConfig.FilterBank = 15;
+		HAL_CAN_ConfigFilter(&hcan1, &canFilterConfig);
+	}
+}
+
+
+class can_port_driver{
+	public:
+	typedef flow_msg_can_id_t id_t;
+	enum{suba_count = 16,  packet_size = 8};
+	
+	static void send(unsigned _id , const uint8_t * _data, size_t _size){
+		if(_size>0){
+			CAN_TxHeaderTypeDef header;
+			header.DLC =_size;
+			header.ExtId = 0;
+			header.IDE = CAN_ID_STD;
+			header.RTR = CAN_RTR_DATA;
+			header.StdId = _id;
+			HAL_CAN_AddTxMessage(&hcan1, &header, ( uint8_t *)_data,  (uint32_t *)CAN_TX_MAILBOX0);
+		}
+	}
+};
+
+::robo::net::flow::port_t<can_port_driver> can0;
+void can_on_receive(uint32_t id, uint8_t * _data, uint32_t _size ){
+	can0.on_receive(id,_data,_size);
+}
+
+::robo::net::bridge_t<4,4,::robo::system::critical>  freemaster_serial;
+
+
+#define can0_echo_FLOW_CMD_ID 1
+#define can0_echo_SUBA 1
+#define can0_echo_SUBA_ANSW 1
+#define can0_echo_KIND frontend
+
+
+FLOW_ROUTE_RECORD_B(can0,echo,KIND,
+	static uint8_t old_data[can_port_driver::packet_size];
+	static size_t old_sz;
+	if(in_msg){
+		put_answer(in_msg->data(),in_msg->size());
+		old_sz = in_msg->size();
+		std::copy_n(in_msg->data(),old_sz,old_data);
+	}	else{
+		put_answer(old_data,old_sz);
+	}	
+)
+
+
+#define can0_serial0_FLOW_CMD_ID 2
+#define can0_serial0_SUBA 0xF
+#define can0_serial0_SUBA_ANSW 0xF
+#define can0_serial0_KIND frontend
+
+FLOW_SERIAL_ROUTE_RECORD(4,6,can0,serial0,KIND)
+
+	
+

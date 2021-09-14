@@ -339,7 +339,7 @@
               <MiscControls>-mfpu=fpv4-sp-d16 -mfloat-abi=hard</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB,STM32F405xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../../../../reference/robosd-ref;../../../../reference/robosd-ref/core/platform/keil+cpp6;../../../source/common;../../../source/platform/stm32F103;../../../source/common/vercion/test;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;../../../../reference/robosd-ref;../../../../reference/robosd-ref/core/platform/keil+cpp6;../../../source/common;..\..\..\source\platform\STM32F405-omega;../../../source/common/vercion/test;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2523,6 +2523,21 @@
               <FileName>robosd_serial.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\net\robosd_serial.hpp</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>robosd++/fm</GroupName>
+          <Files>
+            <File>
+              <FileName>robosd_fm.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>robosd_fm.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp</FilePath>
             </File>
           </Files>
         </Group>

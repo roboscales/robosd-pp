@@ -40,7 +40,7 @@ extern CAN_HandleTypeDef hcan1;
 void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+extern CAN_HandleTypeDef hcan1;
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

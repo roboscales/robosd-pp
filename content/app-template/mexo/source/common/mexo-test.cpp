@@ -1,76 +1,76 @@
 #include "mexo-test.hpp"
+#include "freemaster/robosd_fm.hpp"
+struct all_config{
+	mexo::ps::current_filter_b::config_s current_filter;
+	mexo::ps::current_regulator_b::config_s current_regulator;
+} config = {
+	{//mexo::ps::current_filter_b::config_s
+	{//fb
+		{0} //ref
+		,0.f //standalone input
+		,0.f //стартовое значение
+	}
+	, ::mexo::parametr_t(0.99)	//gain y = y*gain+(1-gain)*x;
+	}
+,{ //mexo::ps::current_regulator_b::config_s
+	{ //control block
+		{0} //ref
+		,{ //standalone
+			{ // range
+				-::mexo::signal_t(12) //мин
+				, ::mexo::signal_t(12) //макс
+			}
+			,0.f //input
+			,mexo::iblock::satstate::none //master_satstate
+		}
+	}
+	, ::mexo::parametr_t(0.1) //пропорцилнальный
+	, ::mexo::parametr_t(0.001) //интегральный
+	, ::mexo::parametr_t(0)	//диффиренциальный
 
+	,::mexo::signal_t(0) //standalone actual
+	, ::mexo::signal_t(0) //standalone actual_diff
+}
+};
 
-//300 ns
+struct {
+	dc_power_supply_b::present_s dc_power_supply;
+	current_sensor_b::present_s current_sensor;
+	mexo::ps::current_filter_b::present_s current_filter;
+	mexo::ps::current_regulator_b::present_s current_regulator;
+} present;
+
+//1. конфигурируем приоритетную подсистему,саязывающую все блоки с аппаратурой
 //подсистема - работает в контексте prioritet ( будет срабатывать по прерыванию от АЦП)
-::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true); //500 ns
-::mexo::frontend_subsystem control_subsystem(RT("control"), true); 
+::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), false); 
 
-::mexo::backend_subsystem dirrect_pwm_subsystem(RT("dirrect_pwm"), false); 
+//1.1. подключаем к системе силовой преобразователь
+dc_power_supply_b dc_power_supply_(hardware_subsystem, RT("dc"), dc_power_supply_config, present.dc_power_supply ); //2us
 
+//1.2.  подключаем к подсистеме датчик тока
+current_sensor_b current_sensor_(hardware_subsystem,RT("current sensor"),current_sensor_config, present.current_sensor);
 
-//подключаем к системе регулятор напряжения (рампа)
-mexo::ps::voltage::config_s dcv_config = {
-	{0} //block
-	,{ //
-		-::mexo::signal_t(12)
-		, ::mexo::signal_t(12)
-	}
-	, ::mexo::signal_t(0.0001)
-	, ::mexo::signal_t(0)
-};
-
-
-mexo::ps::current::config_s dcc_config = {
-	{0} //block
-	,{ //
-		-::mexo::signal_t(12)
-		, ::mexo::signal_t(12)
-	}
-	, ::mexo::signal_t(0.1)
-	, ::mexo::signal_t(0.001)
-	, ::mexo::signal_t(0)
-	, ::mexo::signal_t(0)
-};
-
-mexo::ps::filter::config_s current_filter_config = {
-	{0} //block
-	, ::mexo::signal_t(0.99)
-	, ::mexo::signal_t(0)
-};
-
-
-
-mexo::ps::voltage dcv_(dirrect_pwm_subsystem, RT("dcv"), dcv_config); //1,5 us
-
-
-//подключаем к системе источник напряжения
-dc dc_(hardware_subsystem, RT("dc"), dc_config); //2us
-
-//подключаем к системе датчик тока
-current_sensor_t current_sensor_(hardware_subsystem,RT("current sensor"),current_sensor_config);
-
-//конфигурируем cbcntve eghfdktybz njrf
+//2. подсистема управления током
 ::mexo::backend_subsystem current_control_subsystem(RT("current_control"), false); 
 
-//подключаем к системе управления током фильтр тока
-mexo::ps::filter current_filter_(current_control_subsystem, RT("current filter"), current_filter_config); //
+//2.1 подключаем к подсистеме управления током фильтр тока
+mexo::ps::current_filter_b current_filter_(current_control_subsystem, RT("current filter"), config.current_filter,present.current_filter); 
 
-//подключаем к системе регулятор тока
-mexo::ps::current current_regulator_(current_control_subsystem, RT("current_regulator"), dcc_config); //
+//2.2 подключаем к подсистеме регулятор тока
+mexo::ps::current_regulator_b current_regulator_(current_control_subsystem, RT("current_regulator"), config.current_regulator ,present.current_regulator ); 
 
-//делегат в слот "begin" - сработает при инициализации
+//делегат в слот "begin" - сработает при инициализации - собираем все вместе
 ::mexo::machine::slot::simple begin(
 	::mexo::machine::slot::kind::begin
 	,	[] {	
 		//стыкуем фильтр тока с датчиком тока
 		current_filter_.input.link_to(&current_sensor_.output);
 		
-		//стыкуем фильтр тока ирегулятор тока
+		//стыкуем фильтр тока и регулятор тока
 		current_regulator_.actual.link_to(&current_filter_.output);
 
 		//стыкуем регулятор тока  и силовой преобразователь
-		dc_.link_to(current_regulator_);
+		dc_power_supply_.link_to(current_regulator_);
 		
 		::mexo::tp::set_verb(::mexo::tp_verb::priority);
 	}
@@ -81,32 +81,53 @@ mexo::ps::current current_regulator_(current_control_subsystem, RT("current_regu
 ::mexo::machine::slot::simple start(
 	::mexo::machine::slot::kind::start
 , [] {
-	current_regulator_.standalone_input = 1.f;
-	current_control_subsystem.start();
-	dc_.on(); //2.5 us
+	config.current_regulator.cb.standalone.input = 1.f;	//заданный ток
+	hardware_subsystem.start();									//активируем подсистему аппаратуры
+	current_control_subsystem.start();					//активируем подсистему управления током
+	dc_power_supply_.on(); 						
 });
 
 //делегат в слот "0" - сработает каждый 16-ый такт
 ::mexo::machine::slot::simple restart(
 	0
 , [] {
-/*
-	//гоняем ШИМ туда обратно
-	if(dcv_.output.value > 11.9f){
-		dcv_.standalone_input = -12.f;
-	} else if ( dcv_.output.value < - 11.9f){
-		dcv_.standalone_input = 12.f;
-		
-	} //2.5us
-*/
 	//гоняем ток туда обратно
 	if(current_regulator_.output.value > 11.9f){
-		current_regulator_.standalone_input = -1.f;
+		config.current_regulator.cb.standalone.input = -1.f;
 	} else if ( current_regulator_.output.value < - 11.9f){
-		current_regulator_.standalone_input = 1.f;
+		config.current_regulator.cb.standalone.input = 1.f;
 		
 	} //2.5us
 });
 
 
+::mexo::machine::slot::simple frontend_(
+	::mexo::machine::slot::kind::frontend
+	,	[]{
+		robo::freemaster::poll();
+	}
+);
+	
+::mexo::machine::slot::simple backend_(
+	::mexo::machine::slot::kind::backend
+	,	[]{
+		robo::freemaster::recorder();
+	}
+);	
+	
+/*
+::mexo::frontend_subsystem control_subsystem(RT("control"), true); 
 
+//подключаем к системе регулятор напряжения (рампа)
+mexo::ps::voltage::config_s dcv_config = {
+	{0} //block
+	,{ //
+		-::mexo::signal_t(12) //мин, В
+		, ::mexo::signal_t(12)//макс, В
+	}
+	, ::mexo::signal_t(0.0001)
+	, ::mexo::signal_t(0)
+};
+::mexo::backend_subsystem dirrect_pwm_subsystem(RT("dirrect_pwm"), false); 
+mexo::ps::voltage dcv_(dirrect_pwm_subsystem, RT("dcv"), dcv_config); 
+*/

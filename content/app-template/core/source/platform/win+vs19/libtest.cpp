@@ -1046,59 +1046,31 @@ public:
 
 		class fake_dc_periphery {
 		public:
-			typedef signal_t input_t;
-			typedef int16_t duty_t;
-			typedef duty_t output_t;
-		private:
-			fdc<float, duty_t> 	float_to_int16_;
-		public:
-			int16_t duty;
-			struct config_s {
-				::mexo::iblock::config_s block;
-				range_s<duty_t> range;
-				float scale;
-			};
+			typedef  int16_t duty_t;
+			duty_t duty_;
 		protected:
 			static void boot_begin(void) {}
 			static bool do_boot(void) { return true; }
-			void boot_complete(duty_t _duty) { duty = _duty; }
+			void boot_complete(duty_t _duty) { duty_ = _duty; }
 
 			static void shutdown_begin(void) {}
 			static bool do_shutdown(void) { return true; }
 			static void shutdown_complete(void) {}
 
-			void do_run(duty_t _duty) { duty = _duty; }
+			void do_run(duty_t _duty) {
+				duty_ = _duty;
+			}
 
-			iblock::satstate dirrect(const input_t& _deseired, const range_s<output_t>& _range, duty_t& _duty) {
-				return float_to_int16_.dirrect(_deseired, _range, _duty);
-			}
-			void revert(duty_t _duty, input_t& _actual) {
-				float_to_int16_.revert(_duty, _actual);
-			}
-			bool applay(const config_s& _config) {
-				if (_config.scale > 1.f / 32767) {
-					float_to_int16_.scale = _config.scale;
-					return true;
-				}
-				else {
-					return false;
-				}
-			}
 		};
+		typedef ::mexo::ps::pwm_b<fake_dc_periphery > fake_dc;
 
-		typedef controller_block_t< ::mexo::ps::pwm<fake_dc_periphery>  > fake_dc;
-		typedef controller_block_t< ramp< signal_t > > voltage;
-
-		/*class power_dc_2 {
-		protected:
-			void boot_begin(void) {}
-			bool do_boot(void) { return true; }
-			void boot_complete(void) { }
-
-			void shutdown_begin(void) {  }
-			bool do_begin(void) { return true; }
-			void shutdown_complete(void) {  }
-		};*/
+		class fake_adc {
+		public:
+			typedef uint16_t  native_t;
+			typedef uint32_t  acc_t;
+			native_t sence[3];
+			void query(void) {};
+		};
 
 		/*
 				class actuator: public dev {
@@ -1179,46 +1151,100 @@ public:
 				};
 				*/
 		TEST_METHOD(ps) {
+
 			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
-			fake_dc::config_s dc_config = {
-				{0} //block
-				,{ //range
-					-4095
-					, 4095
+			typedef adc_diff_b<fake_adc, ::mexo::signal_t	> adcd;
+			adcd::config_s adc_conf = {
+				{22}
+			};
+			adcd::present_s adc_present = {
+				{22}
+				,0
+			};
+			adcd adc(hardware_subsystem, RT("adc"), adc_conf, adc_present);
+
+			typedef single_adc_b<fake_adc, ::mexo::signal_t	> adcs;
+			adcs::config_s ads_conf = {
+				{22}
+			};
+			adcs::present_s ads_present = {
+				{22}
+				,0
+			};
+			adcs ads(hardware_subsystem, RT("adc"), ads_conf, ads_present);
+
+			/*typedef to_parrot_scale_b<int16_t, signal_t> hwt;
+			hwt::config_s hwtc = {
+				{
+					{0} //ref
+					,{
+						{ //range
+							-4095
+							, 4095
+						}
+						, 0.f
+					}
+					, 0
 				}
 				, 4095. / 12.
 			};
-			voltage::config_s dcv_config = {
-				{ 0 } //block
-				,{ //
-					-12.f
-					, 12.f
+			hwt::present_s hwtp = {
+				{
+					{0} //ref
+					, 0
+				}
+			};
+
+			hwt hw(hardware_subsystem, RT("test"), hwtc, hwtp);*/
+
+			fake_dc::config_s dc_config = {
+				{
+					{77} //ref
+					,{
+						{ //range
+							-4095
+							, 4095
+						}
+						, 0.f
+					}
+					, 0
+				}
+				, 4095. / 12.
+			};
+			fake_dc::present_s dc_present = {
+				{
+					{88} //ref
+					, 0 //output
+				}
+			};
+			::mexo::ps::voltage_regulator_b::config_s dcv_config = {
+				{
+					{99} //ref
+					,{
+						{ //range
+							-12.f
+							, 12.f
+						}
+						, 0.f
+					}
+					, 0.f
 				}
 				, 0.8f
-					, 0.f
 			};
-			fake_dc dc(hardware_subsystem, RT("dc"), dc_config);
-			voltage dcv(hardware_subsystem, RT("dcv"), dcv_config);
+			::mexo::ps::voltage_regulator_b::present_s dcv_present = {
+				{
+					{11} //ref
+					, 0.f //output
+				}
+			};
+			fake_dc dc(hardware_subsystem, RT("dc"), dc_config, dc_present);
+			::mexo::ps::voltage_regulator_b dcv(hardware_subsystem, RT("dcv"), dcv_config, dcv_present);
+
 			dc.link_to(dcv);
-			/*typedef ::mexo::ps::vdc< power_dc_1>  dc_1_t;
-			dc_1_t::config_s dc1_cfg = {
-				{0} //block
-				,0.5f
-				,{-12,12}
-				,0
-			};
 
-			dc_1_t power_supply_1(hardware_subsystem, RT("power_supply-1"), dc1_cfg);
-
-			actuator  a_1(RT("actuator-1"), power_supply_1);
-
-			*/
 			::mexo::machine::begin();
 			::mexo::machine::start();
-			//hardware_subsystem
-			//a_1.action_inst.voltage = 1.f;
-			//a_1.action_inst.mode = actuator::voltage_id;
-			dcv.standalone_input = 12.f;
+			dcv_config.cb.standalone.input = 12.f;
 			dc.on();
 
 			for (int i = 0; i < 1000; ++i) {
@@ -1227,10 +1253,9 @@ public:
 				::mexo::machine::frontend_loop();
 			}
 
-			Assert::IsTrue(dc.output.value > 4000 && dc.output.value < 4096);
-			Assert::IsTrue(dcv.output.value > 11.f && dcv.output.value < 12.1f);
+			Assert::IsTrue(dc_present.cb.output > 4000 && dc_present.cb.output < 4096);
+			Assert::IsTrue(dcv_present.cb.output > 11.f && dcv_present.cb.output < 12.1f);
 		}
 	};
 
 }
-

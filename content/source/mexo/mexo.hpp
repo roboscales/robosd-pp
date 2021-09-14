@@ -228,15 +228,20 @@ namespace mexo {
 	class iblock : public node {
 		friend class isubsystem;
 	public:
+		//параметры блока и стартовые значения
 		struct config_s {
-			int ver;
+			int tag;
+		};
+		//окрытые данные блока - текущие значения переменных, которы, возможно, потребуется видеть онлайн 
+		struct present_s {
+			int tag;
 		};
 		typedef robo::list::unsorted<iblock> list;
 		typedef list::ref ref;
 	private:
 		ref ref_;
-	protected:
-		config_s& config;
+		const config_s& config_;
+		present_s& present_;
 	public:
 		template <typename T> class output_t {
 		public:
@@ -269,13 +274,21 @@ namespace mexo {
 
 		enum class satstate { none, both, low, up };
 
+		template <typename S> const S& config_cast(void) {
+			return reinterpret_cast <const S&>(config_);
+		}
+
+		template <typename P> P& present_cast(void) {
+			return reinterpret_cast <P&>(present_);
+		}
+
 	protected:
 
-		iblock(isubsystem& _subsystem, cstr  _name, config_s& _config);
+		iblock(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present);
 
 		virtual void execute(void) = 0;
+		virtual bool reconfig(void) = 0;
 	};
-
 
 	class isubsystem : public node {
 		friend class iblock;
@@ -295,11 +308,7 @@ namespace mexo {
 	public:
 		void  start(void);
 		void stop(void);
-		virtual bool do_reconfig(void) {
-			ROBO_LBREAKN(node::do_reconfig());
-			if (autostart_) start();
-			return true;
-		}
+		virtual bool do_reconfig(void);
 	};
 
 	class subsystem : public isubsystem, public machine::slot::delegat {
@@ -462,20 +471,23 @@ namespace mexo {
 	public:
 	};
 	*/
-
-
-	template < typename S > class block_t : public  iblock {
+	/*
+	template < class A > class block_t : public  A {
 	protected:
 	public:
-		//S - это старая добрая сишная структура
-		typedef  S config_s;
-		block_t(isubsystem& _subsystem, cstr  _name, config_s& _config) : iblock(_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
+		//S и P - это старая добрая сишная структура
+		typedef  typename A::config_s config_s;
+		typedef  typename A::present_s present_s;
+		block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: A(_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
 		virtual bool do_reconfig(void) {
-			return applay(reinterpret_cast<config_s&> (iblock::config));
+			return A::applay(reinterpret_cast<config_s&> (iblock::config));
 		}
-
-		virtual bool applay(const  config_s& _config) = 0;
+		virtual bool do_adjust(void) {
+			return A::adjust(reinterpret_cast<config_s&> (iblock::config), reinterpret_cast<config_s&> (iblock::present));
+		}
 	};
+	*/
 
 
 	template <typename A> struct range_s {
@@ -483,105 +495,141 @@ namespace mexo {
 		A hi;
 	};
 
-	template < typename A> class controller_block_t : public  block_t<typename A::config_s>, public A {
-	protected:
-		iblock::satstate satstate_ = iblock::satstate::none;
+	template < typename I, typename O> class controller_block_t : public iblock {
 	public:
-		typedef  typename A::input_t input_t;
-		typedef  typename A::output_t output_t;
-		typedef  typename A::config_s config_s;
+		struct config_s {
+			iblock::config_s ref;
+			struct {
+				range_s<O> range;
+				I input;
+				iblock::satstate master_satstate;
+			}standalone;
+			O def;
+		};
+		struct present_s {
+			iblock::present_s ref;
+			O output;
+			iblock::satstate satstate;
+			iblock::satstate local_satstate;
+		};
 
-		input_t standalone_input;
-		iblock::input_t<input_t> input;
-
-		iblock::satstate standalone_master_satstate = iblock::satstate::none;
+	public:
+		iblock::input_t<I> input;
 		iblock::input_t<iblock::satstate> master_satstate;
+		iblock::input_t<range_s<O>> range;
 
-		range_s<output_t> standalone_range = {};
-		iblock::input_t<range_s<output_t>> range;
-
-		iblock::output_t<output_t> output;
+		iblock::output_t<O> output;
 		iblock::output_t<iblock::satstate> satstate;
 
-
-		controller_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
-			: block_t<config_s>(_subsystem, _name, _config)
-			, input(standalone_input)
-			, master_satstate(standalone_master_satstate)
-			, range(standalone_range)
-			, output(A::output_value())
-			, satstate(satstate_) {
-			standalone_input = {};
-		}
-
-		virtual bool applay(const config_s& _config) {
-			standalone_range = ((const typename A::config_s&)_config).range;
-			ROBO_LBREAKN(standalone_range.low <= standalone_range.hi);
-			ROBO_LRET(A::applay(_config));
-		}
-
-		virtual void execute(void) {
-			satstate_ = A::execute(input.value(), master_satstate.value(), range.value());
-		}
+		controller_block_t(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present)
+			: iblock(_subsystem, _name, _config.ref, _present.ref)
+			, input(_config.standalone.input)
+			, master_satstate(_config.standalone.master_satstate)
+			, range(_config.standalone.range)
+			, output(_present.output)
+			, satstate(_present.satstate) {}
 
 		template < typename M> void link_to(M& _controller) {
 			input.link_to(&_controller.output);
-			master_satstate.link_to(&_controller.satstate);
+			_controller.master_satstate.link_to(&satstate);
 		}
 
+	protected:
+		void saturate(void) {
+			const range_s<O>& r = range.value();
+			if (present_cast<present_s>().output >= r.hi) {
+				present_cast<present_s>().output = r.hi;
+				present_cast<present_s>().local_satstate = iblock::satstate::up;
+			}
+			else if (present_cast<present_s>().output <= r.low) {
+				present_cast<present_s>().output = r.low;
+				present_cast<present_s>().local_satstate = iblock::satstate::low;
+			}
+			else {
+				present_cast<present_s>().local_satstate = iblock::satstate::none;
+			}
+		}
+
+		void update_satstate(void) {
+			iblock::satstate remote = master_satstate.value();
+			if (remote == iblock::satstate::none) {
+				present_cast<present_s>().satstate = present_cast<present_s>().local_satstate;
+			}
+			else {
+				present_cast<present_s>().satstate = remote;
+			}
+		}
+		virtual bool reconfig(void) {
+			ROBO_LBREAKN(config_cast<config_s>().standalone.range.low <= config_cast<config_s>().def && config_cast<config_s>().def <= config_cast<config_s>().standalone.range.hi);
+			adjust(config_cast<config_s>().def);
+			saturate();
+			update_satstate();
+			return true;
+		}
+		virtual void adjust(const O& _output) {
+			present_cast<present_s>().output = _output;
+			saturate();
+			update_satstate();
+		}
 	};
 
-	template < typename A> class sence_block_t : public  block_t<typename A::config_s>, public A {
+	template < typename I, typename O> class function_block_t : public iblock {
+	protected:
+		iblock::satstate satstate_ = iblock::satstate::none;
 	public:
-		typedef  typename A::output_t output_t;
-		typedef  typename A::config_s config_s;
+		struct config_s {
+			iblock::config_s ref;
+			I standalone_input;
+			O def;
+		};
+		struct present_s {
+			iblock::present_s ref;
+			O output;
+		};
+		iblock::input_t<I> input;
 
-		iblock::output_t<output_t> output;
+		iblock::output_t<O> output;
 
-
-		sence_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
-			: block_t<config_s>(_subsystem, _name, _config)
-			, output(A::output_value()) {}
-
-		virtual bool applay(const config_s& _config) {
-			ROBO_LRET(A::applay(_config));
+		function_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: iblock(_subsystem, _name, _config.ref, _present.ref)
+			, input(_config.standalone_input)
+			, output(_present.output) {}
+		virtual bool reconfig(void) {
+			adjust(config_cast<config_s>().def);
+			return true;
 		}
-
-		virtual void execute(void) {
-			A::update_output();
-			A::query();
+		virtual void adjust(const O& _output) {
+			present_cast<present_s>().output = _output;
 		}
-
 	};
-	template < typename A> class atom_block_t : public  block_t<typename A::config_s>, public A {
+
+	template < typename O> class sence_block_t : public iblock {
+	protected:
+		iblock::satstate satstate_ = iblock::satstate::none;
 	public:
-		typedef  typename A::output_t output_t;
-		typedef  typename A::input_t input_t;
-		typedef  typename A::config_s config_s;
+		struct config_s {
+			iblock::config_s ref;
+			O def;
+		};
+		struct present_s {
+			iblock::present_s ref;
+			O output;
+		};
 
-		iblock::output_t<output_t> output;
-		input_t standalone_input;
-		iblock::input_t<input_t> input;
+		iblock::output_t<O> output;
 
+		sence_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: iblock(_subsystem, _name, _config.ref, _present.ref)
+			, output(_present.output) {}
 
-		atom_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config)
-			: block_t<config_s>(_subsystem, _name, _config)
-			, output(A::output_value())
-			, input(standalone_input) {
-			standalone_input = {};
+		virtual bool reconfig(void) {
+			adjust(config_cast<config_s>().def);
+			return true;
 		}
-
-		virtual bool applay(const config_s& _config) {
-			ROBO_LRET(A::applay(_config));
-		}
-
-		virtual void execute(void) {
-			input_t tmp = input.value();
-			A::execute(tmp);
+		virtual void adjust(const O& _output) {
+			present_cast<present_s>().output = _output;
 		}
 
 	};
-
-
 }
 #endif

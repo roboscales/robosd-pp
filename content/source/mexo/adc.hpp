@@ -3,211 +3,171 @@
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 namespace mexo {
-	template <typename D, typename F, size_t C> class adc : private D {
-		unsigned int init_count_ = 0;
-		bool init_ = false;
-		void reset_(void) {
-			native_t* a = acc;
-			for (int i = 0; i < C; ++i, ++a) {
-				*a = 0;
-			}
-			init_count_ = 1 << config.init_count_shift;
-		}
+	template <typename D, typename F, size_t C> class adc_b : public sence_block_t<F>, private D {
 	public:
-		typedef  F output_t;
 		struct config_s {
-			iblock::config_s	block;
+			typename sence_block_t<F>::config_s	sb;
 			unsigned int index[C];
 			F scale[C];
 			unsigned int  init_count_shift;
 		};
-		config_s  config = {};
 
 		typedef typename D::native_t native_t;
-		native_t native[C];
-		native_t offset[C];
-		native_t acc[C];
+		typedef typename D::acc_t acc_t;
 
-		F values[C];
+		struct present_s {
+			typename sence_block_t<F>::present_s	sb;
+			native_t native[C];
+			native_t offset[C];
+			acc_t acc[C];
+			F values[C];
+		};
+	private:
+		unsigned int init_count_ = 0;
+		bool init_ = false;
+		void reset_(void) {
+			acc_t* a = iblock::present_cast<present_s>().acc;
+			for (int i = 0; i < C; ++i, ++a) {
+				*a = 0;
+			}
+			init_count_ = 1 << iblock::config_cast<config_s>().init_count_shift;
+		}
+	public:
 		void reset(void) {
 			bool init_ = false;
 			reset_();
 		}
-		void update_output(void) {
-			native_t* n = native;
-			unsigned int* ix = config.index;
+		virtual void execute(void) {
+			present_s& present = iblock::present_cast<present_s>();
+			const config_s& config = iblock::config_cast<config_s>();
+
+			native_t* n = present.native;
+			const unsigned int* ix = config.index;
 			for (int i = 0; i < C; ++i, ++n, ++ix) {
 				*n = D::sence[*ix];
 			}
 			if (init_) {
-				F* v = values;
-				native_t* n = native;
-				F* s = config.scale;
-				native_t* o = offset;
+				F* v = present.values;
+				native_t* n = present.native;
+				const F* s = config.scale;
+				native_t* o = present.offset;
 				for (int i = 0; i < C; ++i, ++v, ++n, ++s, ++o) {
 					*v = *s * ((F)*n - *o);
 				}
 			}
 			else {
-				native_t* a = acc;
-				native_t* n = native;
+				acc_t* a = present.acc;
+				native_t* n = present.native;
 				for (int i = 0; i < C; ++i, ++a, ++n) {
 					*a += *n;
 				}
 				init_count_--;
 				if (init_count_ == 0) {
-					F* v = values;
-					native_t* n = native;
-					F* s = config.scale;
-					native_t* o = offset;
-					native_t* a = acc;
+					F* v = present.values;
+					native_t* n = present.native;
+					const F* s = config.scale;
+					native_t* o = present.offset;
+					acc_t* a = present.acc;
 
 					for (int i = 0; i < C; ++i, ++v, ++n, ++s, ++o, ++a) {
-						*o = (*a + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
+						*o = (native_t)(*a + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
 						*v = *s * ((F)*n - *o);
 					}
 
-					reset_();
-
 					init_ = true;
-
 				}
 			}
-		}
-
-		void query(void) {
 			D::query();
 		}
 
-		bool applay(const config_s& _config) {
-			config = _config;
+		virtual bool reconfig(void) {
+			ROBO_LBREAKN(sence_block_t<F>::reconfig());
 			reset();
+			D::query();
 			return true;
 		}
+
+
+		adc_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: sence_block_t<F>(_subsystem, _name, _config.sb, _present.sb) {}
 	};
 
-	template <typename D, typename F> class adc<D, F, 1> : private D {
-		unsigned int init_count_ = 0;
-		bool init_ = false;
-		void reset_(void) {
-			acc = 0;
-			init_count_ = 1 << config.init_count_shift;
-		}
+	template <typename D, typename F> class single_adc_b : public sence_block_t<F>, private D {
 	public:
-		typedef  F output_t;
+		typedef typename D::native_t native_t;
+		typedef typename D::acc_t acc_t;
 		struct config_s {
+			typename sence_block_t<F>::config_s	sb;
 			unsigned int index;
 			F scale;
 			unsigned int  init_count_shift;
 		};
-		config_s  config = {};
 
-		typedef typename D::native_t native_t;
-		native_t native;
-		native_t offset;
-		native_t acc;
+		struct present_s {
+			typename sence_block_t<F>::present_s	sb;
+			native_t native;
+			native_t offset;
+			acc_t acc;
+			F value;
+		};
 
-		F value;
-		void reset(void) {
-			bool init_ = false;
-			reset_();
-		}
-		void update_output(void) {
-			native = D::sence[config.index];
-			if (init_) {
-				value = config.scale * ((F)native - offset);
-			}
-			else {
-				acc += native;
-				init_count_--;
-				if (init_count_ == 0) {
-					offset = (acc + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
-					value = config.scale * ((F)native - offset);
-					reset_();
-					init_ = true;
-
-				}
-			}
-		}
-
-		void query(void) {
-			D::query();
-		}
-
-		bool applay(const config_s& _config) {
-			config = _config;
-			reset();
-			return true;
-		}
-	};
-
-	template <typename D, typename F> class adc_single : private D {
+	private:
 		unsigned int init_count_ = 0;
 		bool init_ = false;
 		void reset_(void) {
-			acc = 0;
-			init_count_ = 1 << config.init_count_shift;
+			iblock::present_cast<present_s>().acc = 0;
+			init_count_ = 1 << iblock::config_cast<config_s>().init_count_shift;
 		}
 	public:
-		struct config_s {
-			unsigned int index;
-			F scale;
-			unsigned int  init_count_shift;
-		};
-		config_s  config = {};
-
-		typedef typename D::native_t native_t;
-		native_t native;
-		native_t offset;
-		native_t acc;
-
-		F value = (F)0;
 		void reset(void) {
 			bool init_ = false;
 			reset_();
 		}
-		void update_output(void) {
-			native = D::sence[config.index];
+		virtual void execute(void) {
+			present_s& present = iblock::present_cast<present_s>();
+			const config_s& config = iblock::config_cast<config_s>();
+			present.native = D::sence[config.index];
 			if (init_) {
-				value = config.scale * (native - offset);
+				present.value = config.scale * ((F)present.native - present.offset);
 			}
 			else {
-				acc += native;
+				present.acc += present.native;
 				init_count_--;
 				if (init_count_ == 0) {
-					offset = (acc + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
-					value = config.scale * (native - offset);
-					reset_();
+					present.offset = (present.acc + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
+					present.value = config.scale * ((F)present.native - present.offset);
 					init_ = true;
 
 				}
 			}
-		}
-
-		void query(void) {
 			D::query();
 		}
 
-		bool applay(const config_s& _config) {
-			config = _config;
+
+		virtual bool reconfig(void) {
+			ROBO_LBREAKN(sence_block_t<F>::reconfig());
 			reset();
+			D::query();
 			return true;
 		}
-		F& output_value(void) {
-			return value;
-		}
+
+		single_adc_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: sence_block_t<F>(_subsystem, _name, _config.sb, _present.sb) {}
+
 	};
 
-	template <typename D, typename F  > class adc_diff : public adc<D, F, 2> {
+	template <typename D, typename F  > class adc_diff_b : public adc_b<D, F, 2> {
+		typedef adc_b<D, F, 2> B;
 	public:
-		F diff_value = (F)0;
-		F& output_value(void) {
-			return diff_value;
+		typedef typename B::present_s present_s;
+		typedef typename B::config_s config_s;
+		virtual void execute(void) {
+			B::execute();
+			present_s& present = iblock::present_cast<present_s>();
+			present.sb.output = present.values[1] - present.values[0];
 		}
-		void update_output(void) {
-			adc<D, F, 2>::update_output();
-			diff_value = adc<D, F, 2>::values[1] - adc<D, F, 2>::values[0];
-		}
+		adc_diff_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: B(_subsystem, _name, _config, _present) {}
 	};
 
 

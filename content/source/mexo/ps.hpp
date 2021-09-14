@@ -23,44 +23,15 @@ namespace mexo {
 			control(void) {}
 			virtual ~control(void) {}
 		};
-
-		template < typename C > class pwm
+		template < typename C > class pwm_b
 			: public ps::control
-			, public C {
-		public:
-			typedef typename C::input_t input_t;
-			typedef typename C::output_t output_t;
-			typedef typename C::config_s  config_s;
-		private:
-			output_t duty_;
-		public:
-			void loockup(input_t& _output) {
-				C::revert(duty_, _output);
-			}
-			output_t& output_value(void) {
-				return duty_;
-			}
+			, private C
+			, public to_parrot_scale_b< ::mexo::signal_t, typename C::duty_t, ::mexo::parametr_t > {
+		protected:
+			typedef to_parrot_scale_b< ::mexo::signal_t, typename C::duty_t, ::mexo::parametr_t > to_parrot_scale;
+			void execute() {
+				present_s& present = iblock::present_cast<present_s>();
 
-		public:
-			pwm(void) {}
-
-			pwm(const input_t& _default) {
-				C::dirrect(_default, duty_);
-			}
-
-			bool applay(const config_s& _config) {
-				if (C::applay(_config)) {
-					enable();
-					return true;
-				}
-				else {
-					return false;
-				}
-			}
-
-			iblock::satstate  execute(const input_t& _input, const iblock::satstate _master_sat, const range_s<output_t>& _range) {
-				if (_master_sat == iblock::satstate::both) return iblock::satstate::both;
-				iblock::satstate satstate = iblock::satstate::both;
 				switch (status_) {
 				case status::off:
 				if (command_ == command::on) {
@@ -73,18 +44,19 @@ namespace mexo {
 
 				case status::boot:
 				if (C::do_boot()) {
-					C::dirrect(_input, _range, duty_);
-					C::boot_complete(duty_);
+					to_parrot_scale::execute();
+					C::boot_complete(present.cb.output);
 					status_ = status::on;
+					return;
 				}
 				else {
 					break;
 				}
 				case status::on:
 				if (command_ == command::on) {
-					satstate = C::dirrect(_input, _range, duty_);
-					C::do_run(duty_);
-					break;
+					to_parrot_scale::execute();
+					C::do_run(present.cb.output);
+					return;
 				}
 				else {
 					status_ = status::shutdown;
@@ -101,15 +73,24 @@ namespace mexo {
 				case status::configure:
 				break;
 				}
-
-				return satstate;
-
+				present.cb.satstate = iblock::satstate::both;
 			}
+			virtual bool reconfig(void) {
+				ROBO_LBREAKN(to_parrot_scale::reconfig());
+				status_ = status::off;
+				return true;
+			}
+		public:
+			typedef typename to_parrot_scale::config_s config_s;
+			typedef typename to_parrot_scale::present_s present_s;
+			pwm_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+				: to_parrot_scale(_subsystem, _name, _config, _present) {}
+
 		};
 
-		typedef controller_block_t< ramp< signal_t > > voltage;
-		typedef atom_block_t< filter< signal_t, signal_t > > filter;
-		typedef controller_block_t<  quazzy_adapt<signal_t, signal_t, signal_t> > current;
+		typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
+		typedef filter_b<signal_t, signal_t, parametr_t>  current_filter_b;
+		typedef quazzy_adapt_b<signal_t, signal_t, parametr_t>  current_regulator_b;
 
 		/*
 		namespace inverter {
