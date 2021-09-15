@@ -4,18 +4,199 @@
 #include <limits>  
 #include <math.h>
 namespace mexo {
+	enum class  signal_bits {
+		i7 = 8
+		, i15 = 16
+		, i31 = 32
+		, i63 = 64
+		, real15 = 1 //float + float
+		, real31 = 2 //float + float
+		, real63 = 3 //float + double
+	};
+	template<signal_bits bits> struct dsigna {
+		enum {
+			max = (1 << ((int)bits - 1)) - 1
+			, min = (-max)
+			, half_pos = max >> 1
+			, half_neg = -half_pos
+			, uhalf_pos = (1LU << ((int)bits - 2) - 1)
+			, uhalf_neg = ((1LU << (int)bits) - half_pos)
+		};
+	};
+
+	struct int7 : public dsigna<signal_bits::i7> {
+		typedef int8_t signal_t;
+		typedef uint8_t usignal_t;
+		typedef int8_t parameter_t;
+		typedef int16_t long_signal_t;
+	};
+
+	struct int15 : public dsigna<signal_bits::i15> {
+		typedef int16_t signal_t;
+		typedef uint16_t usignal_t;
+		typedef int16_t parameter_t;
+		typedef int32_t long_signal_t;
+	};
+
+	struct int31 : public dsigna<signal_bits::i31> {
+		typedef int32_t signal_t;
+		typedef uint32_t usignal_t;
+		typedef int32_t parameter_t;
+		typedef int64_t long_signal_t;
+	};
+
+	struct real15 : public dsigna<signal_bits::i31> {
+		typedef float signal_t;
+		typedef float parameter_t;
+		typedef float long_signal_t;
+	};
+
+	struct real31 : public dsigna<signal_bits::i31> {
+		typedef float signal_t;
+		typedef float parameter_t;
+		typedef double long_signal_t;
+	};
+
+	struct real63 : public dsigna<signal_bits::i31> {
+		typedef double signal_t;
+		typedef double parameter_t;
+		typedef double long_signal_t;
+	};
+
+	template< typename q > struct fixed_point {
+
+		typedef typename  q::signal_t signal_t;
+		typedef typename  q::usignal_t usignal_t;
+		typedef typename  q::long_signal_t long_signal_t;
+
+		union point {
+			long_signal_t value;
+			struct {
+				usignal_t first;
+				signal_t second;
+			};
+		};
+
+		static void extract(const long_signal_t& _src, signal_t& _dst, unsigned int shift) {
+			point v;
+			if (_src == 0 || shift == 0) {
+				v.value = _src;
+			}
+			else {
+				int r = 1 << (shift - 1);
+				if (_src > 0) {
+					if (q::max - _src < r) {
+						v.value = q::max >> shift;
+					}
+					else {
+						v.value = (_src + r) >> shift;
+					}
+					if (v.second < q15::half_pos) {
+						if (v.first > q15::uhalf_pos) {
+							_dst = (v.second << 1) + 1;
+						}
+						else {
+							_dst = (v.second << 1);
+						}
+					}
+					else {
+						_dst = q15::max;
+					}
+				}
+				else {
+					if (_src - q::min < r) {
+						v.value = -((-q::min) >> shift);
+					}
+					else {
+						v.value = -((r - _src) >> shift);
+					}
+					if (v.second > q15::half_neg) {
+						if (v->first < q15::uhalf_neg) {
+							_dst = -(((-v.second) << 1) + 1);
+						}
+						else {
+							_dst = -(-(v.second) << 1);
+						}
+					}
+					else {
+						_dst = q15::min;
+					}
+
+				}
+			}
+		}
+
+	};
+
+	#ifndef MEXO_BASE_TYPE
+	#define MEXO_BASE_TYPE real15
+	#endif
+	typedef MEXO_BASE_TYPE::signal_t signal_t;
+	typedef MEXO_BASE_TYPE::long_signal_t long_signal_t;
+	typedef MEXO_BASE_TYPE::parameter_t parameter_t;
+
 	constexpr signal_t pi = robo::pi<signal_t>;
 	constexpr signal_t one_div_sqrt3 = robo::one_div_sqrt3<signal_t>;
 	constexpr signal_t sqrt3_div_2 = robo::sqrt3_div_2<signal_t>;
 
+	template<typename L, typename S>	void extract(const L& _src, S& _dst, unsigned int shift);
 
-	template <typename F, typename D>  void round(const F& _f, D& _d) {
-		F tmp = _f;
-		if (tmp > ((F)0)) tmp += ((F)0.5);
-		else
-			if (tmp < ((F)0)) tmp -= ((F)0.5);
-		_d = (D)tmp;
+	template<>	void extract(const float& _src, float& _dst, unsigned int shift) {
+		if (shift == 0) {
+			_dst = _src;
+		}
+		else {
+			int d = 1 << shift;
+			int r = 1 << (shift - 1);
+			_dst = (_src + r) / d;
+		}
 	}
+	/*
+	template<typename D>	void extract(const D& _src, D& _dst, unsigned int shift) {
+		if (_src == 0 || shift == 0) {
+			_dst = _src;
+		}
+		else {
+			int r = 1 << (shift - 1);
+			if (_src > 0) {
+				if (std::numeric_limits<D>::max() - _src < r) {
+					_dst = std::numeric_limits<D>::max() >> shift;
+				}
+				else {
+					_dst = (_src + r) >> shift;
+				}
+			}
+			else {
+				if (_src - std::numeric_limits<D>::lowest() < r) {
+					_dst = -(-std::numeric_limits<D>::lowest()) >> shift;
+				}
+				else {
+					_dst = -((r - _src) >> shift);
+				}
+			}
+		}
+	}*/
+
+	template<>	void extract(const int7::long_signal_t& _src, int7::signal_t& _dst, unsigned int _shift) {
+		fixed_point<int7>::extract(_src, _dst, _shift);
+	}
+
+	template<>	void extract(const int15::long_signal_t& _src, int15::signal_t& _dst, unsigned int _shift) {
+		fixed_point<int15>::extract(_src, _dst, _shift);
+	}
+
+	template<>	void extract(const int31::long_signal_t& _src, int31::signal_t& _dst, unsigned int _shift) {
+		fixed_point<int31>::extract(_src, _dst, _shift);
+	}
+
+	/*
+		template <typename F, typename D>  void round(const F& _f, D& _d) {
+			F tmp = _f;
+			if (tmp > ((F)0)) tmp += ((F)0.5);
+			else
+				if (tmp < ((F)0)) tmp -= ((F)0.5);
+			_d = (D)tmp;
+		}*/
 
 	template <typename I, typename  O, typename  P>  void scale(const I& _x, const P& _scale, const O& _offset, O& _y) {
 		_y = (O)(_scale * _x + _offset);
@@ -205,101 +386,6 @@ namespace mexo {
 			: function_block_t<I, O>(_subsystem, _name, _config.fb, _present.fb) {}
 	};
 
-	template< typename I, typename O, typename P, typename L = O>  class  quazzy_adapt_b : public controller_block_t<I, O> {
-		typedef controller_block_t<I, O> B;
-	public:
-		struct config_s {
-			typename B::config_s cb;
-			P propGain;
-			P modelGain;
-			P diffGain;
-			O standalone_actual;
-			O standalone_actual_diff;
-		};
-		struct present_s {
-			typename B::present_s cb;
-			L control;
-			L control_diff;
-			L model;
-			L error;
-		};
-
-	private:
-		void execute_(
-			const I& _deseired
-			, iblock::satstate _master_sat
-			, const range_s<O>& _control_range
-			, const I& _actual
-			, const I& _diff
-		) {
-			iblock::satstate remote = controller_block_t<I, O>::master_satstate.value();
-			present_s& present = iblock::present_cast<present_s>();
-			if (remote == iblock::satstate::both) {
-				present.cb.satstate = iblock::satstate::both;
-			}
-
-			const config_s& config = iblock::config_cast<config_s>();
-
-			present.error = _deseired - _actual;
-			L tmp = present.error + present.model - _actual;
-
-			present.control = tmp * config.propGain;
-
-			present.control_diff = _diff * config.diffGain;
-			present.control += present.control_diff;
-
-			if (present.control >= _control_range.hi) {
-				present.control = _control_range.hi;
-				present.cb.local_satstate = iblock::satstate::up;
-			}
-			else if (tmp <= _control_range.low) {
-				present.control = _control_range.low;
-				present.cb.local_satstate = iblock::satstate::low;
-			}
-			else {
-				present.cb.local_satstate = iblock::satstate::none;
-			}
-			B::update_satstate();
-			if (!(
-				((present.error > (L)0) && (present.cb.satstate == iblock::satstate::up))
-				||
-				((present.error < (L)0) && (present.cb.satstate == iblock::satstate::low))
-				)) {
-				present.model += present.error * config.modelGain;
-			}
-			present.cb.output = (O)present.control;
-		}
-
-	protected:
-		virtual void execute(void) {
-			execute_(B::input.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value());
-		}
-		virtual void adjust(const O& _def) {
-			present_s& present = iblock::present_cast<present_s>();
-			const config_s& config = iblock::config_cast<config_s>();
-
-			if (config.propGain > (O)0) {
-				present.control = (L)0;
-				present.cb.output = _def;
-				present.model = present.control / config.propGain;
-			}
-			else {
-				present.control = (L)0;
-				present.cb.output = (O)0;
-				present.model = (L)0;
-			}
-		}
-	public:
-		iblock::input_t<I> actual;
-		iblock::input_t<I> actual_diff;
-
-
-		quazzy_adapt_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: controller_block_t<I, O>(_subsystem, _name, _config.cb, _present.cb)
-			, actual(_config.standalone_actual)
-			, actual_diff(_config.standalone_actual_diff) {}
-
-	};
 
 	/*
 	struct signal2ph_s {

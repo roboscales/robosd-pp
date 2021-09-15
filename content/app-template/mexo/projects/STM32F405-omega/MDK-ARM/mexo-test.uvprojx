@@ -526,6 +526,11 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\mexo\adc.hpp</FilePath>
             </File>
+            <File>
+              <FileName>regulator.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\regulator.hpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

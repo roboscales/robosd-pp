@@ -3,6 +3,7 @@
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 #include "mexo/adc.hpp"
+#include "mexo/regulator.hpp"
 
 namespace mexo {
 	namespace ps {

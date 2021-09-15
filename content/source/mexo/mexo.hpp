@@ -15,7 +15,7 @@
 #define APP_MEXO_PRIORITY_SLOT_ENABLE 1
 #endif
 
-#ifndef APP_MEXO_SIGNAL_T
+/*#ifndef APP_MEXO_SIGNAL_T
 #define APP_MEXO_SIGNAL_T float
 #endif
 
@@ -30,7 +30,7 @@
 #ifndef MEXO_DEBUG_TP1_ENABLED
 #define MEXO_DEBUG_TP1_ENABLED 0
 #endif
-
+*/
 
 using namespace robo;
 namespace mexo {
@@ -53,10 +53,10 @@ namespace mexo {
 
 	#endif 
 
-	typedef APP_MEXO_SIGNAL_T signal_t;
-	typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
-	typedef APP_MEXO_PARAMETR_T parametr_t;
-
+	/*	typedef APP_MEXO_SIGNAL_T signal_t;
+		typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
+		typedef APP_MEXO_PARAMETR_T parametr_t;
+	*/
 	class machine {
 	public:
 		enum { slot_count = APP_MEXO_SLOT_COUNT };
