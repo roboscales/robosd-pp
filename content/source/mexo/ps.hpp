@@ -24,12 +24,13 @@ namespace mexo {
 			control(void) {}
 			virtual ~control(void) {}
 		};
-		template < typename C > class pwm_b
+		template < typename q, typename C > class pwm_b
 			: public ps::control
 			, private C
-			, public to_parrot_scale_b< ::mexo::signal_t, typename C::duty_t, ::mexo::parametr_t > {
+			, public to_digit_scale_b< q > {
+
 		protected:
-			typedef to_parrot_scale_b< ::mexo::signal_t, typename C::duty_t, ::mexo::parametr_t > to_parrot_scale;
+			typedef to_digit_scale_b< q> to_digit_scale_b;
 			void execute() {
 				present_s& present = iblock::present_cast<present_s>();
 
@@ -45,7 +46,7 @@ namespace mexo {
 
 				case status::boot:
 				if (C::do_boot()) {
-					to_parrot_scale::execute();
+					to_digit_scale_b::execute();
 					C::boot_complete(present.cb.output);
 					status_ = status::on;
 					return;
@@ -55,7 +56,7 @@ namespace mexo {
 				}
 				case status::on:
 				if (command_ == command::on) {
-					to_parrot_scale::execute();
+					to_digit_scale_b::execute();
 					C::do_run(present.cb.output);
 					return;
 				}
@@ -77,21 +78,21 @@ namespace mexo {
 				present.cb.satstate = iblock::satstate::both;
 			}
 			virtual bool reconfig(void) {
-				ROBO_LBREAKN(to_parrot_scale::reconfig());
+				ROBO_LBREAKN(to_digit_scale_b::reconfig());
 				status_ = status::off;
 				return true;
 			}
 		public:
-			typedef typename to_parrot_scale::config_s config_s;
-			typedef typename to_parrot_scale::present_s present_s;
+			typedef typename to_digit_scale_b::config_s config_s;
+			typedef typename to_digit_scale_b::present_s present_s;
 			pwm_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-				: to_parrot_scale(_subsystem, _name, _config, _present) {}
+				: to_digit_scale_b(_subsystem, _name, _config, _present) {}
 
 		};
 
-		typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
-		typedef filter_b<signal_t, signal_t, parametr_t>  current_filter_b;
-		typedef quazzy_adapt_b<signal_t, signal_t, parametr_t>  current_regulator_b;
+		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
+		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
+		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
 
 		/*
 		namespace inverter {

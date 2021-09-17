@@ -3,14 +3,16 @@
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 #include "mexo/ps.hpp"
+
+typedef  ::mexo::float_point<::mexo::real15> types;
+
 class pwm  {
 public:
-	typedef int16_t duty_t;
 protected:
 	
-	void boot_complete(duty_t _duty);
+	void boot_complete(types::discret_t _duty);
 	static void shutdown_begin(void);
-	void do_run(duty_t _duty);
+	void do_run(types::discret_t _duty);
 
 	static void boot_begin(void){};
 	static bool do_boot(void) { return true; }
@@ -18,7 +20,7 @@ protected:
 	static bool do_shutdown(void) { return true; }
 	static void shutdown_complete(void) {  }
 };
-typedef ::mexo::ps::pwm_b<pwm>  dc_power_supply_b;
+typedef ::mexo::ps::pwm_b<types, pwm>  dc_power_supply_b;
 
 struct current_adc{
 	typedef uint32_t native_t;
@@ -26,7 +28,7 @@ struct current_adc{
 	static native_t sence[2];
 	static void query(void){};
 };
-typedef ::mexo::adc_diff_b<current_adc, ::mexo::signal_t>  current_sensor_b;
+typedef ::mexo::adc_diff_b<current_adc, types>  current_sensor_b;
 
 extern dc_power_supply_b::config_s dc_power_supply_config;
 extern current_sensor_b::config_s current_sensor_config;

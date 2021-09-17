@@ -1043,35 +1043,6 @@ public:
 		}
 
 
-
-		class fake_dc_periphery {
-		public:
-			typedef  int16_t duty_t;
-			duty_t duty_;
-		protected:
-			static void boot_begin(void) {}
-			static bool do_boot(void) { return true; }
-			void boot_complete(duty_t _duty) { duty_ = _duty; }
-
-			static void shutdown_begin(void) {}
-			static bool do_shutdown(void) { return true; }
-			static void shutdown_complete(void) {}
-
-			void do_run(duty_t _duty) {
-				duty_ = _duty;
-			}
-
-		};
-		typedef ::mexo::ps::pwm_b<fake_dc_periphery > fake_dc;
-
-		class fake_adc {
-		public:
-			typedef uint16_t  native_t;
-			typedef uint32_t  acc_t;
-			native_t sence[3];
-			void query(void) {};
-		};
-
 		/*
 				class actuator: public dev {
 				public:
@@ -1150,10 +1121,38 @@ public:
 
 				};
 				*/
-		TEST_METHOD(ps) {
+		TEST_METHOD(ps_digit13) {
+
+			typedef  fixed_point<int15> types;
+
+			class fake_dc_periphery {
+			public:
+				types::discret_t duty_;
+			protected:
+				static void boot_begin(void) {}
+				static bool do_boot(void) { return true; }
+				void boot_complete(types::discret_t _duty) { duty_ = _duty; }
+
+				static void shutdown_begin(void) {}
+				static bool do_shutdown(void) { return true; }
+				static void shutdown_complete(void) {}
+
+				void do_run(types::discret_t _duty) {
+					duty_ = _duty;
+				}
+			};
+			typedef ::mexo::ps::pwm_b<types, fake_dc_periphery> fake_dc;
+			typedef ::mexo::ramp_b<types> voltage_regulator_b;
+			class fake_adc {
+			public:
+				typedef uint16_t  native_t;
+				typedef uint32_t  acc_t;
+				native_t sence[3];
+				void query(void) {};
+			};
 
 			::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), true);
-			typedef adc_diff_b<fake_adc, ::mexo::signal_t	> adcd;
+			typedef adc_diff_b<fake_adc, types	> adcd;
 			adcd::config_s adc_conf = {
 				{22}
 			};
@@ -1163,7 +1162,7 @@ public:
 			};
 			adcd adc(hardware_subsystem, RT("adc"), adc_conf, adc_present);
 
-			typedef single_adc_b<fake_adc, ::mexo::signal_t	> adcs;
+			typedef single_adc_b<fake_adc, types	> adcs;
 			adcs::config_s ads_conf = {
 				{22}
 			};
@@ -1173,78 +1172,50 @@ public:
 			};
 			adcs ads(hardware_subsystem, RT("adc"), ads_conf, ads_present);
 
-			/*typedef to_parrot_scale_b<int16_t, signal_t> hwt;
-			hwt::config_s hwtc = {
-				{
-					{0} //ref
-					,{
-						{ //range
-							-4095
-							, 4095
-						}
-						, 0.f
-					}
-					, 0
-				}
-				, 4095. / 12.
-			};
-			hwt::present_s hwtp = {
-				{
-					{0} //ref
-					, 0
-				}
-			};
-
-			hwt hw(hardware_subsystem, RT("test"), hwtc, hwtp);*/
-
 			fake_dc::config_s dc_config = {
-				{
-					{77} //ref
-					,{
-						{ //range
-							-4095
-							, 4095
-						}
-						, 0.f
+			{
+				{77} //ref
+				,{
+					{ //range
+						-4095
+						, 4095
 					}
 					, 0
 				}
-				, 4095. / 12.
+				, 0
+			}
+			, 409
 			};
 			fake_dc::present_s dc_present = {
-				{
-					{88} //ref
-					, 0 //output
-				}
 			};
-			::mexo::ps::voltage_regulator_b::config_s dcv_config = {
+			voltage_regulator_b::config_s dcv_config = {
 				{
 					{99} //ref
 					,{
 						{ //range
-							-12.f
-							, 12.f
+							-32767
+							, 32767
 						}
-						, 0.f
+						, 0
 					}
-					, 0.f
+					, 0
 				}
-				, 0.8f
+				, 100
 			};
-			::mexo::ps::voltage_regulator_b::present_s dcv_present = {
+			voltage_regulator_b::present_s dcv_present = {
 				{
 					{11} //ref
-					, 0.f //output
+					, 0 //output
 				}
 			};
 			fake_dc dc(hardware_subsystem, RT("dc"), dc_config, dc_present);
-			::mexo::ps::voltage_regulator_b dcv(hardware_subsystem, RT("dcv"), dcv_config, dcv_present);
+			voltage_regulator_b dcv(hardware_subsystem, RT("dcv"), dcv_config, dcv_present);
 
 			dc.link_to(dcv);
 
 			::mexo::machine::begin();
 			::mexo::machine::start();
-			dcv_config.cb.standalone.input = 12.f;
+			dcv_config.cb.standalone.input = 32767;
 			dc.on();
 
 			for (int i = 0; i < 1000; ++i) {
@@ -1254,7 +1225,7 @@ public:
 			}
 
 			Assert::IsTrue(dc_present.cb.output > 4000 && dc_present.cb.output < 4096);
-			Assert::IsTrue(dcv_present.cb.output > 11.f && dcv_present.cb.output < 12.1f);
+			Assert::IsTrue(dcv_present.cb.output > 31767 && dcv_present.cb.output < 32768);
 		}
 	};
 

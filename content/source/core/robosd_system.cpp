@@ -62,7 +62,10 @@ namespace robo {
 #endif
 
 namespace robo {
-
+	system & system::instance_(void){
+		static system instance__;
+		return instance__;
+	}
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	class allocator {
 		friend class system;
@@ -219,11 +222,11 @@ namespace robo {
 	}
 
 	system::guard::guard(void) {
-		context_ = system::instance_.enter_();
+		context_ = system::instance_().enter_();
 	}
 
 	system::guard::~guard(void) {
-		system::instance_.leave_(context_);
+		system::instance_().leave_(context_);
 	}
 
 	void* system::critical_enter_(void) {
@@ -246,11 +249,11 @@ namespace robo {
 	}
 
 	system::critical::critical(void) {
-		context_ = system::instance_.critical_enter_();
+		context_ = system::instance_().critical_enter_();
 	}
 
 	system::critical::~critical(void) {
-		system::instance_.critical_leave_(context_);
+		system::instance_().critical_leave_(context_);
 	}
 
 	system::system(void) {
@@ -300,15 +303,16 @@ namespace robo {
 			guard g__;
 			if (env::is_backend()) {
 				ptr = allocator::instance_.query(_sz);
+				ROBO_APP_ASSERT(ptr != nullptr);
 			}
 			else {
 				_sz += sizeof(size_t);
 				ptr = env::mem_alloc(_sz);
+				ROBO_APP_ASSERT(ptr != nullptr);
 				*(size_t*)ptr = _sz;
 				ptr = ((size_t*)ptr) + 1;
 			}
 		}
-		ROBO_APP_ASSERT(ptr != nullptr);
 		memstat_.total.size += _sz;
 		memstat_.used.size += _sz;
 		memstat_.total.count++;
@@ -360,15 +364,17 @@ namespace robo {
 		return ret;
 	}
 
-	system system::instance_;
 }
 
 void* operator new(size_t size) {
+	void* tmp;
 	#if ROBO_APP_ALLOC_ENABLED == 1
-	return robo::system::mem::alloc(size);
+	tmp = robo::system::mem::alloc(size);
 	#else
-	return malloc(size);
+	tmp = malloc(size);;
 	#endif
+	ROBO_APP_ASSERT(tmp!=nullptr)
+	return tmp;
 }
 
 void operator delete(void* ptr) {

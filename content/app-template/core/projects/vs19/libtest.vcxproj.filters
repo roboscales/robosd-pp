@@ -158,5 +158,8 @@
     <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\source\mexo\regulator.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

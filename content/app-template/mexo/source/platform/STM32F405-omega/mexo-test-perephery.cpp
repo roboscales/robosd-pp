@@ -9,6 +9,7 @@
 #include "net/robosd_serial.hpp"
 #include "net/robosd_flow.hpp"
 #include "net/robosd_flow_id.h"
+#include "freemaster/robosd_fm.hpp"
 namespace robo {
 
 	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_KEIL
@@ -171,25 +172,6 @@ namespace robo {
 #endif
 }
 #include "mexo/mexo.hpp"
-namespace mexo{
-	void tp_driver::on(void){
-		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_SET);
-	}
-	void tp_driver::off(void){
-		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_RESET);
-	}
-	
-	machine::slot::simple start(
-		machine::slot::kind::start
-		, [] {
-				HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);	
-				HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-				HAL_CAN_Start(&hcan1);
-
-		}
-	);
-
-}
 current_adc::native_t current_adc::sence[2];
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
@@ -202,7 +184,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	::mexo::machine::backend_loop();
 };
 
-void pwm::boot_complete(duty_t _duty){
+void pwm::boot_complete(types::discret_t _duty){
 	TIM1->CCR1 = 0;
 	TIM1->CCR2 = 0;
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -218,7 +200,7 @@ void pwm::shutdown_begin(void){
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
 }
 
-void pwm::do_run(duty_t _duty){
+void pwm::do_run(types::discret_t _duty){
 	if(_duty>0){
 		TIM1->CCR1 = (uint32_t)_duty;
 		TIM1->CCR2 = 0;
@@ -230,7 +212,22 @@ void pwm::do_run(duty_t _duty){
 
 #define MAX_PWM ((int)(PWM_PERIOD * 0.98))
 
-dc_power_supply_b::config_s dc_power_supply_config = {
+dc_power_supply_b::config_s dc_power_supply_config =
+{
+	{//controller block;
+		{0} //ref
+		,{//stabdalone
+			{ //converter
+			-MAX_PWM
+			, MAX_PWM
+			}
+			, 0 //defalt
+		} 
+	}
+	, MAX_PWM/12.f  //gain
+};
+
+/*{
 	{//controller block;
 		{0} //ref
 		,{//stabdalone
@@ -242,9 +239,11 @@ dc_power_supply_b::config_s dc_power_supply_config = {
 		} 
 	}
 	, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12  //gain
-};
+};*/
 
-current_sensor_b::config_s current_sensor_config = {
+current_sensor_b::config_s current_sensor_config = 
+
+{
 	{
 		{0} //sence_block
 	}
@@ -296,7 +295,7 @@ void  flow_set_addr( uint8_t _addr){
 class can_port_driver{
 	public:
 	typedef flow_msg_can_id_t id_t;
-	enum{suba_count = 16,  packet_size = 8};
+	enum{suba_count = 16,  packet_size = 8, msg_pool_size = 4 };
 	
 	static void send(unsigned _id , const uint8_t * _data, size_t _size){
 		if(_size>0){
@@ -312,12 +311,17 @@ class can_port_driver{
 };
 
 ::robo::net::flow::port_t<can_port_driver> can0;
-void can_on_receive(uint32_t id, uint8_t * _data, uint32_t _size ){
-	can0.on_receive(id,_data,_size);
+
+//::robo::net::bridge_t<4,4,::robo::system::critical>  freemaster_serial;
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+ static int trig = 0;
+ static CAN_RxHeaderTypeDef RxHeader;
+ static uint8_t RxData[8];
+HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData);
+	can0.on_receive(RxHeader.StdId,RxData,RxHeader.DLC);
+
 }
-
-::robo::net::bridge_t<4,4,::robo::system::critical>  freemaster_serial;
-
 
 #define can0_echo_FLOW_CMD_ID 1
 #define can0_echo_SUBA 1
@@ -345,5 +349,24 @@ FLOW_ROUTE_RECORD_B(can0,echo,KIND,
 
 FLOW_SERIAL_ROUTE_RECORD(4,6,can0,serial0,KIND)
 
+namespace mexo{
+	void tp_driver::on(void){
+		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_SET);
+	}
+	void tp_driver::off(void){
+		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_RESET);
+	}
+	machine::slot::simple start(
+		machine::slot::kind::start
+		, [] {
+				HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);	
+				HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+				flow_set_addr(0xA);			
+				robo::freemaster::connect( &can0_serial0_.local() );
+				HAL_CAN_Start(&hcan1);
+
+		}
+	);
+}
 	
 

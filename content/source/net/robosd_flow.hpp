@@ -113,7 +113,7 @@ namespace robo {
 			template <typename D> class port_t : public port, private D {
 			public:
 				port_t() :port(D::packet_size, D::suba_count) {
-					for (int i = 0; i < D::suba_count; i++) {
+					for (int i = 0; i < D::msg_pool_size; i++) {
 						new msg_a<D::packet_size>(*this);
 					}
 				}

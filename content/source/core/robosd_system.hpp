@@ -66,21 +66,21 @@ namespace robo {
 					int count = 0;
 				} total;
 			};
-			static void* alloc(size_t _sz) { return instance_.mem_alloc_(_sz); }
-			static void free(void* _memo) { instance_.mem_free_(_memo); }
+			static void* alloc(size_t _sz) { return system::instance_().mem_alloc_(_sz); }
+			static void free(void* _memo) { system::instance_().mem_free_(_memo); }
 		};
-		static mem::stat& get_mem_statistic(void) { guard g__; return instance_.memstat_; }
+		static mem::stat& get_mem_statistic(void) { guard g__; return instance_().memstat_; }
 	private:
 		mem::stat memstat_;
 		#endif
 	private:
+		static system & instance_(void);
 		enum  class state { enabled = 178, unknown = -178 };
 		state state_ = state::unknown;
 		#if ROBO_APP_ENV_ENABLED == 1
 		int lock_count_ = 0;
 		int guest_count_ = 0;
 		#endif
-		static system instance_;
 		void* enter_(void);
 		void leave_(void* context_);
 		void* critical_enter_(void);

@@ -50,6 +50,7 @@
     <ClInclude Include="..\..\..\..\source\core\robosd_lambda.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_tran.h" />
+    <ClInclude Include="..\..\..\..\source\mexo\regulator.hpp" />
     <ClInclude Include="..\..\..\..\source\net\robosd_flow.hpp" />
     <ClInclude Include="..\..\..\..\source\net\robosd_net_trafic.hpp" />
     <ClInclude Include="..\..\..\..\source\net\robosd_ring_buf.hpp" />

@@ -2,24 +2,28 @@
 #define __regulator_hpp
 #include "mexo/mexo.hpp"
 namespace mexo {
-	template< typename I, typename O, typename P, typename L = O>  class  quazzy_adapt {
+	template< typename q >  class  quazzy_adapt {
 	public:
+		typedef typename  q::signal_t signal_t;
+		typedef typename  q::long_signal_t long_signal_t;
+		typedef typename  q::parameter_t parameter_t;
+
 		struct config_s {
-			P propGain;
-			P modelGain;
-			P diffGain;
+			parameter_t propGain;
+			parameter_t modelGain;
+			parameter_t diffGain;
 			uint8_t control_shift;
 			uint8_t model_shift;
 		};
 		struct present_s {
-			L control;
-			L control_diff;
-			L model;
-			L model_l;
-			L error;
+			long_signal_t control;
+			long_signal_t control_diff;
+			long_signal_t model;
+			long_signal_t model_l;
+			long_signal_t error;
 		};
 	private:
-		O& output_;
+		signal_t& output_;
 		iblock::satstate& local_satstate_;
 		iblock::satstate& satstate_;
 		config_s& config_;
@@ -27,7 +31,7 @@ namespace mexo {
 
 	public:
 		quazzy_adapt(
-			O& _output
+			signal_t& _output
 			, iblock::satstate& _local_satstate
 			, iblock::satstate& _satstate
 			, config_s& _config
@@ -42,11 +46,11 @@ namespace mexo {
 		}
 
 		void do_execute(
-			const I& _deseired
+			const signal_t& _deseired
 			, iblock::satstate _master_sat
-			, const range_s<O>& _control_range
-			, const I& _actual
-			, const I& _diff
+			, const range_s<signal_t>& _control_range
+			, const signal_t& _actual
+			, const signal_t& _diff
 		) {
 			//		iblock::satstate remote = controller_block_t<I, O>::master_satstate.value();
 			//		present_s& present = iblock::present_cast<present_s>();
@@ -54,45 +58,15 @@ namespace mexo {
 				return;
 			}
 
-			present_.error = (L)_deseired - _actual;
+			present_.error = (long_signal_t)_deseired - _actual;
 
-			L tmp = present_.error + present_.model - _actual;
+			long_signal_t tmp = present_.error + present_.model - _actual;
 
 			present_.control = tmp * config_.propGain;
 
 			present_.control_diff = _diff * config_.diffGain;
 			present_.control += present_.control_diff;
-
-			if (present_.control >= _control_range.hi) {
-				present_.control = _control_range.hi;
-				local_satstate_ = iblock::satstate::up;
-			}
-			else if (tmp <= _control_range.low) {
-				present_.control = _control_range.low;
-				local_satstate_ = iblock::satstate::low;
-			}
-			else {
-				local_satstate_ = iblock::satstate::none;
-			}
-
-			L model_inc = present_.error * config_.modelGain;
-			if (model_inc > std::numeric_limits<L>::epsilon()) {
-				L d = std::numeric_limits<float>::max() - present_.model_l;
-				if (d < model_inc) {
-					model_inc = d;
-				}
-			}
-			else
-				if (model_inc < -std::numeric_limits<L>::epsilon()) {
-					L d = std::numeric_limits<float>::lowest() - present_.model_l;
-					if (d > model_inc) {
-						model_inc = d;
-					}
-				}
-				else {
-					model_inc = (L)0;
-				}
-
+			local_satstate_ = q::round_s(present_.control, _control_range, config_.control_shift, output_);
 
 			if (_master_sat == iblock::satstate::none) {
 				satstate_ = local_satstate_;
@@ -101,41 +75,60 @@ namespace mexo {
 				satstate_ = _master_sat;
 			}
 
-			if (!(
-				((present_.error > (L)0) && ((satstate_ == iblock::satstate::up) || (present_.model_l > integrator_limit_max<L, O>())))
-				||
-				((present_.error < (L)0) && (satstate_ == iblock::satstate::low) || (present_.model_l < integrator_limit_min<L, O>()))
-				)) {
-				present_.model_l += ;
+			long_signal_t model_inc = present_.error * config_.modelGain;
+
+			if (model_inc > std::numeric_limits<long_signal_t>::epsilon()) {
+				if (satstate_ != iblock::satstate::up) {
+					long_signal_t d = q::long_max - present_.model_l;
+					if (d < model_inc) {
+						model_inc = d;
+						present_.model_l = q::long_max;
+					}
+					else {
+						present_.model_l += model_inc;
+					}
+				}
 			}
-			extract<L, O>(present_.model_l, present_.model, config_.model_shift);
-			extract<L, O>(present_.control, output_, config_.control_shift);
+			else {
+				if (satstate_ != iblock::satstate::low) {
+					if (model_inc < -std::numeric_limits<long_signal_t>::epsilon()) {
+						long_signal_t d = q::long_min - present_.model_l;
+						if (d > model_inc) {
+							present_.model_l = q::long_min;
+						}
+						else {
+							present_.model_l += model_inc;
+						}
+					}
+				}
+			}
+			present_.model = q::round_s(present_.model_l, config_.model_shift);
 		}
 
-		void do_adjust(const O& _def) {
+		void do_adjust(const signal_t& _def) {
 
-			if (config_.propGain > (O)0) {
-				present_.control = (L)0;
+			if (config_.propGain > (parameter_t)0) {
+				present_.control = (long_signal_t)_def * (1 << config_.model_shift);
 				output_ = _def;
 				present_.model = present_.control / config_.propGain;
 			}
 			else {
-				present_.control = (L)0;
-				output_ = (O)0;
-				present_.model = (L)0;
+				present_.control = (long_signal_t)0;
+				output_ = (signal_t)0;
+				present_.model = (long_signal_t)0;
 			}
 		}
 	};
 
-	template< typename I, typename O, typename P, typename L = O>  class  quazzy_adapt_b : public controller_block_t<I, O>, public quazzy_adapt<I, O, P, L> {
-		typedef controller_block_t<I, O> B;
-		typedef quazzy_adapt<I, O, P, L> QA;
+	template< typename q >  class  quazzy_adapt_b : public controller_block_t<typename q::signal_t, typename q::signal_t >, public quazzy_adapt<q> {
+		typedef controller_block_t<typename q::signal_t, typename q::signal_t> B;
+		typedef quazzy_adapt<q> QA;
 	public:
 		struct config_s {
 			typename B::config_s cb;
 			typename QA::config_s qa;
-			I standalone_actual;
-			I standalone_actual_diff;
+			typename q::signal_t standalone_actual;
+			typename q::signal_t standalone_actual_diff;
 		};
 		struct present_s {
 			typename B::present_s cb;
@@ -148,15 +141,15 @@ namespace mexo {
 		virtual void execute(void) {
 			QA::do_execute(B::input.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value());
 		}
-		virtual void adjust(const O& _def) {
+		virtual void adjust(const typename q::signal_t& _def) {
 			QA::do_adjust(_def);
 		}
 	public:
-		iblock::input_t<I> actual;
-		iblock::input_t<I> actual_diff;
+		iblock::input_t<typename q::signal_t> actual;
+		iblock::input_t<typename q::signal_t> actual_diff;
 
 		quazzy_adapt_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: controller_block_t<I, O>(_subsystem, _name, _config.cb, _present.cb)
+			: B(_subsystem, _name, _config.cb, _present.cb)
 			, QA(_present.cb.output
 				 , _present.cb.local_satstate
 				 , _present.cb.satstate
