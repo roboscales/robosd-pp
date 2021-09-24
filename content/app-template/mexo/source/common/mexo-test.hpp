@@ -4,7 +4,7 @@
 #include "mexo/math.hpp"
 #include "mexo/ps.hpp"
 
-typedef  ::mexo::float_point<::mexo::real15> types;
+typedef  ::mexo::fixed_point<::mexo::int15> types;
 
 class pwm  {
 public:

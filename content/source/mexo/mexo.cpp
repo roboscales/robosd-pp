@@ -12,11 +12,10 @@ namespace mexo {
 	}
 	void machine::begin_(void) {
 		slots_ref_.begin.execute();
+		ROBO_APP_ASSERT(::mexo::node::begin());
 	}
 	void machine::start_(void) {
 		slots_ref_.start.execute();
-		ROBO_APP_ASSERT(::mexo::node::begin());
-
 	}
 	void machine::priority_loop_(void) {
 		tp::on(tp_verb::loop);
@@ -34,11 +33,11 @@ namespace mexo {
 		if (slot_index_ == slot_count) {
 			slot_index_ = 0;
 		}
-		tp::off(tp_verb::backend);
-		tp::off(tp_verb::loop);
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::backend_poll();
 		#endif
+		tp::off(tp_verb::backend);
+		tp::off(tp_verb::loop);
 	}
 	void machine::frontend_loop_(void) {
 		tp::on(tp_verb::frontend);
@@ -221,12 +220,21 @@ namespace mexo {
 			r->owner().execute();
 		}
 	}
-
+	/*
+	void isubsystem::adjust(void) {
+		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
+			r->owner().adjust();
+		}
+		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().adjust();
+		}
+	}
+	*/
 	bool isubsystem::do_reconfig(void) {
 		ROBO_LBREAKN(node::do_reconfig());
-		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
+		/*for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
 			ROBO_LBREAKN(r->owner().reconfig());
-		}
+		}*/
 		if (autostart_) start();
 		return true;
 	}
@@ -261,7 +269,7 @@ namespace mexo {
 
 
 	dev::mode::mode(int _index, cstr  _name, dev& _dev)
-		: isubsystem(_name, false, &_dev)
+		: node(_name, &_dev)
 		, ref_(*this, _index) {
 		ref_.attach_to(_dev.modes_);
 	};
@@ -271,40 +279,40 @@ namespace mexo {
 		return do_reset();
 	}*/
 
-	dev::dev(cstr  _name, action& _action, snapshot& _snapshot)
+	dev::dev(cstr  _name, action_s& _action, present_s& _present)
 		: node(_name, nullptr)
 		, idle(*this)
 		, actual_mode_(&idle)
-		, actual_mode_id_(idle_id)
 		, backend_(this, &dev::backend__)
 		, backend_ref_(backend_)
 		, action_(_action)
-		, snapshot_(_snapshot) {
+		, present_(_present) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend);
-	}
+		present_.mode = idle_id;
+		}
 
 	void dev::switch_to(int _mode_id) {
 		ROBO_APP_ASSERT(is_backend__);
-		if (_mode_id != actual_mode_id_) {
-			if (actual_mode_id_ != idle_id) {
-				actual_mode_->stop();
+		if (_mode_id != present_.mode) {
+			if (present_.mode != idle_id) {
+				actual_mode_->do_stop();
 			}
 
 			if (_mode_id == idle_id) {
 				actual_mode_ = &idle;
-				actual_mode_id_ = idle_id;
+				present_.mode = idle_id;
 			}
 			else {
 				mode* m = modes_.find(_mode_id);
 				if (m == nullptr || !m->enabled()) {
 					actual_mode_ = &idle;
-					actual_mode_id_ = idle_id;
+					present_.mode = idle_id;
 				}
 				else {
-					m->start();
+					m->do_start();
 					m->applay_action();
 					actual_mode_ = m;
-					actual_mode_id_ = _mode_id;
+					present_.mode = _mode_id;
 				}
 			}
 			if (actual_mode_ == &idle) {
@@ -314,15 +322,15 @@ namespace mexo {
 	}
 	void dev::backend__(void) {
 		ROBO_APP_ASSERT(is_backend__);
-		guard__;
-		if (action_.mode != actual_mode_id_) {
+		if (action_.mode != present_.mode) {
+			guard__;
 			switch_to(action_.mode);
 		}
 		if (action_.actual) {
+			guard__;
 			action_.actual = false;
 			actual_mode_->applay_action();
 		}
-
 	}
 
 }

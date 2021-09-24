@@ -70,23 +70,23 @@ ARM Macro Assembler    Page 2
 
 
    43 00000200         
-   44 00000200 00000500 
+   44 00000200 00000700 
                        Heap_Size
-                               EQU              0x500
+                               EQU              0x700
    45 00000200         
    46 00000200                 AREA             HEAP, NOINIT, READWRITE, ALIGN=
 3
    47 00000000         __heap_base
    48 00000000         Heap_Mem
                                SPACE            Heap_Size
-   49 00000500         __heap_limit
-   50 00000500         
-   51 00000500                 PRESERVE8
-   52 00000500                 THUMB
-   53 00000500         
-   54 00000500         
-   55 00000500         ; Vector Table Mapped to Address 0 at Reset
-   56 00000500                 AREA             RESET, DATA, READONLY
+   49 00000700         __heap_limit
+   50 00000700         
+   51 00000700                 PRESERVE8
+   52 00000700                 THUMB
+   53 00000700         
+   54 00000700         
+   55 00000700         ; Vector Table Mapped to Address 0 at Reset
+   56 00000700                 AREA             RESET, DATA, READONLY
    57 00000000                 EXPORT           __Vectors
    58 00000000                 EXPORT           __Vectors_End
    59 00000000                 EXPORT           __Vectors_Size
@@ -826,7 +826,7 @@ ARM Macro Assembler    Page 13
               00000000 
               00000000 
               00000200 
-              00000500 
+              00000700 
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --depend=mexo
 -test\startup_stm32f405xx.d -omexo-test\startup_stm32f405xx.o -I.\RTE\_mexo-tes
@@ -898,7 +898,7 @@ Symbol: __heap_base
    Uses
       None
 Comment: __heap_base unused
-__heap_limit 00000500
+__heap_limit 00000700
 
 Symbol: __heap_limit
    Definitions
@@ -1847,7 +1847,7 @@ Comment: __user_initial_stackheap used once
 ARM Macro Assembler    Page 1 Alphabetic symbol ordering
 Absolute symbols
 
-Heap_Size 00000500
+Heap_Size 00000700
 
 Symbol: Heap_Size
    Definitions

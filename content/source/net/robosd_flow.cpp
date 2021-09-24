@@ -174,30 +174,34 @@ namespace robo {
 			void machine::run_(performer* _pfr) {
 				_pfr->execute();
 				if (_pfr->in_msg) {
-					_pfr->in_msg->release_();
+					_pfr->in_msg->release();
 					_pfr->in_msg = nullptr;
 				}
 				_pfr->request_ = performer::request::idle;
 
 			}
 			void machine::frontend_poll(void) {
-				performer* pfr;
-				{
-					guard__;
-					pfr = instance_().frontend_list_.pop();
-				}
-				if (pfr) {
-					run_(pfr);
+				if(instance_().frontend_list_.count()>0){
+					performer* pfr;
+					{
+						guard__;
+						pfr = instance_().frontend_list_.pop();
+					}
+					if (pfr) {
+						run_(pfr);
+					}
 				}
 			}
 			void machine::backend_poll(void) {
-				performer* pfr;
-				{
-					guard__;
-					pfr = instance_().backend_list_.pop();
-				}
-				if (pfr) {
-					run_(pfr);
+				if(instance_().backend_list_.count()>0){
+					performer* pfr;
+					{
+						guard__;
+						pfr = instance_().backend_list_.pop();
+					}
+					if (pfr) {
+						run_(pfr);
+					}
 				}
 			}
 

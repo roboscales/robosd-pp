@@ -284,10 +284,14 @@ namespace mexo {
 
 	protected:
 
+		template <typename S> S& config_ref(void) {
+			return const_cast<S&>(reinterpret_cast <const S&>(config_));
+		}
+
 		iblock(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present);
 
 		virtual void execute(void) = 0;
-		virtual bool reconfig(void) = 0;
+		virtual void adjust(void) = 0;
 	};
 
 	class isubsystem : public node {
@@ -309,6 +313,8 @@ namespace mexo {
 		void  start(void);
 		void stop(void);
 		virtual bool do_reconfig(void);
+		//void adjust(void);
+
 	};
 
 	class subsystem : public isubsystem, public machine::slot::delegat {
@@ -388,17 +394,24 @@ namespace mexo {
 		virtual void on_idle(void) {};
 	public:
 		enum { idle_id = 0 };
-		struct action {
+		struct action_s {
 			bool actual;
-			int mode = idle_id;
+			int mode;
 		};
-		struct snapshot {
-			int mode = idle_id;
+		struct present_s {
+			int mode;
 		};
 
+		template <typename S> const S& action_cast(void) {
+			return reinterpret_cast <const S&>(action_);
+		}
+
+		template <typename P> P& present_cast(void) {
+			return reinterpret_cast <P&>(present_);
+		}
 
 
-		class mode : public isubsystem {
+		class mode : public node {
 			friend class dev;
 		public:
 			typedef robo::list::unique<mode, int> map;
@@ -408,16 +421,17 @@ namespace mexo {
 			typedef robo::list::unsorted<subsystem> subsystems_;
 			ref ref_;
 		protected:
-			dev& owner() { return *((dev*)node::owner()); };
-			virtual void applay_action(void) {};
-			virtual void do_start(void) {};
-			virtual void do_stop(void) {};
+			template<typename T>T& owner_cast(void) { return *((T*)node::owner()); };
+			virtual void applay_action(void) = 0;
+			virtual void do_start(void) = 0;
+			virtual void do_stop(void) = 0;
 		public:
 			mode(int _index, cstr  _name, dev& _dev);
 		};
 
 		class idle_mode : public mode {
 		protected:
+			virtual void applay_action(void) {};
 			virtual void do_start(void) {};
 			virtual void do_stop(void) {};
 			virtual	void do_execute(void) {};
@@ -428,17 +442,16 @@ namespace mexo {
 		};
 
 		idle_mode idle;
-		dev(cstr  _name, action& _action, snapshot& _snapshot);
+		dev(cstr  _name, action_s& _action, present_s& _present);
 		void switch_to(int _mode);
 	private:
 		friend class mode;
 		mode::map modes_;
 		mode* actual_mode_;
-		int actual_mode_id_;
 		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
 		::mexo::machine::slot::delegat::ref  backend_ref_;
-		action& action_;
-		snapshot& snapshot_;
+		action_s& action_;
+		present_s& present_;
 		void backend__(void);
 	};
 
@@ -534,6 +547,15 @@ namespace mexo {
 			_controller.master_satstate.link_to(&satstate);
 		}
 
+		void set_input(const I& _value) {
+			config_ref<config_s>().standalone.input = _value;
+		}
+		void set_min(const O& _value) {
+			config_ref<config_s>().standalone.range.low = _value;
+		}
+		void set_max(const O& _value) {
+			config_ref<config_s>().standalone.range.hi = _value;
+		}
 	protected:
 		void saturate(void) {
 			const range_s<O>& r = range.value();
@@ -559,17 +581,18 @@ namespace mexo {
 				present_cast<present_s>().satstate = remote;
 			}
 		}
-		virtual bool reconfig(void) {
+		virtual bool do_reconfig(void) {
 			ROBO_LBREAKN(config_cast<config_s>().standalone.range.low <= config_cast<config_s>().def && config_cast<config_s>().def <= config_cast<config_s>().standalone.range.hi);
-			adjust(config_cast<config_s>().def);
-			saturate();
-			update_satstate();
+			present_cast<present_s>().output = config_cast<config_s>().def;
+			do_adjust(config_cast<config_s>().def);
 			return true;
 		}
-		virtual void adjust(const O& _output) {
-			present_cast<present_s>().output = _output;
+		virtual void do_adjust(const O& _output) {
 			saturate();
 			update_satstate();
+		}
+		virtual void adjust(void) {
+			do_adjust(present_cast<present_s>().output);
 		}
 	};
 
@@ -594,13 +617,18 @@ namespace mexo {
 			: iblock(_subsystem, _name, _config.ref, _present.ref)
 			, input(_config.standalone_input)
 			, output(_present.output) {}
-		virtual bool reconfig(void) {
-			adjust(config_cast<config_s>().def);
+		virtual bool do_reconfig(void) {
+			present_cast<present_s>().output = config_cast<config_s>().def;
+			do_adjust(config_cast<config_s>().def);
 			return true;
 		}
-		virtual void adjust(const O& _output) {
-			present_cast<present_s>().output = _output;
+		virtual void do_adjust(const O& _output) {}
+		virtual void adjust(void) {
+			do_adjust(present_cast<present_s>().output);
 		}
+		/*		template < typename S> void link_to(S& _src) {
+					input.link_to(&_src.output);
+				}*/
 	};
 
 	template < typename O> class sence_block_t : public iblock {
@@ -622,12 +650,18 @@ namespace mexo {
 			: iblock(_subsystem, _name, _config.ref, _present.ref)
 			, output(_present.output) {}
 
-		virtual bool reconfig(void) {
-			adjust(config_cast<config_s>().def);
+		virtual bool do_reconfig(void) {
+			present_cast<present_s>().output = config_cast<config_s>().def;
+			do_adjust(config_cast<config_s>().def);
 			return true;
 		}
-		virtual void adjust(const O& _output) {
-			present_cast<present_s>().output = _output;
+
+		virtual void do_adjust(const O& _output) {
+			ROBO_UNUSED(_output);
+		}
+
+		virtual void adjust(void) {
+			do_adjust(present_cast<present_s>().output);
 		}
 
 	};

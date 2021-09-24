@@ -210,9 +210,10 @@ void pwm::do_run(types::discret_t _duty){
 	}
 }
 
-#define MAX_PWM ((int)(PWM_PERIOD * 0.98))
+#define MAX_PWM ADC_START_TIME
 
 dc_power_supply_b::config_s dc_power_supply_config =
+/*
 {
 	{//controller block;
 		{0} //ref
@@ -225,6 +226,21 @@ dc_power_supply_b::config_s dc_power_supply_config =
 		} 
 	}
 	, MAX_PWM/12.f  //gain
+};
+*/
+{
+	{//controller block;
+		{0} //ref
+		,{//stabdalone
+			{ //converter
+			-MAX_PWM
+			, MAX_PWM
+			}
+			, 0 //defalt
+		} 
+	}
+	, 231  //gain
+	, 10 //shift 
 };
 
 /*{
@@ -242,17 +258,24 @@ dc_power_supply_b::config_s dc_power_supply_config =
 };*/
 
 current_sensor_b::config_s current_sensor_config = 
-
+/*
 {
 	{
 		{0} //sence_block
 	}
 	,{0,1} //index
-	,{5.f/4096, -5.f/4096} //scale
+	,{5.f/4096, 5.f/4096} //scale
 	,10	// init_count_shift -1024 точек
 };
-
-
+*/
+{
+	{
+		{0} //sence_block
+	}
+	,{0,1} //index
+	,{1, 1} //scale
+	,10	// init_count_shift -1024 точек
+};
 void  flow_set_addr( uint8_t _addr){
 	//volatile uint32_t tmp = rdk_store_array[0];
 	if (_addr > 0 && _addr < 16){
@@ -368,5 +391,4 @@ namespace mexo{
 		}
 	);
 }
-	
 

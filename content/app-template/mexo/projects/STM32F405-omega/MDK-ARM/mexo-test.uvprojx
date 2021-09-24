@@ -55,7 +55,7 @@
           <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath></ListingPath>
+          <ListingPath>.\mexo-test\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -172,8 +172,8 @@
             <AdsLsun>1</AdsLsun>
             <AdsLven>1</AdsLven>
             <AdsLsxf>1</AdsLsxf>
-            <RvctClst>0</RvctClst>
-            <GenPPlst>0</GenPPlst>
+            <RvctClst>1</RvctClst>
+            <GenPPlst>1</GenPPlst>
             <AdsCpuType>"Cortex-M3"</AdsCpuType>
             <RvctDeviceName></RvctDeviceName>
             <mOS>0</mOS>
@@ -393,6 +393,11 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\source\common\mexo-test.hpp</FilePath>
             </File>
+            <File>
+              <FileName>mexo-model-test.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\source\common\mexo-model-test.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -530,6 +535,16 @@
               <FileName>regulator.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\mexo\regulator.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>actuator.inc.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>ps.inc.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\ps.inc.hpp</FilePath>
             </File>
           </Files>
         </Group>

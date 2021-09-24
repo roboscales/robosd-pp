@@ -24,6 +24,7 @@ namespace mexo {
 			control(void) {}
 			virtual ~control(void) {}
 		};
+
 		template < typename q, typename C > class pwm_b
 			: public ps::control
 			, private C
@@ -77,9 +78,11 @@ namespace mexo {
 				}
 				present.cb.satstate = iblock::satstate::both;
 			}
-			virtual bool reconfig(void) {
-				ROBO_LBREAKN(to_digit_scale_b::reconfig());
-				status_ = status::off;
+			virtual bool do_reconfig(void) {
+				ROBO_LBREAKN(to_digit_scale_b::do_reconfig());
+				if (status_ == status::configure) {
+					status_ = status::off;
+				}
 				return true;
 			}
 		public:
@@ -90,6 +93,30 @@ namespace mexo {
 
 		};
 
+		class dev :public ::mexo::dev {
+			control& control_;
+		public:
+			dev(cstr  _name, action_s& _action, present_s& _present, control& _control)
+				: ::mexo::dev(_name, _action, _present)
+				, control_(_control) {}
+			void enable(void) { control_.enable(); }
+			void on(void) { control_.on(); }
+			void set(control::command _command) { control_.set(_command); }
+			void off(void) { control_.off(); }
+			bool active(void) { return control_.active(); }
+			class mode : public ::mexo::dev::mode {
+			public:
+				dev& owner(void) { return owner_cast<dev>(); }
+				mode(int _index, cstr  _name, dev& _dev)
+					: ::mexo::dev::mode(_index, _name, _dev) {}
+				void power_enable(void) { owner().enable(); }
+				void power_on(void) { owner().on(); }
+				void power_set(control::command _command) { owner().set(_command); }
+				void power_off(void) { owner().off(); }
+				bool power_active(void) { return owner().active(); }
+			};
+
+		};
 		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
 		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
 		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;

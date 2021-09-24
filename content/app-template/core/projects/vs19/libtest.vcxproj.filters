@@ -161,5 +161,23 @@
     <ClInclude Include="..\..\..\..\source\mexo\regulator.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.settings.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\qa.templ.settings.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@
 #include <limits>  
 #include <math.h>
 namespace mexo {
+	
 	enum class  dsignal_bits {
 		i7 = 8
 		, i13 = 13
@@ -15,8 +16,8 @@ namespace mexo {
 		enum {
 			max = (1 << ((int)bits - 1)) - 1
 			, min = (-max)
-			, long_max = (1UL << ((int)long_bits - 1)) - 1
-			, long_min = (-long_max)
+			, long_max = (1 << ((int)long_bits - 1)) - 1
+			, long_min = -long_max
 			, ones = max
 		};
 	};
@@ -74,8 +75,8 @@ namespace mexo {
 		typedef float long_signal_t;
 		constexpr static signal_t max = std::numeric_limits<float>::max();
 		constexpr static signal_t min = std::numeric_limits<float>::lowest();
-		constexpr static signal_t long_max = std::numeric_limits<float>::max();
-		constexpr static signal_t long_min = std::numeric_limits<float>::lowest();
+		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
+		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
 	};
 
 	template< typename digit > struct fixed_point {
@@ -87,13 +88,12 @@ namespace mexo {
 		typedef typename  digit::parameter_t parameter_t;
 		constexpr static signal_t max = digit::max;
 		constexpr static signal_t min = digit::min;
-		constexpr static signal_t long_max = digit::long_max;
-		constexpr static signal_t long_min = digit::long_min;
+		constexpr static long_signal_t long_max = digit::long_max;
+		constexpr static long_signal_t long_min = digit::long_min;
 		constexpr static signal_t ones = digit::ones;
 		constexpr static signal_t pi = digit::max;
 		constexpr static signal_t one_div_sqrt3 = (digit::max * robo::one_div_sqrt3<signal_t>);
 		constexpr static signal_t sqrt3_div_2 = (digit::max * robo::sqrt3_div_2<signal_t>);
-
 
 		template <typename T> static iblock::satstate round_s(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
@@ -319,10 +319,7 @@ namespace mexo {
 			const config_s& config = iblock::config_cast<config_s>();
 
 			long_signal_t tmp = (long_signal_t)config.scale * B::input.value();
-			present.cb.local_satstate =  q::round_s(tmp, B::range.value(), config.shift,present.cb.output);
-			
-			iblock::present_cast<present_s>().cb.output = q::round_s(tmp, iblock::config_cast<config_s>().shift);
-			//B::saturate();
+			present.cb.local_satstate = q::round_s(tmp, B::range.value(), config.shift, present.cb.output);
 			B::update_satstate();
 		}
 	public:
@@ -415,6 +412,39 @@ namespace mexo {
 		ramp_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
 			: B(_subsystem, _name, _config.cb, _present.cb) {}
 	};
+template<typename q>  class  fast_filter_b : public function_block_t<typename  q::signal_t, typename  q::signal_t> {
+		typedef function_block_t<typename  q::signal_t, typename  q::signal_t> B;
+	public:
+		typedef typename q::signal_t signal_t;
+		typedef typename q::long_signal_t long_signal_t;
+		typedef typename q::parameter_t parameter_t;
+		struct config_s {
+			typename B::config_s fb;
+			parameter_t	shift;
+		};
+		struct present_s {
+			typename B::present_s fb;
+		};
+		parameter_t gain = (parameter_t)0;
+	protected:
+		virtual void execute(void) {
+			present_s& present = iblock::present_cast<present_s>();
+			const config_s& config = iblock::config_cast<config_s>();
+			long_signal_t tmp = (long_signal_t)present.fb.output*gain + B::input.value();
+			present.fb.output = (signal_t)(tmp >> config.shift);
+		}
+
+		virtual bool do_reconfig(void) {
+			const config_s& config = iblock::config_cast<config_s>();
+			gain = (1<<config.shift) -1;
+			B::do_reconfig();
+			return true;
+		};
+
+	public:
+		fast_filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
+			: B(_subsystem, _name, _config.fb, _present.fb) {}
+	};
 
 	template<typename q>  class  filter_b : public function_block_t<typename  q::signal_t, typename  q::signal_t> {
 		typedef function_block_t<typename  q::signal_t, typename  q::signal_t> B;
@@ -425,26 +455,38 @@ namespace mexo {
 		struct config_s {
 			typename B::config_s fb;
 			parameter_t	gain;
-			unsigned shift;
+			struct {
+				unsigned gain;
+				unsigned presc;
+				unsigned value;
+			} shift;
 		};
 		struct present_s {
 			typename B::present_s fb;
+			long_signal_t value;
 		};
 		parameter_t gain1 = (parameter_t)0;
 		parameter_t gain2 = (parameter_t)0;
-
 	protected:
 		virtual void execute(void) {
 			present_s& present = iblock::present_cast<present_s>();
-			long_signal_t tmp = (long_signal_t)gain1 * present.fb.output + gain2 * B::input.value();
-			present.fb.output = q::round_s(tmp, iblock::config_cast<config_s>().shift);
+			const config_s& config = iblock::config_cast<config_s>();
+			long_signal_t tmp = present.value * gain1  + B::input.value() * gain2;
+			present.value = q::round_s(tmp, config.shift.gain);
+			present.fb.output = (signal_t)q::round_s(present.value, config.shift.value);
 		}
 
-		virtual bool reconfig(void) {
+		virtual bool do_reconfig(void) {
 			const config_s& config = iblock::config_cast<config_s>();
-			gain1 = config.gain;
-			gain2 = (q::ones - config.gain);
-			B::reconfig();
+			parameter_t ones = (parameter_t)(1 << config.shift.gain);
+			if (config.gain > ones) {
+				gain1 = ones;
+			}
+			else {
+				gain1 = config.gain;
+			}
+			gain2 = (ones - config.gain) * (1 << config.shift.presc);
+			B::do_reconfig();
 			return true;
 		};
 

@@ -15,7 +15,7 @@ namespace mexo {
 			typename sence_block_t<signal_t>::config_s	sb;
 			unsigned int index[C];
 			parameter_t scale[C];
-			unsigned int  init_count_shift;
+			unsigned init_count_shift;
 		};
 
 		struct present_s {
@@ -83,13 +83,12 @@ namespace mexo {
 			D::query();
 		}
 
-		virtual bool reconfig(void) {
-			ROBO_LBREAKN(sence_block_t<signal_t>::reconfig());
+		virtual bool do_reconfig(void) {
+			ROBO_LBREAKN(sence_block_t<signal_t>::do_reconfig());
 			reset();
 			D::query();
 			return true;
 		}
-
 
 		adc_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
 			: sence_block_t<signal_t>(_subsystem, _name, _config.sb, _present.sb) {}

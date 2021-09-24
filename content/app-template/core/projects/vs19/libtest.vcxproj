@@ -62,10 +62,16 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.settings.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\qa.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\source\platform\win+vs19\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
