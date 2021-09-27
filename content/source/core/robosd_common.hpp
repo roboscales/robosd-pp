@@ -93,6 +93,13 @@ namespace robo {
 
 	template<typename T>
 	constexpr T sqrt3_div_2 = csqrt(T(3)) / T(2);
+
+
+	template<typename T, unsigned C> struct array {
+		T values[C];
+	};
+
+
 }
 
 

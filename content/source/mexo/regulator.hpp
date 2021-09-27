@@ -2,6 +2,7 @@
 #define __regulator_hpp
 #include "mexo/mexo.hpp"
 namespace mexo {
+	/*
 	template< typename q >  class  quazzy_adapt {
 	public:
 		typedef typename  q::signal_t signal_t;
@@ -24,16 +25,16 @@ namespace mexo {
 		};
 	private:
 		signal_t& output_;
-		iblock::satstate& local_satstate_;
-		iblock::satstate& satstate_;
+		satstate& local_satstate_;
+		satstate& satstate_;
 		config_s& config_;
 		present_s& present_;
 
 	public:
 		quazzy_adapt(
 			signal_t& _output
-			, iblock::satstate& _local_satstate
-			, iblock::satstate& _satstate
+			, satstate& _local_satstate
+			, satstate& _satstate
 			, config_s& _config
 			, present_s& _present
 		)
@@ -47,14 +48,14 @@ namespace mexo {
 
 		void do_execute(
 			const signal_t& _deseired
-			, iblock::satstate _master_sat
+			, satstate _master_sat
 			, const range_s<signal_t>& _control_range
 			, const signal_t& _actual
 			, const signal_t& _diff
 		) {
-			//		iblock::satstate remote = controller_block_t<I, O>::master_satstate.value();
-			//		present_s& present = iblock::present_cast<present_s>();
-			if (_master_sat == iblock::satstate::both) {
+			//		satstate remote = controller_block_t<I, O>::master_satstate.value();
+			//		present_s& present = iatom::present_cast<present_s>();
+			if (_master_sat == satstate::both) {
 				return;
 			}
 
@@ -68,7 +69,7 @@ namespace mexo {
 			present_.control += present_.control_diff;
 			local_satstate_ = q::round_s(present_.control, _control_range, config_.control_shift, output_);
 
-			if (_master_sat == iblock::satstate::none) {
+			if (_master_sat == satstate::none) {
 				satstate_ = local_satstate_;
 			}
 			else {
@@ -78,8 +79,8 @@ namespace mexo {
 			long_signal_t model_inc = present_.error * config_.modelGain;
 
 			if (model_inc > std::numeric_limits<long_signal_t>::epsilon()) {
-				if (satstate_ != iblock::satstate::up) {
-					if(present_.model_l > 0){
+				if (satstate_ != satstate::up) {
+					if (present_.model_l > 0) {
 						long_signal_t d = q::long_max;
 						d -= present_.model_l;
 						if (d < model_inc) {
@@ -89,27 +90,29 @@ namespace mexo {
 						else {
 							present_.model_l += model_inc;
 						}
-					} else {
-							present_.model_l += model_inc;
+					}
+					else {
+						present_.model_l += model_inc;
 					}
 				}
 			}
 			else {
-					if (model_inc < -std::numeric_limits<long_signal_t>::epsilon()) {
-						if (satstate_ != iblock::satstate::low) {
-							if(present_.model_l < 0){
-								long_signal_t d = q::long_min;
-								d -= present_.model_l;
-								if (d > model_inc) {
-									present_.model_l = q::long_min;
-								}
-								else {
-									present_.model_l += model_inc;
-								}
-							}else {
-								present_.model_l += model_inc;					
+				if (model_inc < -std::numeric_limits<long_signal_t>::epsilon()) {
+					if (satstate_ != satstate::low) {
+						if (present_.model_l < 0) {
+							long_signal_t d = q::long_min;
+							d -= present_.model_l;
+							if (d > model_inc) {
+								present_.model_l = q::long_min;
 							}
-						} 
+							else {
+								present_.model_l += model_inc;
+							}
+						}
+						else {
+							present_.model_l += model_inc;
+						}
+					}
 				}
 			}
 			present_.model = q::round_s(present_.model_l, config_.model_shift);
@@ -121,7 +124,7 @@ namespace mexo {
 				present_.control = (long_signal_t)_def * (1 << config_.control_shift);
 				output_ = _def;
 				present_.model = present_.control / config_.propGain;
-				present_.model_l =  present_.model * (1 << config_.model_shift);
+				present_.model_l = present_.model * (1 << config_.model_shift);
 			}
 			else {
 				present_.control = (long_signal_t)0;
@@ -138,44 +141,48 @@ namespace mexo {
 		struct config_s {
 			typename B::config_s cb;
 			typename QA::config_s qa;
-			typename q::signal_t standalone_actual;
-			typename q::signal_t standalone_actual_diff;
 		};
 		struct present_s {
 			typename B::present_s cb;
 			typename QA::present_s qa;
 		};
-
+		struct standalone_s {
+			typename B::standalone_s cb;
+			typename q::signal_t actual;
+			typename q::signal_t actual_diff;
+		};
 	private:
 
 	protected:
 		virtual void execute(void) {
-			QA::do_execute(B::input.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value());
+			QA::do_execute(B::deseired.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value());
 		}
 		virtual void do_adjust(const typename q::signal_t& _def) {
 			QA::do_adjust(_def);
 			B::do_adjust(_def);
 		}
 	public:
-		iblock::input_t<typename q::signal_t> actual;
-		iblock::input_t<typename q::signal_t> actual_diff;
+		iatom::input_t<typename q::signal_t> actual;
+		iatom::input_t<typename q::signal_t> actual_diff;
 
-		quazzy_adapt_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.cb, _present.cb)
+		quazzy_adapt_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
+			: B(_subsystem, _name, _config.cb, _standalone.cb, _present.cb)
 			, QA(_present.cb.output
 				 , _present.cb.local_satstate
 				 , _present.cb.satstate
 				 , _config.qa
 				 , _present.qa
 			)
-			, actual(_config.standalone_actual)
-			, actual_diff(_config.standalone_actual_diff) {}
+			, actual(_standalone.actual)
+			, actual_diff(_standalone.actual_diff) {
+			_standalone = {};
+		}
 
 	};
 
-	
+
 	template< typename q >  class  limmiter {
-		public:
+	public:
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
 		typedef typename  q::parameter_t parameter_t;
@@ -185,28 +192,28 @@ namespace mexo {
 			typename quazzy_adapt::config_s qa;
 			signal_t rampStep;
 		};
-		struct req_signals{
+		struct req_signals {
 			signal_t signal;
 			signal_t control;
-			iblock::satstate local_satstate;
-			iblock::satstate satstate;
+			satstate local_satstate;
+			satstate satstate;
 		};
 		struct present_s {
-			struct{
-				typename quazzy_adapt::present_s qa ;
+			struct {
+				typename quazzy_adapt::present_s qa;
 				req_signals lm;
 			}  hi;
-			struct{
-				typename quazzy_adapt::present_s qa ;
+			struct {
+				typename quazzy_adapt::present_s qa;
 				req_signals lm;
 			}  low;
 			long_signal_t control;
 			signal_t control_des;
 		};
 	private:
-		signal_t& output_;
-		iblock::satstate& local_satstate_;
-		iblock::satstate& satstate_;
+		signal_t& actual_;
+		satstate& local_satstate_;
+		satstate& satstate_;
 		config_s& config_;
 		present_s& present_;
 		quazzy_adapt r_hi_;
@@ -214,35 +221,35 @@ namespace mexo {
 	protected:
 		void do_execute(
 			const signal_t& _deseired
-			, iblock::satstate _master_sat
+			, satstate _master_sat
 			, const range_s<signal_t>& _control_range
 			, const signal_t& _actual
 			, const signal_t& _diff
 			, const range_s<signal_t>& _signal_range
 		) {
-		
+
 			present_.hi.lm.signal = _actual - _signal_range.hi;
 			present_.low.lm.signal = _actual - _signal_range.low;
-			range_s<signal_t> tmp_range= {_signal_range.low,0} ;
-			
+			range_s<signal_t> tmp_range = { _signal_range.low,0 };
+
 			r_hi_.do_execute(
 				0
-			, iblock::satstate::none
+				, satstate::none
 				, tmp_range
 				, present_.hi.lm.signal
 				, _diff
 			);
-			
-			tmp_range= {0, _signal_range.hi} ;
-			
+
+			tmp_range = { 0, _signal_range.hi };
+
 			r_low_.do_execute(
 				0
-			, iblock::satstate::none
+				, satstate::none
 				, tmp_range
 				, present_.low.lm.signal
 				, _diff
 			);
-			
+
 			signal_t delta = _deseired - present_.control_des;
 
 			if (delta > std::numeric_limits<signal_t>::epsilon()) {
@@ -251,8 +258,9 @@ namespace mexo {
 				}
 				else {
 					present_.control_des += config_.rampStep;
-				}				
-			}	else {
+				}
+			}
+			else {
 				if (delta < -std::numeric_limits<signal_t>::epsilon()) {
 					if ((-delta) < config_.rampStep) {
 						present_.control_des = present_.control_des;
@@ -262,10 +270,10 @@ namespace mexo {
 					}
 				}
 			}
-			
+
 			present_.control = present_.hi.lm.control + present_.low.lm.control + present_.control_des;
-			local_satstate_ = q::round_s(present_.control, _control_range, 0, output_);
-			if (_master_sat == iblock::satstate::none) {
+			local_satstate_ = q::round_s(present_.control, _control_range, 0, actual_);
+			if (_master_sat == satstate::none) {
 				satstate_ = local_satstate_;
 			}
 			else {
@@ -280,34 +288,32 @@ namespace mexo {
 	public:
 		limmiter(
 			signal_t& _output
-			, iblock::satstate& _local_satstate
-			, iblock::satstate& _satstate
+			, satstate& _local_satstate
+			, satstate& _satstate
 			, config_s& _config
 			, present_s& _present
-		)			
-		: output_(_output)
+		)
+			: actual_(_output)
 			, local_satstate_(_local_satstate)
 			, satstate_(_satstate)
 			, config_(_config)
 			, present_(_present)
 			, r_hi_(
 				present_.hi.lm.control
-				,present_.hi.lm.local_satstate
-				,present_.hi.lm.satstate
-				,_config.qa
-				,present_.hi.qa
+				, present_.hi.lm.local_satstate
+				, present_.hi.lm.satstate
+				, _config.qa
+				, present_.hi.qa
 			)
 			, r_low_(
 				present_.low.lm.control
-				,present_.low.lm.local_satstate
-				,present_.low.lm.satstate
-				,_config.qa
-				,present_.low.qa
-			)
-			{
-			}
+				, present_.low.lm.local_satstate
+				, present_.low.lm.satstate
+				, _config.qa
+				, present_.low.qa
+			) {}
 	};
-	
+
 	template< typename q >  class  limmiter_b : public controller_block_t<typename q::signal_t, typename q::signal_t >, public limmiter<q> {
 		typedef controller_block_t<typename q::signal_t, typename q::signal_t> B;
 		typedef limmiter<q> LM;
@@ -315,54 +321,56 @@ namespace mexo {
 		struct config_s {
 			typename B::config_s cb;
 			typename LM::config_s lm;
-			typename q::signal_t standalone_actual;
-			typename q::signal_t standalone_actual_diff;
-			range_s<typename  q::signal_t> standalone_signal_range;
 		};
 		struct present_s {
 			typename B::present_s cb;
 			typename LM::present_s lm;
+		};
+		struct standalone_s {
+			typename B::standalone_s cb;
+			typename q::signal_t actual;
+			typename q::signal_t actual_diff;
+			range_s<typename  q::signal_t> signal_range;
 		};
 
 	private:
 
 	protected:
 		virtual void execute(void) {
-			LM::do_execute(B::input.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value(),signal_range.value());
+			LM::do_execute(B::deseired.value(), B::master_satstate.value(), B::range.value(), actual.value(), actual_diff.value(), signal_range.value());
 		}
 		virtual void do_adjust(const typename q::signal_t& _def) {
 			LM::do_adjust(_def);
 			B::do_adjust(_def);
 		}
 	public:
-		iblock::input_t<typename q::signal_t> actual;
-		iblock::input_t<typename q::signal_t> actual_diff;
-		iblock::input_t<range_s<typename  q::signal_t>> signal_range;
+		iatom::input_t<typename q::signal_t> actual;
+		iatom::input_t<typename q::signal_t> actual_diff;
+		iatom::input_t<range_s<typename  q::signal_t>> signal_range;
 
-		limmiter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.cb, _present.cb)
+		limmiter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
+			: B(_subsystem, _name, _config.cb, _standalone.cb, _present.cb)
 			, LM(_present.cb.output
 				 , _present.cb.local_satstate
 				 , _present.cb.satstate
 				 , _config.lm
 				 , _present.lm
 			)
-			, actual(_config.standalone_actual)
-			, actual_diff(_config.standalone_actual_diff)
-			, signal_range(_config.standalone_signal_range)
-			{}
+			, actual(_standalone.actual)
+			, actual_diff(_standalone.actual_diff)
+			, signal_range(_standalone.signal_range) {}
 
-			void set_signal_min(typename q::signal_t _min){ 
-				config_s& config = iblock::config_ref<config_s>();
-				config.standalone_signal_range.low = _min;
-			}
-			void set_signal_max(typename q::signal_t _max){ 
-				config_s& config = iblock::config_ref<config_s>();
-				config.standalone_signal_range.hi = _max;
-			}
+		void set_signal_min(typename q::signal_t _min) {
+			standalone_s& standalone = iatom::standalone_cast<standalone_s>();
+			standalone.signal_range.low = _min;
+		}
+		void set_signal_max(typename q::signal_t _max) {
+			standalone_s& standalone = iatom::standalone_cast<standalone_s>();
+			standalone.signal_range.hi = _max;
+		}
 	};
+	*/
 
-	
 	/*
 	#ifndef MODEL_VALUE_MAX
 	#define MODEL_VALUE_MAX 0.9

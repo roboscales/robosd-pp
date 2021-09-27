@@ -1097,7 +1097,7 @@ public:
 				class voltage_mode : mode {
 				private:
 					signal_t deseired__ =(signal_t)0;
-					::mexo::iblock::output_t<signal_t>  deseired_;
+					::mexo::iatom::output_t<signal_t>  deseired_;
 				protected:
 					virtual void do_start(void) {
 						owner().psv.deseired.link_to(&deseired_);
@@ -1140,6 +1140,7 @@ public:
 				duty_ = _duty;
 			}
 		};
+		/*
 		typedef ::mexo::ps::pwm_b<types, fake_dc_periphery> fake_dc;
 		typedef ::mexo::ramp_b<types> voltage_regulator_b;
 		class fake_adc {
@@ -1158,51 +1159,58 @@ public:
 			typedef single_adc_b<fake_adc, types	> adcs;
 			adcd::config_s adc_conf;
 			adcd::present_s adc_present;
+			adcd::standalone_s adc_standalone;
 			adcd adc;
 
 			typedef single_adc_b<fake_adc, types	> adcs;
 			adcs::config_s ads_conf;
 			adcs::present_s ads_present;
+			adcs::standalone_s ads_standalone;
 			adcs ads;
 
 			fake_dc::config_s dc_config;
 			fake_dc::present_s dc_present;
+			fake_dc::standalone_s dc_standalone;
 			voltage_regulator_b::config_s dcv_config;
 
 			voltage_regulator_b::present_s dcv_present;
+			voltage_regulator_b::standalone_s dcv_standalone;
 			fake_dc dc;
 
 			voltage_regulator_b dcv;
 
 		public:
-			::mexo::iblock::output_t< types::signal_t >& current(void) { return adc.output; }
-			::mexo::iblock::output_t< types::signal_t >& current_diff(void) { return adc.output; }
+			::mexo::iatom::output_t< types::signal_t >& current(void) { return adc.output; }
+			::mexo::iatom::output_t< types::signal_t >& current_diff(void) { return adc.output; }
 			void reconfig(void) {
 				hardware_subsystem.reconfig();
 			}
-			fake_dc& pwm() { return dc; }
+			fake_dc& pwm_atom() { return dc; }
+			adcs& sence_atom() { return ads; }
+			::mexo::prioritet_subsystem subsys() { return hardware_subsystem; }
 			prioritet_subsystem()
 				: hardware_subsystem(RT("hardware"), true)
 				, adc(hardware_subsystem, RT("adc"), adc_conf, adc_present)
 				, ads(hardware_subsystem, RT("ads"), ads_conf, ads_present)
-				, dc(hardware_subsystem, RT("dc"), dc_config, dc_present)
-				, dcv(hardware_subsystem, RT("dcv"), dcv_config, dcv_present) {
+				, dc(hardware_subsystem, RT("dc"), dc_config, dc_standalone, dc_present)
+				, dcv(hardware_subsystem, RT("dcv"), dcv_config, dcv_standalone, dcv_present) {
 				adc_conf = { {22} };
 				adc_present = { {23} };
 				ads_conf = { {24} };
 				ads_present = { {25} };
 
+				dc_standalone = {
+					{26} //ref
+					,{ //range
+						-4095
+						, 4095
+					}
+					, 0
+					, satstate::none
+				};
 				dc_config = {
 					{
 						{26} //ref
-						,{
-							{ //range
-								-4095
-								, 4095
-							}
-							, 0
-						}
-						, 0
 					}
 					, 128
 					,10
@@ -1210,333 +1218,446 @@ public:
 				dc_present = {
 					{{27}}
 				};
+
+				dcv_standalone = {
+					{26} //ref
+					,{ //range
+						-32767
+						, 32767
+					}
+					, 0
+					, satstate::none
+				};
+
 				dcv_config = {
 					{
 						{28} //ref
-						,{
-							{ //range
-								-32767
-								, 32767
-							}
-							, 0
-						}
-						, 0
 					}
 					, 100
 				};
 				dcv_present = {
-					{
-						{19} //ref
-						, 0 //output
-					}
+					{19} //ref
+					, 0 //output
 				};
 				dc.link_to(dcv);
 			}
 		};
-		prioritet_subsystem prioritet_subsystem_;
+		*/
 
 		TEST_METHOD(ps) {
-			/*			::mexo::machine::slot::lambda::mexo::machine::slot::lambda(
-							::mexo::machine::slot::kind::start
-							, [&] {
-								prioritet_subsystem_.dcv_config.cb.standalone.input = 32767;
-								prioritet_subsystem_.dc.on();
-							}
-						);
-						*/
 
-			::mexo::machine::begin();
-			::mexo::machine::start();
-			prioritet_subsystem_.dcv_config.cb.standalone.input = 32767;
-			prioritet_subsystem_.dc.on();
+			::mexo::prioritet_subsystem prioritet_subsystem_(RT("hardware"), true);
 
-			for (int i = 0; i < 330; ++i) {
-				::mexo::machine::priority_loop();
-				::mexo::machine::backend_loop();
-				::mexo::machine::frontend_loop();
-			}
-
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output > 4000 && prioritet_subsystem_.dc_present.cb.output < 4096);
-			Assert::IsTrue(prioritet_subsystem_.dcv_present.cb.output > 31767 && prioritet_subsystem_.dcv_present.cb.output < 32768);
-
-			prioritet_subsystem_.hardware_subsystem.reconfig();
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output == 0);
-			Assert::IsTrue(prioritet_subsystem_.dcv_present.cb.output == 0);
-
-			prioritet_subsystem_.dc_config.scale = 256;
-			prioritet_subsystem_.dcv_config.rampStep = 100;
-			prioritet_subsystem_.dcv_config.cb.standalone.input = -32767;
-			for (int i = 0; i < 330; ++i) {
-				::mexo::machine::priority_loop();
-				::mexo::machine::backend_loop();
-				::mexo::machine::frontend_loop();
-			}
-
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output == -4095);
-			Assert::IsTrue(prioritet_subsystem_.dcv_present.cb.output == -16400);
-		}
-
-		#define PS_TEMPLATE_NAME psdev
-		#define  psdev_VOLTAGE_REGULATOR_ENABLED 1
-		#define  psdev_CURRENT_REGULATOR_ENABLED 1
-		#define  psdev_CURRENT_MEASSURY_ENABLED 1
-		#define  psdev_CURRENT_DIFF_ENABLED 1
-		#define  psdev_CURRENT_FILTER_ENABLED 1
-		#define  psdev_CURRENT_DIFF_FILTER_ENABLED 1
-		#define psdev_VOLTAGE_MIN_LIM -32767
-		#define psdev_VOLTAGE_MAX_LIM 32767
-		#define psdev_VOLTAGE_RAMP_GAIN 1
-		#define psdev_CURRENT_FILTER_GAIN 200
-		#define psdev_CURRENT_FILTER_SHIFT_GAIN 8
-		#define psdev_CURRENT_FILTER_SHIFT_PRESC 0
-		#define psdev_CURRENT_FILTER_SHIFT_VALUE 0
-
-		#define psdev_CURRENT_DIFF_FILTER_GAIN 200
-		#define psdev_CURRENT_DIFF_FILTER_SHIFT_GAIN 8
-		#define psdev_CURRENT_DIFF_FILTER_SHIFT_PRESC 0
-		#define psdev_CURRENT_DIFF_FILTER_SHIFT_VALUE 0
-
-		#define psdev_CURRENT_PROP_GAIN 10
-		#define psdev_CURRENT_MODEL_GAIN 10
-		#define psdev_CURRENT_DIFF_GAIN 10
-		#define psdev_CURRENT_CONTROL_SHIFT 7
-		#define psdev_CURRENT_MODEL_SHIFT 10
-		#include "mexo/ps.inc.hpp"
-		typedef psdev<types, prioritet_subsystem> psdev_t;
-
-		#define ACTUATOR_TEMPLATE_NAME a1
-		#define  a1_ps_POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED 1
-		#define  a1_ps_POWER_SUPPLY_CURRENT_REGULATOR_ENABLED 1
-		#define  a1_ps_POWER_SUPPLY_CURRENT_MEASSURY_ENABLED 1
-		#define  a1_ps_POWER_SUPPLY_CURRENT_DIFF_ENABLED 1
-		#define  a1_ps_POWER_SUPPLY_CURRENT_FILTER_ENABLED 1
-		#define  a1_ps_POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED 1
-		#define a1_ps_VOLTAGE_MIN_LIM -32767
-		#define a1_ps_VOLTAGE_MAX_LIM 32767
-		#define a1_ps_VOLTAGE_RAMP_GAIN 1
-		#define a1_ps_CURRENT_FILTER_GAIN 200
-		#define a1_ps_CURRENT_FILTER_SHIFT_GAIN 8
-		#define a1_ps_CURRENT_FILTER_SHIFT_PRESC 0
-		#define a1_ps_CURRENT_FILTER_SHIFT_VALUE 0
-
-		#define a1_ps_CURRENT_DIFF_FILTER_GAIN 200
-		#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_GAIN 8
-		#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_PRESC 0
-		#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_VALUE 0
-
-		#define a1_ps_CURRENT_PROP_GAIN 10
-		#define a1_ps_CURRENT_MODEL_GAIN 10
-		#define a1_ps_CURRENT_DIFF_GAIN 10
-		#define a1_ps_CURRENT_CONTROL_SHIFT 7
-		#define a1_ps_CURRENT_MODEL_SHIFT 10
-		#include "mexo/actuator.inc.hpp"
-		typedef a1<types, prioritet_subsystem> a1_t;
+			typedef ::mexo::ps::pwm_block_t <
+				types
+				, fake_dc_periphery
+				, ::mexo::prioritet_subsystem
+			> pwm;
 
 
-		TEST_METHOD(ps_dev) {
-			class actuator : public ::mexo::ps::dev {
+			typedef ::mexo::controller_task_t <
+				::mexo::ramp<types>
+				, ::mexo::prioritet_subsystem
+				//			, periodic_task_t<0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15>
+			> voltage_ramp;
+
+			class fake_adc {
 			public:
-				struct action_s {
-					::mexo::ps::dev::action_s dev;
-					bool invers;
-					types::signal_t voltage;
-					types::signal_t current;
-					types::signal_t speed;
-					types::long_signal_t position;
-					types::long_signal_t force;
-				} action;
-				typedef ::mexo::quazzy_adapt_b<types> current_regulaor_b;
-				typedef ::mexo::filter_b<types> filter_b;
-				struct config_s {
-					voltage_regulator_b::config_s voltage_regulator;
-					filter_b::config_s current_filter;
-					current_regulaor_b::config_s current_regulaor;
-				}config;
+				types::discret_t sence[3];
+				void query(void) { sence[0]++; sence[2]--; sence[1] += 2; };
+				fake_adc() { sence[0] = 0; sence[1] = 0; sence[2] = 0xFFFF; }
+			};
 
-				struct present_s {
-					::mexo::ps::dev::present_s dev;
-					voltage_regulator_b::present_s voltage_regulator;
-					filter_b::present_s current_filter;
-					current_regulaor_b::present_s current_regulaor;
-				}present;
+			typedef ::mexo::sence_task_t <
+				::mexo::adc<types, fake_adc, 2>
+				, ::mexo::prioritet_subsystem
+			> adc;
 
-				prioritet_subsystem& prioritet_subsystem_;
-				::mexo::backend_subsystem voltage_control;
-				::mexo::backend_subsystem current_control;
+			typedef ::mexo::sence_block_t <
+				::mexo::single_adc<types, fake_adc>
+				, ::mexo::prioritet_subsystem
+			> adc2;
+			typedef ::mexo::sence_block_t <
+				::mexo::diff_adc<types, fake_adc>
+				, ::mexo::prioritet_subsystem
+			> adc3;
 
-				voltage_regulator_b voltage_regulator;
-				current_regulaor_b current_regulator;
-				filter_b current_filter;
 
-				class voltage_mode :public ::mexo::ps::dev::mode {
-				protected:
-					actuator& owner(void) { return owner_cast<actuator>(); }
-					virtual void applay_action(void) {
-						if (owner().action.invers) {
-							owner().voltage_regulator.set_input(-owner().action.voltage);
-						}
-						else {
-							owner().voltage_regulator.set_input(owner().action.voltage);
-						}
-					}
-					virtual void do_start(void) {
-						owner().prioritet_subsystem_.hardware_subsystem.reconfig();
-						owner().voltage_control.reconfig();
-						owner().voltage_control.start();
-						owner().prioritet_subsystem_.dc.link_to(owner().voltage_regulator);
-						owner().on();
-					}
-					virtual void do_stop(void) {
-						owner().voltage_control.stop();
-						owner().off();
-					}
-				public:
-					voltage_mode(int _index, actuator& _actuator) :
-						::mexo::ps::dev::mode(_index, RT("@mo_@v"), _actuator) {}
-				} voltage_mode_;
+			struct present_s {
+				pwm::present_s pwm;
+				adc::present_s adc;
+				adc2::present_s adc2;
+				adc3::present_s adc3;
+				voltage_ramp::present_s voltage_ramp;
+			} present = {};
 
-				class current_mode :public ::mexo::ps::dev::mode {
-				protected:
-					actuator& owner(void) { return owner_cast<actuator>(); }
-					virtual void applay_action(void) {
-						if (owner().action.invers) {
-							owner().current_regulator.set_input(-owner().action.current);
-						}
-						else {
-							owner().current_regulator.set_input(owner().action.current);
-						}
-						owner().current_regulator.set_min(-owner().action.voltage);
-						owner().current_regulator.set_max(owner().action.voltage);
-					}
-					virtual void do_start(void) {
-						owner().prioritet_subsystem_.dc.link_to(owner().current_regulator);
-						owner().prioritet_subsystem_.hardware_subsystem.reconfig();
-						owner().current_control.reconfig();
-						owner().current_control.start();
-						owner().on();
-					}
-					virtual void do_stop(void) {
-						owner().current_control.stop();
-						owner().off();
-					}
-				public:
-					current_mode(int _index, actuator& _actuator) :
-						::mexo::ps::dev::mode(_index, RT("@mo_@c"), _actuator) {}
-				} current_mode_;
 
-				actuator(prioritet_subsystem& _prioritet_subsystem)
-					: ::mexo::ps::dev(RT("actuator"), action.dev, present.dev, _prioritet_subsystem.dc)
-					, prioritet_subsystem_(_prioritet_subsystem)
-					, voltage_control(RT("@v_@co"), false, this)
-					, current_control(RT("@c_@co"), false, this)
-					, voltage_regulator(voltage_control, RT("@r"), config.voltage_regulator, present.voltage_regulator)
-					, current_filter(current_control, RT("@f"), config.current_filter, present.current_filter)
-					, current_regulator(current_control, RT("@r"), config.current_regulaor, present.current_regulaor)
-					, voltage_mode_(1, *this)
-					, current_mode_(2, *this) {
-					prioritet_subsystem_.dc.link_to(current_regulator);
-					current_regulator.actual.link_to(&current_filter.output);
-					current_filter.input.link_to(&prioritet_subsystem_.adc.output);
-					present = {};
-					action = {};
-					config = {
-						{
-							{
-								{28} //ref
-								,{
-									{ //range
-										-32767
-										, 32767
-									}
-									, 0
-								}
-								, 0
-							}
-							, 100
-						}
-						,{
-							{}
-							, 12
-							, {
-								8
-								, 0
-								, 0
-							}
-						}
-						,{
-							{}
-							,{
-								10	//parameter_t propGain;
-								,60 //parameter_t modelGain;
-								,0	//parameter_t diffGain;
-								,7	//uint8_t control_shift;
-								,10	//uint8_t model_shift;
-							}
-						}
-					};
+			struct config_s {
+				pwm::config_s pwm;
+				adc::config_s adc;
+				adc2::config_s adc2;
+				adc3::config_s adc3;
+				voltage_ramp::config_s voltage_ramp;
+			} config_ = {
+				{ {{17}, 263, 10},{{-8400,8400},{-32767,32767}} }
+				,{{18}, {0,2}, {1,1}, 10 }
+				,{{18}, 1, 1, 12 }
+				,{{19}, {0,1}, {-1,-1}, 10 }
+				,{{20},100,0}
+			};
+			//present_s present_ = {};
 
-				}
-			} actuator_(prioritet_subsystem_);
+			present.pwm.ref.tag = 0x777;
+			present.voltage_ramp.ref.tag = 0x888;
+			present.adc.sb.ref.tag = 0x999;
+			//pwm2 pwm2_(RT("pwm2"), &prioritet_subsystem_, config_.pwm, voltage_required, duty_required, duty_satstate);
 
-			::mexo::machine::slot::lambda start(
+			types::signal_t voltage_deseired = 0;
+			pwm pwm_(RT("pwm"), &prioritet_subsystem_, config_.pwm, present.pwm, present.voltage_ramp.output);
+			voltage_ramp voltage_ramp_(RT("ramp"), nullptr, config_.voltage_ramp, present.voltage_ramp, voltage_deseired, config_.pwm.range.voltage, present.pwm.satstate.actual);
+			adc adc_(RT("adc"), &prioritet_subsystem_, config_.adc, present.adc);
+			adc2 adc2_(RT("adc2"), &prioritet_subsystem_, config_.adc2, present.adc2);
+			adc3 adc3_(RT("adc3"), &prioritet_subsystem_, config_.adc3, present.adc3);
+			/*::mexo::machine::slot::lambda(
 				::mexo::machine::slot::kind::start
 				, [&] {
-					actuator_.action.voltage = 32767;
-					actuator_.action.dev.mode = 1;
+					voltage_req = 32767;
+					pwm_.on();
 				}
-			);
-
+			);*/
 
 			::mexo::machine::begin();
 			::mexo::machine::start();
+			adc_.start();
+			//adc2_.start();
+			voltage_deseired = 32767;
+			pwm_.on();
+			voltage_ramp_.start();
 
-			for (int i = 0; i < 330; ++i) {
+			for (int i = 0; i < 1025; ++i) {
 				::mexo::machine::priority_loop();
 				::mexo::machine::backend_loop();
 				::mexo::machine::frontend_loop();
 			}
+			Assert::IsTrue(present.pwm.output == 8400);
+			Assert::IsTrue(present.voltage_ramp.output == 32767);
+		}
 
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output > 4000 && prioritet_subsystem_.dc_present.cb.output < 4096);
-			Assert::IsTrue(actuator_.present.voltage_regulator.cb.output > 31767 && actuator_.present.voltage_regulator.cb.output < 32768);
 
-			actuator_.action.dev.mode = 0;
-			for (int i = 0; i < 3; ++i) {
-				::mexo::machine::priority_loop();
-				::mexo::machine::backend_loop();
-				::mexo::machine::frontend_loop();
-			}
+		/*prioritet_subsystem_.hardware_subsystem.reconfig();
+		Assert::IsTrue(prioritet_subsystem_.dc_present.output == 0);
+		Assert::IsTrue(prioritet_subsystem_.dcv_present.output == 0);
 
-			actuator_.action.dev.mode = 2;
-			for (int i = 0; i < 3; ++i) {
-				::mexo::machine::priority_loop();
-				::mexo::machine::backend_loop();
-				::mexo::machine::frontend_loop();
-			}
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output == 0);
-			actuator_.action.voltage = 10000;
-			actuator_.action.current = 10000;
-			actuator_.action.dev.actual = true;
-			for (int i = 0; i < 300; ++i) {
-				::mexo::machine::priority_loop();
-				::mexo::machine::backend_loop();
-				::mexo::machine::frontend_loop();
-			}
+		prioritet_subsystem_.dc_config.scale = 256;
+		prioritet_subsystem_.dcv_config.rampStep = 100;
+		prioritet_subsystem_.dcv_standalone.deseired = -32767;
+		for (int i = 0; i < 330; ++i) {
 			::mexo::machine::priority_loop();
 			::mexo::machine::backend_loop();
 			::mexo::machine::frontend_loop();
-			Assert::IsTrue(prioritet_subsystem_.dc_present.cb.output > 0);
-
-			{
-				psdev_t::action_s action;
-				psdev_t::present_s present;
-				psdev_t::config_s config;
-				psdev_t psdev_(prioritet_subsystem_, RT("ps"), action, config, present);
-				a1_t::action_s action2;
-				a1_t::present_s present2;
-				a1_t::config_s config2;
-				a1_t a1_(prioritet_subsystem_, RT("a1"), action2, config2, present2);
-			}
 		}
+
+		Assert::IsTrue(prioritet_subsystem_.dc_present.output == -4095);
+		Assert::IsTrue(prioritet_subsystem_.dcv_present.output == -16400);
+	}
+
+	#define PS_TEMPLATE_NAME psdev
+	#define  psdev_VOLTAGE_REGULATOR_ENABLED 1
+	#define  psdev_CURRENT_REGULATOR_ENABLED 1
+	#define  psdev_CURRENT_MEASSURY_ENABLED 1
+	#define  psdev_CURRENT_DIFF_ENABLED 0
+	#define  psdev_CURRENT_FILTER_ENABLED 1
+	#define  psdev_CURRENT_DIFF_FILTER_ENABLED 0
+	#define psdev_VOLTAGE_MIN_LIM -32767
+	#define psdev_VOLTAGE_MAX_LIM 32767
+	#define psdev_VOLTAGE_RAMP_GAIN 1
+	#define psdev_CURRENT_FILTER_GAIN 200
+	#define psdev_CURRENT_FILTER_SHIFT_GAIN 8
+	#define psdev_CURRENT_FILTER_SHIFT_PRESC 0
+	#define psdev_CURRENT_FILTER_SHIFT_VALUE 0
+
+	#define psdev_CURRENT_DIFF_FILTER_GAIN 200
+	#define psdev_CURRENT_DIFF_FILTER_SHIFT_GAIN 8
+	#define psdev_CURRENT_DIFF_FILTER_SHIFT_PRESC 0
+	#define psdev_CURRENT_DIFF_FILTER_SHIFT_VALUE 0
+
+	#define psdev_CURRENT_PROP_GAIN 10
+	#define psdev_CURRENT_MODEL_GAIN 10
+	#define psdev_CURRENT_DIFF_GAIN 10
+	#define psdev_CURRENT_CONTROL_SHIFT 7
+	#define psdev_CURRENT_MODEL_SHIFT 10
+	#include "mexo/ps.inc.hpp"
+	typedef psdev<types, prioritet_subsystem> psdev_t;
+
+	#define ACTUATOR_TEMPLATE_NAME a1
+	#define  a1_ps_VOLTAGE_REGULATOR_ENABLED 1
+	#define  a1_ps_CURRENT_REGULATOR_ENABLED 1
+	#define  a1_ps_CURRENT_MEASSURY_ENABLED 1
+	#define  a1_ps_CURRENT_DIFF_ENABLED 0
+	#define  a1_ps_CURRENT_FILTER_ENABLED 0
+	#define  a1_ps_CURRENT_FAST_FILTER_ENABLED 1
+	#define  a1_ps_CURRENT_DIFF_FILTER_ENABLED 0
+	#define a1_ps_VOLTAGE_MIN_LIM -32767
+	#define a1_ps_VOLTAGE_MAX_LIM 32767
+	#define a1_ps_VOLTAGE_RAMP_GAIN 1
+	#define a1_ps_CURRENT_FILTER_GAIN 200
+	#define a1_ps_CURRENT_FILTER_SHIFT_GAIN 8
+	#define a1_ps_CURRENT_FILTER_SHIFT_PRESC 0
+	#define a1_ps_CURRENT_FILTER_SHIFT_VALUE 0
+
+	#define a1_ps_CURRENT_DIFF_FILTER_GAIN 200
+	#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_GAIN 8
+	#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_PRESC 0
+	#define a1_ps_CURRENT_DIFF_FILTER_SHIFT_VALUE 0
+
+	#define a1_ps_CURRENT_PROP_GAIN 10
+	#define a1_ps_CURRENT_MODEL_GAIN 10
+	#define a1_ps_CURRENT_DIFF_GAIN 10
+	#define a1_ps_CURRENT_CONTROL_SHIFT 7
+	#define a1_ps_CURRENT_MODEL_SHIFT 10
+	#include "mexo/actuator.inc.hpp"
+	typedef a1_t<types, prioritet_subsystem> a1;
+
+
+	TEST_METHOD(ps_dev) {
+		class actuator : public ::mexo::ps::dev {
+		public:
+			typedef ::mexo::quazzy_adapt_b<types> current_regulaor_b;
+			typedef ::mexo::filter_b<types> filter_b;
+			struct action_s {
+				::mexo::ps::dev::action_s dev;
+				bool invers;
+				types::signal_t voltage;
+				types::signal_t current;
+				types::signal_t speed;
+				types::long_signal_t position;
+				types::long_signal_t force;
+			} action;
+
+			struct config_s {
+				voltage_regulator_b::config_s voltage_regulator;
+				filter_b::config_s current_filter;
+				current_regulaor_b::config_s current_regulaor;
+			}config;
+
+			struct standalone_s {
+				voltage_regulator_b::standalone_s voltage_regulator;
+				filter_b::standalone_s current_filter;
+				current_regulaor_b::standalone_s current_regulaor;
+			} standalone;
+
+			struct present_s {
+				::mexo::ps::dev::present_s dev;
+				voltage_regulator_b::present_s voltage_regulator;
+				filter_b::present_s current_filter;
+				current_regulaor_b::present_s current_regulaor;
+			}present;
+
+
+			prioritet_subsystem& prioritet_subsystem_;
+			::mexo::backend_subsystem voltage_control;
+			::mexo::backend_subsystem current_control;
+
+			voltage_regulator_b voltage_regulator;
+			current_regulaor_b current_regulator;
+			filter_b current_filter;
+
+			class voltage_mode :public ::mexo::ps::dev::mode {
+			protected:
+				actuator& owner(void) { return owner_cast<actuator>(); }
+				virtual void applay_action(void) {
+					if (owner().action.invers) {
+						owner().voltage_regulator.set_input(-owner().action.voltage);
+					}
+					else {
+						owner().voltage_regulator.set_input(owner().action.voltage);
+					}
+				}
+				virtual void do_start(void) {
+					owner().prioritet_subsystem_.hardware_subsystem.reconfig();
+					owner().voltage_control.reconfig();
+					owner().voltage_control.start();
+					owner().prioritet_subsystem_.dc.link_to(owner().voltage_regulator);
+					owner().on();
+				}
+				virtual void do_stop(void) {
+					owner().voltage_control.stop();
+					owner().off();
+				}
+			public:
+				voltage_mode(int _index, actuator& _actuator) :
+					::mexo::ps::dev::mode(_index, RT("@mo_@v"), _actuator) {}
+			} voltage_mode_;
+
+			class current_mode :public ::mexo::ps::dev::mode {
+			protected:
+				actuator& owner(void) { return owner_cast<actuator>(); }
+				virtual void applay_action(void) {
+					if (owner().action.invers) {
+						owner().current_regulator.set_input(-owner().action.current);
+					}
+					else {
+						owner().current_regulator.set_input(owner().action.current);
+					}
+					owner().current_regulator.set_min(-owner().action.voltage);
+					owner().current_regulator.set_max(owner().action.voltage);
+				}
+				virtual void do_start(void) {
+					owner().prioritet_subsystem_.dc.link_to(owner().current_regulator);
+					owner().prioritet_subsystem_.hardware_subsystem.reconfig();
+					owner().current_control.reconfig();
+					owner().current_control.start();
+					owner().on();
+				}
+				virtual void do_stop(void) {
+					owner().current_control.stop();
+					owner().off();
+				}
+			public:
+				current_mode(int _index, actuator& _actuator) :
+					::mexo::ps::dev::mode(_index, RT("@mo_@c"), _actuator) {}
+			} current_mode_;
+
+			actuator(prioritet_subsystem& _prioritet_subsystem)
+				: ::mexo::ps::dev(RT("actuator"), action.dev, present.dev, _prioritet_subsystem.dc)
+				, prioritet_subsystem_(_prioritet_subsystem)
+				, voltage_control(RT("@v_@co"), false, this)
+				, current_control(RT("@c_@co"), false, this)
+				, voltage_regulator(voltage_control, RT("@r"), config.voltage_regulator, standalone.voltage_regulator, present.voltage_regulator)
+				, current_filter(current_control, RT("@f"), config.current_filter, standalone.current_filter, present.current_filter)
+				, current_regulator(current_control, RT("@r"), config.current_regulaor, standalone.current_regulaor, present.current_regulaor)
+				, voltage_mode_(1, *this)
+				, current_mode_(2, *this) {
+				prioritet_subsystem_.dc.link_to(current_regulator);
+				current_regulator.actual.link_to(&current_filter.output);
+				current_filter.input.link_to(&prioritet_subsystem_.adc.output);
+				present = {};
+				action = {
+					{
+						0
+						, false
+					}
+					,false
+					,0
+					,0
+					,0
+					,0
+					,0
+				};
+				standalone = {
+					{
+						{12}
+						,{
+							-32767
+							, 32767
+						}
+					}
+					,{
+						{13}
+					}
+					,{
+						{
+							{14}
+							,{
+								-32767
+								, 32767
+							}
+						}
+					}
+				};
+				config = {
+					{
+						{
+							{28} //ref
+						}
+						, 100
+					}
+					,{
+						{}
+						, 12
+						, {
+							8
+							, 0
+							, 0
+						}
+					}
+					,{
+						{}
+						,{
+							10	//parameter_t propGain;
+							,60 //parameter_t modelGain;
+							,0	//parameter_t diffGain;
+							,7	//uint8_t control_shift;
+							,10	//uint8_t model_shift;
+						}
+					}
+				};
+
+			}
+		} actuator_(prioritet_subsystem_);
+
+		::mexo::machine::slot::lambda start(
+			::mexo::machine::slot::kind::start
+			, [&] {
+				actuator_.action.voltage = 32767;
+				actuator_.action.dev.mode = 1;
+			}
+		);
+
+
+		::mexo::machine::begin();
+		::mexo::machine::start();
+
+		for (int i = 0; i < 330; ++i) {
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+		}
+
+		Assert::IsTrue(prioritet_subsystem_.dc_present.output > 4000 && prioritet_subsystem_.dc_present.output < 4096);
+		Assert::IsTrue(actuator_.present.voltage_regulator.output > 31767 && actuator_.present.voltage_regulator.output < 32768);
+
+		actuator_.action.dev.mode = 0;
+		for (int i = 0; i < 3; ++i) {
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+		}
+
+		actuator_.action.dev.mode = 2;
+		for (int i = 0; i < 3; ++i) {
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+		}
+		Assert::IsTrue(prioritet_subsystem_.dc_present.output == 0);
+		actuator_.action.voltage = 10000;
+		actuator_.action.current = 10000;
+		actuator_.action.dev.actual = true;
+		for (int i = 0; i < 300; ++i) {
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+		}
+		::mexo::machine::priority_loop();
+		::mexo::machine::backend_loop();
+		::mexo::machine::frontend_loop();
+		Assert::IsTrue(prioritet_subsystem_.dc_present.output > 0);
+
+		{
+			psdev_t::action_s action;
+			psdev_t::present_s present;
+			psdev_t::config_s config;
+			psdev_t::standalone_s standalone;
+			psdev_t psdev_(prioritet_subsystem_, RT("ps"), action, config, standalone, present);
+			a1::action_s action2;
+			a1::present_s present2;
+			a1::config_s config2;
+			a1::standalone_s standalone2;
+			a1 a1_(prioritet_subsystem_, RT("a1"), action2, config2, standalone2, present2);
+			bool f = a1_.enabled();
+		}*/
+		//}
 	};
 
 }

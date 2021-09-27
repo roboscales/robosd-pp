@@ -164,28 +164,9 @@ namespace mexo {
 		return true;
 	}
 
-	/*void node::enable(bool _hand) {
-		if (auto_enabled_ || _hand) {
-			for (ref* r = childs_.first(); r; r = r->next()) {
-				r->owner().enable();
-			}
-			do_enable();
-			enabled_ = true;
-		}
-	}
-	void node::disable(void) {
-		for (ref* r = childs_.first(); r; r = r->next()) {
-			r->owner().disable();
-		}
-		do_disable();
-		enabled_ = false;
-	}*/
-
-	node::node(cstr _name, /*bool _auto_enabled,*/ node* _owner) : ref_(*this), map_ref_(*this, 0)
+	node::node(cstr _name, node* _owner) : ref_(*this), map_ref_(*this, 0)
 		, name_(_name)
-		, owner_(_owner == nullptr ? &root_() : _owner)
-		//	, auto_enabled_(_auto_enabled) 
-	{
+		, owner_(_owner == nullptr ? &root_() : _owner) {
 		int key;
 		if (_owner) {
 			key = owner_->map_ref_.key();
@@ -201,83 +182,88 @@ namespace mexo {
 	}
 
 	bool node::begin(void) {
-		//root_().enable();
 		return  root_().reconfig();
 	}
 
-	isubsystem::isubsystem(cstr  _name, bool _autostart, node* _owner) : node(_name, _owner), ref_(*this), autostart_(_autostart) {
-		isubsystem* m = dynamic_cast<isubsystem*>(_owner);
-		if (m != nullptr) {
-			ref_.attach_to(m->childs_);
-		}
-	}
-
-	void isubsystem::execute(void) {
-		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
-			r->owner().execute();
-		}
-		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
-			r->owner().execute();
-		}
-	}
-	/*
-	void isubsystem::adjust(void) {
-		for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
-			r->owner().adjust();
-		}
-		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
-			r->owner().adjust();
-		}
-	}
-	*/
-	bool isubsystem::do_reconfig(void) {
+	bool task::do_reconfig(void) {
 		ROBO_LBREAKN(node::do_reconfig());
-		/*for (iblock::ref* r = blocks_.first(); r; r = r->next()) {
-			ROBO_LBREAKN(r->owner().reconfig());
-		}*/
 		if (autostart_) start();
 		return true;
 	}
-	void isubsystem::start(void) {
-		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
-			r->owner().start();
-		}
+
+	void task::start(void) {
 		do_start();
 	}
 
-	void isubsystem::stop(void) {
-		for (isubsystem::ref* r = childs_.first(); r; r = r->next()) {
-			r->owner().stop();
-		}
+	void task::stop(void) {
 		do_stop();
 	}
 
-	iblock::iblock(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present)
-		: node(_name, &_subsystem)
-		, ref_(*this)
-		, config_(_config)
-		, present_(_present) {
-		ref_.attach_to(_subsystem.blocks_);
-	};
-
-	subsystem::subsystem(cstr  _name, bool _autostart, node* _owner) : isubsystem(_name, _autostart, _owner) {};
-
-	void subsystem::operator()(void) {
-		isubsystem::execute();
+	void periodic_task::do_start(void) {
+		machine::slot::delegat::ref** pref = refs_;
+		int* ix = index_;
+		for (size_t n = 0; n < ref_count_; ++n, ++pref, ++ix) {
+			machine::slot::delegat::attach(**pref, *ix);
+		}
 	}
 
+	void periodic_task::do_stop(void) {
+		machine::slot::delegat::ref** pref = refs_;
+		for (size_t n = 0; n < ref_count_; ++n, ++pref) {
+			(*pref)->dettach();
+		}
+	}
 
+	void periodic_task::clean(void) {
+		if (ref_count_) {
+			machine::slot::delegat::ref** pref = refs_;
+			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
+				delete* pref;
+			}
+			delete[] refs_;
+			delete[] index_;
+			ref_count_ = 0;
+			refs_ = nullptr;
+			index_ = nullptr;
+		}
+	}
+	void periodic_task::setup(std::initializer_list<int> _index) {
+		ref_count_ = _index.end() - _index.begin();
+		if (ref_count_ > 0) {
+			refs_ = new machine::slot::delegat::ref * [ref_count_];
+			index_ = new int[ref_count_];
+			machine::slot::delegat::ref** pref = refs_;
+			const int* src = _index.begin();
+			int* dst = index_;
+			for (size_t n = 0; n < ref_count_; ++n, ++pref, ++src, ++dst) {
+				*pref = new machine::slot::delegat::ref(*this);
+				*dst = *src;
+			}
+		}
+	}
 
-	dev::mode::mode(int _index, cstr  _name, dev& _dev)
-		: node(_name, &_dev)
-		, ref_(*this, _index) {
-		ref_.attach_to(_dev.modes_);
-	};
+	periodic_task::periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner)
+		: task(_name, _autostart, _owner) {
+		setup(_index);
+	}
+	periodic_task::periodic_task(cstr  _name, node* _owner)
+		: task(_name, false, _owner) {}
 
-	/*dev::control::command dev::mode::start_(void) {
-		start();
-		return do_reset();
-	}*/
+	periodic_task::~periodic_task(void) {
+		machine::slot::delegat::ref** pref = refs_;
+		for (size_t n = 0; n < ref_count_; ++n, ++pref) {
+			delete* pref;
+		}
+		delete[] refs_;
+	}
+
+	subsystem_atom::subsystem_atom(cstr  _name, subsystem* _subsystem)
+		: node(_name, _subsystem ? _subsystem->owned_node() : nullptr)
+		, ref_(*this) {
+		if (_subsystem) {
+			ref_.attach_to(_subsystem->atoms);
+		}
+	}
 
 	dev::dev(cstr  _name, action_s& _action, present_s& _present)
 		: node(_name, nullptr)
@@ -289,7 +275,7 @@ namespace mexo {
 		, present_(_present) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend);
 		present_.mode = idle_id;
-		}
+	}
 
 	void dev::switch_to(int _mode_id) {
 		ROBO_APP_ASSERT(is_backend__);
@@ -333,6 +319,11 @@ namespace mexo {
 		}
 	}
 
+	dev::mode::mode(int _index, cstr  _name, dev& _dev)
+		: node(_name, &_dev)
+		, ref_(*this, _index) {
+		ref_.attach_to(_dev.modes_);
+	};
 }
 
 #include "mexo/mexo.h"

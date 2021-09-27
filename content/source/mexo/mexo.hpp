@@ -15,23 +15,6 @@
 #define APP_MEXO_PRIORITY_SLOT_ENABLE 1
 #endif
 
-/*#ifndef APP_MEXO_SIGNAL_T
-#define APP_MEXO_SIGNAL_T float
-#endif
-
-#ifndef APP_MEXO_PARAMETR_T
-#define APP_MEXO_PARAMETR_T float
-#endif
-
-#ifndef APP_MEXO_LONG_SIGNAL_T
-#define APP_MEXO_LONG_SIGNAL_T double
-#endif
-
-#ifndef MEXO_DEBUG_TP1_ENABLED
-#define MEXO_DEBUG_TP1_ENABLED 0
-#endif
-*/
-
 using namespace robo;
 namespace mexo {
 	struct tp_verb {
@@ -53,10 +36,6 @@ namespace mexo {
 
 	#endif 
 
-	/*	typedef APP_MEXO_SIGNAL_T signal_t;
-		typedef APP_MEXO_LONG_SIGNAL_T long_signal_t;
-		typedef APP_MEXO_PARAMETR_T parametr_t;
-	*/
 	class machine {
 	public:
 		enum { slot_count = APP_MEXO_SLOT_COUNT };
@@ -129,8 +108,6 @@ namespace mexo {
 				}
 			};
 
-			//typedef delegat_t< ::robo::delegat::lambda<delegat, void>, ::robo::lambda< void(void)> > lambda;
-			//typedef delegat_t < ::robo::delegat::simple<delegat, void>, void (*)(void) >  simple;
 		private:
 			friend class machine;
 			friend class slots;
@@ -204,8 +181,6 @@ namespace mexo {
 		static map& map_(void);
 	protected:
 		list& childs(void) { return childs_; }
-		//		virtual void do_enable(void) {};
-		//		virtual void do_disable(void) {};
 		virtual bool do_reconfig(void) { return true; };
 	public:
 		node* owner() { return owner_; };
@@ -215,178 +190,13 @@ namespace mexo {
 
 		bool reconfig(void);
 
-		node(cstr _name, /*bool _auto_enabled,*/ node* _owner = nullptr);
+		node(cstr _name, node* _owner = nullptr);
 
 		static node* find(int _key) {
 			return map_().find(_key);
 		}
-		//		void enable(bool _hand = false);
-		//		void disable(void);
 		bool enabled(void) { return state_ == state::ready; };
 	};
-	class isubsystem;
-	class iblock : public node {
-		friend class isubsystem;
-	public:
-		//параметры блока и стартовые значения
-		struct config_s {
-			int tag;
-		};
-		//окрытые данные блока - текущие значения переменных, которы, возможно, потребуется видеть онлайн 
-		struct present_s {
-			int tag;
-		};
-		typedef robo::list::unsorted<iblock> list;
-		typedef list::ref ref;
-	private:
-		ref ref_;
-		const config_s& config_;
-		present_s& present_;
-	public:
-		template <typename T> class output_t {
-		public:
-
-			const T& value;
-
-			bool operator == (const T& _value) {
-				return value == _value;
-			}
-
-			output_t(const T& _value) : value(_value) {}
-		};
-
-		template <typename T> class input_t {
-			output_t<T> dummy_;
-			const output_t<T>* output_;
-		public:
-			const T& value(void) { return output_->value; }
-
-			input_t(const T& _dummy) : dummy_(_dummy), output_(&dummy_) {}
-			void link_to(const output_t<T>* _output) {
-				if (_output == nullptr) {
-					output_ = &dummy_;
-				}
-				else {
-					output_ = _output;
-				}
-			}
-		};
-
-		enum class satstate { none, both, low, up };
-
-		template <typename S> const S& config_cast(void) {
-			return reinterpret_cast <const S&>(config_);
-		}
-
-		template <typename P> P& present_cast(void) {
-			return reinterpret_cast <P&>(present_);
-		}
-
-	protected:
-
-		template <typename S> S& config_ref(void) {
-			return const_cast<S&>(reinterpret_cast <const S&>(config_));
-		}
-
-		iblock(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present);
-
-		virtual void execute(void) = 0;
-		virtual void adjust(void) = 0;
-	};
-
-	class isubsystem : public node {
-		friend class iblock;
-	public:
-		typedef robo::list::unsorted<isubsystem> list;
-		typedef robo::list::unsorted<isubsystem>::ref ref;
-	private:
-		iblock::list blocks_;
-		list childs_;
-		ref ref_;
-		bool autostart_;
-	protected:
-		virtual void  do_start(void) = 0;
-		virtual void do_stop(void) = 0;
-		isubsystem(cstr  _name, bool _autostart, node* _owner = nullptr);
-		void execute(void);
-	public:
-		void  start(void);
-		void stop(void);
-		virtual bool do_reconfig(void);
-		//void adjust(void);
-
-	};
-
-	class subsystem : public isubsystem, public machine::slot::delegat {
-
-	protected:
-		subsystem(cstr  _name, bool _autostart, node* _owner = nullptr);
-	public:
-		virtual	void operator()(void);
-	};
-
-
-	class prioritet_subsystem : public subsystem {
-		machine::slot::delegat::ref ref_;
-	protected:
-		virtual void do_start(void) {
-			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority);
-		};
-		virtual void do_stop(void) { guard__; ref_.dettach(); };
-	public:
-		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
-	};
-
-	class backend_subsystem : public subsystem {
-		machine::slot::delegat::ref ref_;
-	public:
-		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend); };
-		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
-	};
-
-	class frontend_subsystem : public subsystem {
-		machine::slot::delegat::ref ref_;
-	public:
-		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
-		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : subsystem(_name, _autostart, _owner), ref_(*this) {};
-	};
-
-
-	class periodic_subsystem : public subsystem {
-		machine::slot::delegat::ref** refs_ = nullptr;
-		size_t ref_count_ = 0;
-	public:
-		virtual void do_start(void) {
-			machine::slot::delegat::ref** pref = refs_;
-			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				machine::slot::delegat::attach(**pref, n);
-			}
-		};
-		virtual void do_stop(void) {
-			machine::slot::delegat::ref** pref = refs_;
-			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				(*pref)->dettach();
-			}
-		};
-		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : subsystem(_name, _autostart, _owner) {
-			ref_count_ = _index.end() - _index.begin() + 1;
-			refs_ = new machine::slot::delegat::ref * [ref_count_];
-			machine::slot::delegat::ref** pref = refs_;
-			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				*pref = new machine::slot::delegat::ref(*this);
-			}
-		};
-		virtual ~periodic_subsystem(void) {
-			machine::slot::delegat::ref** pref = refs_;
-			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-				delete* pref;
-			}
-			delete[] refs_;
-		}
-	};
-
 
 	class dev : public node {
 		friend class mode;
@@ -418,7 +228,6 @@ namespace mexo {
 			typedef map::ref ref;
 
 		private:
-			typedef robo::list::unsorted<subsystem> subsystems_;
 			ref ref_;
 		protected:
 			template<typename T>T& owner_cast(void) { return *((T*)node::owner()); };
@@ -455,215 +264,391 @@ namespace mexo {
 		void backend__(void);
 	};
 
-
-
-	/*
-	class tandem_subsystem : public node {
+	class task : public node, public machine::slot::delegat {
+		friend class iatom;
 	public:
-		class backend : public ::robo::delegat::member< machine::slot::delegat, tandem_subsystem, void> {
-			friend class tandem_subsystem;
-			machine::slot::delegat::ref ref_;
-		public:
-			backend(tandem_subsystem & _owner)
-				: ::robo::delegat::member< machine::slot::delegat, tandem_subsystem, void>(&_owner, tandem_subsystem::backend_execute_), ref_(*this) {}
-		};
-		class frontend : public ::robo::delegat::member< machine::slot::delegat, tandem_subsystem, void> {
-			friend class tandem_subsystem;
-			machine::slot::delegat::ref ref_;
-		public:
-			frontend(tandem_subsystem& _owner)
-				: ::robo::delegat::member< machine::slot::delegat, tandem_subsystem, void>(&_owner, tandem_subsystem::frontend_execute_), ref_(*this) {}
-		};
 	private:
-		friend class backend;
-		friend class frontend;
-		backend backend_;
-		frontend frontend_;
-		virtual void backend_execute_(void) {};
-		virtual void frontend_execute_();
-	public:
-	};
-	*/
-	/*
-	template < class A > class block_t : public  A {
+		bool autostart_;
 	protected:
+		virtual void  do_start(void) = 0;
+		virtual void do_stop(void) = 0;
+		task(cstr  _name, bool _autostart, node* _owner = nullptr) :node(_name, _owner), autostart_(_autostart) {};
+		virtual bool do_reconfig(void);
 	public:
-		//S и P - это старая добрая сишная структура
-		typedef  typename A::config_s config_s;
-		typedef  typename A::present_s present_s;
-		block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: A(_subsystem, _name, reinterpret_cast<iblock::config_s&> (_config)) {};
-		virtual bool do_reconfig(void) {
-			return A::applay(reinterpret_cast<config_s&> (iblock::config));
-		}
-		virtual bool do_adjust(void) {
-			return A::adjust(reinterpret_cast<config_s&> (iblock::config), reinterpret_cast<config_s&> (iblock::present));
+		void start(void);
+		void stop(void);
+	};
+
+	class prioritet_task : public task {
+		machine::slot::delegat::ref ref_;
+	protected:
+		virtual void do_start(void) {
+			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority);
+		};
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
+		prioritet_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+	public:
+		prioritet_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+	};
+
+	class backend_task : public task {
+		machine::slot::delegat::ref ref_;
+	protected:
+		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend); };
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
+		backend_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+	public:
+		backend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+	};
+
+	class frontend_task : public task {
+		machine::slot::delegat::ref ref_;
+	protected:
+		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
+		frontend_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+	public:
+		frontend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+	};
+
+
+	class periodic_task : public task {
+		machine::slot::delegat::ref** refs_ = nullptr;
+		size_t ref_count_ = 0;
+		int* index_ = nullptr;
+	protected:
+		void setup(std::initializer_list<int> _index);
+		void clean(void);
+		periodic_task(cstr  _name, node* _owner = nullptr);
+		virtual void do_start(void);
+		virtual void do_stop(void);
+	public:
+		periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr);
+		virtual ~periodic_task(void);
+	};
+
+	template<int ... Nums> class periodic_task_t : public periodic_task {
+	public:
+		periodic_task_t(cstr  _name, node* _owner = nullptr) : periodic_task(_name, _owner) {
+			periodic_task::setup({ Nums ... });
 		}
 	};
-	*/
 
+	enum class satstate_t { none, both, low, up };
+
+	class subsystem;
+	class subsystem_atom : public node {
+	public:
+		typedef robo::list::unsorted<subsystem_atom> list;
+		typedef list::ref ref;
+	private:
+		ref ref_;
+	public:
+	protected:
+		friend class subsystem;
+		subsystem_atom(cstr  _name, subsystem* _subsystem);
+		virtual void operator ()(void) = 0;
+	};
+
+	class subsystem {
+	protected:
+		friend class subsystem_atom;
+		virtual node* owned_node(void) = 0;
+		subsystem_atom::list atoms;
+		void run(void) {
+			for (subsystem_atom::ref* r = atoms.first(); r; r = r->next()) {
+				(r->owner())();
+			}
+		}
+	};
+
+	class prioritet_subsystem : public prioritet_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
+	};
+	class backend_subsystem : public backend_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : backend_task(_name, _autostart, _owner) {};
+	};
+	class frontend_subsystem : public frontend_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : frontend_task(_name, _autostart, _owner) {};
+	};
+
+	class periodic_subsystem : public periodic_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+
+		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : periodic_task(_name, _autostart, _index, _owner) {};
+	};
+
+
+
+	/*template< typename D, typename S, typename ... Args > class subsys_atom_t : public atom_t<::mexo::subsystem_atom, D, S> {
+	public:
+		typedef atom_t<::mexo::subsystem_atom, D, S> A;
+		typedef typename A::config_s config_s;
+		typedef typename A::present_s present_s;
+		subsys_atom_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
+			: A(_name, _owner, _config, _present, args...) {}
+	};*/
 
 	template <typename A> struct range_s {
 		A low;
 		A hi;
 	};
 
-	template < typename I, typename O> class controller_block_t : public iblock {
+	template< typename T, typename R, typename S, typename ... Args > class atom_t : public T, public  R {
+	public:
+		typedef typename R::config_s config_s;
+		typedef typename R::present_s present_s;
+		virtual void operator ()(void) {
+			R::execute();
+		}
+		virtual bool do_reconfig(void) {
+			return R::do_reconfig();
+		}
+		atom_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
+			: T(_name, _owner)
+			, R(_config, _present, args...) {}
+	};
+
+	template < typename T, typename B, typename S, typename ... Args> class controller_t
+		: public atom_t<T, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
+	public:
+		typedef  atom_t<T, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
+		controller_t(
+			cstr  _name
+			, S* _owner
+			, typename const BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename B::input_t& _deseired
+			, const range_s<typename B::output_t>& _range
+			, satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _deseired, _range, _master_satstate, args...) {}
+	};
+	template < typename B, typename S, typename ... Args> class controller_block_t
+		: public atom_t<subsystem_atom, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
+	public:
+		typedef  atom_t<subsystem_atom, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
+		controller_block_t(
+			cstr  _name
+			, S* _owner
+			, typename const BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename B::input_t& _deseired
+			, const range_s<typename B::output_t>& _range
+			, satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _deseired, _range, _master_satstate, _output, _satstate, args...) {}
+	};
+	template <  typename B, typename S, typename ... Args> class controller_task_t
+		: public atom_t<S, B, node, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
+	public:
+		typedef  atom_t<S, B, node, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
+		controller_task_t(
+			cstr  _name
+			, node* _owner
+			, typename const BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename B::input_t& _deseired
+			, const range_s<typename B::output_t>& _range
+			, satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _deseired, _range, _master_satstate, args...) {}
+	};
+
+
+	class atom {
 	public:
 		struct config_s {
-			iblock::config_s ref;
-			struct {
-				range_s<O> range;
-				I input;
-				iblock::satstate master_satstate;
-			}standalone;
-			O def;
+			int tag;
 		};
 		struct present_s {
-			iblock::present_s ref;
-			O output;
-			iblock::satstate satstate;
-			iblock::satstate local_satstate;
+			int tag;
 		};
-
+	private:
+		const config_s& config_;
+		present_s& present_;
 	public:
-		iblock::input_t<I> input;
-		iblock::input_t<iblock::satstate> master_satstate;
-		iblock::input_t<range_s<O>> range;
+		template <typename S>const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
+		template <typename P>  P& present_cast() { return reinterpret_cast <P&>(present_); }
+		atom(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
+	};
 
-		iblock::output_t<O> output;
-		iblock::output_t<iblock::satstate> satstate;
-
-		controller_block_t(isubsystem& _subsystem, cstr  _name, const config_s& _config, present_s& _present)
-			: iblock(_subsystem, _name, _config.ref, _present.ref)
-			, input(_config.standalone.input)
-			, master_satstate(_config.standalone.master_satstate)
-			, range(_config.standalone.range)
-			, output(_present.output)
-			, satstate(_present.satstate) {}
-
-		template < typename M> void link_to(M& _controller) {
-			input.link_to(&_controller.output);
-			_controller.master_satstate.link_to(&satstate);
-		}
-
-		void set_input(const I& _value) {
-			config_ref<config_s>().standalone.input = _value;
-		}
-		void set_min(const O& _value) {
-			config_ref<config_s>().standalone.range.low = _value;
-		}
-		void set_max(const O& _value) {
-			config_ref<config_s>().standalone.range.hi = _value;
-		}
+	template < typename I, typename O> class controller_atom : public atom {
+	public:
 	protected:
-		void saturate(void) {
-			const range_s<O>& r = range.value();
-			if (present_cast<present_s>().output >= r.hi) {
-				present_cast<present_s>().output = r.hi;
-				present_cast<present_s>().local_satstate = iblock::satstate::up;
-			}
-			else if (present_cast<present_s>().output <= r.low) {
-				present_cast<present_s>().output = r.low;
-				present_cast<present_s>().local_satstate = iblock::satstate::low;
-			}
-			else {
-				present_cast<present_s>().local_satstate = iblock::satstate::none;
-			}
-		}
+		const I& deseired;
+		const range_s<O>& range;
+		satstate_t& master_satstate;
+	public:
+		struct present_s {
+			atom::present_s ref;
+			O output;
+			struct {
+				satstate_t actual;
+				satstate_t local;
+			}satstate;
+		};
+		controller_atom(
+			const config_s& _config
+			, present_s& _present
+			, const I& _deseired
+			, const range_s<O>& _range
+			, satstate_t& _master_satstate
+		)
+			: atom(_config, _present.ref)
+			, deseired(_deseired)
+			, range(_range)
+			, master_satstate(_master_satstate) {}
 
 		void update_satstate(void) {
-			iblock::satstate remote = master_satstate.value();
-			if (remote == iblock::satstate::none) {
-				present_cast<present_s>().satstate = present_cast<present_s>().local_satstate;
+			present_s& present = present_cast<present_s>();
+			satstate_t remote = master_satstate;
+			if (remote == satstate_t::none) {
+				present.satstate.actual = present.satstate.local;
 			}
 			else {
-				present_cast<present_s>().satstate = remote;
+				present.satstate.actual = remote;
 			}
 		}
 		virtual bool do_reconfig(void) {
-			ROBO_LBREAKN(config_cast<config_s>().standalone.range.low <= config_cast<config_s>().def && config_cast<config_s>().def <= config_cast<config_s>().standalone.range.hi);
-			present_cast<present_s>().output = config_cast<config_s>().def;
-			do_adjust(config_cast<config_s>().def);
+			ROBO_LBREAKN(range.low <= range.hi);
 			return true;
-		}
-		virtual void do_adjust(const O& _output) {
-			saturate();
-			update_satstate();
-		}
-		virtual void adjust(void) {
-			do_adjust(present_cast<present_s>().output);
 		}
 	};
-
-	template < typename I, typename O> class function_block_t : public iblock {
+	template < typename O> class sence_atom : public atom {
 	protected:
-		iblock::satstate satstate_ = iblock::satstate::none;
 	public:
-		struct config_s {
-			iblock::config_s ref;
-			I standalone_input;
-			O def;
-		};
 		struct present_s {
-			iblock::present_s ref;
+			atom::present_s ref;
 			O output;
 		};
-		iblock::input_t<I> input;
-
-		iblock::output_t<O> output;
-
-		function_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: iblock(_subsystem, _name, _config.ref, _present.ref)
-			, input(_config.standalone_input)
-			, output(_present.output) {}
-		virtual bool do_reconfig(void) {
-			present_cast<present_s>().output = config_cast<config_s>().def;
-			do_adjust(config_cast<config_s>().def);
-			return true;
-		}
-		virtual void do_adjust(const O& _output) {}
-		virtual void adjust(void) {
-			do_adjust(present_cast<present_s>().output);
-		}
-		/*		template < typename S> void link_to(S& _src) {
-					input.link_to(&_src.output);
-				}*/
+		sence_atom(const config_s& _config, present_s& _present)
+			: atom(_config, _present.ref) {}
 	};
 
-	template < typename O> class sence_block_t : public iblock {
-	protected:
-		iblock::satstate satstate_ = iblock::satstate::none;
+	template< typename R, typename S > class sence_block_t : public atom_t <
+		::mexo::subsystem_atom
+		, R
+		, S
+	> {
 	public:
-		struct config_s {
-			iblock::config_s ref;
-			O def;
-		};
+		typedef atom_t <
+			::mexo::subsystem_atom
+			, R
+			, S
+		> A;
+		sence_block_t(cstr _name, S* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
+			: A(_name, _owner, _config, _present) {}
+	};
+
+	template< typename R, typename S> class sence_task_t : public atom_t <
+		, S
+		, R
+		, ::mexo::node
+	> {
+	public:
+		typedef atom_t <
+			, S
+			, R
+			, ::mexo::node
+		> A;
+		sence_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
+			: A(_name, _owner, _config, _present) {}
+	};
+
+	/*	template < typename T, typename B, typename S, typename I, typename O> class function_atom_t
+			: public atom_t<
+			T
+			, B
+			, S
+			, const I&
+			, O&
+			> {
+		public:
+			typedef  atom_t<
+				T
+				, B
+				, S
+				, const I&
+				, O&
+			> BB;
+			function_atom_t(
+				cstr  _name
+				, S& _owner
+				, const I& _deseired
+				, O& _output
+			)
+				: BB(_name, _owner, _deseired, _output) {}
+		};*/
+
+	template < typename I, typename O> class function_atom : public atom {
+	public:
+		const I& input;
 		struct present_s {
-			iblock::present_s ref;
+			atom::present_s ref;
 			O output;
 		};
-
-		iblock::output_t<O> output;
-
-		sence_block_t(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: iblock(_subsystem, _name, _config.ref, _present.ref)
-			, output(_present.output) {}
-
-		virtual bool do_reconfig(void) {
-			present_cast<present_s>().output = config_cast<config_s>().def;
-			do_adjust(config_cast<config_s>().def);
-			return true;
-		}
-
-		virtual void do_adjust(const O& _output) {
-			ROBO_UNUSED(_output);
-		}
-
-		virtual void adjust(void) {
-			do_adjust(present_cast<present_s>().output);
-		}
-
+		function_atom(
+			config_s& _config
+			, const I& _input
+			, present_s& _present
+		)
+			: atom(_config, _present)
+			, input(_input) {}
+	};
+	/*
+	template < typename T, typename B, typename S, typename I, typename O> class scope_atom_t
+		: public atom_t<
+		T
+		, B
+		, S
+		, const I&
+		> {
+	public:
+		typedef  atom_t<
+			T
+			, B
+			, S
+			, const I&
+		> BB;
+		scope_atom_t(
+			cstr  _name
+			, S& _owner
+			, const I& _deseired
+		)
+			: BB(_name, _owner, _deseired) {}
+	};
+	*/
+	template < typename I> class scope_atom : public atom {
+	protected:
+		const I& input;
+		atom::present_s present_;
+	public:
+		scope_atom(
+			config_s& _config
+			, const I& _deseired
+		)
+			: atom(_config, present_)
+			, input(_input) {}
 	};
 }
 #endif
+

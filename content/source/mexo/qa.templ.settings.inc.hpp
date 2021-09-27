@@ -1,25 +1,17 @@
 {
 	{
 		{} //ref
-		, {
-			{ //range
-				REGULATOR_MIN_LIM
-				, REGULATOR_MAX_LIM
-			}
-			, 0
-		}
-		, 0
 	}
 
-	,{
+	, {
 		REGULATOR_PROP_GAIN //mexo_parametr_t propGain;
 		,REGULATOR_MODEL_GAIN //mexo_parametr_t modelGain;
 		,REGULATOR_DIFF_GAIN //mexo_parametr_t diffGain;
 		,REGULATOR_CONTROL_SHIFT //uint8_t controlShift;
 		,REGULATOR_MODEL_SHIFT//uint8_t modelShift;
 	}
-	,0
-	,0
+		, 0
+		, 0
 }
 
 #undef REGULATOR_PROP_GAIN

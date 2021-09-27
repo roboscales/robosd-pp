@@ -1,4 +1,4 @@
- #ifndef PS_TEMPLATE_NAME
+#ifndef PS_TEMPLATE_NAME
 #define PS_TEMPLATE_NAME ps
 #define POWER_SUPPLY_PREFIX(name)  _POWER_SUPPLY_PREFIX(name,PS_TEMPLATE_NAME)
 #define _POWER_SUPPLY_PREFIX(name,prfx)  __POWER_SUPPLY_PREFIX(name,prfx)
@@ -84,6 +84,28 @@ public:
 		typename types::signal_t current;
 	};
 
+	struct standalone_s {
+		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		typename current_limmiter_b::standalone_s current_limmiter;
+		#else 
+		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
+		typename voltage_regulator_b::standalone_s voltage_regulator;
+		#endif
+		#endif		
+		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
+		typename filter_b::standalone_s current_filter;
+		#endif
+		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
+		typename fast_filter_b::standalone_s current_filter;
+		#endif
+		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED == 1
+		typename filter_b::standalone_s current_diff_filter;
+		#endif
+		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
+		typename current_regulaor_b::standalone_s current_regulaor;
+		#endif
+	};
+
 	struct config_s {
 		int tag;
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
@@ -147,7 +169,7 @@ public:
 			owner().hardwaresys.reconfig();
 			owner().voltage_control.reconfig();
 			owner().voltage_control.start();
-			owner().hardwaresys.pwm_block().link_to(owner().voltage_regulator);
+			owner().hardwaresys.pwm_atom().link_to(owner().voltage_regulator);
 			owner().on();
 		}
 
@@ -177,7 +199,7 @@ public:
 			owner().current_regulator.set_max(action.voltage);
 		}
 		virtual void do_start(void) {
-			owner().hardwaresys.pwm_block().link_to(owner().current_regulator);
+			owner().hardwaresys.pwm_atom().link_to(owner().current_regulator);
 			owner().hardwaresys.reconfig();
 			owner().current_control.reconfig();
 			owner().current_control.start();
@@ -203,13 +225,13 @@ public:
 			}
 			else {
 				owner().current_limmiter.set_input(action.voltage);
-			}			
+			}
 			owner().current_limmiter.set_signal_min(-action.current);
 			owner().current_limmiter.set_signal_max(action.current);
 		}
-		
+
 		virtual void do_start(void) {
-			owner().hardwaresys.pwm_block().link_to(owner().current_limmiter);
+			owner().hardwaresys.pwm_atom().link_to(owner().current_limmiter);
 			owner().hardwaresys.reconfig();
 			owner().current_limmiter_control.reconfig();
 			owner().current_limmiter_control.start();
@@ -234,35 +256,39 @@ public:
 	#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 	current_limmiter_mode_t current_limmiter_mode;
 	#endif
-	PS_TEMPLATE_NAME(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
-		: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.pwm_block())
+	PS_TEMPLATE_NAME(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, standalone_s& _standalone, present_s& _present)
+		: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.pwm_atom())
 		, hardwaresys(_hardwaresys)
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		, voltage_control(RT("v_co"), false, this)
-		, voltage_regulator(voltage_control, RT("v_re"), _config.voltage_regulator, _present.voltage_regulator)
+		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		, voltage_regulator(voltage_control, RT("v_re"), _config.voltage_regulator, _standalone.current_limmiter.cb, _present.voltage_regulator)
+		#else
+		, voltage_regulator(voltage_control, RT("v_re"), _config.voltage_regulator, _standalone.voltage_regulator, _present.voltage_regulator)
+		#endif
 		, voltage_mode(1, *this)
 		#endif
-		#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 		, current_control(RT("c_co"), false, this)
 		#endif
-		#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		, current_limmiter_control(RT("c_lm_co"), false, this)
 		#endif
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-		, current_filter(_hardwaresys.subsystem(), RT("cf"), _config.current_filter, _present.current_filter)
+		, current_filter(_hardwaresys.subsys(), RT("cf"), _config.current_filter, _standalone.current_filter, _present.current_filter)
 		#endif
 		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-		, current_filter(_hardwaresys.subsystem(), RT("cf"), _config.current_filter, _present.current_filter)
+		, current_filter(_hardwaresys.subsys(), RT("cf"), _config.current_filter, _standalone.current_filter, _present.current_filter)
 		#endif
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		, current_diff_filter(current_control, RT("cdf"), _config.current_filter, _present.current_filter)
+		, current_diff_filter(current_control, RT("cdf"), _config.current_diff_filter, _standalone.current_diff_filter, _present.current_diff_filter)
 		#endif
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-		, current_regulator(current_control, RT("c_re"), _config.current_regulaor, _present.current_regulaor)
+		, current_regulator(current_control, RT("c_re"), _config.current_regulaor, _standalone.current_regulaor, _present.current_regulaor)
 		, current_mode(2, *this)
 		#endif
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-		, current_limmiter(current_limmiter_control, RT("c_lm_r"), _config.current_limmiter, _present.current_limmiter)
+		, current_limmiter(current_limmiter_control, RT("c_lm_r"), _config.current_limmiter, _standalone.current_limmiter, _present.current_limmiter)
 		, current_limmiter_mode(16, *this)
 		#endif
 	{
@@ -270,24 +296,90 @@ public:
 		//				prioritet_subsystem_.dc.link_to(current_regulator);
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED ==1
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-		current_filter.input.link_to(&hardwaresys.sence_block().output);
+		current_filter.input.link_to(&hardwaresys.sence_atom().output);
 		current_regulator.actual.link_to(&current_filter.output);
 		#else
-		current_regulator.actual.link_to(&hardwaresys.sence_block().output);
+		current_regulator.actual.link_to(&hardwaresys.sence_atom().output);
 		#endif
 
 		#if POWER_SUPPLY_CURRENT_DIFF_ENABLED ==1
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		current_diff_filter.input.link_to(&hardwaresys.sence_block().output_diff);
+		current_diff_filter.input.link_to(&hardwaresys.sence_atom().output_diff);
 		current_regulator.actual_diff.link_to(&current_diff_filter.output);
 		#else
-		current_regulator.actual.link_to(&hardwaresys.sence_block().output_diff);
+		current_regulator.actual.link_to(&hardwaresys.sence_atom().output_diff);
 		#endif
 		#endif
 		#endif
 		_config =
-			#include "mexo/ps.templ.settings.inc.hpp"
-			;
+
+		{
+			0/*
+			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
+			, {
+				{
+					{} //ref
+				}
+				, POWER_SUPPLY_PREFIX(VOLTAGE_RAMP_GAIN)
+			}
+			#endif
+			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
+			, {
+				{}
+				, POWER_SUPPLY_PREFIX(CURRENT_FILTER_GAIN)
+				,{
+					POWER_SUPPLY_PREFIX(CURRENT_FILTER_SHIFT_GAIN)
+					, POWER_SUPPLY_PREFIX(CURRENT_FILTER_SHIFT_PRESC)
+					, POWER_SUPPLY_PREFIX(CURRENT_FILTER_SHIFT_VALUE)
+				}
+			}
+			#endif
+			#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
+			, {
+				{}
+				, POWER_SUPPLY_PREFIX(CURRENT_FAST_FILTER_SHIFT_VALUE)
+			}
+			#endif
+			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED == 1
+			, {
+				{}
+				, POWER_SUPPLY_PREFIX(CURRENT_DIFF_FILTER_GAIN)
+				,{
+					POWER_SUPPLY_PREFIX(CURRENT_DIFF_FILTER_SHIFT_GAIN)
+					, POWER_SUPPLY_PREFIX(CURRENT_DIFF_FILTER_SHIFT_PRESC)
+					, POWER_SUPPLY_PREFIX(CURRENT_DIFF_FILTER_SHIFT_VALUE)
+				}
+			}
+			#endif
+			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
+			,
+			#define REGULATOR_PROP_GAIN POWER_SUPPLY_PREFIX(CURRENT_PROP_GAIN)
+			#define REGULATOR_MODEL_GAIN POWER_SUPPLY_PREFIX(CURRENT_MODEL_GAIN)
+			#define REGULATOR_DIFF_GAIN POWER_SUPPLY_PREFIX(CURRENT_DIFF_GAIN)
+			#define REGULATOR_CONTROL_SHIFT POWER_SUPPLY_PREFIX(CURRENT_CONTROL_SHIFT)
+			#define REGULATOR_MODEL_SHIFT POWER_SUPPLY_PREFIX(CURRENT_MODEL_SHIFT)
+
+			#include "mexo/qa.templ.settings.inc.hpp"
+			#endif
+			#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+			,
+			#define REGULATOR_PROP_GAIN POWER_SUPPLY_PREFIX(CURRENT_PROP_GAIN)
+			#define REGULATOR_MODEL_GAIN POWER_SUPPLY_PREFIX(CURRENT_MODEL_GAIN)
+			#define REGULATOR_DIFF_GAIN POWER_SUPPLY_PREFIX(CURRENT_DIFF_GAIN)
+			#define REGULATOR_CONTROL_SHIFT POWER_SUPPLY_PREFIX(CURRENT_CONTROL_SHIFT)
+			#define REGULATOR_MODEL_SHIFT POWER_SUPPLY_PREFIX(CURRENT_MODEL_SHIFT)
+			#define REGULATOR_RAMP_STEP POWER_SUPPLY_PREFIX(CURRENT_LIMMITER_RAMP_STEP)
+			#define REGULATOR_SIGNAL_MIN POWER_SUPPLY_PREFIX(CURRENT_MIN_LIM)
+			#define REGULATOR_SIGNAL_MAX POWER_SUPPLY_PREFIX(CURRENT_MAX_LIM)
+
+			#include "mexo/lm.templ.settings.inc.hpp"
+			#endif*/
+		};
+		/*			#include "mexo/ps.templ.settings.inc.hpp"
+					;
+				_standalone =
+					#include "mexo/ps.templ.standalone.inc.hpp"
+					;*/
 	}
 };
 

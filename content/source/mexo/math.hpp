@@ -4,7 +4,7 @@
 #include <limits>  
 #include <math.h>
 namespace mexo {
-	
+
 	enum class  dsignal_bits {
 		i7 = 8
 		, i13 = 13
@@ -21,43 +21,6 @@ namespace mexo {
 			, ones = max
 		};
 	};
-
-
-	/*
-	struct int7 : public dsigna<signal_bits::i7> {
-		typedef int8_t discret_t;
-		typedef int16_t long_discret_t;
-		typedef int8_t signal_t;
-		typedef uint8_t usignal_t;
-		typedef int8_t parameter_t;
-		typedef int16_t long_signal_t;
-	};
-
-
-	struct int31 : public dsigna<signal_bits::i31> {
-		typedef int32_t discret_t;
-		typedef int64_t long_discret_t;
-		typedef int32_t signal_t;
-		typedef uint32_t usignal_t;
-		typedef int32_t parameter_t;
-		typedef int64_t long_signal_t;
-	};
-
-
-	struct real31 {
-		typedef int32_t discret_t;
-		typedef int64_t long_discret_t;
-		typedef float signal_t;
-		typedef float parameter_t;
-		typedef double long_signal_t;
-	};
-
-	struct real63 {
-		typedef double signal_t;
-		typedef double parameter_t;
-		typedef double long_signal_t;
-	};*/
-
 
 	struct int15 : public dsigna<dsignal_bits::i15, dsignal_bits::i31> {
 		typedef int16_t discret_t;
@@ -79,6 +42,7 @@ namespace mexo {
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
 	};
 
+
 	template< typename digit > struct fixed_point {
 
 		typedef typename  digit::discret_t discret_t;
@@ -95,10 +59,10 @@ namespace mexo {
 		constexpr static signal_t one_div_sqrt3 = (digit::max * robo::one_div_sqrt3<signal_t>);
 		constexpr static signal_t sqrt3_div_2 = (digit::max * robo::sqrt3_div_2<signal_t>);
 
-		template <typename T> static iblock::satstate round_s(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
+		template <typename T> static satstate_t round_s(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
-				return iblock::satstate::both;
+				return satstate_t::both;
 			}
 			long_signal_t tmp;
 			if (_src == 0) {
@@ -136,15 +100,15 @@ namespace mexo {
 			}
 			if (tmp > _range.hi) {
 				_output = _range.hi;
-				return iblock::satstate::up;
+				return satstate_t::up;
 			}
 			else if (tmp < _range.low) {
 				_output = _range.low;
-				return iblock::satstate::low;
+				return satstate_t::low;
 			}
 			else {
 				_output = (T)tmp;
-				return iblock::satstate::none;
+				return satstate_t::none;
 			}
 		}
 		static long_signal_t round_s(const long_signal_t& _src, unsigned int _shift) {
@@ -203,10 +167,10 @@ namespace mexo {
 		constexpr static signal_t long_max = q::long_max;
 		constexpr static signal_t long_min = q::long_min;
 
-		template <typename T> static iblock::satstate round_s(const long_signal_t& _src, const range_s<T>& _range, unsigned int _shift, T& _output) {
+		template <typename T> static satstate_t round_s(const long_signal_t& _src, const range_s<T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
-				return iblock::satstate::both;
+				return satstate_t::both;
 			}
 			long_signal_t tmp;
 			if (_src == 0) {
@@ -246,15 +210,15 @@ namespace mexo {
 			}
 			if (tmp > _range.hi) {
 				_output = _range.hi;
-				return iblock::satstate::up;
+				return satstate_t::up;
 			}
 			else if (tmp < _range.low) {
 				_output = _range.low;
-				return iblock::satstate::low;
+				return satstate_t::low;
 			}
 			else {
 				_output = tmp;
-				return iblock::satstate::none;
+				return satstate_t::none;
 			}
 		}
 
@@ -298,122 +262,169 @@ namespace mexo {
 	};
 
 
-	template<typename q> class to_digit_scale_b : public controller_block_t< typename q::signal_t, typename q::discret_t > {
-		typedef controller_block_t<typename q::signal_t, typename q::discret_t> B;
+	template<typename q> class to_digit_scale
+		: public controller_atom< typename q::signal_t, typename q::discret_t > {
 	public:
+		typedef controller_atom<typename q::signal_t, typename q::discret_t> A;
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
 		typedef typename q::discret_t discret_t;
+		typedef typename q::signal_t input_t;
+		typedef typename q::discret_t output_t;
 		struct config_s {
-			typename B::config_s cb;
+			typename A::config_s cb;
 			parameter_t scale;
 			unsigned shift;
 		};
-		struct present_s {
-			typename B::present_s cb;
-		};
+		typedef typename A::present_s present_s;
 	protected:
 		virtual void execute(void) {
-			present_s& present = iblock::present_cast<present_s>();
-			const config_s& config = iblock::config_cast<config_s>();
-
-			long_signal_t tmp = (long_signal_t)config.scale * B::input.value();
-			present.cb.local_satstate = q::round_s(tmp, B::range.value(), config.shift, present.cb.output);
-			B::update_satstate();
+			const config_s& config = config_cast<config_s>();
+			present_s& present = present_cast<present_s>();
+			long_signal_t tmp = (long_signal_t)config.scale * A::deseired;
+			present.satstate.local = q::round_s(tmp, A::range, config.shift, present.output);
+			A::update_satstate();
 		}
 	public:
-		to_digit_scale_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.cb, _present.cb) {}
+
+
+
+		to_digit_scale(const config_s& _config
+					   , present_s& _present
+					   , const signal_t& _deseired
+					   , const range_s<signal_t>& _range
+					   , satstate_t& _master_satstate
+		)
+			: A(_config.cb, _present, _deseired, _range, _master_satstate) {}
 	};
 
-	template<typename q> class ramp_b : public controller_block_t<typename  q::signal_t, typename  q::signal_t> {
-		typedef controller_block_t<typename q::signal_t, typename  q::signal_t> B;
+	template<typename q> class ramp
+		: public controller_atom< typename q::signal_t, typename q::signal_t > {
+		typedef controller_atom<typename q::signal_t, typename  q::signal_t> A;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
+		typedef typename q::signal_t input_t;
+		typedef typename q::discret_t output_t;
 
 		struct config_s {
-			typename B::config_s cb;
+			typename A::config_s cb;
 			signal_t rampStep;
+			unsigned shift;
 		};
-		struct present_s {
-			typename B::present_s cb;
-		};
+		typedef typename A::present_s present_s;
 	protected:
 
 		virtual void execute(void) {
-
-			iblock::satstate remote = B::master_satstate.value();
-			present_s& present = iblock::present_cast<present_s>();
-			const config_s& config = iblock::config_cast<config_s>();
-			if (remote == iblock::satstate::both) {
-				present.cb.satstate = iblock::satstate::both;
+			satstate_t remote = master_satstate;
+			const config_s& config = config_cast<config_s>();
+			present_s& present = present_cast<present_s>();
+			if (remote == satstate_t::both) {
+				present.satstate.actual = satstate_t::both;
 				return;
 			}
 
-			signal_t inp = B::input.value();
-			const range_s<signal_t>& r = B::range.value();
-			iblock::satstate inp_sut;
-			if (inp >= r.hi) {
-				inp = r.hi;
-				inp_sut = iblock::satstate::up;
+
+			satstate_t inp_sut;
+			signal_t input = deseired;
+			if (input >= range.hi) {
+				input = range.hi;
+				inp_sut = satstate_t::up;
 			}
-			else if (inp <= r.low) {
-				inp = r.low;
-				inp_sut = iblock::satstate::low;
+			else if (input <= range.low) {
+				input = range.low;
+				inp_sut = satstate_t::low;
 			}
 			else {
-				inp_sut = iblock::satstate::none;
+				inp_sut = satstate_t::none;
 			}
 
-			signal_t out = present.cb.output;
-			signal_t delta = inp - out;
+			long_signal_t delta = input - present.output;
 
 			if (delta > std::numeric_limits<signal_t>::epsilon()) {
-				if (remote != iblock::satstate::up) {
+				if (remote != satstate_t::up) {
 					if (delta < config.rampStep) {
-						present.cb.output = inp;
-						present.cb.local_satstate = inp_sut;
+						present.output = input;
+						present.satstate.local = inp_sut;
 					}
 					else {
-						present.cb.output += config.rampStep;
-						present.cb.local_satstate = iblock::satstate::none;
+						present.output += config.rampStep;
+						present.satstate.local = satstate_t::none;
 					}
 				}
 				else {
-					present.cb.local_satstate = iblock::satstate::none;
+					present.satstate.local = satstate_t::none;
 				}
 			}
 			else {
 				if (delta < -std::numeric_limits<signal_t>::epsilon()) {
-					if (remote != iblock::satstate::low) {
+					if (remote != satstate_t::low) {
 						if ((-delta) < config.rampStep) {
-							present.cb.output = inp;
-							present.cb.local_satstate = inp_sut;
+							present.output = input;
+							present.satstate.local = inp_sut;
 						}
 						else {
-							present.cb.output -= config.rampStep;
-							present.cb.local_satstate = iblock::satstate::none;
+							present.output -= config.rampStep;
+							present.satstate.local = satstate_t::none;
 						}
 					}
 					else {
-						present.cb.local_satstate = iblock::satstate::none;
+						present.satstate.local = satstate_t::none;
 					}
 				}
 				else {
-					present.cb.local_satstate = inp_sut;
+					present.satstate.local = inp_sut;
 				}
 			}
-			B::update_satstate();
+			A::update_satstate();
 		}
 	public:
-		ramp_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.cb, _present.cb) {}
+		ramp(const config_s& _config
+			 , present_s& _present
+			 , const signal_t& _deseired
+			 , const range_s<signal_t>& _range
+			 , satstate_t& _master_satstate
+		)
+			: A(_config.cb, _present, _deseired, _range, _master_satstate) {}
 	};
-template<typename q>  class  fast_filter_b : public function_block_t<typename  q::signal_t, typename  q::signal_t> {
-		typedef function_block_t<typename  q::signal_t, typename  q::signal_t> B;
+
+	template<typename q> class fast_filter
+		: public function_atom< typename q::signal_t, typename q::signal_t > {
+		typedef function_atom<typename q::signal_t, typename  q::signal_t> A;
+	public:
+		typedef typename q::signal_t signal_t;
+		typedef typename q::long_signal_t long_signal_t;
+		typedef typename q::parameter_t parameter_t;
+		typedef typename q::signal_t input_t;
+		typedef typename q::signal_t output_t;
+
+		struct config_s {
+			typename A::config_s cb;
+			unsigned shift;
+		};
+		typedef typename A::present_s present_s;
+		parameter_t  gain;
+	protected:
+
+		virtual void execute(void) {
+			const config_s& config = config_cast<config_s>();
+			present_s& present = present_cast<present_s>();
+			long_signal_t tmp = (long_signal_t)present.output * gain + input;
+			present.output = (signal_t)(((int)tmp) >> config.shift);
+		}
+	public:
+		fast_filter(const config_s& _config
+					, present_s& _present
+					, const signal_t& _input
+		)
+			: A(_config.cb, _present, _input) {}
+	};
+
+	/*
+	template<typename q>  class  fast_filter_b : public function_atom_t<typename  q::signal_t, typename  q::signal_t> {
+		typedef function_atom_t<typename  q::signal_t, typename  q::signal_t> B;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
@@ -422,32 +433,31 @@ template<typename q>  class  fast_filter_b : public function_block_t<typename  q
 			typename B::config_s fb;
 			parameter_t	shift;
 		};
-		struct present_s {
-			typename B::present_s fb;
-		};
+		typedef  typename B::present_s present_s;
+		typedef  typename B::standalone_s standalone_s;
 		parameter_t gain = (parameter_t)0;
 	protected:
 		virtual void execute(void) {
-			present_s& present = iblock::present_cast<present_s>();
-			const config_s& config = iblock::config_cast<config_s>();
-			long_signal_t tmp = (long_signal_t)present.fb.output*gain + B::input.value();
-			present.fb.output = (signal_t)(tmp >> config.shift);
+			present_s& present = iatom::present_cast<present_s>();
+			const config_s& config = iatom::config_cast<config_s>();
+			long_signal_t tmp = (long_signal_t)present.output * gain + B::input.value();
+			present.output = (signal_t)(tmp >> config.shift);
 		}
 
 		virtual bool do_reconfig(void) {
-			const config_s& config = iblock::config_cast<config_s>();
-			gain = (1<<config.shift) -1;
+			const config_s& config = iatom::config_cast<config_s>();
+			gain = (1 << config.shift) - 1;
 			B::do_reconfig();
 			return true;
 		};
 
 	public:
-		fast_filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.fb, _present.fb) {}
+		fast_filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
+			: B(_subsystem, _name, _config.fb, _standalone, _present) {}
 	};
 
-	template<typename q>  class  filter_b : public function_block_t<typename  q::signal_t, typename  q::signal_t> {
-		typedef function_block_t<typename  q::signal_t, typename  q::signal_t> B;
+	template<typename q>  class  filter_b : public function_atom_t<typename  q::signal_t, typename  q::signal_t> {
+		typedef function_atom_t<typename  q::signal_t, typename  q::signal_t> B;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
@@ -465,19 +475,22 @@ template<typename q>  class  fast_filter_b : public function_block_t<typename  q
 			typename B::present_s fb;
 			long_signal_t value;
 		};
+
+		typedef  typename B::standalone_s standalone_s;
+
 		parameter_t gain1 = (parameter_t)0;
 		parameter_t gain2 = (parameter_t)0;
 	protected:
 		virtual void execute(void) {
-			present_s& present = iblock::present_cast<present_s>();
-			const config_s& config = iblock::config_cast<config_s>();
-			long_signal_t tmp = present.value * gain1  + B::input.value() * gain2;
+			present_s& present = iatom::present_cast<present_s>();
+			const config_s& config = iatom::config_cast<config_s>();
+			long_signal_t tmp = present.value * gain1 + B::input.value() * gain2;
 			present.value = q::round_s(tmp, config.shift.gain);
 			present.fb.output = (signal_t)q::round_s(present.value, config.shift.value);
 		}
 
 		virtual bool do_reconfig(void) {
-			const config_s& config = iblock::config_cast<config_s>();
+			const config_s& config = iatom::config_cast<config_s>();
 			parameter_t ones = (parameter_t)(1 << config.shift.gain);
 			if (config.gain > ones) {
 				gain1 = ones;
@@ -491,11 +504,11 @@ template<typename q>  class  fast_filter_b : public function_block_t<typename  q
 		};
 
 	public:
-		filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-			: B(_subsystem, _name, _config.fb, _present.fb) {}
+		filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
+			: B(_subsystem, _name, _config.fb, _standalone, _present.fb) {}
 	};
 
-
+	*/
 	/*
 	struct signal2ph_s {
 		signal_t cross;

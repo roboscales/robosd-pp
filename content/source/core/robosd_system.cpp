@@ -62,7 +62,7 @@ namespace robo {
 #endif
 
 namespace robo {
-	system & system::instance_(void){
+	system& system::instance_(void) {
 		static system instance__;
 		return instance__;
 	}
@@ -85,7 +85,7 @@ namespace robo {
 			} count;
 		} statistic_;
 
-		struct block {
+		struct atom {
 			union {
 				struct {
 					size prev_offset;
@@ -97,7 +97,7 @@ namespace robo {
 		};
 
 		word  memo_[size_ + 1];
-		block* top_ = reinterpret_cast<block*>(memo_);
+		atom* top_ = reinterpret_cast<atom*>(memo_);
 		static allocator instance_;
 		size memo_top_ = 0;
 		allocator(void) {
@@ -121,7 +121,7 @@ namespace robo {
 			statistic_.count.query++;
 
 			if (size_ >= next_top) {
-				block* next_ = reinterpret_cast<block*>(memo_ + next_top);
+				atom* next_ = reinterpret_cast<atom*>(memo_ + next_top);
 				next_->prev_offset = offset;
 				next_->size = 0;
 				top_->size = (size)_sz;
@@ -139,17 +139,17 @@ namespace robo {
 			}
 		}
 
-		void release_(block* _block) {
-			size offset = offset_(_block->size);
+		void release_(atom* _atom) {
+			size offset = offset_(_atom->size);
 
-			statistic_.useful -= _block->size;
+			statistic_.useful -= _atom->size;
 			statistic_.used -= offset * sizeof(word);
 
-			_block->size = 0;
+			_atom->size = 0;
 		}
 
 		void release(void* _memo) {
-			block* tmp = (block*)(((word*)_memo) - 1);
+			atom* tmp = (atom*)(((word*)_memo) - 1);
 
 			if (tmp != top_ - top_->prev_offset) {
 				//todo проверить
@@ -171,7 +171,7 @@ namespace robo {
 		size_t owned(void* _memo) {
 			int sz = reinterpret_cast<word*>(_memo) - memo_;
 			if (sz > 0 && sz < size_) {
-				block* tmp = (block*)(((word*)_memo) - 1);
+				atom* tmp = (atom*)(((word*)_memo) - 1);
 				return  tmp->size;
 			}
 			else {
@@ -373,8 +373,8 @@ void* operator new(size_t size) {
 	#else
 	tmp = malloc(size);;
 	#endif
-	ROBO_APP_ASSERT(tmp!=nullptr)
-	return tmp;
+	ROBO_APP_ASSERT(tmp != nullptr)
+		return tmp;
 }
 
 void operator delete(void* ptr) {

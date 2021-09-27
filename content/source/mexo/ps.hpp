@@ -25,15 +25,18 @@ namespace mexo {
 			virtual ~control(void) {}
 		};
 
-		template < typename q, typename C > class pwm_b
+		template < typename q, typename C > class pwm
 			: public ps::control
 			, private C
-			, public to_digit_scale_b< q > {
+			, public to_digit_scale< q > {
 
+			satstate_t master_satstate_ = satstate_t::none;
+		public:
+			typedef to_digit_scale<q> to_digit_scale;
+			typedef typename to_digit_scale::present_s present_s;
 		protected:
-			typedef to_digit_scale_b< q> to_digit_scale_b;
-			void execute() {
-				present_s& present = iblock::present_cast<present_s>();
+			void execute(void) {
+				present_s& present = to_digit_scale::present_cast<present_s>();
 
 				switch (status_) {
 				case status::off:
@@ -47,8 +50,8 @@ namespace mexo {
 
 				case status::boot:
 				if (C::do_boot()) {
-					to_digit_scale_b::execute();
-					C::boot_complete(present.cb.output);
+					to_digit_scale::execute();
+					C::boot_complete(present.output);
 					status_ = status::on;
 					return;
 				}
@@ -57,8 +60,8 @@ namespace mexo {
 				}
 				case status::on:
 				if (command_ == command::on) {
-					to_digit_scale_b::execute();
-					C::do_run(present.cb.output);
+					to_digit_scale::execute();
+					C::do_run(present.output);
 					return;
 				}
 				else {
@@ -76,23 +79,82 @@ namespace mexo {
 				case status::configure:
 				break;
 				}
-				present.cb.satstate = iblock::satstate::both;
+				present.satstate.actual = satstate_t::both;
 			}
 			virtual bool do_reconfig(void) {
-				ROBO_LBREAKN(to_digit_scale_b::do_reconfig());
+				ROBO_LBREAKN(to_digit_scale::do_reconfig());
 				if (status_ == status::configure) {
 					status_ = status::off;
 				}
 				return true;
 			}
 		public:
-			typedef typename to_digit_scale_b::config_s config_s;
-			typedef typename to_digit_scale_b::present_s present_s;
-			pwm_b(isubsystem& _subsystem, cstr  _name, config_s& _config, present_s& _present)
-				: to_digit_scale_b(_subsystem, _name, _config, _present) {}
+			struct config_s {
+				typename to_digit_scale::config_s ds;
+				struct {
+					range_s < typename q::discret_t > duty;
+					range_s < typename q::signal_t > voltage;
+				} range;
+			};
 
+			pwm(const config_s& _config, present_s& _present, const signal_t& _deseired)
+				: to_digit_scale(_config.ds, _present, _deseired, _config.range.duty, master_satstate_) {}
 		};
 
+		template< typename q, typename T, typename D, typename S> class pwm_t
+			: public ::mexo::atom_t <
+			T
+			, pwm<q, D>
+			, S
+			, const typename q::signal_t&
+			> {
+		public:
+			typedef typename q::signal_t signal_t;
+			typedef ::mexo::atom_t <
+				T
+				, pwm<q, D>
+				, S
+				, const signal_t&
+			> A;
+			pwm_t(cstr _name, S* _owner, const typename  pwm<q, D>::config_s& _config, typename  pwm<q, D>::present_s& _present, const signal_t& _deseired)
+				: A(_name, _owner, _config, _present, _deseired) {}
+		};
+
+
+		template< typename q, typename D, typename S> class pwm_block_t : public pwm_t <
+			q
+			, ::mexo::subsystem_atom
+			, D
+			, S
+		> {
+		public:
+			typedef pwm_t <
+				q
+				, ::mexo::subsystem_atom
+				, D
+				, S
+			> A;
+			pwm_block_t(cstr _name, S* _owner, const typename A::config_s& _config, typename  A::present_s& _present, const typename q::signal_t& _deseired)
+				: A(_name, _owner, _config, _present, _deseired) {}
+		};
+
+		template< typename q, typename D, typename S> class pwm_task_t : public pwm_t <
+			q
+			, S
+			, D
+			, ::mexo::node
+		> {
+		public:
+			typedef pwm_t <
+				q
+				, S
+				, D
+				, ::mexo::node
+			> A;
+			pwm_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present, const typename q::signal_t& _deseired)
+				: A(_name, _owner, _config, _present, _deseired) {}
+		};
+		/*
 		class dev :public ::mexo::dev {
 			control& control_;
 		public:
@@ -120,7 +182,7 @@ namespace mexo {
 		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
 		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
 		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
-
+		*/
 		/*
 		namespace inverter {
 			class voltage {

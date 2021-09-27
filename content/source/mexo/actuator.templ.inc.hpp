@@ -23,13 +23,16 @@ public:
 	struct config_s {
 		typename ps_t::config_s ps;
 	};
+
 	struct present_s {
 		typename ps_t::present_s ps;
 	};
+	struct standalone_s {
+		typename ps_t::standalone_s ps;
+	};
 
-
-	ACTUATOR_PREFIX(t)(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
-		: ps_t(_hardwaresys, _name, _action.ps, _config.ps, _present.ps) {}
+	ACTUATOR_PREFIX(t)(hardwaresys_t & _hardwaresys, cstr _name, action_s & _action, config_s & _config, standalone_s & _standalone, present_s & _present)
+		: ps_t(_hardwaresys, _name, _action.ps, _config.ps, _standalone.ps, _present.ps) {}
 };
 #undef  POWER_SUPPLY_PREFIX
 #undef  _POWER_SUPPLY_PREFIX

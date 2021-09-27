@@ -18,6 +18,7 @@ namespace robo {
 			base_ref* prev = nullptr;
 			base_ref(T& _owner) : owner_(_owner) {};
 			void attach_to(base<T>& _list, base_ref<T>* _next) {
+				dettach();
 				_list.add_p(this, _next);
 			}
 		public:
@@ -77,6 +78,9 @@ namespace robo {
 				count_++;
 				_ref->list_ = this;
 				ROBO_APP_ASSERT(last->next == 0);
+				if (_ref != first) {
+					ROBO_APP_ASSERT(_ref->prev != 0);
+				}
 			}
 
 			void drop_p(base_ref<T>* _ref) {
