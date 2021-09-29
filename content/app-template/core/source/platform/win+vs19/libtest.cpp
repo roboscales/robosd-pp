@@ -1097,7 +1097,7 @@ public:
 				class voltage_mode : mode {
 				private:
 					signal_t deseired__ =(signal_t)0;
-					::mexo::iatom::output_t<signal_t>  deseired_;
+					::mexo::ihandler::output_t<signal_t>  deseired_;
 				protected:
 					virtual void do_start(void) {
 						owner().psv.deseired.link_to(&deseired_);
@@ -1180,13 +1180,13 @@ public:
 			voltage_regulator_b dcv;
 
 		public:
-			::mexo::iatom::output_t< types::signal_t >& current(void) { return adc.output; }
-			::mexo::iatom::output_t< types::signal_t >& current_diff(void) { return adc.output; }
+			::mexo::ihandler::output_t< types::signal_t >& current(void) { return adc.output; }
+			::mexo::ihandler::output_t< types::signal_t >& current_diff(void) { return adc.output; }
 			void reconfig(void) {
 				hardware_subsystem.reconfig();
 			}
-			fake_dc& pwm_atom() { return dc; }
-			adcs& sence_atom() { return ads; }
+			fake_dc& pwm_handler() { return dc; }
+			adcs& sence_handler() { return ads; }
 			::mexo::prioritet_subsystem subsys() { return hardware_subsystem; }
 			prioritet_subsystem()
 				: hardware_subsystem(RT("hardware"), true)
@@ -1264,8 +1264,23 @@ public:
 			class fake_adc {
 			public:
 				types::discret_t sence[3];
-				void query(void) { sence[0]++; sence[2]--; sence[1] += 2; };
-				fake_adc() { sence[0] = 0; sence[1] = 0; sence[2] = 0xFFFF; }
+				void query(void) {
+					sence[0]++;
+					sence[2]--;
+					static int n = 0;
+					if (n < 3072) {
+						n++;
+					}
+					else {
+						sence[1] = 555;
+					}
+
+				}
+				fake_adc() {
+					sence[0] = 0;
+					sence[1] = 0;
+					sence[2] = 0xFFFF;
+				}
 			};
 
 			typedef ::mexo::sence_task_t <
@@ -1282,6 +1297,30 @@ public:
 				, ::mexo::prioritet_subsystem
 			> adc3;
 
+			typedef ::mexo::function_block_t <
+				::mexo::fast_filter<types>
+				, ::mexo::prioritet_subsystem
+			> fast_filter;
+
+			typedef ::mexo::function_task_t <
+				::mexo::filter<types>
+				, ::mexo::prioritet_subsystem
+			> filter;
+
+			typedef ::mexo::controller_task_t <
+				::mexo::quazzy_adapt<types>
+				, ::mexo::prioritet_subsystem
+				, const types::signal_t&
+				, const types::signal_t&
+			> quazzy_adapt;
+
+			typedef ::mexo::controller_task_t <
+				::mexo::limmiter<types>
+				, ::mexo::prioritet_subsystem
+				, const types::signal_t&
+				, const types::signal_t&
+				, const range_s<types::signal_t>&
+			> limmiter;
 
 			struct present_s {
 				pwm::present_s pwm;
@@ -1289,6 +1328,10 @@ public:
 				adc2::present_s adc2;
 				adc3::present_s adc3;
 				voltage_ramp::present_s voltage_ramp;
+				fast_filter::present_s  fast_filter;
+				filter::present_s  filter;
+				quazzy_adapt::present_s quazzy_adapt;
+				limmiter::present_s limmiter;
 			} present = {};
 
 
@@ -1298,12 +1341,23 @@ public:
 				adc2::config_s adc2;
 				adc3::config_s adc3;
 				voltage_ramp::config_s voltage_ramp;
+				fast_filter::config_s  fast_filter;
+				filter::config_s  filter;
+				quazzy_adapt::config_s quazzy_adapt;
+				limmiter::config_s limmiter;
 			} config_ = {
 				{ {{17}, 263, 10},{{-8400,8400},{-32767,32767}} }
 				,{{18}, {0,2}, {1,1}, 10 }
-				,{{18}, 1, 1, 12 }
+				,{{18}, 1, 1, 10 }
 				,{{19}, {0,1}, {-1,-1}, 10 }
 				,{{20},100,0}
+				,{{21},1}
+				,{{{22}},60,{7,3,0}}
+				,{{{23}},0,10,1000,0,7,10}
+				,{
+					{{24}}
+					,{{{25}},0,10,1000,0,7,9}
+				}
 			};
 			//present_s present_ = {};
 
@@ -1311,13 +1365,47 @@ public:
 			present.voltage_ramp.ref.tag = 0x888;
 			present.adc.sb.ref.tag = 0x999;
 			//pwm2 pwm2_(RT("pwm2"), &prioritet_subsystem_, config_.pwm, voltage_required, duty_required, duty_satstate);
-
-			types::signal_t voltage_deseired = 0;
-			pwm pwm_(RT("pwm"), &prioritet_subsystem_, config_.pwm, present.pwm, present.voltage_ramp.output);
-			voltage_ramp voltage_ramp_(RT("ramp"), nullptr, config_.voltage_ramp, present.voltage_ramp, voltage_deseired, config_.pwm.range.voltage, present.pwm.satstate.actual);
+			present.pwm.satstate.actual = satstate_t::none;
+			types::signal_t dummy = 0;
+			range_s<types::signal_t> voltage_range_desired = { -32767,32767 };
+			range_s<types::signal_t> current_range_desired = { -400,400 };
+			pwm pwm_(RT("pwm"), &prioritet_subsystem_, config_.pwm, present.pwm);
+			voltage_ramp voltage_ramp_(RT("ramp"), nullptr, config_.voltage_ramp, present.voltage_ramp, config_.pwm.range.voltage, present.pwm.satstate.actual);
 			adc adc_(RT("adc"), &prioritet_subsystem_, config_.adc, present.adc);
 			adc2 adc2_(RT("adc2"), &prioritet_subsystem_, config_.adc2, present.adc2);
 			adc3 adc3_(RT("adc3"), &prioritet_subsystem_, config_.adc3, present.adc3);
+			fast_filter fast_filter_(RT("fast_filter"), &prioritet_subsystem_, config_.fast_filter, present.fast_filter, present.adc2.sb.output);
+			filter filter_(RT("filter"), nullptr, config_.filter, present.filter, present.adc2.sb.output);
+			quazzy_adapt quazzy_adapt_(
+				RT("quazzy_adapt")
+				, nullptr
+				, config_.quazzy_adapt
+				, present.quazzy_adapt
+				, voltage_range_desired
+				, present.pwm.satstate.actual
+				, present.adc2.sb.output
+				, dummy
+			);
+			limmiter limmiter_(
+				RT("limmiter")
+				, nullptr
+				, config_.limmiter
+				, present.limmiter
+				, config_.pwm.range.voltage
+				, present.pwm.satstate.actual
+				, present.adc2.sb.output
+				, dummy
+				, current_range_desired
+			);
+			types::discret_t pwm_duty = 0;
+			types::signal_t voltage_required = 0;
+			types::signal_t voltage_deseired = 0;
+			types::signal_t current_deseired = 0;
+
+			pwm_.set_output(&pwm_duty);
+			pwm_.set_input(&voltage_required);
+			voltage_ramp_.set_output(&voltage_required);
+			voltage_ramp_.set_input(&voltage_deseired);
 			/*::mexo::machine::slot::lambda(
 				::mexo::machine::slot::kind::start
 				, [&] {
@@ -1330,17 +1418,60 @@ public:
 			::mexo::machine::start();
 			adc_.start();
 			//adc2_.start();
+			filter_.start();
 			voltage_deseired = 32767;
 			pwm_.on();
 			voltage_ramp_.start();
-
-			for (int i = 0; i < 1025; ++i) {
+			//quazzy_adapt_.start();
+			for (int i = 0; i < 2025; ++i) {
 				::mexo::machine::priority_loop();
 				::mexo::machine::backend_loop();
 				::mexo::machine::frontend_loop();
 			}
-			Assert::IsTrue(present.pwm.output == 8400);
-			Assert::IsTrue(present.voltage_ramp.output == 32767);
+			Assert::IsTrue(pwm_duty == 8400);
+			Assert::IsTrue(voltage_required == 32767);
+
+			voltage_ramp_.stop();
+			voltage_ramp_.set_output(nullptr);
+			voltage_ramp_.set_input(nullptr);
+			quazzy_adapt_.set_input(&current_deseired);
+			quazzy_adapt_.set_output(&voltage_required);
+			quazzy_adapt_.reconfig();
+			quazzy_adapt_.start();
+
+			Assert::IsTrue(voltage_required == 0);
+			for (int i = 0; i < 2025; ++i) {
+				::mexo::machine::priority_loop();
+				::mexo::machine::backend_loop();
+				::mexo::machine::frontend_loop();
+			}
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+			Assert::IsTrue(pwm_duty == -8400);
+			Assert::IsTrue(voltage_required == -32767);
+
+
+			quazzy_adapt_.set_input(nullptr);
+			quazzy_adapt_.set_output(nullptr);
+
+			limmiter_.set_input(&voltage_deseired);
+			limmiter_.set_output(&voltage_required);
+			limmiter_.reconfig();
+			limmiter_.start();
+
+			Assert::IsTrue(voltage_required == 0);
+			for (int i = 0; i < 2025; ++i) {
+				::mexo::machine::priority_loop();
+				::mexo::machine::backend_loop();
+				::mexo::machine::frontend_loop();
+			}
+			::mexo::machine::priority_loop();
+			::mexo::machine::backend_loop();
+			::mexo::machine::frontend_loop();
+			Assert::IsTrue(pwm_duty == -8400);
+			Assert::IsTrue(voltage_required == -32767);
+
 		}
 
 

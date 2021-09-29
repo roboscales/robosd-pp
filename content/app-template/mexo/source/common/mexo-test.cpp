@@ -4,8 +4,8 @@
 
 //1.	Соединение между блоками , управляющими переферией и системой управления
 struct hardware_link {
-			static dc_power_supply_b & pwm_block(void);
-			static current_sensor_b & sence_block(void);
+			static dc_power_supply & pwm_block(void);
+			static current_sensor & sence_block(void);
 			static ::mexo::prioritet_subsystem & subsys(void);
 			static void reconfig(void);	
 } hardware_link_;
@@ -75,16 +75,12 @@ typedef  joint_t<types, hardware_link> joint;
 // собираем все сигналы и настройки в одно место- легко сохранять, легко отлаживаться, 
 //2.1. тут храним все актуальные сигналы в одном месте
 struct {
-	dc_power_supply_b::present_s dc_power_supply;
-	current_sensor_b::present_s current_sensor;
+	dc_power_supply::present_s dc_power_supply;
+	current_sensor::present_s current_sensor;
 	joint::present_s joint;
 } present ={};
-struct {
-	dc_power_supply_b::standalone_s dc_power_supply;
-	current_sensor_b::standalone_s current_sensor;
-	joint::standalone_s joint;
-} standalone ={};
-//2.2. тут храним все настройки в одном месте
+
+	//2.2. тут храним все настройки в одном месте
 struct {
 	joint::config_s joint;
 } config ={};
@@ -100,16 +96,16 @@ struct {
 ::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), false); 
 
 //3.2. подключаем к системе силовой преобразователь + 0.5 мкс
-dc_power_supply_b dc_power_supply_(hardware_subsystem, RT("dc"), dc_power_supply_config,standalone.dc_power_supply, present.dc_power_supply ); 
+dc_power_supply dc_power_supply_(RT("dc"), &hardware_subsystem, dc_power_supply_config, present.dc_power_supply ); 
 
 //3.3.  подключаем к подсистеме датчик тока  + 0.5 мкс
-current_sensor_b current_sensor_(hardware_subsystem,RT("current sensor"),current_sensor_config, present.current_sensor);
+current_sensor current_sensor_(RT("current sensor"), &hardware_subsystem, current_sensor_config, present.current_sensor);
 
 //3.4.  делигируем (to do коряво)
-dc_power_supply_b & hardware_link::pwm_block(void){
+dc_power_supply & hardware_link::pwm_block(void){
 	return dc_power_supply_;
 }
-current_sensor_b & hardware_link::sence_block(void){
+current_sensor & hardware_link::sence_block(void){
 	return current_sensor_;
 }
 void hardware_link::reconfig(void){
@@ -120,7 +116,7 @@ void hardware_link::reconfig(void){
 }
 
 //3.5. сам моторчик +1мкс - инфраструкутура и быстрый фильтр  +1мкс - напряженческий, +2,5мкс -токовый
-joint joint_(hardware_link_, RT("joint"), action.joint, config.joint,standalone.joint, present.joint);
+joint joint_(hardware_link_, RT("joint"), action.joint, present.joint);
 
 //4. дополнителные сервисы для mexo //не добавляет времени к обрабготке прерывания
 ::mexo::machine::slot::simple frontend_pool_ (

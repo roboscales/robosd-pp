@@ -4,10 +4,10 @@
 #include "mexo/math.hpp"
 namespace mexo {
 	template <typename q, typename D, unsigned C> class adc
-		: public sence_atom<robo::array<typename q::signal_t, C> >, private D {
+		: public sence_handler<robo::array<typename q::signal_t, C> >, private D {
 	public:
 		typedef robo::array<typename q::signal_t, C> out_t;
-		typedef sence_atom<out_t> A;
+		typedef sence_handler<out_t> A;
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
@@ -31,20 +31,23 @@ namespace mexo {
 		unsigned int init_count_ = 0;
 		bool init_ = false;
 		void reset_(void) {
-			long_discret_t* a = present_cast<present_s>().acc;
+			long_discret_t* a = handler::present_cast<present_s>().acc;
 			for (int i = 0; i < C; ++i, ++a) {
 				*a = 0;
 			}
-			init_count_ = 1 << config_cast<config_s>().init_count_shift;
+			init_count_ = 1 << handler::config_cast<config_s>().init_count_shift;
 		}
 	public:
 		void reset(void) {
 			bool init_ = false;
 			reset_();
 		}
+	protected:
+		virtual void do_handler_adjust(void) {}
+
 		void execute(void) {
-			present_s& present = present_cast<present_s>();
-			const config_s& config = config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
 
 			discret_t* n = present.native;
 			const unsigned int* ix = config.index;
@@ -85,21 +88,21 @@ namespace mexo {
 			D::query();
 		}
 
-		virtual bool do_reconfig(void) {
+		virtual bool do_handler_reconfig(void) {
 			reset();
 			D::query();
 			return true;
 		}
-
+	public:
 		adc(const config_s& _config, present_s& _present)
 			: A(_config.sb, _present.sb) {}
 	};
 
 
 	template <typename q, typename D>  class single_adc
-		: public sence_atom< typename q::signal_t >, private D {
+		: public sence_handler< typename q::signal_t >, private D {
 	public:
-		typedef sence_atom< typename q::signal_t > A;
+		typedef sence_handler< typename q::signal_t > A;
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
@@ -124,17 +127,18 @@ namespace mexo {
 		unsigned int init_count_ = 0;
 		bool init_ = false;
 		void reset_(void) {
-			present_cast<present_s>().acc = 0;
-			init_count_ = 1 << config_cast<config_s>().init_count_shift;
+			handler::present_cast<present_s>().acc = 0;
+			init_count_ = 1 << handler::config_cast<config_s>().init_count_shift;
 		}
 	public:
 		void reset(void) {
 			bool init_ = false;
 			reset_();
 		}
+	protected:
 		void execute(void) {
-			present_s& present = present_cast<present_s>();
-			const config_s& config = config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
 			present.native = D::sence[config.index];
 			if (init_) {
 				present.sb.output = config.scale * (present.native - present.offset);
@@ -151,9 +155,9 @@ namespace mexo {
 			}
 			D::query();
 		}
+		virtual void do_handler_adjust(void) {}
 
-
-		virtual bool do_reconfig(void) {
+		virtual bool do_handler_reconfig(void) {
 			reset();
 			D::query();
 			return true;
@@ -172,13 +176,17 @@ namespace mexo {
 			typename q::signal_t output;
 		};
 
-		void execute(void) {
-			B::execute();
-			present_s& present = present_cast<present_s>();
-			present.output = present.adc.sb.output.values[1] - present.adc.sb.output.values[0];
-		}
+
 		diff_adc(const config_s& _config, present_s& _present)
 			: B(_config, _present.adc) {}
+	protected:
+		void execute(void) {
+			B::execute();
+			present_s& present = handler::present_cast<present_s>();
+			present.output = present.adc.sb.output.values[1] - present.adc.sb.output.values[0];
+		}
+		virtual void do_handler_adjust(void) {}
+
 	};
 
 }

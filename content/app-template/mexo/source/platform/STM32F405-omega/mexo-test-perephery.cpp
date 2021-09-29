@@ -172,7 +172,7 @@ namespace robo {
 #endif
 }
 #include "mexo/mexo.hpp"
-current_adc::native_t current_adc::sence[2];
+uint32_t current_adc::sence[2];
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	current_adc::sence[0] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1); // читаем полученное значение в переменную adc	
@@ -212,66 +212,28 @@ void pwm::do_run(types::discret_t _duty){
 
 #define MAX_PWM ADC_START_TIME
 
-dc_power_supply_b::config_s dc_power_supply_config =
-/*
-{
-	{//controller block;
-		{0} //ref
-		,{//stabdalone
-			{ //converter
-			-MAX_PWM
-			, MAX_PWM
-			}
-			, 0 //defalt
-		} 
+dc_power_supply::config_s dc_power_supply_config =
+{ 
+	{
+		{0}
+		, 231
+		, 10
 	}
-	, MAX_PWM/12.f  //gain
-};
-*/
-{
-	{//controller block;
-		{0} //ref
-		,{//stabdalone
-			{ //converter
+	,{
+		{
 			-MAX_PWM
-			, MAX_PWM
-			}
-			, 0 //defalt
-		} 
-	}
-	, 231  //gain
-	, 10 //shift 
+			,MAX_PWM
+		}
+		,{
+			-32767
+			,32767
+		}
+	} 
 };
 
-/*{
-	{//controller block;
-		{0} //ref
-		,{//stabdalone
-			{ //converter
-			-MAX_PWM
-			, MAX_PWM
-			}
-			, 0 //defalt
-		} 
-	}
-	, (::mexo::signal_t)MAX_PWM/(::mexo::signal_t)12  //gain
-};*/
-
-current_sensor_b::config_s current_sensor_config = 
-/*
+current_sensor::config_s current_sensor_config = 
 {
-	{
-		{0} //sence_block
-	}
-	,{0,1} //index
-	,{5.f/4096, 5.f/4096} //scale
-	,10	// init_count_shift -1024 точек
-};
-*/
-{
-	{
-		{0} //sence_block
-	}
+	{0} 
 	,{0,1} //index
 	,{1, 1} //scale
 	,10	// init_count_shift -1024 точек

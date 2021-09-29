@@ -257,11 +257,11 @@ namespace mexo {
 		delete[] refs_;
 	}
 
-	subsystem_atom::subsystem_atom(cstr  _name, subsystem* _subsystem)
+	subsystem_handler::subsystem_handler(cstr  _name, subsystem* _subsystem)
 		: node(_name, _subsystem ? _subsystem->owned_node() : nullptr)
 		, ref_(*this) {
 		if (_subsystem) {
-			ref_.attach_to(_subsystem->atoms);
+			ref_.attach_to(_subsystem->handlers);
 		}
 	}
 

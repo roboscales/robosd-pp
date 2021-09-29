@@ -20,18 +20,24 @@ protected:
 	static bool do_shutdown(void) { return true; }
 	static void shutdown_complete(void) {  }
 };
-typedef ::mexo::ps::pwm_b<types, pwm>  dc_power_supply_b;
+
+typedef ::mexo::ps::pwm_block_t <
+	types
+	, pwm
+	, ::mexo::prioritet_subsystem
+> dc_power_supply;
 
 struct current_adc{
-	typedef uint32_t native_t;
-	typedef uint32_t acc_t;
-	static native_t sence[2];
+	static uint32_t sence[2];
 	static void query(void){};
 };
-typedef ::mexo::adc_diff_b<current_adc, types>  current_sensor_b;
+typedef ::mexo::sence_block_t <
+	::mexo::diff_adc<types, current_adc>
+	, ::mexo::prioritet_subsystem
+> current_sensor;
 
-extern dc_power_supply_b::config_s dc_power_supply_config;
-extern current_sensor_b::config_s current_sensor_config;
+extern dc_power_supply::config_s dc_power_supply_config;
+extern current_sensor::config_s current_sensor_config;
 
 
 

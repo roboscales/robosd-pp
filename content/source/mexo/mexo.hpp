@@ -265,7 +265,7 @@ namespace mexo {
 	};
 
 	class task : public node, public machine::slot::delegat {
-		friend class iatom;
+		friend class ihandler;
 	public:
 	private:
 		bool autostart_;
@@ -337,26 +337,26 @@ namespace mexo {
 	enum class satstate_t { none, both, low, up };
 
 	class subsystem;
-	class subsystem_atom : public node {
+	class subsystem_handler : public node {
 	public:
-		typedef robo::list::unsorted<subsystem_atom> list;
+		typedef robo::list::unsorted<subsystem_handler> list;
 		typedef list::ref ref;
 	private:
 		ref ref_;
 	public:
 	protected:
 		friend class subsystem;
-		subsystem_atom(cstr  _name, subsystem* _subsystem);
+		subsystem_handler(cstr  _name, subsystem* _subsystem);
 		virtual void operator ()(void) = 0;
 	};
 
 	class subsystem {
 	protected:
-		friend class subsystem_atom;
+		friend class subsystem_handler;
 		virtual node* owned_node(void) = 0;
-		subsystem_atom::list atoms;
+		subsystem_handler::list handlers;
 		void run(void) {
-			for (subsystem_atom::ref* r = atoms.first(); r; r = r->next()) {
+			for (subsystem_handler::ref* r = handlers.first(); r; r = r->next()) {
 				(r->owner())();
 			}
 		}
@@ -393,88 +393,32 @@ namespace mexo {
 		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : periodic_task(_name, _autostart, _index, _owner) {};
 	};
 
-
-
-	/*template< typename D, typename S, typename ... Args > class subsys_atom_t : public atom_t<::mexo::subsystem_atom, D, S> {
-	public:
-		typedef atom_t<::mexo::subsystem_atom, D, S> A;
-		typedef typename A::config_s config_s;
-		typedef typename A::present_s present_s;
-		subsys_atom_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
-			: A(_name, _owner, _config, _present, args...) {}
-	};*/
-
 	template <typename A> struct range_s {
 		A low;
 		A hi;
 	};
 
-	template< typename T, typename R, typename S, typename ... Args > class atom_t : public T, public  R {
+	template< typename T, typename R, typename S, typename ... Args > class handler_t : public T, public  R {
 	public:
 		typedef typename R::config_s config_s;
 		typedef typename R::present_s present_s;
 		virtual void operator ()(void) {
 			R::execute();
 		}
+	protected:
 		virtual bool do_reconfig(void) {
-			return R::do_reconfig();
+			ROBO_LBREAKN(T::do_reconfig());
+			ROBO_LBREAKN(R::do_handler_reconfig());
+			return true;
 		}
-		atom_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
+	public:
+		handler_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
 			: T(_name, _owner)
 			, R(_config, _present, args...) {}
 	};
 
-	template < typename T, typename B, typename S, typename ... Args> class controller_t
-		: public atom_t<T, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
-	public:
-		typedef  atom_t<T, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
-		controller_t(
-			cstr  _name
-			, S* _owner
-			, typename const BB::config_s& _config
-			, typename BB::present_s& _present
-			, const typename B::input_t& _deseired
-			, const range_s<typename B::output_t>& _range
-			, satstate_t& _master_satstate
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _present, _deseired, _range, _master_satstate, args...) {}
-	};
-	template < typename B, typename S, typename ... Args> class controller_block_t
-		: public atom_t<subsystem_atom, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
-	public:
-		typedef  atom_t<subsystem_atom, B, S, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
-		controller_block_t(
-			cstr  _name
-			, S* _owner
-			, typename const BB::config_s& _config
-			, typename BB::present_s& _present
-			, const typename B::input_t& _deseired
-			, const range_s<typename B::output_t>& _range
-			, satstate_t& _master_satstate
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _deseired, _range, _master_satstate, _output, _satstate, args...) {}
-	};
-	template <  typename B, typename S, typename ... Args> class controller_task_t
-		: public atom_t<S, B, node, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> {
-	public:
-		typedef  atom_t<S, B, node, const typename B::input_t&, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
-		controller_task_t(
-			cstr  _name
-			, node* _owner
-			, typename const BB::config_s& _config
-			, typename BB::present_s& _present
-			, const typename B::input_t& _deseired
-			, const range_s<typename B::output_t>& _range
-			, satstate_t& _master_satstate
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _present, _deseired, _range, _master_satstate, args...) {}
-	};
 
-
-	class atom {
+	class handler {
 	public:
 		struct config_s {
 			int tag;
@@ -485,39 +429,97 @@ namespace mexo {
 	private:
 		const config_s& config_;
 		present_s& present_;
+	protected:
+		virtual bool do_handler_reconfig(void) { return true; };
+		virtual void do_handler_adjust(void) {};
 	public:
 		template <typename S>const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
 		template <typename P>  P& present_cast() { return reinterpret_cast <P&>(present_); }
-		atom(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
+		handler(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
 	};
 
-	template < typename I, typename O> class controller_atom : public atom {
+	/*template < typename T> class connection_point {
+		static T& dummy_() {
+			static T dummy__ = (T)0;
+			return dummy__;
+		}
+		T& value_;
+		T* input_;
+		T* output_;
 	public:
+		connection_point(T& _value) :value_(_value) {
+			input_ = &dummy_();
+			output_ = &dummy_();
+		}
+		void connect(T* _input, T* _output) {
+			if (_input == nullptr) {
+				input_ = &dummy_();
+			}
+			else {
+				input_ = _input;
+			}
+			if (_output == nullptr) {
+				output_ = &dummy_();
+			}
+			else {
+				output_ = _output;
+			}
+		}
+		void update() {
+			*output_ = value_ = *input_;
+		}
+	};
+	*/
+
+
+	template < typename I, typename O> class controller_handler : public handler {
+		I dummy_input_ = (I)0;
+		O dummy_output_ = (O)0;
 	protected:
-		const I& deseired;
 		const range_s<O>& range;
-		satstate_t& master_satstate;
+		const satstate_t& master_satstate;
+		I* deseired;
+		O* output;
+		//connection_point<O>* connection_point_;
 	public:
+		typedef I input_t;
+		typedef O output_t;
 		struct present_s {
-			atom::present_s ref;
-			O output;
+			handler::present_s ref;
 			struct {
 				satstate_t actual;
 				satstate_t local;
 			}satstate;
 		};
-		controller_atom(
+		controller_handler(
 			const config_s& _config
 			, present_s& _present
-			, const I& _deseired
 			, const range_s<O>& _range
-			, satstate_t& _master_satstate
+			, const satstate_t& _master_satstate
 		)
-			: atom(_config, _present.ref)
-			, deseired(_deseired)
+			: handler(_config, _present.ref)
 			, range(_range)
-			, master_satstate(_master_satstate) {}
+			, master_satstate(_master_satstate)
+			, deseired(&dummy_input_)
+			, output(&dummy_output_) {}
+		void set_output(I* _output) {
+			if (_output) {
+				output = _output;
+			}
+			else {
+				output = &dummy_output_;
+			}
+		}
+		void set_input(I* _input) {
+			if (_input) {
+				deseired = _input;
+			}
+			else {
+				deseired = &dummy_input_;
+			}
+		}
 
+	protected:
 		void update_satstate(void) {
 			present_s& present = present_cast<present_s>();
 			satstate_t remote = master_satstate;
@@ -528,30 +530,79 @@ namespace mexo {
 				present.satstate.actual = remote;
 			}
 		}
-		virtual bool do_reconfig(void) {
+		virtual bool do_handler_reconfig(void) {
+			ROBO_LBREAKN(handler::do_handler_reconfig());
 			ROBO_LBREAKN(range.low <= range.hi);
+			do_handler_adjust();
 			return true;
 		}
 	};
-	template < typename O> class sence_atom : public atom {
+	template < typename T, typename B, typename S, typename ... Args> class controller_t
+		: public handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> {
+	public:
+		typedef  handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
+		controller_t(
+			cstr  _name
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const range_s<typename B::output_t>& _range
+			, satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+	};
+	template < typename B, typename S, typename ... Args> class controller_block_t
+		: public handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+	public:
+		typedef  handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> BB;
+		controller_block_t(
+			cstr  _name
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const range_s<typename B::output_t>& _range
+			, const satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+	};
+	template <  typename B, typename S, typename ... Args> class controller_task_t
+		: public handler_t<S, B, node, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+	public:
+		typedef  handler_t<S, B, node, const range_s<typename B::output_t>&, const  satstate_t&, Args...> BB;
+		controller_task_t(
+			cstr  _name
+			, node* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const range_s<typename B::output_t>& _range
+			, const satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+	};
+
+
+	template < typename O> class sence_handler : public handler {
 	protected:
 	public:
 		struct present_s {
-			atom::present_s ref;
+			handler::present_s ref;
 			O output;
 		};
-		sence_atom(const config_s& _config, present_s& _present)
-			: atom(_config, _present.ref) {}
+		sence_handler(const config_s& _config, present_s& _present)
+			: handler(_config, _present.ref) {}
 	};
 
-	template< typename R, typename S > class sence_block_t : public atom_t <
-		::mexo::subsystem_atom
+	template< typename R, typename S > class sence_block_t : public handler_t <
+		::mexo::subsystem_handler
 		, R
 		, S
 	> {
 	public:
-		typedef atom_t <
-			::mexo::subsystem_atom
+		typedef handler_t <
+			::mexo::subsystem_handler
 			, R
 			, S
 		> A;
@@ -559,14 +610,14 @@ namespace mexo {
 			: A(_name, _owner, _config, _present) {}
 	};
 
-	template< typename R, typename S> class sence_task_t : public atom_t <
-		, S
+	template< typename R, typename S> class sence_task_t : public handler_t <
+			S
 		, R
 		, ::mexo::node
 	> {
 	public:
-		typedef atom_t <
-			, S
+		typedef handler_t <
+				S
 			, R
 			, ::mexo::node
 		> A;
@@ -574,79 +625,78 @@ namespace mexo {
 			: A(_name, _owner, _config, _present) {}
 	};
 
-	/*	template < typename T, typename B, typename S, typename I, typename O> class function_atom_t
-			: public atom_t<
-			T
-			, B
-			, S
-			, const I&
-			, O&
-			> {
-		public:
-			typedef  atom_t<
-				T
-				, B
-				, S
-				, const I&
-				, O&
-			> BB;
-			function_atom_t(
-				cstr  _name
-				, S& _owner
-				, const I& _deseired
-				, O& _output
-			)
-				: BB(_name, _owner, _deseired, _output) {}
-		};*/
-
-	template < typename I, typename O> class function_atom : public atom {
+	template < typename I, typename O> class function_handler : public handler {
+	protected:
+		const I & input;
 	public:
-		const I& input;
+		typedef I input_t;
+		typedef O output_t;
 		struct present_s {
-			atom::present_s ref;
-			O output;
+			handler::present_s ref;
+			output_t output;
 		};
-		function_atom(
-			config_s& _config
-			, const I& _input
+		function_handler(
+			const config_s& _config
 			, present_s& _present
+			, const input_t& _input
 		)
-			: atom(_config, _present)
-			, input(_input) {}
+			: handler(_config, _present.ref)
+			, input(_input){}
 	};
-	/*
-	template < typename T, typename B, typename S, typename I, typename O> class scope_atom_t
-		: public atom_t<
-		T
-		, B
-		, S
-		, const I&
-		> {
+
+	template < typename T, typename R, typename S, typename ... Args> class function_t
+		: public handler_t<T, R, S, const typename R::input_t&, Args...> {
+		typedef  handler_t<T, R, S, const typename R::input_t&, Args...> BB;
 	public:
-		typedef  atom_t<
-			T
-			, B
-			, S
-			, const I&
-		> BB;
-		scope_atom_t(
+		function_t(
 			cstr  _name
-			, S& _owner
-			, const I& _deseired
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename R::input_t & _input
+			, Args ... args
 		)
-			: BB(_name, _owner, _deseired) {}
+			: BB(_name, _owner, _config, _present,_input, args...) {}
 	};
-	*/
-	template < typename I> class scope_atom : public atom {
+	template < typename R, typename S, typename ... Args> class function_block_t
+		: public handler_t<subsystem_handler, R, S, const typename R::input_t&, Args...> {
+		typedef  handler_t<subsystem_handler, R, S, const typename R::input_t&, Args...> BB;
+	public:
+		function_block_t(
+			cstr  _name
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename R::input_t& _input
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _input, args...) {}
+	};
+	template <  typename R, typename S, typename ... Args> class function_task_t
+		: public handler_t<S, R, node, const typename R::input_t&, Args...> {
+		typedef  handler_t<S, R, node, const typename R::input_t&, Args...> BB;
+	public:
+		function_task_t(
+			cstr  _name
+			, node* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, const typename R::input_t& _input
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, _input, args...) {}
+	};
+
+	template < typename I> class scope_handler : public handler {
 	protected:
 		const I& input;
-		atom::present_s present_;
+		handler::present_s present_;
 	public:
-		scope_atom(
+		scope_handler(
 			config_s& _config
-			, const I& _deseired
+			, const I & _input
 		)
-			: atom(_config, present_)
+			: handler(_config, present_)
 			, input(_input) {}
 	};
 }

@@ -29,39 +29,48 @@
 #include "mexo/regulator.hpp"
 template <typename types, typename hardwaresys_t>  class PS_TEMPLATE_NAME : public ::mexo::ps::dev {
 public:
+	
 	#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-	::mexo::backend_subsystem voltage_control;
-	#endif
-
-	#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-	::mexo::backend_subsystem current_control;
-	#endif
-
-	#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-	::mexo::backend_subsystem current_limmiter_control;
-	#endif
-
-	#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-	typedef ::mexo::ramp_b<types> voltage_regulator_b;
+	typedef ::mexo::controller_task_t <
+		::mexo::ramp<types>
+		, ::mexo::backend_subsystem
+	> voltage_regulator_b;
 	voltage_regulator_b voltage_regulator;
 	#endif
 
 	#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-	typedef ::mexo::quazzy_adapt_b<types> current_regulaor_b;
+	typedef ::mexo::controller_task_t <
+		::mexo::quazzy_adapt<types>
+		, ::mexo::backend_subsystem
+		, const typename types::signal_t&
+		, const typename types::signal_t&
+	> current_regulaor_b;
 	current_regulaor_b current_regulator;
 	#endif
 
 	#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-	typedef ::mexo::limmiter_b<types> current_limmiter_b;
+	typedef ::mexo::controller_task_t <
+		::mexo::limmiter<types>
+		, ::mexo::prioritet_subsystem
+		, const typename types::signal_t&
+		, const typename types::signal_t&
+		, const ::mexo::range_s<typename types::signal_t>&
+	> current_limmiter_b;
 	current_limmiter_b current_limmiter;
 	#endif
 
 	#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_DIFF_ENABLED==1
-	typedef ::mexo::filter_b<types> filter_b;
+	typedef ::mexo::function_task_t <
+			::mexo::filter<types>
+			, ::mexo::prioritet_subsystem
+		>  filter_b;
 	#endif 
 
 	#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-	typedef ::mexo::fast_filter_b<types> fast_filter_b;
+	typedef ::mexo::function_block_t <
+		::mexo::fast_filter<types>
+		, ::mexo::prioritet_subsystem
+	>fast_filter_b;
 	#endif 
 
 	#if POWER_SUPPLY_CURRENT_FILTER_ENABLED == 1
@@ -84,30 +93,9 @@ public:
 		typename types::signal_t current;
 	};
 
-	struct standalone_s {
-		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-		typename current_limmiter_b::standalone_s current_limmiter;
-		#else 
-		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-		typename voltage_regulator_b::standalone_s voltage_regulator;
-		#endif
-		#endif		
-		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-		typename filter_b::standalone_s current_filter;
-		#endif
-		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-		typename fast_filter_b::standalone_s current_filter;
-		#endif
-		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED == 1
-		typename filter_b::standalone_s current_diff_filter;
-		#endif
-		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-		typename current_regulaor_b::standalone_s current_regulaor;
-		#endif
-	};
-
 	struct config_s {
 		int tag;
+
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typename voltage_regulator_b::config_s voltage_regulator;
 		#endif
@@ -127,7 +115,8 @@ public:
 		typename current_limmiter_b::config_s current_limmiter;
 		#endif
 	};
-	struct present_s {
+	
+	struct present_s {		
 		::mexo::ps::dev::present_s dev;
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typename voltage_regulator_b::present_s voltage_regulator;
@@ -147,7 +136,33 @@ public:
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		typename current_limmiter_b::present_s current_limmiter;
 		#endif
+
+		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		typename types::discret_t pwm_duty;
+		typename types::signal_t voltage_required;
+		#endif		
+
+		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		typename types::signal_t voltage_deseired;
+		#endif
+		
+		#if  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
+		typename types::signal_t current_deseired;
+		#endif		
+		
+		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 \
+		||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 \
+		|| POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		::mexo::range_s<typename types::signal_t> voltage_range_desired;
+		#endif
+		
+		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 \
+		|| POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		::mexo::range_s<typename types::signal_t> current_range_desired;
+		#endif
+
 	};
+
 
 	#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 	class voltage_mode_t :public ::mexo::ps::dev::mode {
@@ -156,26 +171,38 @@ public:
 
 		virtual void applay_action(void) {
 			const action_s& action = owner().template action_cast<action_s>();
+			const present_s& present = owner().template present_cast<present_s>();
 
 			if (action.invers) {
-				owner().voltage_regulator.set_input(-action.voltage);
+				present.voltage_deseired = -action.voltage;
 			}
 			else {
-				owner().voltage_regulator.set_input(action.voltage);
+				present.voltage_deseired = action.voltage;
 			}
 		}
 
 		virtual void do_start(void) {
+			
+			const present_s& present = owner().template present_cast<present_s>();
+
+			owner().pwm_block().set_output(&present.pwm_duty);
+			owner().pwm_block().set_input(&present.voltage_required);
+			owner().voltage_regulator.set_output(&present.voltage_required);
+			owner().voltage_regulator.set_input(&present.voltage_deseired);
+
 			owner().hardwaresys.reconfig();
-			owner().voltage_control.reconfig();
-			owner().voltage_control.start();
-			owner().hardwaresys.pwm_atom().link_to(owner().voltage_regulator);
+			owner().voltage_regulator.reconfig();
+			owner().voltage_regulator.start();
 			owner().on();
 		}
 
 		virtual void do_stop(void) {
-			owner().voltage_control.stop();
 			owner().off();
+			owner().voltage_regulator.stop();
+			owner().pwm_block().set_output(nullptr);
+			owner().pwm_block().set_input(nullptr);
+			owner().voltage_regulator.set_output(nullptr);
+			owner().voltage_regulator.set_input(nullptr);
 		}
 
 	public:
@@ -183,31 +210,50 @@ public:
 			::mexo::ps::dev::mode(_index, RT("mod_v"), _owner) {}
 	};
 	#endif
+	
+	
 	#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 	class current_mode_t :public ::mexo::ps::dev::mode {
 	protected:
 		PS_TEMPLATE_NAME& owner(void) { return owner_cast<PS_TEMPLATE_NAME>(); }
 		virtual void applay_action(void) {
 			const action_s& action = owner().template action_cast<action_s>();
+			const present_s& present = owner().template present_cast<present_s>();
+	
 			if (action.invers) {
-				owner().current_regulator.set_input(-action.current);
+				present.current_deseired = -action.current;
 			}
 			else {
-				owner().current_regulator.set_input(action.current);
+				present.current_deseired = action.current;
 			}
-			owner().current_regulator.set_min(-action.voltage);
-			owner().current_regulator.set_max(action.voltage);
+			
+			present.voltage_range_desired.hi = action.voltage;
+			present.voltage_range_desired.low = -action.voltage;
+			
 		}
 		virtual void do_start(void) {
-			owner().hardwaresys.pwm_atom().link_to(owner().current_regulator);
+			
+			
+			const present_s& present = owner().template present_cast<present_s>();
+
+			owner().pwm_block().set_output(&present.pwm_duty);
+			owner().pwm_block().set_input(&present.voltage_required);
+			owner().current_regulator.set_output(&present.voltage_required);
+			owner().current_regulator.set_input(&present.current_deseired);
+
 			owner().hardwaresys.reconfig();
-			owner().current_control.reconfig();
-			owner().current_control.start();
-			owner().on();
+			owner().current_regulator.reconfig();
+			owner().current_regulator.start();
+			owner().on();			
+
 		}
 		virtual void do_stop(void) {
-			owner().current_control.stop();
 			owner().off();
+			owner().v.stop();
+			owner().pwm_block().set_output(nullptr);
+			owner().pwm_block().set_input(nullptr);
+			owner().current_regulator.set_output(nullptr);
+			owner().current_regulator.set_input(nullptr);
 		}
 	public:
 		current_mode_t(int _index, PS_TEMPLATE_NAME& _owner) :
@@ -220,26 +266,39 @@ public:
 		PS_TEMPLATE_NAME& owner(void) { return owner_cast<PS_TEMPLATE_NAME>(); }
 		virtual void applay_action(void) {
 			const action_s& action = owner().template action_cast<action_s>();
+			const present_s& present = owner().template present_cast<present_s>();
+	
 			if (action.invers) {
-				owner().current_limmiter.set_input(-action.voltage);
+				present.voltage_deseired = -action.voltage;
 			}
 			else {
-				owner().current_limmiter.set_input(action.voltage);
+				present.voltage_deseired = action.voltage;
 			}
-			owner().current_limmiter.set_signal_min(-action.current);
-			owner().current_limmiter.set_signal_max(action.current);
+			
+			present.current_range_desired.hi = action.current;
+			present.current_range_desired.low = -action.current;
 		}
 
 		virtual void do_start(void) {
-			owner().hardwaresys.pwm_atom().link_to(owner().current_limmiter);
+			const present_s& present = owner().template present_cast<present_s>();
+
+			owner().pwm_block().set_output(&present.pwm_duty);
+			owner().pwm_block().set_input(&present.voltage_required);
+			owner().current_limmiter.set_output(&present.voltage_required);
+			owner().current_limmiter.set_input(&present.voltage_deseired);
+			present.voltage_range_desired =  owner().pwm_block().
 			owner().hardwaresys.reconfig();
-			owner().current_limmiter_control.reconfig();
-			owner().current_limmiter_control.start();
-			owner().on();
+			owner().current_limmiter.reconfig();
+			owner().current_limmiter.start();
+			owner().on();			
 		}
 		virtual void do_stop(void) {
-			owner().current_limmiter_control.stop();
 			owner().off();
+			owner().current_limmiter.stop();
+			owner().pwm_block().set_output(nullptr);
+			owner().pwm_block().set_input(nullptr);
+			owner().current_limmiter.set_output(nullptr);
+			owner().current_limmiter.set_input(nullptr);
 		}
 	public:
 		current_limmiter_mode_t(int _index, PS_TEMPLATE_NAME& _owner) :
@@ -257,7 +316,7 @@ public:
 	current_limmiter_mode_t current_limmiter_mode;
 	#endif
 	PS_TEMPLATE_NAME(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, standalone_s& _standalone, present_s& _present)
-		: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.pwm_atom())
+		: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.pwm_handler())
 		, hardwaresys(_hardwaresys)
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		, voltage_control(RT("v_co"), false, this)
@@ -296,18 +355,18 @@ public:
 		//				prioritet_subsystem_.dc.link_to(current_regulator);
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED ==1
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-		current_filter.input.link_to(&hardwaresys.sence_atom().output);
+		current_filter.input.link_to(&hardwaresys.sence_handler().output);
 		current_regulator.actual.link_to(&current_filter.output);
 		#else
-		current_regulator.actual.link_to(&hardwaresys.sence_atom().output);
+		current_regulator.actual.link_to(&hardwaresys.sence_handler().output);
 		#endif
 
 		#if POWER_SUPPLY_CURRENT_DIFF_ENABLED ==1
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		current_diff_filter.input.link_to(&hardwaresys.sence_atom().output_diff);
+		current_diff_filter.input.link_to(&hardwaresys.sence_handler().output_diff);
 		current_regulator.actual_diff.link_to(&current_diff_filter.output);
 		#else
-		current_regulator.actual.link_to(&hardwaresys.sence_atom().output_diff);
+		current_regulator.actual.link_to(&hardwaresys.sence_handler().output_diff);
 		#endif
 		#endif
 		#endif

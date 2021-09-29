@@ -85,7 +85,7 @@ namespace robo {
 			} count;
 		} statistic_;
 
-		struct atom {
+		struct handler {
 			union {
 				struct {
 					size prev_offset;
@@ -97,7 +97,7 @@ namespace robo {
 		};
 
 		word  memo_[size_ + 1];
-		atom* top_ = reinterpret_cast<atom*>(memo_);
+		handler* top_ = reinterpret_cast<handler*>(memo_);
 		static allocator instance_;
 		size memo_top_ = 0;
 		allocator(void) {
@@ -121,7 +121,7 @@ namespace robo {
 			statistic_.count.query++;
 
 			if (size_ >= next_top) {
-				atom* next_ = reinterpret_cast<atom*>(memo_ + next_top);
+				handler* next_ = reinterpret_cast<handler*>(memo_ + next_top);
 				next_->prev_offset = offset;
 				next_->size = 0;
 				top_->size = (size)_sz;
@@ -139,17 +139,17 @@ namespace robo {
 			}
 		}
 
-		void release_(atom* _atom) {
-			size offset = offset_(_atom->size);
+		void release_(handler* _handler) {
+			size offset = offset_(_handler->size);
 
-			statistic_.useful -= _atom->size;
+			statistic_.useful -= _handler->size;
 			statistic_.used -= offset * sizeof(word);
 
-			_atom->size = 0;
+			_handler->size = 0;
 		}
 
 		void release(void* _memo) {
-			atom* tmp = (atom*)(((word*)_memo) - 1);
+			handler* tmp = (handler*)(((word*)_memo) - 1);
 
 			if (tmp != top_ - top_->prev_offset) {
 				//todo проверить
@@ -171,7 +171,7 @@ namespace robo {
 		size_t owned(void* _memo) {
 			int sz = reinterpret_cast<word*>(_memo) - memo_;
 			if (sz > 0 && sz < size_) {
-				atom* tmp = (atom*)(((word*)_memo) - 1);
+				handler* tmp = (handler*)(((word*)_memo) - 1);
 				return  tmp->size;
 			}
 			else {

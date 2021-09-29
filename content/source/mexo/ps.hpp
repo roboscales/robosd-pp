@@ -31,12 +31,12 @@ namespace mexo {
 			, public to_digit_scale< q > {
 
 			satstate_t master_satstate_ = satstate_t::none;
-		public:
 			typedef to_digit_scale<q> to_digit_scale;
+		public:
 			typedef typename to_digit_scale::present_s present_s;
 		protected:
 			void execute(void) {
-				present_s& present = to_digit_scale::present_cast<present_s>();
+				present_s& present = handler::present_cast<present_s>();
 
 				switch (status_) {
 				case status::off:
@@ -51,7 +51,7 @@ namespace mexo {
 				case status::boot:
 				if (C::do_boot()) {
 					to_digit_scale::execute();
-					C::boot_complete(present.output);
+					C::boot_complete(*to_digit_scale::output);
 					status_ = status::on;
 					return;
 				}
@@ -61,7 +61,7 @@ namespace mexo {
 				case status::on:
 				if (command_ == command::on) {
 					to_digit_scale::execute();
-					C::do_run(present.output);
+					C::do_run(*to_digit_scale::output);
 					return;
 				}
 				else {
@@ -81,8 +81,8 @@ namespace mexo {
 				}
 				present.satstate.actual = satstate_t::both;
 			}
-			virtual bool do_reconfig(void) {
-				ROBO_LBREAKN(to_digit_scale::do_reconfig());
+			virtual bool do_handler_reconfig(void) {
+				ROBO_LBREAKN(to_digit_scale::do_handler_reconfig());
 				if (status_ == status::configure) {
 					status_ = status::off;
 				}
@@ -97,45 +97,43 @@ namespace mexo {
 				} range;
 			};
 
-			pwm(const config_s& _config, present_s& _present, const signal_t& _deseired)
-				: to_digit_scale(_config.ds, _present, _deseired, _config.range.duty, master_satstate_) {}
+			pwm(const config_s& _config, present_s& _present)
+				: to_digit_scale(_config.ds, _present, _config.range.duty, master_satstate_) {}
 		};
 
 		template< typename q, typename T, typename D, typename S> class pwm_t
-			: public ::mexo::atom_t <
+			: public ::mexo::handler_t <
 			T
 			, pwm<q, D>
 			, S
-			, const typename q::signal_t&
 			> {
 		public:
 			typedef typename q::signal_t signal_t;
-			typedef ::mexo::atom_t <
+			typedef ::mexo::handler_t <
 				T
 				, pwm<q, D>
 				, S
-				, const signal_t&
 			> A;
-			pwm_t(cstr _name, S* _owner, const typename  pwm<q, D>::config_s& _config, typename  pwm<q, D>::present_s& _present, const signal_t& _deseired)
-				: A(_name, _owner, _config, _present, _deseired) {}
+			pwm_t(cstr _name, S* _owner, const typename  pwm<q, D>::config_s& _config, typename  pwm<q, D>::present_s& _present)
+				: A(_name, _owner, _config, _present) {}
 		};
 
 
 		template< typename q, typename D, typename S> class pwm_block_t : public pwm_t <
 			q
-			, ::mexo::subsystem_atom
+			, ::mexo::subsystem_handler
 			, D
 			, S
 		> {
 		public:
 			typedef pwm_t <
 				q
-				, ::mexo::subsystem_atom
+				, ::mexo::subsystem_handler
 				, D
 				, S
 			> A;
-			pwm_block_t(cstr _name, S* _owner, const typename A::config_s& _config, typename  A::present_s& _present, const typename q::signal_t& _deseired)
-				: A(_name, _owner, _config, _present, _deseired) {}
+			pwm_block_t(cstr _name, S* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
+				: A(_name, _owner, _config, _present) {}
 		};
 
 		template< typename q, typename D, typename S> class pwm_task_t : public pwm_t <
@@ -151,10 +149,10 @@ namespace mexo {
 				, D
 				, ::mexo::node
 			> A;
-			pwm_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present, const typename q::signal_t& _deseired)
-				: A(_name, _owner, _config, _present, _deseired) {}
+			pwm_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
+				: A(_name, _owner, _config, _present) {}
 		};
-		/*
+
 		class dev :public ::mexo::dev {
 			control& control_;
 		public:
@@ -182,7 +180,6 @@ namespace mexo {
 		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
 		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
 		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
-		*/
 		/*
 		namespace inverter {
 			class voltage {

@@ -263,15 +263,13 @@ namespace mexo {
 
 
 	template<typename q> class to_digit_scale
-		: public controller_atom< typename q::signal_t, typename q::discret_t > {
+		: public controller_handler< typename q::signal_t, typename q::discret_t > {
+		typedef controller_handler<typename q::signal_t, typename q::discret_t> A;
 	public:
-		typedef controller_atom<typename q::signal_t, typename q::discret_t> A;
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
 		typedef typename q::discret_t discret_t;
-		typedef typename q::signal_t input_t;
-		typedef typename q::discret_t output_t;
 		struct config_s {
 			typename A::config_s cb;
 			parameter_t scale;
@@ -280,34 +278,31 @@ namespace mexo {
 		typedef typename A::present_s present_s;
 	protected:
 		virtual void execute(void) {
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
-			long_signal_t tmp = (long_signal_t)config.scale * A::deseired;
-			present.satstate.local = q::round_s(tmp, A::range, config.shift, present.output);
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			long_signal_t tmp = (long_signal_t)config.scale * *A::deseired;
+			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
 		}
+		virtual void do_handler_adjust(void) {
+			//
+		}
 	public:
-
-
-
 		to_digit_scale(const config_s& _config
 					   , present_s& _present
-					   , const signal_t& _deseired
 					   , const range_s<signal_t>& _range
-					   , satstate_t& _master_satstate
+					   , const satstate_t& _master_satstate
 		)
-			: A(_config.cb, _present, _deseired, _range, _master_satstate) {}
+			: A(_config.cb, _present, _range, _master_satstate) {}
 	};
 
 	template<typename q> class ramp
-		: public controller_atom< typename q::signal_t, typename q::signal_t > {
-		typedef controller_atom<typename q::signal_t, typename  q::signal_t> A;
+		: public controller_handler< typename q::signal_t, typename q::signal_t > {
+		typedef controller_handler<typename q::signal_t, typename  q::signal_t> A;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
-		typedef typename q::signal_t input_t;
-		typedef typename q::discret_t output_t;
 
 		struct config_s {
 			typename A::config_s cb;
@@ -318,9 +313,9 @@ namespace mexo {
 	protected:
 
 		virtual void execute(void) {
-			satstate_t remote = master_satstate;
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			satstate_t remote = A::master_satstate;
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
 			if (remote == satstate_t::both) {
 				present.satstate.actual = satstate_t::both;
 				return;
@@ -328,29 +323,30 @@ namespace mexo {
 
 
 			satstate_t inp_sut;
-			signal_t input = deseired;
-			if (input >= range.hi) {
-				input = range.hi;
+			signal_t input = *A::deseired;
+			signal_t out = *A::output;
+			if (input >= A::range.hi) {
+				input = A::range.hi;
 				inp_sut = satstate_t::up;
 			}
-			else if (input <= range.low) {
-				input = range.low;
+			else if (input <= A::range.low) {
+				input = A::range.low;
 				inp_sut = satstate_t::low;
 			}
 			else {
 				inp_sut = satstate_t::none;
 			}
 
-			long_signal_t delta = input - present.output;
+			long_signal_t delta = input - out;
 
 			if (delta > std::numeric_limits<signal_t>::epsilon()) {
 				if (remote != satstate_t::up) {
 					if (delta < config.rampStep) {
-						present.output = input;
+						*A::output = input;
 						present.satstate.local = inp_sut;
 					}
 					else {
-						present.output += config.rampStep;
+						*A::output = out + config.rampStep;
 						present.satstate.local = satstate_t::none;
 					}
 				}
@@ -362,11 +358,11 @@ namespace mexo {
 				if (delta < -std::numeric_limits<signal_t>::epsilon()) {
 					if (remote != satstate_t::low) {
 						if ((-delta) < config.rampStep) {
-							present.output = input;
+							*A::output = input;
 							present.satstate.local = inp_sut;
 						}
 						else {
-							present.output -= config.rampStep;
+							*A::output = out - config.rampStep;
 							present.satstate.local = satstate_t::none;
 						}
 					}
@@ -380,25 +376,29 @@ namespace mexo {
 			}
 			A::update_satstate();
 		}
+
+		virtual void do_handler_adjust(void) {
+			//const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			*A::output = 0;
+			present.satstate.actual = satstate_t::both;
+		}
 	public:
 		ramp(const config_s& _config
 			 , present_s& _present
-			 , const signal_t& _deseired
 			 , const range_s<signal_t>& _range
-			 , satstate_t& _master_satstate
+			 , const satstate_t& _master_satstate
 		)
-			: A(_config.cb, _present, _deseired, _range, _master_satstate) {}
+			: A(_config.cb, _present, _range, _master_satstate) {}
 	};
 
 	template<typename q> class fast_filter
-		: public function_atom< typename q::signal_t, typename q::signal_t > {
-		typedef function_atom<typename q::signal_t, typename  q::signal_t> A;
+		: public function_handler< typename q::signal_t, typename q::signal_t > {
+		typedef function_handler<typename q::signal_t, typename  q::signal_t> A;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
-		typedef typename q::signal_t input_t;
-		typedef typename q::signal_t output_t;
 
 		struct config_s {
 			typename A::config_s cb;
@@ -408,12 +408,19 @@ namespace mexo {
 		parameter_t  gain;
 	protected:
 
-		virtual void execute(void) {
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
-			long_signal_t tmp = (long_signal_t)present.output * gain + input;
+		void execute(void) {
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			long_signal_t tmp = (long_signal_t)present.output * gain + A::input;
 			present.output = (signal_t)(((int)tmp) >> config.shift);
 		}
+		bool do_handler_reconfig(void) {
+			const config_s& config = handler::config_cast<config_s>();
+			gain = (1 << config.shift) - 1;
+			return true;
+		}
+		virtual void do_handler_adjust(void) { handler::present_cast<present_s>().output = 0; }
+
 	public:
 		fast_filter(const config_s& _config
 					, present_s& _present
@@ -422,42 +429,10 @@ namespace mexo {
 			: A(_config.cb, _present, _input) {}
 	};
 
-	/*
-	template<typename q>  class  fast_filter_b : public function_atom_t<typename  q::signal_t, typename  q::signal_t> {
-		typedef function_atom_t<typename  q::signal_t, typename  q::signal_t> B;
-	public:
-		typedef typename q::signal_t signal_t;
-		typedef typename q::long_signal_t long_signal_t;
-		typedef typename q::parameter_t parameter_t;
-		struct config_s {
-			typename B::config_s fb;
-			parameter_t	shift;
-		};
-		typedef  typename B::present_s present_s;
-		typedef  typename B::standalone_s standalone_s;
-		parameter_t gain = (parameter_t)0;
-	protected:
-		virtual void execute(void) {
-			present_s& present = iatom::present_cast<present_s>();
-			const config_s& config = iatom::config_cast<config_s>();
-			long_signal_t tmp = (long_signal_t)present.output * gain + B::input.value();
-			present.output = (signal_t)(tmp >> config.shift);
-		}
 
-		virtual bool do_reconfig(void) {
-			const config_s& config = iatom::config_cast<config_s>();
-			gain = (1 << config.shift) - 1;
-			B::do_reconfig();
-			return true;
-		};
-
-	public:
-		fast_filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
-			: B(_subsystem, _name, _config.fb, _standalone, _present) {}
-	};
-
-	template<typename q>  class  filter_b : public function_atom_t<typename  q::signal_t, typename  q::signal_t> {
-		typedef function_atom_t<typename  q::signal_t, typename  q::signal_t> B;
+	template<typename q>  class  filter
+		: public function_handler<typename  q::signal_t, typename  q::signal_t> {
+		typedef function_handler<typename  q::signal_t, typename  q::signal_t> B;
 	public:
 		typedef typename q::signal_t signal_t;
 		typedef typename q::long_signal_t long_signal_t;
@@ -473,24 +448,22 @@ namespace mexo {
 		};
 		struct present_s {
 			typename B::present_s fb;
-			long_signal_t value;
+			long_signal_t filtered;
 		};
-
-		typedef  typename B::standalone_s standalone_s;
 
 		parameter_t gain1 = (parameter_t)0;
 		parameter_t gain2 = (parameter_t)0;
 	protected:
-		virtual void execute(void) {
-			present_s& present = iatom::present_cast<present_s>();
-			const config_s& config = iatom::config_cast<config_s>();
-			long_signal_t tmp = present.value * gain1 + B::input.value() * gain2;
-			present.value = q::round_s(tmp, config.shift.gain);
-			present.fb.output = (signal_t)q::round_s(present.value, config.shift.value);
+		void execute(void) {
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
+			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
+			present.filtered = q::round_s(tmp, config.shift.gain);
+			present.fb.output = (signal_t)q::round_s(present.filtered, config.shift.value);
 		}
 
-		virtual bool do_reconfig(void) {
-			const config_s& config = iatom::config_cast<config_s>();
+		bool do_handler_reconfig(void) {
+			const config_s& config = handler::config_cast<config_s>();
 			parameter_t ones = (parameter_t)(1 << config.shift.gain);
 			if (config.gain > ones) {
 				gain1 = ones;
@@ -499,16 +472,23 @@ namespace mexo {
 				gain1 = config.gain;
 			}
 			gain2 = (ones - config.gain) * (1 << config.shift.presc);
-			B::do_reconfig();
 			return true;
 		};
-
+		virtual void do_handler_adjust(void) {
+			//const config_s& config = config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			present.fb.output = 0;
+			present.filtered = 0;
+		}
 	public:
-		filter_b(isubsystem& _subsystem, cstr  _name, config_s& _config, standalone_s& _standalone, present_s& _present)
-			: B(_subsystem, _name, _config.fb, _standalone, _present.fb) {}
+		filter(const config_s& _config
+			   , present_s& _present
+			   , const signal_t& _input
+		)
+			: B(_config.fb, _present.fb, _input) {}
 	};
 
-	*/
+
 	/*
 	struct signal2ph_s {
 		signal_t cross;
