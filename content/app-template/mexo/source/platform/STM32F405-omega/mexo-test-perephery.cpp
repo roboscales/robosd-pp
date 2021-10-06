@@ -5,11 +5,13 @@
 #include "tim.h"
 #include "adc.h"
 #include "can.h"
+#include "spi.h"
 #include "mexo-test.hpp"
 #include "net/robosd_serial.hpp"
 #include "net/robosd_flow.hpp"
 #include "net/robosd_flow_id.h"
 #include "freemaster/robosd_fm.hpp"
+#include "prf/as5048a/as5048a.hpp"
 namespace robo {
 
 	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_KEIL
@@ -178,7 +180,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	current_adc::sence[0] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1); // читаем полученное значение в переменную adc	
 	current_adc::sence[1] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2); // читаем полученное значение в переменную adc
 	HAL_ADCEx_InjectedStart(&hadc1); // запускаем преобразование сигнала ј÷ѕ
-
+	__HAL_SPI_ENABLE(&hspi1);
 	tick_();
 	::mexo::machine::priority_loop();
 	::mexo::machine::backend_loop();
@@ -349,8 +351,34 @@ namespace mexo{
 				flow_set_addr(0xA);			
 				robo::freemaster::connect( &can0_serial0_.local() );
 				HAL_CAN_Start(&hcan1);
-
+			  
 		}
 	);
 }
+static volatile uint16_t enco_native_ =0;
+
+void as5048_driver::cs_low(void){
+		HAL_GPIO_WritePin(CSE2_GPIO_Port,CSE2_Pin,GPIO_PIN_RESET);
+}
+void as5048_driver::cs_hi(void){
+		HAL_GPIO_WritePin(CSE2_GPIO_Port,CSE2_Pin,GPIO_PIN_SET);
+}
+void as5048_driver::put(uint16_t _commamd){
+		HAL_SPI_Transmit_IT( &hspi1,(uint8_t *)&_commamd, 2);
+}
+void as5048_driver::get(uint16_t & _answer){
+		HAL_SPI_Receive_IT( &hspi1, (uint8_t *)&_answer, 2);
+}
+
+
+extern "C"{
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
+	AS5048A::confirm_put();
+}
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
+	AS5048A::confirm_get();
+}
+}
+
+
 

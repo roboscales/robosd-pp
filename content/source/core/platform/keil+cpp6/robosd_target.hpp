@@ -19,3 +19,5 @@
 #define ROBO_APP_PROC_LINE __LINE__
 #define ROBO_UNUSED(x) ((void)(x))
 
+#define APP_MEXO_SLOT_COUNT 4
+#define FMSTR_REC_TIMEBASE (32768+50)

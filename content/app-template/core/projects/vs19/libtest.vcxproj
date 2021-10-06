@@ -65,6 +65,8 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\enco.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\lm.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp" />

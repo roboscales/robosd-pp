@@ -476,12 +476,15 @@ namespace mexo {
 		I dummy_input_ = (I)0;
 		O dummy_output_ = (O)0;
 	protected:
-		const range_s<O>& range;
-		const satstate_t& master_satstate;
 		I* deseired;
 		O* output;
 		//connection_point<O>* connection_point_;
 	public:
+		const range_s<O>& range;
+		const satstate_t& master_satstate;
+		const  O   actual_output(void) { return  *output; }
+		const satstate_t& actual_satstate(void) { return handler::present_cast<present_s>().satstate.actual; }
+
 		typedef I input_t;
 		typedef O output_t;
 		struct present_s {
@@ -611,13 +614,13 @@ namespace mexo {
 	};
 
 	template< typename R, typename S> class sence_task_t : public handler_t <
-			S
+		S
 		, R
 		, ::mexo::node
 	> {
 	public:
 		typedef handler_t <
-				S
+			S
 			, R
 			, ::mexo::node
 		> A;
@@ -627,7 +630,7 @@ namespace mexo {
 
 	template < typename I, typename O> class function_handler : public handler {
 	protected:
-		const I & input;
+		const I& input;
 	public:
 		typedef I input_t;
 		typedef O output_t;
@@ -641,7 +644,7 @@ namespace mexo {
 			, const input_t& _input
 		)
 			: handler(_config, _present.ref)
-			, input(_input){}
+			, input(_input) {}
 	};
 
 	template < typename T, typename R, typename S, typename ... Args> class function_t
@@ -653,10 +656,10 @@ namespace mexo {
 			, S* _owner
 			, const typename BB::config_s& _config
 			, typename BB::present_s& _present
-			, const typename R::input_t & _input
+			, const typename R::input_t& _input
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present,_input, args...) {}
+			: BB(_name, _owner, _config, _present, _input, args...) {}
 	};
 	template < typename R, typename S, typename ... Args> class function_block_t
 		: public handler_t<subsystem_handler, R, S, const typename R::input_t&, Args...> {
@@ -694,7 +697,7 @@ namespace mexo {
 	public:
 		scope_handler(
 			config_s& _config
-			, const I & _input
+			, const I& _input
 		)
 			: handler(_config, present_)
 			, input(_input) {}

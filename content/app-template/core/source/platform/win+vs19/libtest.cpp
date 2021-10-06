@@ -1258,7 +1258,7 @@ public:
 			typedef ::mexo::controller_task_t <
 				::mexo::ramp<types>
 				, ::mexo::prioritet_subsystem
-				//			, periodic_task_t<0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15>
+				//, periodic_task_t<0, 14>
 			> voltage_ramp;
 
 			class fake_adc {

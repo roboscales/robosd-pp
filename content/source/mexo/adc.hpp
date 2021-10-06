@@ -165,6 +165,7 @@ namespace mexo {
 
 		single_adc(const config_s& _config, present_s& _present)
 			: A(_config.sb, _present.sb) {}
+		const typename q::signal_t& output(void) { return handler::present_cast<present_s>().sb.output; }
 	};
 
 	template < typename q, typename D  > class diff_adc : public adc<q, D, 2> {
@@ -179,6 +180,8 @@ namespace mexo {
 
 		diff_adc(const config_s& _config, present_s& _present)
 			: B(_config, _present.adc) {}
+		const typename q::signal_t&  output(void) { return handler::present_cast<present_s>().output; }
+
 	protected:
 		void execute(void) {
 			B::execute();

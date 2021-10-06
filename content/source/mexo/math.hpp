@@ -401,32 +401,34 @@ namespace mexo {
 		typedef typename q::parameter_t parameter_t;
 
 		struct config_s {
-			typename A::config_s cb;
+			typename A::config_s fb;
 			unsigned shift;
 		};
-		typedef typename A::present_s present_s;
+		struct present_s {
+			typename A::present_s fb;
+		};
 		parameter_t  gain;
 	protected:
 
 		void execute(void) {
 			const config_s& config = handler::config_cast<config_s>();
 			present_s& present = handler::present_cast<present_s>();
-			long_signal_t tmp = (long_signal_t)present.output * gain + A::input;
-			present.output = (signal_t)(((int)tmp) >> config.shift);
+			long_signal_t tmp = (long_signal_t)present.fb.output * gain + A::input;
+			present.fb.output = (signal_t)(((int)tmp) >> config.shift);
 		}
 		bool do_handler_reconfig(void) {
 			const config_s& config = handler::config_cast<config_s>();
 			gain = (1 << config.shift) - 1;
 			return true;
 		}
-		virtual void do_handler_adjust(void) { handler::present_cast<present_s>().output = 0; }
+		virtual void do_handler_adjust(void) { handler::present_cast<present_s>().fb.output = 0; }
 
 	public:
 		fast_filter(const config_s& _config
 					, present_s& _present
 					, const signal_t& _input
 		)
-			: A(_config.cb, _present, _input) {}
+			: A(_config.fb, _present.fb, _input) {}
 	};
 
 

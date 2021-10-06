@@ -99,6 +99,8 @@ namespace mexo {
 
 			pwm(const config_s& _config, present_s& _present)
 				: to_digit_scale(_config.ds, _present, _config.range.duty, master_satstate_) {}
+
+			const range_s < typename q::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().range.voltage; }
 		};
 
 		template< typename q, typename T, typename D, typename S> class pwm_t

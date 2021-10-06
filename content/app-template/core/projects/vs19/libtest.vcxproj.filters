@@ -179,5 +179,11 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\lm.templ.settings.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\enco.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

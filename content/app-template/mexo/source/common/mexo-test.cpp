@@ -108,6 +108,7 @@ dc_power_supply & hardware_link::pwm_block(void){
 current_sensor & hardware_link::sence_block(void){
 	return current_sensor_;
 }
+
 void hardware_link::reconfig(void){
 	dc_power_supply_.reconfig();
 }
@@ -116,7 +117,7 @@ void hardware_link::reconfig(void){
 }
 
 //3.5. сам моторчик +1мкс - инфраструкутура и быстрый фильтр  +1мкс - напряженческий, +2,5мкс -токовый
-joint joint_(hardware_link_, RT("joint"), action.joint, present.joint);
+joint joint_(hardware_link_, RT("joint"), action.joint, config. joint, present.joint);
 
 //4. дополнителные сервисы для mexo //не добавляет времени к обрабготке прерывания
 ::mexo::machine::slot::simple frontend_pool_ (
@@ -151,6 +152,19 @@ static volatile robo::time_us_t g_time_us_t = 0;
 		::mexo::tp::set_verb(::mexo::tp_verb::loop);
 	}
 );
+
+//делегат в слот №3 - команда на расчет позиции.
+::mexo::machine::slot::simple enco_put(
+	3
+	,	&AS5048A::put
+);
+
+//делегат в слот №1 - команда на чтение позиции .
+::mexo::machine::slot::simple enco_get(
+	1
+	,	&AS5048A::get
+);
+
 	
 #if 0
 typedef mexo::filter_b<types >current_filter_b;

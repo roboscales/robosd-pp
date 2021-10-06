@@ -8,6 +8,7 @@
 	, POWER_SUPPLY_PREFIX(VOLTAGE_RAMP_GAIN)
 }
 #endif
+
 #if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
 , {
 	{}
@@ -19,6 +20,7 @@
 	}
 }
 #endif
+
 #if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
 , {
 	{}
@@ -36,6 +38,7 @@
 	}
 }
 #endif
+
 #if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 ,
 #define REGULATOR_PROP_GAIN POWER_SUPPLY_PREFIX(CURRENT_PROP_GAIN)
@@ -46,6 +49,8 @@
 
 #include "mexo/qa.templ.settings.inc.hpp"
 #endif
+
+
 #if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 ,
 #define REGULATOR_PROP_GAIN POWER_SUPPLY_PREFIX(CURRENT_PROP_GAIN)
@@ -60,4 +65,3 @@
 #include "mexo/lm.templ.settings.inc.hpp"
 #endif
 }
-

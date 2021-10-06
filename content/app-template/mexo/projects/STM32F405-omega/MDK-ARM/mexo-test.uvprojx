@@ -339,7 +339,7 @@
               <MiscControls>-mfpu=fpv4-sp-d16 -mfloat-abi=hard</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB,STM32F405xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../../../../reference/robosd-ref;../../../../reference/robosd-ref/core/platform/keil+cpp6;../../../source/common;..\..\..\source\platform\STM32F405-omega;../../../source/common/vercion/test;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;      ../../../../reference/robosd-ref;      ../../../../reference/robosd-ref/core/platform/keil+cpp6;      ../../../source/common;      ..\..\..\source\platform\STM32F405-omega;      ../../../source/common/vercion/test;      ../Drivers/STM32F4xx_HAL_Driver/Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;      ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;      ../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -545,6 +545,11 @@
               <FileName>ps.inc.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\mexo\ps.inc.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>enco.hpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\enco.hpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -2449,6 +2454,11 @@
           </GroupOption>
           <Files>
             <File>
+              <FileName>startup_stm32f405xx.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\startup_stm32f405xx.s</FilePath>
+            </File>
+            <File>
               <FileName>system_stm32f4xx.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/system_stm32f4xx.c</FilePath>
@@ -2504,11 +2514,6 @@
                 </FileArmAds>
               </FileOption>
             </File>
-            <File>
-              <FileName>startup_stm32f405xx.s</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\startup_stm32f405xx.s</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -2558,6 +2563,16 @@
               <FileName>robosd_fm.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>robosd++/prf/AS5048A</GroupName>
+          <Files>
+            <File>
+              <FileName>as5048a.hpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\prf\AS5048A\as5048a.hpp</FilePath>
             </File>
           </Files>
         </Group>
