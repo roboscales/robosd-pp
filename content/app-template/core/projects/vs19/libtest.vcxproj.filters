@@ -63,9 +63,6 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\ps.cpp">
-      <Filter>Исходные файлы\mexo</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_dummy.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -81,7 +78,7 @@
     <ClCompile Include="..\..\..\..\source\net\robosd_flow.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.cpp">
+    <ClCompile Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp">
       <Filter>freemaster</Filter>
     </ClCompile>
   </ItemGroup>
@@ -146,9 +143,6 @@
     <ClInclude Include="..\..\..\..\source\net\robosd_flow.hpp">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.hpp">
-      <Filter>freemaster</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
@@ -183,6 +177,18 @@
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\enco.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp">
+      <Filter>freemaster</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\motion.templ.settings.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.settings.inc.hpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\filter.templ.settings.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
   </ItemGroup>

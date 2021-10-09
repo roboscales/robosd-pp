@@ -1,7 +1,7 @@
 chcp 1251 
-set robosd=E:\SOURCETREE\robosd++\content\
+set robosd=I:\SOURCETREE\robosd++\content\
 
-set JSON=E:\SOURCETREE\jsonsl
+set JSON=I:\SOURCETREE\jsonsl
 
 set settings=%COMPUTERNAME%
 set settings=%settings::=,%

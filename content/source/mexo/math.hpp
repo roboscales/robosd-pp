@@ -118,7 +118,7 @@ namespace mexo {
 			else {
 				if (_src > 0) {
 					if (_shift > 0) {
-						int r = 1 << (_shift - 1);
+						int r = (1 << (_shift - 1))-1;
 						if (digit::long_max - _src < r) {
 							return digit::long_max >> _shift;
 						}
@@ -132,7 +132,7 @@ namespace mexo {
 				}
 				else {
 					if (_shift > 0) {
-						int r = 1 << (_shift - 1);
+						int r = (1 << (_shift - 1))-1;
 						if (_src - digit::long_min < r) {
 							return -((-digit::long_min) >> _shift);
 						}
@@ -461,7 +461,7 @@ namespace mexo {
 			const config_s& config = handler::config_cast<config_s>();
 			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
 			present.filtered = q::round_s(tmp, config.shift.gain);
-			present.fb.output = (signal_t)q::round_s(present.filtered, config.shift.value);
+			present.fb.output = (signal_t)q::round_s(present.filtered, config.shift.value+ config.shift.gain);
 		}
 
 		bool do_handler_reconfig(void) {
@@ -473,7 +473,7 @@ namespace mexo {
 			else {
 				gain1 = config.gain;
 			}
-			gain2 = (ones - config.gain) * (1 << config.shift.presc);
+			gain2 = (ones - config.gain) * (1 << config.shift.presc)*(1<< config.shift.gain);
 			return true;
 		};
 		virtual void do_handler_adjust(void) {

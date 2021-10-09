@@ -100,7 +100,7 @@ namespace mexo {
 
 
 	template <typename q, typename D>  class single_adc
-		: public sence_handler< typename q::signal_t >, private D {
+		: public sence_handler< typename q::signal_t > {
 	public:
 		typedef sence_handler< typename q::signal_t > A;
 		typedef typename q::signal_t signal_t;

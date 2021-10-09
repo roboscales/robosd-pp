@@ -242,6 +242,15 @@ namespace mexo {
 		}
 	}
 
+	void periodic_task::setup(int _index) {
+		ref_count_ = 1;
+		refs_ = new machine::slot::delegat::ref * [ref_count_];
+		index_ = new int[ref_count_];
+		machine::slot::delegat::ref** pref = refs_;
+		refs_[0] = new machine::slot::delegat::ref(*this);
+		index_[0] = _index;
+	}
+
 	periodic_task::periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner)
 		: task(_name, _autostart, _owner) {
 		setup(_index);

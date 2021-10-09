@@ -5,20 +5,22 @@
 namespace robo{
 	namespace  prf{
 		template <typename D> class AS5048A: private D{
-		public:
+		private:
 			union{
 				uint8_t memo_[2];
 				uint16_t answer_;
 			};
 			uint16_t native_ = 0;
+			uint16_t command_ = 0xFFFF;
+			bool error_ = false;
 			enum class state { none,put, pause, get } state_ = state::none;
 
 			void put_(void){
-				if(state_ == state::none){
+				//if(state_ == state::none){
 					state_ = state::put;	
 					D::cs_low();
-					D::put(0xFFFF);
-				}
+					D::put(command_);
+				//}
 			}
 			
 			void get_(void){
@@ -43,17 +45,20 @@ namespace robo{
 					uint16_t res = ((uint16_t)(memo_[0]))<<8;
 					res += memo_[1];
 					res	&= ~0xC000;
+					error_ = ((res & 0x4000) == 0x4000);
 					native_ = res;
 				}
 			}
 			
-		private:
 			static AS5048A instance_;
 			AS5048A(void){
 					memo_[0]=0;
 					memo_[1]=0;
 			}
 		public:
+			typedef uint16_t  unative_t;
+			typedef int16_t  native_t;
+
 			static void put(void){
 				instance_.put_();
 			}
@@ -66,8 +71,11 @@ namespace robo{
 			static void confirm_get(void){
 				instance_.confirm_get_();
 			}		
-			static void native(void){
-				instance_.native_();
+			bool static error(void){ 
+				return instance_.error_;
+			}
+			static unative_t native(void){
+				return instance_.native_;
 			}		
 		};
 		template <typename D> AS5048A<D> AS5048A<D>::instance_;

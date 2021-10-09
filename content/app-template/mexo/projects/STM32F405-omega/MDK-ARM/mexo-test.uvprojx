@@ -339,7 +339,7 @@
               <MiscControls>-mfpu=fpv4-sp-d16 -mfloat-abi=hard</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB,STM32F405xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;      ../../../../reference/robosd-ref;      ../../../../reference/robosd-ref/core/platform/keil+cpp6;      ../../../source/common;      ..\..\..\source\platform\STM32F405-omega;      ../../../source/common/vercion/test;      ../Drivers/STM32F4xx_HAL_Driver/Inc;      ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;      ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;      ../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Core/Inc;        ../../../../reference/robosd-ref;        ../../../../reference/robosd-ref/core/platform/keil+cpp6;        ../../../source/common;        ..\..\..\source\platform\STM32F405-omega;        ../../../source/common/vercion/test;        ../Drivers/STM32F4xx_HAL_Driver/Inc;        ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;        ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;        ../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -424,62 +424,62 @@
             <File>
               <FileName>robosd_common.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_common.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_common.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_delegat.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_delegat.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_delegat.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_lambda.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_lambda.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_lambda.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_list.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_list.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_list.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_log.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_log.cpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_log.cpp</FilePath>
             </File>
             <File>
               <FileName>robosd_log.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_log.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_log.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_ring.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_ring.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_ring_buf.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_ring_buf.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_string.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_string.cpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_string.cpp</FilePath>
             </File>
             <File>
               <FileName>robosd_string.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_string.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_string.hpp</FilePath>
             </File>
             <File>
               <FileName>robosd_system.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_system.cpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_system.cpp</FilePath>
             </File>
             <File>
               <FileName>robosd_system.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_system.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\robosd_system.hpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -489,7 +489,7 @@
             <File>
               <FileName>robosd_target.hpp</FileName>
               <FileType>5</FileType>
-              <FilePath>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\platform\keil+cpp6\robosd_target.hpp</FilePath>
+              <FilePath>..\..\..\..\reference\robosd-ref\core\platform\keil+cpp6\robosd_target.hpp</FilePath>
             </File>
           </Files>
         </Group>

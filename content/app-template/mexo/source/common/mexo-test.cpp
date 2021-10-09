@@ -6,7 +6,9 @@
 struct hardware_link {
 			static dc_power_supply & pwm_block(void);
 			static current_sensor & sence_block(void);
-			static ::mexo::prioritet_subsystem & subsys(void);
+			static motor_quadr_enco & enco_block(void);
+			static ::mexo::prioritet_subsystem & prioritet_subsystem(void);
+			static ::mexo::periodic_subsystem & periodic_subsystem(void);
 			static void reconfig(void);	
 } hardware_link_;
 
@@ -66,6 +68,33 @@ struct hardware_link {
 #define joint_ps_CURRENT_MAX_LIM 200
 #define joint_ps_CURRENT_LIMMITER_RAMP_STEP 500
 
+#define joint_MOTOR_POSTITION_MEASSURY_ENABLED 1
+#define joint_MOTOR_SPEED_FILTER_ENABLED 1
+#define joint_SPEED_FILTER_GAIN 31
+#define joint_SPEED_FILTER_SHIFT_GAIN 5
+#define joint_SPEED_FILTER_SHIFT_PRESC 5
+#define joint_SPEED_FILTER_SHIFT_VALUE 0
+
+#define joint_SPEED_OV_CURRENT_MODE_ENABLED 1
+#define joint_SPEED_OV_CURRENT_PROP_GAIN 0
+#define joint_SPEED_OV_CURRENT_MODEL_GAIN 0
+#define joint_SPEED_OV_CURRENT_CONTROL_SHIFT 0
+#define joint_SPEED_OV_CURRENT_MODEL_SHIFT 0
+#define joint_SPEED_OV_CURRENT_FORCE_GAIN 0
+#define joint_SPEED_OV_CURRENT_FORCE_LIM 0
+#define joint_SPEED_OV_CURRENT_REF_GAIN 0
+#define joint_SPEED_OV_CURRENT_REF_PRESC_SHIFT 0
+
+#define joint_SPEED_OV_VOLTAGE_CL_MODE_ENABLED 1
+#define joint_SPEED_OV_VOLTAGE_CL_PROP_GAIN 0
+#define joint_SPEED_OV_VOLTAGE_CL_MODEL_GAIN 0
+#define joint_SPEED_OV_VOLTAGE_CL_CONTROL_SHIFT 0
+#define joint_SPEED_OV_VOLTAGE_CL_MODEL_SHIFT 0
+#define joint_SPEED_OV_VOLTAGE_CL_FORCE_GAIN 0
+#define joint_SPEED_OV_VOLTAGE_CL_FORCE_LIM 0
+#define joint_SPEED_OV_VOLTAGE_CL_REF_GAIN 0
+#define joint_SPEED_OV_VOLTAGE_CL_REF_PRESC_SHIFT 0
+
 #include "mexo/actuator.inc.hpp"
 #endif
 
@@ -77,6 +106,8 @@ typedef  joint_t<types, hardware_link> joint;
 struct {
 	dc_power_supply::present_s dc_power_supply;
 	current_sensor::present_s current_sensor;
+	motor_enco::present_s motor_enco;
+	motor_quadr_enco::present_s motor_quadr_enco;
 	joint::present_s joint;
 } present ={};
 
@@ -93,33 +124,41 @@ struct {
 //3 готовим железо
 //3.1. конфигурируем приоритетную подсистему,саязывающую все блоки с аппаратурой
 // подсистема - работает в контексте prioritet ( будет срабатывать по прерыванию от АЦП)
-::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), false); 
+::mexo::prioritet_subsystem hardware_prioritet_subsystem(RT("hardware-A"), false); 
 
 //3.2. подключаем к системе силовой преобразователь + 0.5 мкс
-dc_power_supply dc_power_supply_(RT("dc"), &hardware_subsystem, dc_power_supply_config, present.dc_power_supply ); 
+dc_power_supply dc_power_supply_(RT("dc"), &hardware_prioritet_subsystem, perephery_config.dc_power_supply, present.dc_power_supply ); 
 
 //3.3.  подключаем к подсистеме датчик тока  + 0.5 мкс
-current_sensor current_sensor_(RT("current sensor"), &hardware_subsystem, current_sensor_config, present.current_sensor);
+current_sensor current_sensor_(RT("current sensor"), &hardware_prioritet_subsystem, perephery_config.current_sensor, present.current_sensor);
 
-//3.4.  делигируем (to do коряво)
-dc_power_supply & hardware_link::pwm_block(void){
-	return dc_power_supply_;
-}
-current_sensor & hardware_link::sence_block(void){
-	return current_sensor_;
-}
+//4. еще один системный скервис - будет работать каждый четвертый период - в слоте 0
+::mexo::periodic_subsystem hardware_periodic_subsystem(RT("hardware-B"), false,{0}); 
+//4.1. подключаем датчик положения мотора
+motor_enco motor_enco_(RT("motor enco"),&hardware_periodic_subsystem, perephery_config.motor_enco,present.motor_enco );
 
-void hardware_link::reconfig(void){
-	dc_power_supply_.reconfig();
-}
-::mexo::prioritet_subsystem & hardware_link::subsys(void){
-	return hardware_subsystem;
-}
+//4.2. делегат в слот №2 - команда на расчет позиции.
+::mexo::machine::slot::simple enco_put(
+	0
+	,	&AS5048A::put
+);
 
-//3.5. сам моторчик +1мкс - инфраструкутура и быстрый фильтр  +1мкс - напряженческий, +2,5мкс -токовый
-joint joint_(hardware_link_, RT("joint"), action.joint, config. joint, present.joint);
+//4.3. делегат в слот №3 - команда на чтение позиции . В нулевом слоте ( в данной настройке mexo имеет 4 слота ) 
+// получим готовые данные
+::mexo::machine::slot::simple enco_get(
+	2
+	,	&AS5048A::get
+);
 
-//4. дополнителные сервисы для mexo //не добавляет времени к обрабготке прерывания
+//4.2. подключаем квадратурный датчик положения мотора
+motor_quadr_enco motor_quadr_enco_(RT("motor quadro enco"),&hardware_periodic_subsystem, perephery_config.motor_quadr_enco,present.motor_quadr_enco );
+
+
+//5. сам моторчик +1мкс - инфраструкутура и быстрый фильтр  +1мкс - напряженческий, +2,5мкс -токовый
+joint joint_(hardware_link_, RT("joint"), action.joint, config. joint, present.joint,0);
+
+//6. дополнителные сервисы для mexo 
+//6.1. не добавляет времени к обрабготке прерывания
 ::mexo::machine::slot::simple frontend_pool_ (
 	::mexo::machine::slot::kind::frontend
 	,	[]{
@@ -129,7 +168,7 @@ static volatile robo::time_us_t g_time_us_t = 0;
 	}
 );
 
-//+0.4мкс
+//6.2. +0.4мкс
 ::mexo::machine::slot::simple backend_(
 	::mexo::machine::slot::kind::backend
 	,	[]{
@@ -137,15 +176,16 @@ static volatile robo::time_us_t g_time_us_t = 0;
 	}
 );	
 
-	//+0.3мкс от hardware_subsystem
+//6.3. +0.3мкс от hardware_subsystem
 //делегат в слот "start" - сработает при старте 
 ::mexo::machine::slot::simple start(
 	::mexo::machine::slot::kind::start
 , [] {
-	hardware_subsystem.start();									//активируем подсистему аппаратуры
+	hardware_prioritet_subsystem.start();									//активируем подсистему аппаратуры
+	hardware_periodic_subsystem.start();									//активируем подсистему аппаратуры
 });
 
-//делегат в слот "begin" - сработает при инициализации - собираем все вместе
+//6.4. делегат в слот "begin" - сработает при инициализации - собираем все вместе
 ::mexo::machine::slot::simple begin(
 	::mexo::machine::slot::kind::begin
 	,	[] {	
@@ -153,191 +193,27 @@ static volatile robo::time_us_t g_time_us_t = 0;
 	}
 );
 
-//делегат в слот №3 - команда на расчет позиции.
-::mexo::machine::slot::simple enco_put(
-	3
-	,	&AS5048A::put
-);
 
-//делегат в слот №1 - команда на чтение позиции .
-::mexo::machine::slot::simple enco_get(
-	1
-	,	&AS5048A::get
-);
+//7.  делигируем (to do коряво)
+dc_power_supply & hardware_link::pwm_block(void){
+	return dc_power_supply_;
+}
+current_sensor & hardware_link::sence_block(void){
+	return current_sensor_;
+}
 
-	
-#if 0
-typedef mexo::filter_b<types >current_filter_b;
-typedef mexo::quazzy_adapt_b<types > current_regulator_b;
+motor_quadr_enco & hardware_link::enco_block(void){
+	return motor_quadr_enco_;
+}
 
-
-struct all_config{
-	current_filter_b::config_s current_filter;
-	current_regulator_b::config_s current_regulator;
-	current_regulator_b::config_s current_regulator2;
-} real_config =
-{
-	{//mexo::ps::current_filter_b::config_s
-		{//fb
-			{0} //ref
-			,0.f //standalone input
-			,0.f //стартовое значение
-		}
-		, types::parameter_t(0.99)	//gain y = y*gain+(1-gain)*x;
-		, 0 //shift
-	}
-	,{ //mexo::ps::current_regulator_b::config_s
-		{ //control block
-			{0} //ref
-			,{ //standalone
-				{ // range
-					-types::signal_t(12) //мин
-					, types::signal_t(12) //макс
-				}
-				,0.f //input
-				,mexo::iblock::satstate::none //master_satstate
-			}
-		}
-		,{ //qa
-			types::parameter_t(0.1) //пропорцилнальный
-			, types::parameter_t(0.01) //интегральный
-			, types::parameter_t(0)	//диффиренциальный
-			, 0
-			, 0
-		}
-		, types::signal_t(0) //standalone actual
-		, types::signal_t(0) //standalone actual_diff
-	}
-	,{ //mexo::ps::current_regulator_b::config_s
-		{ //control block
-			{0} //ref
-			,{ //standalone
-				{ // range
-					-types::signal_t(12) //мин
-					, types::signal_t(12) //макс
-				}
-				,0.f //input
-				,mexo::iblock::satstate::none //master_satstate
-			}
-		}
-		,{ //qa
-			types::parameter_t(0.1) //пропорцилнальный
-			, types::parameter_t(0.01) //интегральный
-			, types::parameter_t(0)	//диффиренциальный
-			, 0
-			, 0
-		}
-		, types::signal_t(0) //standalone actual
-		, types::signal_t(0) //standalone actual_diff
-	}
-};
-
-struct all_present{
-	dc_power_supply_b::present_s dc_power_supply;
-	current_sensor_b::present_s current_sensor;
-	current_filter_b::present_s current_filter;
-	current_regulator_b::present_s current_regulator;
-	current_regulator_b::present_s current_regulator2;
-} real_present ={};
-
-//1. конфигурируем приоритетную подсистему,саязывающую все блоки с аппаратурой
-//подсистема - работает в контексте prioritet ( будет срабатывать по прерыванию от АЦП)
-::mexo::prioritet_subsystem hardware_subsystem(RT("hardware"), false); 
-
-//1.1. подключаем к системе силовой преобразователь
-dc_power_supply_b dc_power_supply_(hardware_subsystem, RT("dc"), dc_power_supply_config, real_present.dc_power_supply ); //2us
-
-//1.2.  подключаем к подсистеме датчик тока
-current_sensor_b current_sensor_(hardware_subsystem,RT("current sensor"),current_sensor_config, real_present.current_sensor);
-
-//2. подсистема управления током
-::mexo::backend_subsystem current_control_subsystem(RT("current_control"), false); 
-
-//2.1 подключаем к подсистеме управления током фильтр тока
-current_filter_b current_filter_(current_control_subsystem, RT("current filter"), real_config.current_filter,real_present.current_filter); 
-
-//2.2 подключаем к подсистеме регулятор тока
-current_regulator_b current_regulator_(current_control_subsystem, RT("current_regulator"), real_config.current_regulator ,real_present.current_regulator ); 
-//2.2 подключаем к подсистеме регулятор тока
-current_regulator_b current_regulator2_(current_control_subsystem, RT("current_regulator2"), real_config.current_regulator2 ,real_present.current_regulator2 ); 
-
-//делегат в слот "begin" - сработает при инициализации - собираем все вместе
-::mexo::machine::slot::simple begin(
-	::mexo::machine::slot::kind::begin
-	,	[] {	
-		//стыкуем фильтр тока с датчиком тока
-		current_filter_.input.link_to(&current_sensor_.output);
-		
-		//стыкуем фильтр тока и регулятор тока
-		current_regulator_.actual.link_to(&current_filter_.output);
-		current_regulator2_.actual.link_to(&current_filter_.output);
-		//стыкуем регулятор тока  и силовой преобразователь
-		dc_power_supply_.link_to(current_regulator_);
-		
-		::mexo::tp::set_verb(::mexo::tp_verb::loop);
-	}
-);
-
-	
-//делегат в слот "start" - сработает при старте
-::mexo::machine::slot::simple start(
-	::mexo::machine::slot::kind::start
-, [] {
-	real_config.current_regulator.cb.standalone.input = 1.f;	//заданный ток
-	real_config.current_regulator2.cb.standalone.input = -1.f;	//заданный ток
-	hardware_subsystem.start();									//активируем подсистему аппаратуры
-	current_control_subsystem.start();					//активируем подсистему управления током
-	dc_power_supply_.on(); 						
-});
-
-//делегат в слот "0" - сработает каждый 16-ый такт
-::mexo::machine::slot::simple restart(
-	0
-, [] {
-	//гоняем ток туда обратно
-	if(current_regulator_.output.value > 11.9f){
-		real_config.current_regulator.cb.standalone.input = -1.f;
-	} else if ( current_regulator_.output.value < - 11.9f){
-		real_config.current_regulator.cb.standalone.input = 1.f;
-	} //2.5us
-});
-
-
-::mexo::machine::slot::simple frontend_(
-	::mexo::machine::slot::kind::frontend
-	,	[]{
-		robo::freemaster::poll();
-	}
-);
-	
-::mexo::machine::slot::simple backend_(
-	::mexo::machine::slot::kind::backend
-	,	[]{
-		static  robo::system::mem::stat st;
-		st =robo::system::get_mem_statistic();
-		volatile size_t tmp = st.total.count;
-		robo::freemaster::recorder();
-	}
-);	
-	
-/*
-::mexo::frontend_subsystem control_subsystem(RT("control"), true); 
-
-//подключаем к системе регулятор напряжения (рампа)
-mexo::ps::voltage::config_s dcv_config = {
-	{0} //block
-	,{ //
-		-::mexo::signal_t(12) //мин, В
-		, ::mexo::signal_t(12)//макс, В
-	}
-	, ::mexo::signal_t(0.0001)
-	, ::mexo::signal_t(0)
-};
-::mexo::backend_subsystem dirrect_pwm_subsystem(RT("dirrect_pwm"), false); 
-mexo::ps::voltage dcv_(dirrect_pwm_subsystem, RT("dcv"), dcv_config); 
-*/
-	
-	
-#endif
+void hardware_link::reconfig(void){
+	dc_power_supply_.reconfig();
+}
+::mexo::prioritet_subsystem & hardware_link::prioritet_subsystem(void){
+	return hardware_prioritet_subsystem;
+}
+::mexo::periodic_subsystem & hardware_link::periodic_subsystem(void){
+	return hardware_periodic_subsystem;
+}
 
 

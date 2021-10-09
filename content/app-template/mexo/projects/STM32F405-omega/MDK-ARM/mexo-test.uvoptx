@@ -337,7 +337,7 @@
 
   <Group>
     <GroupName>robosd++/core</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -348,7 +348,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_common.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_common.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_common.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -360,7 +360,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_delegat.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_delegat.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_delegat.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -372,7 +372,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_lambda.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_lambda.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_lambda.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -384,7 +384,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_list.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_list.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_list.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -396,7 +396,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_log.cpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_log.cpp</PathWithFileName>
       <FilenameWithoutPath>robosd_log.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -408,7 +408,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_log.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_log.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_log.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -420,7 +420,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_ring.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_ring.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -432,7 +432,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_ring_buf.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_ring_buf.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -444,7 +444,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_string.cpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_string.cpp</PathWithFileName>
       <FilenameWithoutPath>robosd_string.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -456,7 +456,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_string.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_string.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_string.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -468,7 +468,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_system.cpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_system.cpp</PathWithFileName>
       <FilenameWithoutPath>robosd_system.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -480,7 +480,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\robosd_system.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\robosd_system.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_system.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -500,7 +500,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>E:\SOURCETREE\robosd++\content\app-template\reference\robosd-ref\core\platform\keil+cpp6\robosd_target.hpp</PathWithFileName>
+      <PathWithFileName>..\..\..\..\reference\robosd-ref\core\platform\keil+cpp6\robosd_target.hpp</PathWithFileName>
       <FilenameWithoutPath>robosd_target.hpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -1057,7 +1057,7 @@
 
   <Group>
     <GroupName>robosd++/net</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

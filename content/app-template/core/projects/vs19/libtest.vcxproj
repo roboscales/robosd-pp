@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.cpp" />
     <ClCompile Include="..\..\..\..\source\core\platform\win+vs19\robosd-system-win.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_backend.cpp" />
     <ClCompile Include="..\..\..\..\source\core\robosd_frontend.cpp" />
@@ -36,13 +35,12 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_log.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\core\robosd_system_std.cpp" />
+    <ClCompile Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\math.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp" />
-    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\ps.cpp" />
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\MAESTRO\ishtar-api-21\content\reference\robosdpp-ref\freemaster\robosd_fm.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_backend.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_delegat.hpp" />
     <ClInclude Include="..\..\..\..\source\core\robosd_frontend.hpp" />
@@ -62,13 +60,17 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\enco.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\filter.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\lm.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\math.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\motion.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.inc.hpp" />

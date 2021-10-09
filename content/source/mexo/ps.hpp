@@ -27,7 +27,6 @@ namespace mexo {
 
 		template < typename q, typename C > class pwm
 			: public ps::control
-			, private C
 			, public to_digit_scale< q > {
 
 			satstate_t master_satstate_ = satstate_t::none;

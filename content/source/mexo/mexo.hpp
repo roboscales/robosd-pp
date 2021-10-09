@@ -317,12 +317,13 @@ namespace mexo {
 		size_t ref_count_ = 0;
 		int* index_ = nullptr;
 	protected:
-		void setup(std::initializer_list<int> _index);
 		void clean(void);
 		periodic_task(cstr  _name, node* _owner = nullptr);
 		virtual void do_start(void);
 		virtual void do_stop(void);
 	public:
+		void setup(std::initializer_list<int> _index);
+		void setup(int _ix);
 		periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr);
 		virtual ~periodic_task(void);
 	};
@@ -387,6 +388,7 @@ namespace mexo {
 	class periodic_subsystem : public periodic_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
+		periodic_subsystem(cstr  _name, node* _owner = nullptr): periodic_task( _name, _owner) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 
@@ -587,45 +589,34 @@ namespace mexo {
 	};
 
 
-	template < typename O> class sence_handler : public handler {
+	template < typename O, typename D = O> class sence_handler : public handler {
 	protected:
 	public:
 		struct present_s {
 			handler::present_s ref;
 			O output;
+			D delta;
 		};
 		sence_handler(const config_s& _config, present_s& _present)
 			: handler(_config, _present.ref) {}
+		const O& output(void) { const present_s & present = present_cast<present_s>();  return present.output; }
+		const D& delta(void) {   const present_s & present = present_cast<present_s>();  return present.delta; }
 	};
 
-	template< typename R, typename S > class sence_block_t : public handler_t <
-		::mexo::subsystem_handler
-		, R
-		, S
-	> {
+	template< typename R, typename S > class sence_block_t 
+		: public 	handler_t <	subsystem_handler, R, S	> {
+		typedef handler_t <	subsystem_handler, R, S	> BB;
 	public:
-		typedef handler_t <
-			::mexo::subsystem_handler
-			, R
-			, S
-		> A;
-		sence_block_t(cstr _name, S* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
-			: A(_name, _owner, _config, _present) {}
+		sence_block_t(cstr _name, S* _owner, const typename BB::config_s& _config, typename  BB::present_s& _present)
+			: BB(_name, _owner, _config, _present) {}
 	};
 
-	template< typename R, typename S> class sence_task_t : public handler_t <
-		S
-		, R
-		, ::mexo::node
-	> {
+	template< typename R, typename S> class sence_task_t 
+		: public handler_t <S, R, ::mexo::node> {
+		typedef handler_t <S, R, ::mexo::node> BB;
 	public:
-		typedef handler_t <
-			S
-			, R
-			, ::mexo::node
-		> A;
-		sence_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
-			: A(_name, _owner, _config, _present) {}
+		sence_task_t(cstr _name, ::mexo::node* _owner, const typename BB::config_s& _config, typename  BB::present_s& _present)
+			: BB(_name, _owner, _config, _present) {}
 	};
 
 	template < typename I, typename O> class function_handler : public handler {

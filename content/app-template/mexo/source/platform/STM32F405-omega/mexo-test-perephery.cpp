@@ -174,11 +174,11 @@ namespace robo {
 #endif
 }
 #include "mexo/mexo.hpp"
-uint32_t current_adc::sence[2];
+uint32_t current_adc_driver::sence[2]={0,0};
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
-	current_adc::sence[0] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1); // читаем полученное значение в переменную adc	
-	current_adc::sence[1] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2); // читаем полученное значение в переменную adc
+	current_adc_driver::sence[0] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1); // читаем полученное значение в переменную adc	
+	current_adc_driver::sence[1] = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2); // читаем полученное значение в переменную adc
 	HAL_ADCEx_InjectedStart(&hadc1); // запускаем преобразование сигнала АЦП
 	__HAL_SPI_ENABLE(&hspi1);
 	tick_();
@@ -186,7 +186,7 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim){
 	::mexo::machine::backend_loop();
 };
 
-void pwm::boot_complete(types::discret_t _duty){
+void pwm_driver::boot_complete(types::discret_t _duty){
 	TIM1->CCR1 = 0;
 	TIM1->CCR2 = 0;
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -194,7 +194,7 @@ void pwm::boot_complete(types::discret_t _duty){
 	HAL_GPIO_WritePin(nSD_GPIO_Port,nSD_Pin,GPIO_PIN_SET);
 }
 
-void pwm::shutdown_begin(void){
+void pwm_driver::shutdown_begin(void){
 	TIM1->CCR1 = 0;
 	TIM1->CCR2 = 0;
 	HAL_GPIO_WritePin(nSD_GPIO_Port,nSD_Pin,GPIO_PIN_RESET);
@@ -202,7 +202,7 @@ void pwm::shutdown_begin(void){
 	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_2);
 }
 
-void pwm::do_run(types::discret_t _duty){
+void pwm_driver::do_run(types::discret_t _duty){
 	if(_duty>0){
 		TIM1->CCR1 = (uint32_t)_duty;
 		TIM1->CCR2 = 0;
@@ -213,33 +213,38 @@ void pwm::do_run(types::discret_t _duty){
 }
 
 #define MAX_PWM ADC_START_TIME
-
-dc_power_supply::config_s dc_power_supply_config =
-{ 
-	{
-		{0}
-		, 231
-		, 10
-	}
-	,{
+perephery_config_s perephery_config=
+{
+	{ 
 		{
-			-MAX_PWM
-			,MAX_PWM
+			{0}
+			, 231
+			, 10
 		}
 		,{
-			-32767
-			,32767
-		}
-	} 
+			{
+				-MAX_PWM
+				,MAX_PWM
+			}
+			,{
+				-32767
+				,32767
+			}
+		} 
+	}
+	,{
+		{0} 
+		,{0,1} //index
+		,{1, 1} //scale
+		,10	// init_count_shift -1024 точек
+	}
+	,{
+		{0}
+		, 1
+		, 2
+	}
 };
 
-current_sensor::config_s current_sensor_config = 
-{
-	{0} 
-	,{0,1} //index
-	,{1, 1} //scale
-	,10	// init_count_shift -1024 точек
-};
 void  flow_set_addr( uint8_t _addr){
 	//volatile uint32_t tmp = rdk_store_array[0];
 	if (_addr > 0 && _addr < 16){
@@ -363,7 +368,7 @@ void as5048_driver::cs_low(void){
 void as5048_driver::cs_hi(void){
 		HAL_GPIO_WritePin(CSE2_GPIO_Port,CSE2_Pin,GPIO_PIN_SET);
 }
-void as5048_driver::put(uint16_t _commamd){
+void as5048_driver::put(uint16_t & _commamd){
 		HAL_SPI_Transmit_IT( &hspi1,(uint8_t *)&_commamd, 2);
 }
 void as5048_driver::get(uint16_t & _answer){

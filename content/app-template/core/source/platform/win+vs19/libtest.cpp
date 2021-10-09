@@ -134,6 +134,7 @@ namespace robo {
 	}
 }
 namespace libtest {
+	uint16_t sence[3] = { 0, 0, 0xFFFF };
 
 
 	TEST_CLASS(list) {
@@ -1126,20 +1127,22 @@ public:
 
 		class fake_dc_periphery {
 		public:
-			types::discret_t duty_;
-		protected:
+			static types::discret_t duty_;
 			static void boot_begin(void) {}
 			static bool do_boot(void) { return true; }
-			void boot_complete(types::discret_t _duty) { duty_ = _duty; }
+			static void boot_complete(types::discret_t _duty) { 
+			//	duty_ = _duty; 
+			}
 
 			static void shutdown_begin(void) {}
 			static bool do_shutdown(void) { return true; }
 			static void shutdown_complete(void) {}
 
-			void do_run(types::discret_t _duty) {
-				duty_ = _duty;
+			static void do_run(types::discret_t _duty) {
+			//	duty_ = _duty;
 			}
 		};
+		//types::discret_t fake_dc_periphery::duty_ = 0;
 		/*
 		typedef ::mexo::ps::pwm_b<types, fake_dc_periphery> fake_dc;
 		typedef ::mexo::ramp_b<types> voltage_regulator_b;
@@ -1243,7 +1246,6 @@ public:
 			}
 		};
 		*/
-
 		TEST_METHOD(ps) {
 
 			::mexo::prioritet_subsystem prioritet_subsystem_(RT("hardware"), true);
@@ -1263,8 +1265,8 @@ public:
 
 			class fake_adc {
 			public:
-				types::discret_t sence[3];
-				void query(void) {
+
+				static void query(void) {
 					sence[0]++;
 					sence[2]--;
 					static int n = 0;
@@ -1276,11 +1278,11 @@ public:
 					}
 
 				}
-				fake_adc() {
+				/*/fake_adc() {
 					sence[0] = 0;
 					sence[1] = 0;
 					sence[2] = 0xFFFF;
-				}
+				}*/
 			};
 
 			typedef ::mexo::sence_task_t <

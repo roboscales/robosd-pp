@@ -44,8 +44,8 @@ public:
 		, ::mexo::backend_subsystem
 		, const typename types::signal_t&
 		, const typename types::signal_t&
-	> current_regulaor_b;
-	current_regulaor_b current_regulator;
+	> current_regulator_b;
+	current_regulator_b current_regulator;
 	#endif
 
 	#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
@@ -108,7 +108,7 @@ public:
 		typename filter_b::config_s current_diff_filter;
 		#endif
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-		typename current_regulaor_b::config_s current_regulaor;
+		typename current_regulator_b::config_s current_regulator;
 		#endif
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		typename current_limmiter_b::config_s current_limmiter;
@@ -130,7 +130,7 @@ public:
 		typename filter_b::present_s current_diff_filter;
 		#endif
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-		typename current_regulaor_b::present_s current_regulaor;
+		typename current_regulator_b::present_s current_regulator;
 		#endif
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		typename current_limmiter_b::present_s current_limmiter;
@@ -164,6 +164,32 @@ public:
 
 	
 	#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
+		protected:
+		void voltage_mode_start(void) {
+			
+			present_s& present = present_cast<present_s>();
+
+			hardwaresys.pwm_block().set_output(&present.pwm_duty);
+			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			voltage_regulator.set_output(&present.voltage_required);
+			voltage_regulator.set_input(&present.voltage_deseired);
+
+			hardwaresys.reconfig();
+			voltage_regulator.reconfig();
+			voltage_regulator.start();
+			on();
+		}
+
+		virtual void voltage_mode_stop(void) {
+			off();
+			voltage_regulator.stop();
+			hardwaresys.pwm_block().set_output(nullptr);
+			hardwaresys.pwm_block().set_input(nullptr);
+			voltage_regulator.set_output(nullptr);
+			voltage_regulator.set_input(nullptr);
+		}
+		friend class voltage_mode_t;
+	public:
 	class voltage_mode_t :public ::mexo::ps::dev::mode {
 	protected:
 		PS_TEMPLATE_NAME& owner(void) { return owner_cast<PS_TEMPLATE_NAME>(); }
@@ -181,27 +207,11 @@ public:
 		}
 
 		virtual void do_start(void) {
-			
-			present_s& present = owner().template present_cast<present_s>();
-
-			owner().hardwaresys.pwm_block().set_output(&present.pwm_duty);
-			owner().hardwaresys.pwm_block().set_input(&present.voltage_required);
-			owner().voltage_regulator.set_output(&present.voltage_required);
-			owner().voltage_regulator.set_input(&present.voltage_deseired);
-
-			owner().hardwaresys.reconfig();
-			owner().voltage_regulator.reconfig();
-			owner().voltage_regulator.start();
-			owner().on();
+			owner().voltage_mode_start();
 		}
 
 		virtual void do_stop(void) {
-			owner().off();
-			owner().voltage_regulator.stop();
-			owner().hardwaresys.pwm_block().set_output(nullptr);
-			owner().hardwaresys.pwm_block().set_input(nullptr);
-			owner().voltage_regulator.set_output(nullptr);
-			owner().voltage_regulator.set_input(nullptr);
+			owner().voltage_mode_stop();
 		}
 
 	public:
@@ -234,6 +244,30 @@ public:
 	#endif
 	
 	#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
+	protected:
+	void mode_current_start(void){
+			present_s& present = present_cast<present_s>();
+
+			hardwaresys.pwm_block().set_output(&present.pwm_duty);
+			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			current_regulator.set_output(&present.voltage_required);
+			current_regulator.set_input(&present.current_deseired);
+
+			hardwaresys.reconfig();
+			current_regulator.reconfig();
+			current_regulator.start();
+			on();			
+	}
+	void mode_current_stop(void){
+			off();
+			current_regulator.stop();
+			hardwaresys.pwm_block().set_output(nullptr);
+			hardwaresys.pwm_block().set_input(nullptr);
+			current_regulator.set_output(nullptr);
+			current_regulator.set_input(nullptr);
+	}
+	friend class current_mode_t;
+	public:
 	class current_mode_t :public ::mexo::ps::dev::mode {
 	protected:
 		PS_TEMPLATE_NAME& owner(void) { return owner_cast<PS_TEMPLATE_NAME>(); }
@@ -252,29 +286,11 @@ public:
 			present.voltage_range_desired.low = -action.voltage;
 			
 		}
-		virtual void do_start(void) {
-			
-			
-			present_s& present = owner().template present_cast<present_s>();
-
-			owner().hardwaresys.pwm_block().set_output(&present.pwm_duty);
-			owner().hardwaresys.pwm_block().set_input(&present.voltage_required);
-			owner().current_regulator.set_output(&present.voltage_required);
-			owner().current_regulator.set_input(&present.current_deseired);
-
-			owner().hardwaresys.reconfig();
-			owner().current_regulator.reconfig();
-			owner().current_regulator.start();
-			owner().on();			
-
+		virtual void do_start(void) {				
+			owner().mode_current_start();
 		}
 		virtual void do_stop(void) {
-			owner().off();
-			owner().current_regulator.stop();
-			owner().hardwaresys.pwm_block().set_output(nullptr);
-			owner().hardwaresys.pwm_block().set_input(nullptr);
-			owner().current_regulator.set_output(nullptr);
-			owner().current_regulator.set_input(nullptr);
+			owner().mode_current_stop();
 		}
 	public:
 		current_mode_t(int _index, PS_TEMPLATE_NAME& _owner) :
@@ -282,6 +298,30 @@ public:
 	};
 	#endif
 	#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+	protected:
+		void mode_limmiter_start(void) {
+			present_s& present = present_cast<present_s>();
+
+			hardwaresys.pwm_block().set_output(&present.pwm_duty);
+			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			current_limmiter.set_output(&present.voltage_required);
+			current_limmiter.set_input(&present.voltage_deseired);
+			present.voltage_range_desired =  hardwaresys.pwm_block().pwm_voltage_limits();
+			hardwaresys.reconfig();
+			current_limmiter.reconfig();
+			current_limmiter.start();
+			on();			
+		}
+		void mode_limmiter_stop(void) {
+			off();
+			current_limmiter.stop();
+			hardwaresys.pwm_block().set_output(nullptr);
+			hardwaresys.pwm_block().set_input(nullptr);
+			current_limmiter.set_output(nullptr);
+			current_limmiter.set_input(nullptr);
+		}	
+		friend class current_limmiter_mode_t;
+	public:
 	class current_limmiter_mode_t :public ::mexo::ps::dev::mode {
 	protected:
 		PS_TEMPLATE_NAME& owner(void) { return owner_cast<PS_TEMPLATE_NAME>(); }
@@ -301,25 +341,10 @@ public:
 		}
 
 		virtual void do_start(void) {
-			present_s& present = owner().template present_cast<present_s>();
-
-			owner().hardwaresys.pwm_block().set_output(&present.pwm_duty);
-			owner().hardwaresys.pwm_block().set_input(&present.voltage_required);
-			owner().current_limmiter.set_output(&present.voltage_required);
-			owner().current_limmiter.set_input(&present.voltage_deseired);
-			present.voltage_range_desired =  owner().hardwaresys.pwm_block().pwm_voltage_limits();
-			owner().hardwaresys.reconfig();
-			owner().current_limmiter.reconfig();
-			owner().current_limmiter.start();
-			owner().on();			
+			owner().mode_limmiter_start();
 		}
 		virtual void do_stop(void) {
-			owner().off();
-			owner().current_limmiter.stop();
-			owner().hardwaresys.pwm_block().set_output(nullptr);
-			owner().hardwaresys.pwm_block().set_input(nullptr);
-			owner().current_limmiter.set_output(nullptr);
-			owner().current_limmiter.set_input(nullptr);
+			owner().mode_limmiter_start();
 		}
 	public:
 		current_limmiter_mode_t(int _index, PS_TEMPLATE_NAME& _owner) :
@@ -346,20 +371,20 @@ public:
 		#endif
 		
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-		, current_filter(RT("cf"), &_hardwaresys.subsys(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
+		, current_filter(RT("cf"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
 		#endif
 		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-		, current_filter( RT("cf"), &_hardwaresys.subsys(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
+		, current_filter( RT("cf"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
 		#endif
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		, current_diff_filter(RT("cdf"),&_hardwaresys.subsys(), _config.current_diff_filter, _present.current_diff_filter,_hardwaresys.sence_block().output_diff())
+		, current_diff_filter(RT("cdf"),&_hardwaresys.prioritet_subsystem(), _config.current_diff_filter, _present.current_diff_filter,_hardwaresys.sence_block().output_diff())
 		#endif
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 		, current_regulator(
 				RT("c_re")
 				,this
-				,	_config.current_regulaor
-				, _present.current_regulaor
+				,	_config.current_regulator
+				, _present.current_regulator
 				, _present.voltage_range_desired
 				, _hardwaresys.pwm_block().actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
@@ -380,9 +405,8 @@ public:
 		, current_limmiter_mode(16, *this)
 		#endif
 	{
-
 		_config =
-		#include "mexo/ps.templ.settings.inc.hpp"
+			#include "mexo/ps.templ.settings.inc.hpp"
 		;
 	}
 };
@@ -392,10 +416,11 @@ public:
 #undef  POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED
 #if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED==1 
 #undef  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED
-#undef  POWER_SUPPLY_CURRENT_MEASSURY_ENABLED
 #undef  POWER_SUPPLY_CURRENT_DIFF_ENABLED
 #undef  POWER_SUPPLY_CURRENT_FILTER_ENABLED
 #undef  POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED
 #undef POWER_SUPPLY_ACTUAL_SIGNALS
 #endif
+#undef  POWER_SUPPLY_CURRENT_MEASSURY_ENABLED
+
 
