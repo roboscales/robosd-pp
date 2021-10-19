@@ -291,6 +291,7 @@ void  flow_set_addr( uint8_t _addr){
 
 class can_port_driver{
 	public:
+	static inline cstr path = can0_PATH;
 	typedef flow_msg_can_id_t id_t;
 	enum{suba_count = 16,  packet_size = 8, msg_pool_size = 4 };
 	static void send(unsigned _id , const uint8_t * _data, size_t _size);
@@ -320,51 +321,8 @@ HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData);
 
 }
 
-#define can0_echo_FLOW_CMD_ID 1
-#define can0_echo_SUBA 1
-#define can0_echo_SUBA_ANSW 1
-#define can0_echo_KIND frontend
 
 
-FLOW_ROUTE_RECORD_B(can0,echo,KIND,
-	static uint8_t old_data[can_port_driver::packet_size];
-	static size_t old_sz;
-	if(in_msg){
-		put_answer(in_msg->data(),in_msg->size());
-		old_sz = in_msg->size();
-		std::copy_n(in_msg->data(),old_sz,old_data);
-	}	else{
-		put_answer(old_data,old_sz);
-	}	
-)
-
-
-#define can0_serial0_FLOW_CMD_ID 2
-#define can0_serial0_SUBA 0xF
-#define can0_serial0_SUBA_ANSW 0xF
-#define can0_serial0_KIND frontend
-
-FLOW_SERIAL_ROUTE_RECORD(4,6,can0,serial0,KIND)
-
-namespace mexo{
-	void tp_driver::on(void){
-		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_SET);
-	}
-	void tp_driver::off(void){
-		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_RESET);
-	}
-	machine::slot::simple start(
-		machine::slot::kind::start
-		, [] {
-				HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);	
-				HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-				flow_set_addr(0xA);			
-				robo::freemaster::connect( &can0_serial0_.local() );
-				HAL_CAN_Start(&hcan1);
-		  	HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);
-		}
-	);
-}
 static volatile uint16_t enco_native_ =0;
 
 void as5048_driver::cs_low(void){
@@ -384,20 +342,22 @@ uint16_t as5040_driver::native(void){
 	return htim3.Instance->CNT;
 }
 
-#define can0_cmd_FLOW_CMD_ID 4
-#define can0_cmd_SUBA 0x2
-#define can0_cmd_SUBA_ANSW 0x2
-#define can0_cmd_KIND backend
-
-FLOW_ROUTE_RECORD_B(can0,cmd,KIND,
-	static uint8_t snapshot[7];
-	if(in_msg){
-		decode_action(in_msg->data(),in_msg->size());
-		encode_feetback(snapshot);
-		put_answer(snapshot,7);
-	}	else{
-		encode_feetback(snapshot);
-		put_answer(snapshot,7);
-	}	
-)
+namespace mexo{
+	void tp_driver::on(void){
+		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_SET);
+	}
+	void tp_driver::off(void){
+		HAL_GPIO_WritePin(TP1_GPIO_Port,TP1_Pin, GPIO_PIN_RESET);
+	}
+	machine::slot::simple start(
+		machine::slot::kind::start
+		, [] {
+				HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_3);	
+				HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+				flow_set_addr(0xA);			
+				HAL_CAN_Start(&hcan1);
+		  	HAL_TIM_Encoder_Start(&htim3,TIM_CHANNEL_ALL);
+		}
+	);
+}
 

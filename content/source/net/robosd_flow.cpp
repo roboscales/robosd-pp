@@ -12,27 +12,20 @@ namespace robo {
 				ref_.attach_to(port_.pool_);
 			}
 
-			performer::performer(
-				port& _port
-				, uint8_t _command
-				, uint8_t _suba
-				, uint8_t _answ_suba
-				, kind_t _kind
-			)
-				: ref_(*this)
-				, port_(_port)
-				, command_(_command)
-				, suba_(_suba)
-				, answ_suba_(_answ_suba)
-				, kind_(_kind) {
-				ROBO_APP_ASSERT(port_.performer_index_[suba_] == 0);
-				port_.performer_index_[suba_] = this;
+
+			performer::performer(cstr _command_path, kind_t _kind) 
+				: ref_(*this, hash(_command_path,0) )
+				, kind_(_kind)
+				, port_(nullptr)
+				, rout_record_(nullptr){
+				ROBO_APP_ASSERT( ref_.attach_to( machine::instance_().performers_ ) )
 			}
+			
 			bool performer::put_answer(const uint8_t* _data, size_t _size) {
-				msg* m = port_.query();
+				msg* m = port_->query();
 				ROBO_LBREAKN(m);
 				ROBO_LBREAKN(m->put(_data, _size));
-				msg** p = port_.outcomm_ + answ_suba_;
+				msg** p = port_->outcomm_ + rout_record_->answ_suba_;
 				{
 					guard__;
 					if (*p != nullptr) {
@@ -43,7 +36,7 @@ namespace robo {
 				return true;
 			}
 			bool performer::put_answer(msg* _m) {
-				msg** p = port_.outcomm_ + answ_suba_;
+				msg** p = port_->outcomm_ + rout_record_->answ_suba_;
 				{
 					guard__;
 					if (*p != nullptr) {
@@ -54,13 +47,32 @@ namespace robo {
 				return true;
 			}
 			msg* performer::msg_query(void) {
-				return port_.query();
+				return port_->query();
 			}
 			size_t performer::max_size(void) {
-				return port_.max_size();
+				return port_->max_size();
 			}
-			port::port(size_t _max_size, size_t _suba_count)
-				: max_size_(_max_size)
+
+			static performer::map& performers_(void) {
+				static performer::map performers__;
+				return performers__;
+			}
+
+			performer* performer::find(cstr _path) {
+				performer* tmp = machine::instance_().performers_.find(hash(_path,0));
+				ROBO_APP_ASSERT(tmp != nullptr);
+				return tmp;
+			}
+
+			performer* performer::find( int _ix) {
+				performer* tmp = machine::instance_().performers_.find(_ix);
+				ROBO_APP_ASSERT(tmp != nullptr);
+				return tmp;
+			}
+
+			port::port(cstr _path, size_t _max_size, size_t _suba_count)
+				: ref_(*this, hash(_path))
+				, max_size_(_max_size)
 				, suba_count_(_suba_count) {
 				if (suba_count_ > 0) {
 					outcomm_ = new msg * [suba_count_];
@@ -68,6 +80,7 @@ namespace robo {
 					std::fill_n(outcomm_, suba_count_, nullptr);
 					std::fill_n(performer_index_, suba_count_, nullptr);
 				}
+				ref_.attach_to( machine::instance_().ports_);
 			}
 
 			msg* port::query(void) {
@@ -85,7 +98,6 @@ namespace robo {
 			size_t msg::max_size(void) {
 				return port_.max_size_;
 			}
-
 
 			bool msg::put(const uint8_t* _data, size_t _size) {
 				if (_size <= port_.max_size()) {
@@ -122,6 +134,7 @@ namespace robo {
 				ROBO_APP_ASSERT(_size <= port_.max_size());
 				size_ = _size;
 			}
+
 			bool port::put(uint8_t _suba, msg* _msg) {
 				if (_suba < suba_count_) {
 					performer* pfr = performer_index_[_suba];
@@ -165,7 +178,16 @@ namespace robo {
 				if (performer_index_ != nullptr)
 					delete[] performer_index_;
 			}
-
+			port * port::find(cstr _path) {
+				port* tmp = machine::instance_().ports_.find(hash(_path, 0));
+				ROBO_APP_ASSERT(tmp != nullptr);
+				return tmp;
+			}
+			port* port::find(int _ix) {
+				port* tmp = machine::instance_().ports_.find( _ix );
+				ROBO_APP_ASSERT(tmp != nullptr);
+				return tmp;
+			}
 			machine& machine::instance_(void) {
 				static machine instance__;
 				return instance__;
@@ -203,6 +225,41 @@ namespace robo {
 						run_(pfr);
 					}
 				}
+			}
+
+			void machine::begin(void) {
+				for (rout_record::ref* pr = instance_().rout_records_.first(); pr; pr = pr->next()) {
+					rout_record& r = pr->owner();
+					port* p = port::find(r.port_ix_);
+					ROBO_APP_ASSERT(p != nullptr);
+					ROBO_APP_ASSERT(r.suba_ > 0);
+					ROBO_APP_ASSERT(r.suba_ < p->suba_count_);
+					ROBO_APP_ASSERT(p->performer_index_[r.suba_] == nullptr);
+					performer* prf = performer::find(r.command_ix_);
+					ROBO_APP_ASSERT(prf != nullptr);
+					p->performer_index_[r.suba_] = prf;
+					prf->port_ = p;
+					prf->rout_record_ = &r;
+				}
+				for (performer::ref* pr = instance_().performers_.first(); pr; pr = pr->next()) {
+					performer& p = pr->owner();
+					ROBO_APP_ASSERT(p.port_ != nullptr);
+					ROBO_APP_ASSERT(p.rout_record_ != nullptr);
+				}
+			}
+
+			rout_record::rout_record(
+				cstr  _port_path
+				, cstr  _command_path
+				, uint8_t _suba
+				, uint8_t _answ_suba
+			):
+				ref_(*this)
+				, suba_(_suba)
+				, answ_suba_(_answ_suba) {
+				port_ix_ = hash(_port_path);
+				command_ix_ = hash(_command_path);
+				ref_.attach_to(machine::instance_().rout_records_);
 			}
 
 			void serial_proto::execute(void) {
@@ -261,8 +318,9 @@ namespace robo {
 				local_.reset();
 				declared_count_ = 0;
 			}
-
+			
 		}
 	}
 }
+
 #endif

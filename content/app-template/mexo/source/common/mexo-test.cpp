@@ -202,15 +202,6 @@ static volatile robo::time_us_t g_time_us_t = 0;
 	hardware_periodic_subsystem.start();									//активируем подсистему аппаратуры
 });
 
-//6.4. делегат в слот "begin" - сработает при инициализации - собираем все вместе
-::mexo::machine::slot::simple begin(
-	::mexo::machine::slot::kind::begin
-	,	[] {	
-		::mexo::tp::set_verb(::mexo::tp_verb::loop);
-		action.joint.ps.voltage = 32767;
-		action.joint.ps.current = 1500;
-	}
-);
 
 
 //7.  делигируем (to do коряво)
@@ -260,4 +251,43 @@ void encode_feetback(uint8_t * _data){
 }
 
 
+//8. делегат в слот "begin" - сработает при инициализации - собираем все вместе
+::mexo::machine::slot::simple begin(
+	::mexo::machine::slot::kind::begin
+	,	[] {	
+		::mexo::tp::set_verb(::mexo::tp_verb::loop);
+		::robo::freemaster::connect( ::robo::net::iserial::query(serial0_PATH) );
+		action.joint.ps.voltage = 32767;
+		action.joint.ps.current = 1500;
+	}
+);
+
+// первый способ сразу  - в лоб
+FLOW_PERFORMER_RAND_RECORD(echo,can0,
+{
+		static uint8_t old_data[8];
+		static size_t old_sz;
+		if(in_msg){
+			put_answer(in_msg->data(),in_msg->size());
+			old_sz = in_msg->size();
+			std::copy_n(in_msg->data(),old_sz,old_data);
+		}	else{
+			put_answer(old_data,old_sz);
+		}	
+	}
+)
+	
+FLOW_SERIAL_PERFORMER_RECORD(serial0,can0,4,6);
+
+FLOW_PERFORMER_RAND_RECORD(exchange,can0,
+	static uint8_t snapshot[7];
+	if(in_msg){
+		decode_action(in_msg->data(),in_msg->size());
+		encode_feetback(snapshot);
+		put_answer(snapshot,7);
+	}	else{
+		encode_feetback(snapshot);
+		put_answer(snapshot,7);
+	}	
+)
 

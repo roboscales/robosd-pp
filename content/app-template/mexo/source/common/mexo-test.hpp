@@ -71,4 +71,23 @@ extern perephery_config_s perephery_config;
 void decode_action(const uint8_t * _data, int _sz);
 void encode_feetback(uint8_t * _data);
 
+
+#define can0_PATH RT("can0")
+
+#define echo_PATH RT("echo")
+#define echo_KIND backend
+
+#define echo_can0_SUBA 0x1
+#define echo_can0_SUBA_ANSW 0x1
+
+#define exchange_PATH RT("exchange")
+#define exchange_KIND backend
+#define exchange_can0_SUBA 0x2
+#define exchange_can0_SUBA_ANSW 0x2
+
+#define serial0_PATH RT("serial0")
+#define serial0_KIND frontend
+#define serial0_can0_SUBA 0xF
+#define serial0_can0_SUBA_ANSW 0xF
+
 #endif

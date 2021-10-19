@@ -13,6 +13,9 @@ namespace mexo {
 	void machine::begin_(void) {
 		slots_ref_.begin.execute();
 		ROBO_APP_ASSERT(::mexo::node::begin());
+		#if ROBO_APP_NET_FLOW_ENABLED == 1
+		::robo::net::flow::machine::begin();
+		#endif
 	}
 	void machine::start_(void) {
 		slots_ref_.start.execute();

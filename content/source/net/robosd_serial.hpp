@@ -53,7 +53,7 @@ namespace robo {
 			virtual size_t get_send_buf(uint8_t* _data, size_t _size) = 0;
 		};*/
 
-		template <unsigned SA, unsigned SB, typename G = void > class bridge_t {
+		template <unsigned SA, unsigned SB, typename G > class bridge_t {
 			ring_t<SA> ring_a_;
 			ring_t<SB> ring_b_;
 		public:
@@ -155,6 +155,93 @@ namespace robo {
 
 		};
 
+		template <unsigned SA, unsigned SB > class bridge_t<SA,SB,void> {
+			ring_t<SA> ring_a_;
+			ring_t<SB> ring_b_;
+		public:
+			class incomm : public  iserial {
+				bridge_t& owner_;
+			public:
+				virtual size_t available(void) {
+					return owner_.ring_a_.count();
+				}
+				virtual size_t space(void) {
+					return owner_.ring_b_.space();
+				}
+				virtual size_t get(uint8_t* _data, size_t _max_size) {
+					return owner_.ring_a_.get(_data, _max_size);
+				}
+				virtual bool put(const uint8_t* _data, size_t _size) {
+					return owner_.ring_b_.put(_data, _size);
+				}
+				virtual uint8_t get(void) {
+					if (owner_.ring_a_.count() > 0) {
+						return owner_.ring_a_.get();
+					}
+					else {
+						return 0;
+					}
+				}
+				virtual bool  put(uint8_t _data) {
+					if (owner_.ring_b_.space() > 0) {
+						owner_.ring_b_.put(_data);
+						return true;
+					}
+					else {
+						return false;
+					}
+				}
+				incomm(bridge_t& _owner) : iserial(), owner_(_owner) {}
+				virtual void reset(void) {
+					owner_.ring_a_.clear();
+				}
+			} A;
+
+			class outcomm : public  iserial {
+				bridge_t& owner_;
+			public:
+				virtual size_t available(void) {
+					return owner_.ring_b_.count();
+				}
+				virtual size_t space(void) {
+					return owner_.ring_a_.space();
+				}
+				virtual size_t get(uint8_t* _data, size_t _max_size) {
+					return owner_.ring_b_.get(_data, _max_size);
+				}
+				virtual bool put(const uint8_t* _data, size_t _size) {
+					return owner_.ring_a_.put(_data, _size);
+				}
+				virtual uint8_t get(void) {
+					if (owner_.ring_b_.count() > 0) {
+						return owner_.ring_b_.get();
+					}
+					else {
+						return 0;
+					}
+				}
+				virtual bool  put(uint8_t _data) {
+					if (owner_.ring_a_.space() > 0) {
+						owner_.ring_a_.put(_data);
+						return true;
+					}
+					else {
+						return false;
+					}
+				}
+				outcomm(bridge_t& _owner)
+					: iserial()
+					, owner_(_owner) {}
+				virtual void reset(void) {
+					owner_.ring_b_.clear();
+				}
+			} B;
+
+			bridge_t(void)
+				: A(*this)
+				, B(*this) {}
+
+		};
 	}
 }
 

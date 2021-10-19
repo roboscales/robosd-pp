@@ -43,56 +43,68 @@ namespace robo {
 			public:
 				msg_a(port& _port) : msg(_port, memo) {};
 			};
-
+			
+			class rout_record;
+	
 			class performer {
-			public:
 				friend class port;
 				friend class machine;
-				typedef  ::robo::list::unsorted <performer> list;
-				typedef  list::ref ref;
-				enum class request { idle = 0, get = 1, put = 2 };
-				enum class kind_t { frontend, backend };
-			private:
-				ref ref_;
-				port * port_;
-				struct record{
-					cstr port_name_;
-					uint8_t command_;
-					uint8_t suba_;
-					uint8_t answ_suba_;
+				friend class rout_record;
+				public:
+					typedef  ::robo::list::unique <performer,int> map;
+					typedef  map::ref ref;
+					enum class request { idle = 0, get = 1, put = 2 };
+					enum class kind_t { frontend, backend };
+				private:
+					ref ref_;
+					port * port_;
+					rout_record* rout_record_;
 					request request_ = request::idle;
 					kind_t kind_;
-					typedef  ::robo::list::unsorted <record> list;
+				protected:
+					msg* in_msg = nullptr;
+					size_t max_size(void);
+					virtual void execute(void) = 0;
+					bool put_answer(const uint8_t* _data, size_t _size);
+					bool put_answer(msg* _msg);
+				public:
+					msg* msg_query(void);
+					performer(cstr _command_path, kind_t _kind);
+					static performer * find(cstr _path);
+					static performer* find(int _ix);
+			};
+			
+			class port;
+			
+			class rout_record {
+				friend class performer;
+				friend class port;
+				friend class machine;
+				private:
+					typedef  ::robo::list::unsorted <rout_record> list;
 					typedef  list::ref ref;
 					ref ref_;
-					static list & records_(void){
-						static list records__;
-						return records__;
-					}
-					record(): ref_(*this){
-						ref_.attach_to(records_());
-					}
-				} record_;
+					int port_ix_;
+					int command_ix_;
+					uint8_t suba_;
+					uint8_t answ_suba_;
+				public:
+					rout_record(
+						cstr  _port_path
+						, cstr  _command_path
+						, uint8_t _suba
+						, uint8_t _answ_suba
+					);
+			};	
 				
-			protected:
-				msg* in_msg = nullptr;
-				size_t max_size(void);
-				virtual void execute(void) = 0;
-				bool put_answer(const uint8_t* _data, size_t _size);
-				bool put_answer(msg* _msg);
-			public:
-				msg* msg_query(void);
-				performer(
-					, uint8_t _command
-					, uint8_t _suba
-					, uint8_t _answ_suba
-					, kind_t _kind
-				);
-			};
-
 			class port {
 				friend class performer;
 				friend class msg;
+				friend class machine;
+			private:
+				typedef  ::robo::list::unique <port, int> map;
+				typedef  map::ref ref;
+				ref ref_;
 				msg::list pool_;
 				size_t max_size_;
 				size_t suba_count_;
@@ -108,14 +120,22 @@ namespace robo {
 				size_t max_size(void) { return max_size_; };
 				size_t suba_count(void) { return suba_count_; };
 
-				port(size_t _max_size, size_t _suba_count);
+				port(cstr _path, size_t _max_size, size_t _suba_count);
 				virtual ~port(void);
+				static port* find(cstr _path);
+				static port* find(int _ix);
+
 			};
 
 			class machine {
 				friend class  port;
-				performer::list frontend_list_;
-				performer::list backend_list_;
+				friend class  performer;
+				friend class  rout_record;
+				performer::map frontend_list_;
+				performer::map backend_list_;
+				performer::map performers_;
+				port::map ports_;
+				rout_record::list rout_records_;
 				static machine& instance_(void);
 				static void run_(performer* _performer);
 			public:
@@ -126,7 +146,7 @@ namespace robo {
 
 			template <typename D> class port_t : public port, private D {
 			public:
-				port_t() :port(D::packet_size, D::suba_count) {
+				port_t() :port(D::path, D::packet_size, D::suba_count) {
 					for (int i = 0; i < D::msg_pool_size; i++) {
 						new msg_a<D::packet_size>(*this);
 					}
@@ -168,26 +188,21 @@ namespace robo {
 				net::iserial& local_;
 			public:
 				serial_proto(
-					port& _port
-					, uint8_t _command
-					, uint8_t _suba
-					, uint8_t _answ_suba
+					cstr _command_path
 					, kind_t _kind
 					, iserial& _remote
 					, iserial& _local
 				)
 					: performer(
-						_port
-						, _command
-						, _suba
-						, _answ_suba
+						_command_path
 						, _kind
 					)
 					, remote_(_remote)
-					, local_(_local) {}
-					net::iserial& local(void){return local_;}
+					, local_(_local) {
+					ROBO_APP_ASSERT(_local.reg(_command_path));
+				}
+				net::iserial& local(void){return local_;}
 			protected:
-
 				virtual void execute(void);
 			};
 			template <unsigned SA, unsigned SB, typename G = void > class serial_proto_t
@@ -195,16 +210,10 @@ namespace robo {
 				, public serial_proto {
 			public:
 				serial_proto_t(
-					port& _port
-					, uint8_t _command
-					, uint8_t _suba
-					, uint8_t _answ_suba
+					cstr _path
 					, kind_t _kind
 				) : bridge_t<SA, SB, G>(), serial_proto(
-					_port
-					, _command
-					, _suba
-					, _answ_suba
+					_path
 					, _kind
 					, bridge_t<SA, SB, G>::A
 					, bridge_t<SA, SB, G>::B
@@ -216,43 +225,58 @@ namespace robo {
 	}
 }
 
-#define FLOW_ROUTE_RECORD_A( P, C , K)  FLOW_ROUTE_RECORD_A_(P, C, K)
-#define	 FLOW_ROUTE_RECORD_A_( P, C, K)	class P##_##C : public  ::robo::net::flow::performer { \
-protected:	\
-	virtual void execute(void);	\
-public:	\
-	P##_##C() :performer(\
-		P\
-		, P##_##C##_FLOW_CMD_ID \
-		, P##_##C##_SUBA \
-		, P##_##C##_SUBA_ANSW \
-		, kind_t::P##_##C##_KIND \
-	) {} \
-} P##_##C##_;
+#define FLOW_PERFORMER_RAND_RECORD( C,P, E) FLOW_PERFORMER_RAND_RECORD_( C,P, E )
+#define FLOW_PERFORMER_RAND_RECORD_(C,P, E) \
+class C##_##P##_performer_  : public ::robo::net::flow::performer { \
+public:\
+	C##_##P##_performer_ (void) : performer(C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND) {}\
+	virtual void execute(void) { E 	} \
+}; \
+C##_##P##_performer_ C##_##P##_performer__; \
+::robo::net::flow::rout_record C##_##P##_rout_record_( \
+	P##_PATH \
+	, C##_PATH \
+	, C##_##P##_SUBA \
+	, C##_##P##_SUBA_ANSW \
+);
 
-#define FLOW_ROUTE_RECORD_B( P, C , K, T)  FLOW_ROUTE_RECORD_B_(P, C, K, T)
-#define	 FLOW_ROUTE_RECORD_B_( P, C, K, T)	class P##_##C : public  ::robo::net::flow::performer { \
-protected:	\
-	virtual void execute(void){  T } \
-public:	\
-	P##_##C() :performer(\
-		P\
-		, P##_##C##_FLOW_CMD_ID \
-		, P##_##C##_SUBA \
-		, P##_##C##_SUBA_ANSW \
-		, kind_t::P##_##C##_KIND \
-	) {} \
-} P##_##C##_;
+#define FLOW_SERIAL_PERFORMER_RECORD( C,P, NI,NO ) FLOW_SERIAL_PERFORMER_RECORD_( C,P, NI,NO )
+#define FLOW_SERIAL_PERFORMER_RECORD_(C,P, NI,NO) \
+::robo::net::flow::serial_proto_t<NI, NO, void>  C##_##P##_proto_(C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND);\
+::robo::net::flow::rout_record C##_##P##_rout_record_( \
+	P##_PATH \
+	, C##_PATH \
+	, C##_##P##_SUBA \
+	, C##_##P##_SUBA_ANSW \
+);
+
+#define FLOW_PERFORMER_RECORD( C, P ) FLOW_PERFORMER_RECORD_( C, P )
+#define FLOW_PERFORMER_RECORD_( C, P ) \
+::robo::net::flow::rout_record C##_##P##_rout_record_( \
+	P##_PATH \
+	, C##_PATH \
+	, C##_##P##_SUBA \
+	, C##_##P##_SUBA_ANSW \
+);
 
 
-#define FLOW_SERIAL_ROUTE_RECORD(NI,NO, P, C , K)  FLOW_SERIAL_ROUTE_RECORD_(NI,NO,P, C, K)
+#define FLOW_PERFORMER_RECORD( C, P ) FLOW_PERFORMER_RECORD_( C, P )
+#define FLOW_PERFORMER_RECORD_( C, P ) \
+::robo::net::flow::rout_record C##_##P##_rout_record_( \
+	P##_PATH \
+	, C##_PATH \
+	, C##_##P##_SUBA \
+	, C##_##P##_SUBA_ANSW \
+);
 
-#define FLOW_SERIAL_ROUTE_RECORD_(NI,NO,P, C, K) ::robo::net::flow::serial_proto_t<NI, NO, ::robo::system::guard> P##_##C##_( \
-	P\
-	, P##_##C##_FLOW_CMD_ID \
-	, P##_##C##_SUBA \
-	, P##_##C##_SUBA_ANSW \
-	, ::robo::net::flow::performer::kind_t::P##_##C##_KIND \
-) ;
+#define FLOW_SERIAL_FRONTEND_PERFORMER( C, IN, ON ) FLOW_SERIAL_FRONTEND_PERFORMER_( C, IN, ON )
+#define FLOW_SERIAL_FRONTEND_PERFORMER_( C, IN, ON ) \
+::robo::net::flow::serial_proto_t<IN,ON, ::robo::system::guard>  C##_proto_(C##_PATH, ::robo::net::flow::performer::kind_t::frontend);
+
+#define FLOW_SERIAL_BACKEND_PERFORMER( C, IN, ON ) FLOW_SERIAL_BACKEND_PERFORMER_( C, IN, ON )
+#define FLOW_SERIAL_BACKEND_PERFORMER_( C, IN, ON ) \
+::robo::net::flow::serial_proto_t<IN,ON, ::robo::system::guard>  C##_proto_(C##_PATH, ::robo::net::flow::performer::kind_t::backend);
+
+
 #endif
 #endif
