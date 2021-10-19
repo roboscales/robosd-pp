@@ -111,7 +111,7 @@ namespace mexo {
 				return satstate_t::none;
 			}
 		}
-		static long_signal_t round_s(const long_signal_t& _src, unsigned int _shift) {
+		static long_signal_t round_l(const long_signal_t& _src, unsigned int _shift) {
 			if (_src == 0) {
 				return (long_signal_t)0;
 			}
@@ -146,6 +146,7 @@ namespace mexo {
 				}
 			}
 		}
+
 	};
 
 
@@ -460,8 +461,8 @@ namespace mexo {
 			present_s& present = handler::present_cast<present_s>();
 			const config_s& config = handler::config_cast<config_s>();
 			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
-			present.filtered = q::round_s(tmp, config.shift.gain);
-			present.fb.output = (signal_t)q::round_s(present.filtered, config.shift.value+ config.shift.gain);
+			present.filtered = q::round_l(tmp, config.shift.gain);
+			present.fb.output = (signal_t)q::round_l(present.filtered, config.shift.value+ config.shift.gain);
 		}
 
 		bool do_handler_reconfig(void) {
@@ -476,6 +477,7 @@ namespace mexo {
 			gain2 = (ones - config.gain) * (1 << config.shift.presc)*(1<< config.shift.gain);
 			return true;
 		};
+		
 		virtual void do_handler_adjust(void) {
 			//const config_s& config = config_cast<config_s>();
 			present_s& present = handler::present_cast<present_s>();

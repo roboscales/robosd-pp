@@ -4,8 +4,8 @@
 namespace mexo {
 
 	template< typename q >  class  quazzy_adapt
-		: public controller_handler< typename q::signal_t, typename q::discret_t > {
-		typedef controller_handler<typename q::signal_t, typename q::discret_t> A;
+		: public controller_handler< typename q::signal_t, typename q::signal_t > {
+		typedef controller_handler<typename q::signal_t, typename q::signal_t> A;
 	public:
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
@@ -107,7 +107,7 @@ namespace mexo {
 					}
 				}
 			}
-			present.model = q::round_s(present.model_l, config.model_shift);
+			present.model = q::round_l(present.model_l, config.model_shift);
 		}
 
 		void do_handler_adjust(void) {
@@ -130,8 +130,8 @@ namespace mexo {
 
 
 	template< typename q >  class  limmiter
-		: public controller_handler< typename q::signal_t, typename q::discret_t > {
-		typedef controller_handler<typename q::signal_t, typename q::discret_t> A;
+		: public controller_handler< typename q::signal_t, typename q::signal_t > {
+		typedef controller_handler<typename q::signal_t, typename q::signal_t> A;
 	public:
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
@@ -259,8 +259,8 @@ namespace mexo {
 
 	
 		template< typename q >  class  motion
-		: public controller_handler< typename q::signal_t, typename q::discret_t > {
-		typedef controller_handler<typename q::signal_t, typename q::discret_t> A;
+		: public controller_handler< typename q::signal_t, typename q::signal_t > {
+		typedef controller_handler<typename q::signal_t, typename q::signal_t> A;
 	public:
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
@@ -273,10 +273,8 @@ namespace mexo {
 			parameter_t modelGain;
 			uint8_t controlShift;
 			uint8_t modelShift;
-			parameter_t forceGain;
+			signal_t forceStep;
 			signal_t forceLim;
-			parameter_t refGain;
-			uint8_t refPrescShift;
 		};
 		struct present_s {
 			typename A::present_s cb;
@@ -309,48 +307,25 @@ namespace mexo {
 
 			present.error = (long_signal_t) * A::deseired - actual;
 
-			/*
-			    if (r->reference != 0){
-    	mexo_long_signal_t lim_max = r->limit_max;
-    	mexo_long_signal_t lim_min = r->limit_min;
-    	mexo_long_signal_t reference =  *(r->reference);
-    	if(reference>lim_max){
-	    	mexo_long_signal_t tmp = (lim_max-reference);
-			tmp = MEXO_RIGHT_SHIFT(tmp, s->limitGainPresc);
-			tmp*=(s->limitGain);
-			controlMax = controlMax + MEXO_RIGHT_SHIFT(tmp, s->controlShift);
-    		if (controlMax<0){
-	    		controlMax = 0;
-		    }
-    	}else{
-	    	if(reference<lim_min){
-				mexo_long_signal_t tmp = (lim_max-reference);
-				tmp = MEXO_RIGHT_SHIFT(tmp, s->limitGainPresc);
-				tmp*=(s->limitGain);
-				controlMin = controlMin + MEXO_RIGHT_SHIFT(tmp, s->controlShift);
-    			if (controlMin>0)
-	    			controlMin = 0;
-		    }
-    	}
-    }
-			*/
 			
-/*			  if ( *(r->signal_force_diff) == 0  && ( signal ==0)){
-            if(Error>0){
-                mexo_parametr_t fm = s->forceMax;
-                force+=s->forceGain;
-                if(force>fm)
-                    force=fm;
-            }else if (Error<0){
-                mexo_parametr_t fm = -s->forceMax;
-                force-=s->forceGain;
-                if(force<fm)
-                    force=fm;
-            }
-        }else {
-        	force = 0;
-        }
-       	r->force = force;*/
+			if (  actual ==0 ){
+				if(present.error>0){
+					if(present.force>config.forceLim-config.forceStep)
+							present.force=config.forceLim;
+					else {
+						present.force+=config.forceStep;
+					}
+				}else if (present.error<0){                
+					signal_t fm = -config.forceLim;
+					if(present.force < fm+config.forceStep){
+						present.force=fm;
+					} else{
+						present.force-=config.forceStep;	
+					}
+				}
+			}else {
+				present.force = 0;
+			}
 				
 			long_signal_t tmp = present.error + present.model - actual;
 
@@ -404,7 +379,7 @@ namespace mexo {
 					}
 				}
 			}
-			present.model = q::round_s(present.model_l, config.modelShift);
+			present.model = q::round_l(present.model_l, config.modelShift);
 		}
 
 		void do_handler_adjust(void) {
@@ -425,6 +400,135 @@ namespace mexo {
 		}
 	};
 
+	template< typename q >  class  positioner
+		: public controller_handler< typename q::long_signal_t, typename q::signal_t > {
+		typedef controller_handler<typename q::long_signal_t, typename q::signal_t> A;
+	public:
+		typedef typename  q::signal_t signal_t;
+		typedef typename  q::long_signal_t long_signal_t;
+		typedef typename  q::parameter_t parameter_t;
+
+		struct config_s {
+			typename A::config_s cb;
+			long_signal_t adjust_value;
+			parameter_t propGain;
+			parameter_t diffGain;
+			uint8_t controlShift;
+			parameter_t diffQuadrGain;
+			uint8_t diffQuadrShift;
+			signal_t deadZone;
+			signal_t crawlSpeed;
+		};
+		struct present_s {
+			typename A::present_s cb;
+			long_signal_t control;
+			long_signal_t controlDiff;
+			long_signal_t controlDiffQuadr;
+			long_signal_t error;
+		};
+		const long_signal_t& actual;
+		const signal_t& actualDiff;
+		const signal_t& force;
+	public:
+		positioner(
+			const config_s& _config
+			 , present_s& _present
+			 , const range_s<signal_t>& _range
+			 , const satstate_t& _master_satstate
+			 , const long_signal_t& _actual
+			 , const signal_t& _actualDiff
+			 , const signal_t& _force
+		)
+			: A(_config.cb, _present.cb, _range, _master_satstate)
+			, actual(_actual)
+			, actualDiff(_actualDiff)
+			, force(_force) 
+{}
+
+		void execute(void) {
+			if (A::master_satstate == satstate_t::both) {
+				return;
+			}
+
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
+
+			present.error = *A::deseired - actual;
+			const signal_t max_err = std::numeric_limits<signal_t>::max();
+			
+			if (present.error==0){
+				present.control = (long_signal_t)0;
+				*A::output = (signal_t)0;					return;
+			}else{
+					if(present.error > config.deadZone){
+							if (present.error>max_err){
+									present.error = max_err;
+							} else {
+									if(config.crawlSpeed == 0) {
+											present.error -= config.deadZone;
+									}
+							}
+					}
+					if(present.error < -config.deadZone){
+							if (present.error<-max_err){
+									present.error = -max_err;
+							} else {
+									if(config.crawlSpeed == 0) {
+											present.error += config.deadZone;
+									}
+							}
+					}
+			}
+			present.control = present.error*config.propGain;
+			
+			if(config.diffQuadrGain>0){
+				present.controlDiffQuadr = actualDiff*actualDiff;
+				present.controlDiffQuadr = q::round_l(present.controlDiffQuadr, config.diffQuadrShift);
+				present.controlDiffQuadr *= config.diffQuadrGain;
+			} else {
+				present.controlDiffQuadr = 0;
+			}
+				
+			present.controlDiff = -actualDiff*config.diffGain;
+
+			present.control += present.controlDiff;
+			present.control += present.controlDiffQuadr;
+			present.control = q::round_l(present.control, config.controlShift);
+			present.control += force;
+
+			if(present.control == 0 && config.crawlSpeed >0 ){
+				if(present.error > config.deadZone){
+					present.control =   config.crawlSpeed;				
+				} else if( present.error < -config.deadZone) {
+					present.control =   -config.crawlSpeed;				
+				}
+			}
+				
+			present.cb.satstate.local = q::round_s(present.control, A::range, 0, *A::output);
+
+			if (A::master_satstate == satstate_t::none) {
+				present.cb.satstate.actual = present.cb.satstate.local;
+			}
+			else {
+				present.cb.satstate.actual = A::master_satstate;
+			}
+		}
+			
+
+		void do_handler_adjust(void) {
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
+
+			if (config.propGain > (parameter_t)0) {
+				present.control = (long_signal_t)config.adjust_value * (1 << config.controlShift);
+				*A::output = config.adjust_value;
+			}
+			else {
+				present.control = (long_signal_t)0;
+				*A::output = (signal_t)0;
+			}
+		}
+	};	
 }
 
 #endif

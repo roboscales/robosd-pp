@@ -507,7 +507,7 @@ namespace mexo {
 			, master_satstate(_master_satstate)
 			, deseired(&dummy_input_)
 			, output(&dummy_output_) {}
-		void set_output(I* _output) {
+		void set_output(O* _output) {
 			if (_output) {
 				output = _output;
 			}

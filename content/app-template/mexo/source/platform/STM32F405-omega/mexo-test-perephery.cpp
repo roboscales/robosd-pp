@@ -241,7 +241,7 @@ perephery_config_s perephery_config=
 	,{
 		{0}
 		, 1
-		, 2
+		, 4
 	}
 };
 

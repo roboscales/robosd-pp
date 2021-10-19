@@ -551,6 +551,16 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\..\reference\robosd-ref\mexo\enco.hpp</FilePath>
             </File>
+            <File>
+              <FileName>motion.templ.settings.inc.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\motion.templ.settings.inc.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>positioner.templ.settings.inc.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\reference\robosd-ref\mexo\positioner.templ.settings.inc.hpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

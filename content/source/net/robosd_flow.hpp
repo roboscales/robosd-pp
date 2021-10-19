@@ -54,12 +54,26 @@ namespace robo {
 				enum class kind_t { frontend, backend };
 			private:
 				ref ref_;
-				port& port_;
-				uint8_t command_;
-				uint8_t suba_;
-				uint8_t answ_suba_;
-				request request_ = request::idle;
-				kind_t kind_;
+				port * port_;
+				struct record{
+					cstr port_name_;
+					uint8_t command_;
+					uint8_t suba_;
+					uint8_t answ_suba_;
+					request request_ = request::idle;
+					kind_t kind_;
+					typedef  ::robo::list::unsorted <record> list;
+					typedef  list::ref ref;
+					ref ref_;
+					static list & records_(void){
+						static list records__;
+						return records__;
+					}
+					record(): ref_(*this){
+						ref_.attach_to(records_());
+					}
+				} record_;
+				
 			protected:
 				msg* in_msg = nullptr;
 				size_t max_size(void);
@@ -69,7 +83,6 @@ namespace robo {
 			public:
 				msg* msg_query(void);
 				performer(
-					port& _port
 					, uint8_t _command
 					, uint8_t _suba
 					, uint8_t _answ_suba
@@ -106,6 +119,7 @@ namespace robo {
 				static machine& instance_(void);
 				static void run_(performer* _performer);
 			public:
+				static void begin(void);
 				static void frontend_poll(void);
 				static void backend_poll(void);
 			};

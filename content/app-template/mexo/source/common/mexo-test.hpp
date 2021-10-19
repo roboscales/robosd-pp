@@ -5,6 +5,8 @@
 #include "mexo/ps.hpp"
 #include "mexo/enco.hpp"
 #include "prf/AS5048A/as5048a.hpp"
+#include "net/robosd_flow.hpp"
+#include "net/robosd_flow_id.h"
 
 
 typedef  ::mexo::fixed_point<::mexo::int15> types;
@@ -66,6 +68,7 @@ struct perephery_config_s{
 };
 extern perephery_config_s perephery_config;
 
-
+void decode_action(const uint8_t * _data, int _sz);
+void encode_feetback(uint8_t * _data);
 
 #endif

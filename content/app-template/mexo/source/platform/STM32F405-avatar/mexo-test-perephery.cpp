@@ -244,7 +244,7 @@ perephery_config_s perephery_config=
 	}
 	,{
 		{0}
-		, 1
+		, -1
 		, 0
 	}
 };
@@ -288,27 +288,28 @@ void  flow_set_addr( uint8_t _addr){
 }
 
 
+
 class can_port_driver{
 	public:
 	typedef flow_msg_can_id_t id_t;
 	enum{suba_count = 16,  packet_size = 8, msg_pool_size = 4 };
-	
-	static void send(unsigned _id , const uint8_t * _data, size_t _size){
-		if(_size>0){
-			CAN_TxHeaderTypeDef header;
-			header.DLC =_size;
-			header.ExtId = 0;
-			header.IDE = CAN_ID_STD;
-			header.RTR = CAN_RTR_DATA;
-			header.StdId = _id;
-			HAL_CAN_AddTxMessage(&hcan1, &header, ( uint8_t *)_data,  (uint32_t *)CAN_TX_MAILBOX0);
-		}
-	}
+	static void send(unsigned _id , const uint8_t * _data, size_t _size);
 };
 
-::robo::net::flow::port_t<can_port_driver> can0;
+typedef ::robo::net::flow::port_t<can_port_driver> can0_t;
+can0_t can0;
+void can_port_driver:: send(unsigned _id , const uint8_t * _data, size_t _size){
+	if(_size>0){
+		CAN_TxHeaderTypeDef header;
+		header.DLC =_size;
+		header.ExtId = 0;
+		header.IDE = CAN_ID_STD;
+		header.RTR = CAN_RTR_DATA;
+		header.StdId = _id;
+		HAL_CAN_AddTxMessage(&hcan1, &header, ( uint8_t *)_data,  (uint32_t *)CAN_TX_MAILBOX0);
+	}
+}
 
-//::robo::net::bridge_t<4,4,::robo::system::critical>  freemaster_serial;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
  static int trig = 0;
@@ -382,4 +383,21 @@ void as5048_driver::get(uint16_t & _answer){
 uint16_t as5040_driver::native(void){
 	return htim3.Instance->CNT;
 }
+
+#define can0_cmd_FLOW_CMD_ID 4
+#define can0_cmd_SUBA 0x2
+#define can0_cmd_SUBA_ANSW 0x2
+#define can0_cmd_KIND backend
+
+FLOW_ROUTE_RECORD_B(can0,cmd,KIND,
+	static uint8_t snapshot[7];
+	if(in_msg){
+		decode_action(in_msg->data(),in_msg->size());
+		encode_feetback(snapshot);
+		put_answer(snapshot,7);
+	}	else{
+		encode_feetback(snapshot);
+		put_answer(snapshot,7);
+	}	
+)
 

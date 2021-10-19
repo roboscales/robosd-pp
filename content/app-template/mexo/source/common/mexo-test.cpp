@@ -86,14 +86,33 @@ struct hardware_link {
 #define joint_SPEED_OV_CURRENT_REF_PRESC_SHIFT 0
 
 #define joint_SPEED_OV_VOLTAGE_CL_MODE_ENABLED 1
-#define joint_SPEED_OV_VOLTAGE_CL_PROP_GAIN 0
-#define joint_SPEED_OV_VOLTAGE_CL_MODEL_GAIN 0
+#define joint_SPEED_OV_VOLTAGE_CL_PROP_GAIN 45
+#define joint_SPEED_OV_VOLTAGE_CL_MODEL_GAIN 30
 #define joint_SPEED_OV_VOLTAGE_CL_CONTROL_SHIFT 0
-#define joint_SPEED_OV_VOLTAGE_CL_MODEL_SHIFT 0
-#define joint_SPEED_OV_VOLTAGE_CL_FORCE_GAIN 0
-#define joint_SPEED_OV_VOLTAGE_CL_FORCE_LIM 0
-#define joint_SPEED_OV_VOLTAGE_CL_REF_GAIN 0
-#define joint_SPEED_OV_VOLTAGE_CL_REF_PRESC_SHIFT 0
+#define joint_SPEED_OV_VOLTAGE_CL_MODEL_SHIFT 10
+#define joint_SPEED_OV_VOLTAGE_CL_FORCE_GAIN 50
+#define joint_SPEED_OV_VOLTAGE_CL_FORCE_LIM 7000
+
+#define joint_POSITION_OV_CURRENT_MODE_ENABLED 1
+#define joint_POSITION_OV_VOLTAGE_CL_MODE_ENABLED 1
+
+
+#define joint_POSITIONER_OV_CURRENT_PROP_GAIN 1
+#define joint_POSITIONER_OV_CURRENT_DIFF_GAIN 0
+#define joint_POSITIONER_OV_CURRENT_CONTROL_SHIFT 0
+#define joint_POSITIONER_OV_CURRENT_DIFF_QUADR_GAIN 0
+#define joint_POSITIONER_OV_CURRENT_DIFF_QUADR_SHIFT 0
+#define joint_POSITIONER_OV_CURRENT_DEAD_ZONE 1
+#define joint_POSITIONER_OV_CURRENT_CRAWL_SPEED 1
+
+#define joint_POSITIONER_OV_VOLTAGE_CL_PROP_GAIN 1
+#define joint_POSITIONER_OV_VOLTAGE_CL_DIFF_GAIN 0
+#define joint_POSITIONER_OV_VOLTAGE_CL_CONTROL_SHIFT 3
+#define joint_POSITIONER_OV_VOLTAGE_CL_DIFF_QUADR_GAIN 0
+#define joint_POSITIONER_OV_VOLTAGE_CL_DIFF_QUADR_SHIFT 0
+#define joint_POSITIONER_OV_VOLTAGE_CL_DEAD_ZONE 16
+#define joint_POSITIONER_OV_VOLTAGE_CL_CRAWL_SPEED 0
+
 
 #include "mexo/actuator.inc.hpp"
 #endif
@@ -137,13 +156,13 @@ current_sensor current_sensor_(RT("current sensor"), &hardware_prioritet_subsyst
 //4.1. подключаем датчик положения мотора
 motor_enco motor_enco_(RT("motor enco"),&hardware_periodic_subsystem, perephery_config.motor_enco,present.motor_enco );
 
-//4.2. делегат в слот №2 - команда на расчет позиции.
+//4.2. делегат в слот №0 - команда на расчет позиции.
 ::mexo::machine::slot::simple enco_put(
 	0
 	,	&AS5048A::put
 );
 
-//4.3. делегат в слот №3 - команда на чтение позиции . В нулевом слоте ( в данной настройке mexo имеет 4 слота ) 
+//4.3. делегат в слот №2 - команда на чтение позиции . В нулевом слоте ( в данной настройке mexo имеет 4 слота ) 
 // получим готовые данные
 ::mexo::machine::slot::simple enco_get(
 	2
@@ -171,9 +190,7 @@ static volatile robo::time_us_t g_time_us_t = 0;
 //6.2. +0.4мкс
 ::mexo::machine::slot::simple backend_(
 	::mexo::machine::slot::kind::backend
-	,	[]{
-		robo::freemaster::recorder();
-	}
+	,	&robo::freemaster::recorder	
 );	
 
 //6.3. +0.3мкс от hardware_subsystem
@@ -190,6 +207,8 @@ static volatile robo::time_us_t g_time_us_t = 0;
 	::mexo::machine::slot::kind::begin
 	,	[] {	
 		::mexo::tp::set_verb(::mexo::tp_verb::loop);
+		action.joint.ps.voltage = 32767;
+		action.joint.ps.current = 1500;
 	}
 );
 
@@ -215,5 +234,30 @@ void hardware_link::reconfig(void){
 ::mexo::periodic_subsystem & hardware_link::periodic_subsystem(void){
 	return hardware_periodic_subsystem;
 }
+
+//uint16_t  as5040_driver::native(void){
+	//return 0;
+//}
+
+
+
+void decode_action(const uint8_t * _data, int _sz){
+	if(_sz>=0){
+		action.joint.ps.dev.mode = *_data; _data++; _sz--;
+		action.joint.ps.dev.actual = true;
+	}
+	if(_sz>=2){
+		action.joint.speed = *(int16_t *)_data;_data+=2;_sz-=2;
+	}
+	if(_sz>=4){
+		action.joint.position = *(int32_t *)_data;
+	}
+}
+void encode_feetback(uint8_t * _data){
+	*_data = (uint8_t ) present.joint.ps.dev.mode; _data++;
+	*(uint16_t *)_data = (uint16_t ) present.joint.speed_filter.fb.output; _data+=2;
+	*(uint32_t *)_data = (uint32_t ) present.motor_quadr_enco.sb.output; 
+}
+
 
 

@@ -46,7 +46,7 @@ namespace robo{
 					res += memo_[1];
 					res	&= ~0xC000;
 					error_ = ((res & 0x4000) == 0x4000);
-					native_ = res;
+					native_ = (res+1)>>2; //12 бит
 				}
 			}
 			
