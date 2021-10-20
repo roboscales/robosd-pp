@@ -5,7 +5,7 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_system.hpp"
 #include "mexo/led.hpp"
-
+#include "mexo/dev.front.hpp"
 #include <initializer_list> 
 #ifndef APP_MEXO_SLOT_COUNT
 #define APP_MEXO_SLOT_COUNT 16
@@ -204,10 +204,9 @@ namespace mexo {
 		virtual void on_idle(void) {};
 	public:
 		enum { idle_id = 0 };
-		struct action_s {
-			bool actual;
-			int mode;
-		};
+		typedef ::dev::action_s action_s;
+		typedef ::dev::feetback_s feetback_s;
+		
 		struct present_s {
 			int mode;
 		};

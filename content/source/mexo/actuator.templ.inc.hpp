@@ -1,45 +1,9 @@
-#ifndef ACTUATOR_TEMPLATE_NAME
-#define ACTUATOR_TEMPLATE_NAME actuator
-#define ACTUATOR_PREFIX(name)  _ACTUATOR_PREFIX(name,ACTUATOR_TEMPLATE_NAME)
-#define _ACTUATOR_PREFIX(name,prfx)  __ACTUATOR_PREFIX(name,prfx)
-#define __ACTUATOR_PREFIX(name,prfx) prfx##_##name
-#define actuator_MOTOR_POSTITION_MEASSURY_ENABLED 1
-#define actuator_MOTOR_SPEED_FILTER_ENABLED 1
-#define actuator_SPEED_OV_CURRENT_MODE_ENABLED 1
-#define actuator_SPEED_OV_VOLTAGE_CL_MODE_ENABLED 1
-#define actuator_POSITION_MODE_OV_CURRENT_ENABLED 1
-#define actuator_POSITION_MODE_OV_VOLTAGE_CL_ENABLED 1
-#define actuator_ps_CURRENT_LIMMITER_ENABLED 1
-#define actuator_ps_CURRENT_REGULATOR_ENABLED 1
-#define PS_TEMPLATE_SUB_NAME ps
-#endif
-#ifndef PS_TEMPLATE_SUB_NAME
-#define PS_TEMPLATE_SUB_NAME ps
-#endif
-#define PS_TEMPLATE_NAME ACTUATOR_PREFIX(PS_TEMPLATE_SUB_NAME)
-#define POWER_SUPPLY_PREFIX(name)  _POWER_SUPPLY_PREFIX(name,ACTUATOR_TEMPLATE_NAME)
-#define _POWER_SUPPLY_PREFIX(name,prfx)  __POWER_SUPPLY_PREFIX(name,prfx)
-#define __POWER_SUPPLY_PREFIX(name,prfx) prfx##_ps_##name
-
-
-#define ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
-#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED ==1
-#define ACTUATOR_MOTOR_SPEED_FILTER_ENABLED ACTUATOR_PREFIX(MOTOR_SPEED_FILTER_ENABLED)
-#define ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED (( ACTUATOR_PREFIX(SPEED_OV_CURRENT_MODE_ENABLED) == 1) && (POWER_SUPPLY_PREFIX(CURRENT_REGULATOR_ENABLED)==1))
-#define ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED ((ACTUATOR_PREFIX(SPEED_OV_VOLTAGE_CL_MODE_ENABLED)==1) && (POWER_SUPPLY_PREFIX(CURRENT_LIMMITER_ENABLED)==1))
-#define ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED ((ACTUATOR_PREFIX(POSITION_OV_CURRENT_MODE_ENABLED)==1) && (ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED==1))
-#define ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED ((ACTUATOR_PREFIX(POSITION_OV_VOLTAGE_CL_MODE_ENABLED)==1) && (ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED==1))
-#else
-#define ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED 0
-#define ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED 0
-#define ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED 0
-#define ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED 0
-#endif 
-
+#define TEMPL_BEGIN
+#include "mexo/actuator.templ.prepare.hpp"
 
 #include "mexo/ps.templ.inc.hpp"
-
-template <typename types, typename hardwaresys_t>  class ACTUATOR_PREFIX(t) : public PS_TEMPLATE_NAME < types, hardwaresys_t > {
+namespace ACTUATOR_TEMPLATE_NAME {
+	template <typename types, typename hardwaresys_t>  class dev_t: public ACTUATOR_PS_TEMPLATE_NAME :: dev_t<types,hardwaresys_t> {
 	int slot_index_;
 public:
 	
@@ -87,7 +51,7 @@ public:
 		positioner_b positioner_ov_voltage_cl;
 	#endif
 		
-	typedef PS_TEMPLATE_NAME < types, hardwaresys_t > ps_t;
+	typedef ACTUATOR_PS_TEMPLATE_NAME :: dev_t<types,hardwaresys_t> ps_t;
 
 	struct action_s {
 		typename ps_t::action_s ps;
@@ -168,12 +132,12 @@ protected:
 		present_s& present = ::mexo::dev::present_cast<present_s>();
 		motion_ov_current.set_output(&present.ps.current_deseired);
 		motion_ov_current.set_input(&present.speed_deseired);
-		PS_TEMPLATE_NAME < types, hardwaresys_t > ::mode_current_start();
+		dev_t < types, hardwaresys_t > ::mode_current_start();
 		motion_ov_current.start();
 	}
 	void speed_ov_current_mode_stop(void) {
 		motion_ov_current.stop();
-		PS_TEMPLATE_NAME < types, hardwaresys_t > ::mode_current_stop();
+		dev_t < types, hardwaresys_t > ::mode_current_stop();
 		motion_ov_current.set_output(nullptr);
 		motion_ov_current.set_input(nullptr);
 	}
@@ -182,7 +146,7 @@ protected:
 	friend class speed_ov_current_mode_t;
 	class speed_ov_current_mode_t :public ::mexo::ps::dev::mode {
 	protected:
-		ACTUATOR_PREFIX(t) & owner(void) { return owner_cast<ACTUATOR_PREFIX(t)>(); }
+		dev_t & owner(void) { return owner_cast<dev_t>(); }
 
 		virtual void applay_action(void) {
 			owner().speed_mode_applay_action();
@@ -197,7 +161,7 @@ protected:
 		}
 
 	public:
-		speed_ov_current_mode_t(int _index, ACTUATOR_PREFIX(t)& _owner) :
+		speed_ov_current_mode_t(int _index, dev_t& _owner) :
 			::mexo::ps::dev::mode(_index, RT("mod_sp_c"), _owner) {}
 	} speed_ov_current_mode;
 	#endif
@@ -207,12 +171,12 @@ protected:
 		present_s& present = ::mexo::dev::present_cast<present_s>();
 		motion_ov_voltage_cl.set_output(&present.ps.voltage_deseired);
 		motion_ov_voltage_cl.set_input(&present.speed_deseired);
-		PS_TEMPLATE_NAME < types, hardwaresys_t > ::mode_limmiter_start();
+		dev_t < types, hardwaresys_t > ::mode_limmiter_start();
 		motion_ov_voltage_cl.start();
 	}
 	void speed_ov_voltage_cl_mode_stop(void) {
 		motion_ov_voltage_cl.stop();
-		PS_TEMPLATE_NAME < types, hardwaresys_t > ::mode_limmiter_stop();
+		dev_t < types, hardwaresys_t > ::mode_limmiter_stop();
 		motion_ov_voltage_cl.set_output(nullptr);
 		motion_ov_voltage_cl.set_input(nullptr);
 	}
@@ -221,7 +185,7 @@ public:
 	friend class speed_ov_voltage_cl_mode_t;
 	class speed_ov_voltage_cl_mode_t :public ::mexo::ps::dev::mode {
 	protected:
-		ACTUATOR_PREFIX(t)& owner(void) { return owner_cast<ACTUATOR_PREFIX(t)>(); }
+		dev_t < types, hardwaresys_t > & owner(void) { return owner_cast<dev_t < types, hardwaresys_t >>(); }
 
 		virtual void applay_action(void) {
 			owner().speed_mode_applay_action();
@@ -236,7 +200,7 @@ public:
 		}
 
 	public:
-		speed_ov_voltage_cl_mode_t(int _index, ACTUATOR_PREFIX(t) & _owner) :
+		speed_ov_voltage_cl_mode_t(int _index, dev_t < types, hardwaresys_t > & _owner) :
 			::mexo::ps::dev::mode(_index, RT("mod_sp_cl"), _owner) {}
 	} speed_ov_voltage_cl_mode;
 	#endif
@@ -283,7 +247,7 @@ public:
 	friend class position_ov_current_mode_t;
 	class position_ov_current_mode_t :public ::mexo::ps::dev::mode {
 	protected:
-		ACTUATOR_PREFIX(t)& owner(void) { return owner_cast<ACTUATOR_PREFIX(t)>(); }
+		dev_t& owner(void) { return owner_cast<dev_t>(); }
 
 		virtual void applay_action(void) {
 			owner().position_mode_applay_action();
@@ -298,7 +262,7 @@ public:
 		}
 
 	public:
-		position_ov_current_mode_t(int _index, ACTUATOR_PREFIX(t) & _owner) :
+		position_ov_current_mode_t(int _index, dev_t & _owner) :
 			::mexo::ps::dev::mode(_index, RT("mod_po_c"), _owner) {}
 	} position_ov_current_mode;
 	#endif
@@ -325,7 +289,7 @@ public:
 	friend class position_ov_voltage_cl_mode_t;
 	class position_ov_voltage_cl_mode_t :public ::mexo::ps::dev::mode {
 	protected:
-		ACTUATOR_PREFIX(t)& owner(void) { return owner_cast<ACTUATOR_PREFIX(t)>(); }
+		dev_t& owner(void) { return owner_cast<dev_t>(); }
 
 		virtual void applay_action(void) {
 			owner().position_mode_applay_action();
@@ -340,11 +304,11 @@ public:
 		}
 
 	public:
-		position_ov_voltage_cl_mode_t(int _index, ACTUATOR_PREFIX(t) & _owner) :
+		position_ov_voltage_cl_mode_t(int _index, dev_t & _owner) :
 			::mexo::ps::dev::mode(_index, RT("mod_po_cl"), _owner) {}
 	} position_ov_voltage_cl_mode;
 	#endif
-	ACTUATOR_PREFIX(t)(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present, int _slot_index)
+	dev_t (hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present, int _slot_index)
 		: ps_t(_hardwaresys, _name, _action.ps, _config.ps, _present.ps )
 		, slot_index_(_slot_index)
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
@@ -499,15 +463,7 @@ public:
 		#endif
 	}
 };
+}
 
-#undef  POWER_SUPPLY_PREFIX
-#undef  _POWER_SUPPLY_PREFIX
-#undef  __POWER_SUPPLY_PREFIX
-#undef PS_TEMPLATE_NAME
-
-#undef ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED
-#undef ACTUATOR_MOTOR_SPEED_FILTER_ENABLED
-#undef ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED
-#undef ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED
-#undef ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED
-#undef ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED
+#define TEMPL_FINISH
+#include "mexo/actuator.templ.prepare.hpp"

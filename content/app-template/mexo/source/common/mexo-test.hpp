@@ -68,9 +68,6 @@ struct perephery_config_s{
 };
 extern perephery_config_s perephery_config;
 
-void decode_action(const uint8_t * _data, int _sz);
-void encode_feetback(uint8_t * _data);
-
 
 #define can0_PATH RT("can0")
 

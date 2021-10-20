@@ -232,24 +232,6 @@ void hardware_link::reconfig(void){
 
 
 
-void decode_action(const uint8_t * _data, int _sz){
-	if(_sz>=0){
-		action.joint.ps.dev.mode = *_data; _data++; _sz--;
-		action.joint.ps.dev.actual = true;
-	}
-	if(_sz>=2){
-		action.joint.speed = *(int16_t *)_data;_data+=2;_sz-=2;
-	}
-	if(_sz>=4){
-		action.joint.position = *(int32_t *)_data;
-	}
-}
-void encode_feetback(uint8_t * _data){
-	*_data = (uint8_t ) present.joint.ps.dev.mode; _data++;
-	*(uint16_t *)_data = (uint16_t ) present.joint.speed_filter.fb.output; _data+=2;
-	*(uint32_t *)_data = (uint32_t ) present.motor_quadr_enco.sb.output; 
-}
-
 
 //8. делегат в слот "begin" - сработает при инициализации - собираем все вместе
 ::mexo::machine::slot::simple begin(
@@ -279,14 +261,33 @@ FLOW_PERFORMER_RAND_RECORD(echo,can0,
 	
 FLOW_SERIAL_PERFORMER_RECORD(serial0,can0,4,6);
 
+void decode_action_(const uint8_t * _data, int _sz){
+	if(_sz>=0){
+		action.joint.ps.dev.mode = *_data; _data++; _sz--;
+		action.joint.ps.dev.actual = true;
+	}
+	if(_sz>=2){
+		action.joint.speed = *(int16_t *)_data;_data+=2;_sz-=2;
+	}
+	if(_sz>=4){
+		action.joint.position = *(int32_t *)_data;
+	}
+}
+void encode_feetback_(uint8_t * _data){
+	*_data = (uint8_t ) present.joint.ps.dev.mode; _data++;
+	*(uint16_t *)_data = (uint16_t ) present.joint.speed_filter.fb.output; _data+=2;
+	*(uint32_t *)_data = (uint32_t ) present.motor_quadr_enco.sb.output; 
+}
+
+#define port can0
 FLOW_PERFORMER_RAND_RECORD(exchange,can0,
 	static uint8_t snapshot[7];
 	if(in_msg){
-		decode_action(in_msg->data(),in_msg->size());
-		encode_feetback(snapshot);
+		decode_action_(in_msg->data(),in_msg->size());
+		encode_feetback_(snapshot);
 		put_answer(snapshot,7);
 	}	else{
-		encode_feetback(snapshot);
+		encode_feetback_(snapshot);
 		put_answer(snapshot,7);
 	}	
 )
