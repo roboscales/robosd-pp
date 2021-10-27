@@ -257,9 +257,66 @@ namespace robo {
 			}
 
 		};
+			
+
+		template <typename T,  typename...Arg> class ROBO_EXPORT unidir_t{
+			public:
+				class ROBO_EXPORT item : public T{
+					friend class unidir_t;
+					item * next_ = nullptr;				
+				public:
+					item* next(void) { return next_;  }
+					item(Arg... arg):T(arg...){};
+					~item(void){  }
+				};	
+			private:
+				item * first_ = nullptr;
+				item * last_ = nullptr;				
+				int count_ = 0;
+			public:
+				item* first(void) { return first_; };
+				item* last(void) { return last_; };
+				int count(void) { return count_; }
+				unidir_t(void){
+				}
+				~unidir_t(void){
+				}
+				void push(item & _item) {
+					ROBO_APP_ASSERT(_item.next_==nullptr);
+					if(last_==nullptr){
+						last_= first_ = &_item;
+					} else{
+						last_->next_ = &_item;						
+					}
+					count_ ++;
+				}
+				item * pop(void) {
+					if(first_!= nullptr){
+						item * tmp = first_;
+						if( tmp->next_ == nullptr ){
+							first_ = last_ = nullptr;
+						} else {
+							first_ = tmp->next_;
+						}
+						ROBO_APP_ASSERT( count_ > 0 );						
+						return tmp;
+					}	else {
+						return nullptr;
+					}
+				}
+				void reset(void){
+					while(first_){
+						first_->pop();
+					}
+				}
+				void free(void){
+					while(first_){
+						item * tmp = pop();
+						delete tmp;
+					}
+				}
+		};
 	}
-
-
 	namespace queue {
 		template<typename T, typename L> class ROBO_EXPORT base
 			: public L {

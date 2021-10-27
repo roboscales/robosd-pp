@@ -3,6 +3,7 @@
 #define robosd_cstring_hpp
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_log.hpp"
+#include "core/robosd_system.hpp"
 #include <string>
 #include <locale.h>
 #ifndef ROBO_STRING_BUFFER_SIZE
@@ -34,6 +35,25 @@ namespace robo {
 
 		inline  cstr c_str() const { return   string_base::c_str(); };
 		inline operator cstr () const { return c_str(); }; //todo осмыслить
+
+		private:
+			struct stream_s{
+				const char_t * memo;
+				size_t size;
+			};
+			static bool printf_backend_(stream_s & _s, cstr _format, va_list _args);
+			static bool printf_frontend_(stream_s & _s, cstr _format, va_list _args);
+		public:
+			template< typename B> static bool format_stream(B & _b,  cstr _format, va_list _args) {
+				stream_s stream;
+				if (system::env::is_backend()) {
+					return ( printf_backend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
+				}
+				else {
+					system::critical c__;
+					return ( printf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
+				}
+			};
 
 		template <typename T> bool to_number(cstr begc, char_t*& endc, T& _value) {
 

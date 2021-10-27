@@ -1,6 +1,6 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_log.hpp"
-#include "core/robosd_system.hpp"
+
 
 namespace robo {
 
@@ -24,28 +24,44 @@ namespace robo {
 		ROBO_ALARMN(format(_format, args))
 			va_end(args);
 	}
+	
+	bool string::printf_backend_(stream_s & _s, cstr _format, va_list _args){
+		#if ROBO_APP_ENV_ENABLED == 1
+		_s.memo = string_buffer_backend;
+		_s.size = system::env::sprintf(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _format, _args);
+		return _s.size>0;
+		#else
+		return 0;
+		#endif
+	}
+	bool string::printf_frontend_(stream_s & _s, cstr _format, va_list _args){
+		#if ROBO_APP_ENV_ENABLED == 1
+		_s.memo = string_buffer_frontend;
+		_s.size = system::env::sprintf(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _format, _args);
+		return _s.size>0;
+		#else
+		return 0;
+		#endif
+	}
 
 	bool string::format(cstr _format, va_list _args) {
-		#if ROBO_APP_ENV_ENABLED == 1
-		char_t* _buffer;
-		if (system::env::is_backend()) {
-			_buffer = string_buffer_backend;
+		stream_s stream;
+		if (system::env::is_backend()) {			
+			if(printf_backend_(stream, _format, _args)){
+				*((string_base*)this) = stream.memo;
+				return true;
+			}
 		}
 		else {
 			system::critical c__;
-			_buffer = string_buffer_frontend;
+			if(printf_frontend_(stream, _format, _args)){
+				*((string_base*)this) = stream.memo;
+				return true;
+			}
 		}
-		if (system::env::sprintf(_buffer, ROBO_STRING_BUFFER_SIZE, _format, _args)) {
-			*((string_base*)this) = _buffer;
-			return true;
-		}
-		else {
-			return false;
-		}
-		#else
 		return false;
-		#endif
 	}
+	
 	bool string::format(cstr _format, ...) {
 		va_list args;
 		va_start(args, _format);

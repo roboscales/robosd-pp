@@ -15,7 +15,7 @@
 #endif
 
 #if ROBO_APP_PROTO_SWITCH_ENABLED ==1
-#include "net/switch/robosd_proto_switch.hpp"
+#include "net/robosd_proto_switch.hpp"
 #endif
 
 #if ROBO_APP_FREEMASTER_SERIAL_ENABLED ==1
@@ -31,16 +31,16 @@ namespace robo {
 		static void connect(robo::net::iserial* _serial);
 		static void recorder(void);
 		static void poll(void);
-		#if APP_PROTO_SWITCH_ENABLED == 1
-		class ROBO_EXPORT abonent : public robo::net::proto::switcher::abonent {
+		#if ROBO_APP_PROTO_SWITCH_ENABLED == 1
+	class ROBO_EXPORT abonent : public ::robo::net::proto::switcher::abonent {
 		protected:
 			virtual void stop(void);
 			virtual void start(void);
 		public:
 			virtual uint8_t get(void);
 			abonent(
-				robo_time_us_t _lock_us
-				, robo_time_us_t _silence_us
+				time_us_t _lock_us
+				, time_us_t _silence_us
 			);
 		};
 		#endif

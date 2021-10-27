@@ -448,6 +448,8 @@ public:
 		#include "mexo/positioner.templ.settings.inc.hpp"
 		;
 		#endif
+		
+		//_action.speed
 
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		motion_ov_current.setup(_slot_index);

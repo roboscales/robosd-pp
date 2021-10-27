@@ -50,8 +50,8 @@ namespace robo {
 	uint8_t abonent_marker[3] = { 0x2b, 0xC0, 0x40 };
 
 	freemaster::abonent::abonent(
-		robo_time_us_t _lock_us
-		, robo_time_us_t _silence_us
+		time_us_t _lock_us
+		, time_us_t _silence_us
 	) : robo::net::proto::switcher::abonent(
 		abonent_marker
 		, 3

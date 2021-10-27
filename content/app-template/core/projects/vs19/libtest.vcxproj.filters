@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp">
       <Filter>freemaster</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\vartable.cpp">
+      <Filter>Исходные файлы\mexo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\source\core\robosd_string.hpp">
@@ -164,12 +167,6 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\qa.templ.settings.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp">
-      <Filter>Исходные файлы\mexo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.inc.hpp">
-      <Filter>Исходные файлы\mexo</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
@@ -185,10 +182,10 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\motion.templ.settings.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.settings.inc.hpp">
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\filter.templ.settings.inc.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\filter.templ.settings.inc.hpp">
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\vartable.hpp">
       <Filter>Исходные файлы\mexo</Filter>
     </ClInclude>
   </ItemGroup>

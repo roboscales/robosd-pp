@@ -16,6 +16,7 @@ namespace mexo {
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::begin();
 		#endif
+		node::create_vars();
 	}
 	void machine::start_(void) {
 		slots_ref_.start.execute();
@@ -182,6 +183,36 @@ namespace mexo {
 		map_ref_.set_key(key);
 		ROBO_APP_ASSERT(map_ref_.attach_to(map_()));
 		ref_.attach_to(owner_->childs_);
+	}
+		
+	void node::create_vars_index_(void){
+		for (var::record::ref* r = vars.first(); r ;  r = r->next()) {
+			var::machine::reg(*r);
+		}
+		for (ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().create_vars_index_();
+		}
+	}
+
+	void node::create_vars_(void){
+		do_create_vars();
+		for (ref* r = childs_.first(); r; r = r->next()) {
+			r->owner().create_vars_();
+		}
+	}
+	
+	int node::var_count_(void){
+		int tmp = 0;
+		for (ref* r = childs_.first(); r; r = r->next()) {
+			tmp+= r->owner().var_count_();
+		}
+		return tmp + vars.count() ;
+	}
+
+	void node::create_vars(void){
+		root_().create_vars_();
+		var::machine::begin(root_().var_count_());
+		root_().create_vars_index_();
 	}
 
 	bool node::begin(void) {

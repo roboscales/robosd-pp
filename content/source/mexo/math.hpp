@@ -28,6 +28,18 @@ namespace mexo {
 		typedef discret_t signal_t;
 		typedef discret_t parameter_t;
 		typedef long_discret_t long_signal_t;
+		struct var{
+			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
+			constexpr static ::mexo::var::types long_discret = ::mexo::var::types::int32;
+			constexpr static ::mexo::var::types signal = ::mexo::var::types::int16;
+			constexpr static ::mexo::var::types parameter = ::mexo::var::types::int16;
+			constexpr static ::mexo::var::types long_signal = ::mexo::var::types::int32;
+			constexpr static ::mexo::var::types const_discret = ::mexo::var::types::const_int16;
+			constexpr static ::mexo::var::types const_long_discret = ::mexo::var::types::const_int32;
+			constexpr static ::mexo::var::types const_signal = ::mexo::var::types::const_int16;
+			constexpr static ::mexo::var::types const_parameter = ::mexo::var::types::const_int16;
+			constexpr static ::mexo::var::types const_long_signal = ::mexo::var::types::const_int32;
+		};
 	};
 
 	struct real15 {
@@ -40,6 +52,18 @@ namespace mexo {
 		constexpr static signal_t min = std::numeric_limits<float>::lowest();
 		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
+		struct var{
+			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
+			constexpr static ::mexo::var::types long_discret = ::mexo::var::types::int32;
+			constexpr static ::mexo::var::types signal = ::mexo::var::types::real;
+			constexpr static ::mexo::var::types parameter = ::mexo::var::types::real;
+			constexpr static ::mexo::var::types long_signal = ::mexo::var::types::real;
+			constexpr static ::mexo::var::types const_discret = ::mexo::var::types::const_int16;
+			constexpr static ::mexo::var::types const_long_discret = ::mexo::var::types::const_int32;
+			constexpr static ::mexo::var::types const_signal = ::mexo::var::types::const_real;
+			constexpr static ::mexo::var::types const_parameter = ::mexo::var::types::const_real;
+			constexpr static ::mexo::var::types const_long_signal = ::mexo::var::types::const_real;
+		};
 	};
 
 
@@ -50,6 +74,7 @@ namespace mexo {
 		typedef typename  digit::signal_t signal_t;
 		typedef typename  digit::long_signal_t long_signal_t;
 		typedef typename  digit::parameter_t parameter_t;
+		typedef typename  digit::var var;
 		constexpr static signal_t max = digit::max;
 		constexpr static signal_t min = digit::min;
 		constexpr static long_signal_t long_max = digit::long_max;
@@ -274,7 +299,7 @@ namespace mexo {
 		struct config_s {
 			typename A::config_s cb;
 			parameter_t scale;
-			unsigned shift;
+			uint8_t shift;
 		};
 		typedef typename A::present_s present_s;
 	protected:
@@ -285,6 +310,12 @@ namespace mexo {
 			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
 		}
+		virtual void do_handler_var_reg(var::record::list & _master_vars,  int _master_key){
+			const config_s& config = handler::config_cast<config_s>();
+			::mexo::var::record::create( q::var::parameter, config.scale, RT("scale"), _master_key,_master_vars );
+			::mexo::var::record::create(var::uint8, config.shift , RT("sh"), _master_key,_master_vars );
+		}
+		
 		virtual void do_handler_adjust(void) {
 			//
 		}

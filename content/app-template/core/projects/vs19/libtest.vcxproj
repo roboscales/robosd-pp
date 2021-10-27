@@ -38,6 +38,7 @@
     <ClCompile Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\math.cpp" />
     <ClCompile Include="..\..\..\reference\robosd-ref\mexo\mexo.cpp" />
+    <ClCompile Include="..\..\..\reference\robosd-ref\mexo\vartable.cpp" />
     <ClCompile Include="..\..\source\platform\win+vs19\libtest.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -61,9 +62,7 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_module_reg.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\core\robosd_system_native.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp" />
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.inc.hpp" />
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\actuator.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\adc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\enco.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\filter.templ.settings.inc.hpp" />
@@ -72,10 +71,10 @@
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\mexo.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\motion.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.hpp" />
-    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\ps.templ.settings.inc.hpp" />
     <ClInclude Include="..\..\..\reference\robosd-ref\mexo\qa.templ.settings.inc.hpp" />
+    <ClInclude Include="..\..\..\reference\robosd-ref\mexo\vartable.hpp" />
     <ClInclude Include="..\..\source\platform\win+vs19\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -24,4 +24,4 @@ namespace ACTUATOR_TEMPLATE_NAME {
 
 
 #define TEMPL_FINISH
-#include "mexo/ps.templ.prepare.hpp"
+#include "mexo/actuator.templ.prepare.hpp"

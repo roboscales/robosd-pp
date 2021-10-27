@@ -6,6 +6,7 @@
 #include "core/robosd_system.hpp"
 #include "mexo/led.hpp"
 #include "mexo/dev.front.hpp"
+#include "mexo/vartable.hpp"
 #include <initializer_list> 
 #ifndef APP_MEXO_SLOT_COUNT
 #define APP_MEXO_SLOT_COUNT 16
@@ -172,22 +173,27 @@ namespace mexo {
 
 		cstr name_;
 		node* owner_;
-
 		//bool auto_enabled_ = false;
 		state state_ = state::configure;
+
 		node(void);
 
 		static node& root_(void);
 		static map& map_(void);
+		void create_vars_(void);
+		void create_vars_index_(void);
+		int var_count_(void);
 	protected:
 		list& childs(void) { return childs_; }
-		virtual bool do_reconfig(void) { return true; };
+		var::record::list vars;
+		virtual bool do_reconfig(void) { return true; };		
+		virtual void do_create_vars(void){};
 	public:
 		node* owner() { return owner_; };
 		cstr name(void) { return name_; };
+		int key(void) { return map_ref_.key(); }
 
 		static bool begin(void);
-
 		bool reconfig(void);
 
 		node(cstr _name, node* _owner = nullptr);
@@ -195,7 +201,10 @@ namespace mexo {
 		static node* find(int _key) {
 			return map_().find(_key);
 		}
+
 		bool enabled(void) { return state_ == state::ready; };
+
+		static void create_vars(void);
 	};
 
 	class dev : public node {
@@ -412,6 +421,11 @@ namespace mexo {
 			ROBO_LBREAKN(R::do_handler_reconfig());
 			return true;
 		}
+		virtual void	do_create_vars(void){
+			T::do_create_vars();
+			R::do_handler_create_vars(T::vars,T::key());
+		}
+
 	public:
 		handler_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
 			: T(_name, _owner)
@@ -433,44 +447,12 @@ namespace mexo {
 	protected:
 		virtual bool do_handler_reconfig(void) { return true; };
 		virtual void do_handler_adjust(void) {};
+		virtual void do_handler_create_vars(var::record::list &/* _vars*/, int /*_master_key*/ ) {};
 	public:
 		template <typename S>const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
 		template <typename P>  P& present_cast() { return reinterpret_cast <P&>(present_); }
 		handler(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
 	};
-
-	/*template < typename T> class connection_point {
-		static T& dummy_() {
-			static T dummy__ = (T)0;
-			return dummy__;
-		}
-		T& value_;
-		T* input_;
-		T* output_;
-	public:
-		connection_point(T& _value) :value_(_value) {
-			input_ = &dummy_();
-			output_ = &dummy_();
-		}
-		void connect(T* _input, T* _output) {
-			if (_input == nullptr) {
-				input_ = &dummy_();
-			}
-			else {
-				input_ = _input;
-			}
-			if (_output == nullptr) {
-				output_ = &dummy_();
-			}
-			else {
-				output_ = _output;
-			}
-		}
-		void update() {
-			*output_ = value_ = *input_;
-		}
-	};
-	*/
 
 
 	template < typename I, typename O> class controller_handler : public handler {
@@ -505,7 +487,8 @@ namespace mexo {
 			, range(_range)
 			, master_satstate(_master_satstate)
 			, deseired(&dummy_input_)
-			, output(&dummy_output_) {}
+			, output(&dummy_output_) {
+		}
 		void set_output(O* _output) {
 			if (_output) {
 				output = _output;
@@ -522,7 +505,7 @@ namespace mexo {
 				deseired = &dummy_input_;
 			}
 		}
-
+		
 	protected:
 		void update_satstate(void) {
 			present_s& present = present_cast<present_s>();
@@ -540,7 +523,15 @@ namespace mexo {
 			do_handler_adjust();
 			return true;
 		}
+		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
+			present_s& present = present_cast<present_s>();
+			if (var::machine::actual_mode() == var::machine::mode::full) {
+				var::record::create(var::const_uint8, present.satstate.actual, RT("ss.ac"), _master_key, _vars );
+				var::record::create(var::const_uint8, present.satstate.local, RT("ss.loc"), _master_key, _vars);
+			}
+		};
 	};
+	
 	template < typename T, typename B, typename S, typename ... Args> class controller_t
 		: public handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> {
 	public:
@@ -554,7 +545,8 @@ namespace mexo {
 			, satstate_t& _master_satstate
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {
+			}
 	};
 	template < typename B, typename S, typename ... Args> class controller_block_t
 		: public handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
@@ -569,7 +561,8 @@ namespace mexo {
 			, const satstate_t& _master_satstate
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {
+			}
 	};
 	template <  typename B, typename S, typename ... Args> class controller_task_t
 		: public handler_t<S, B, node, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
