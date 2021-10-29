@@ -205,6 +205,22 @@ namespace robo {
 			protected:
 				virtual void execute(void);
 			};
+			template <typename D, unsigned SA, unsigned SB, typename G = void > class hardware_serial_proto_t
+				: protected hardware_bridge_t<D, SA, SB, G>
+				, public serial_proto {
+			public:
+				hardware_serial_proto_t(
+					cstr _path
+					, kind_t _kind
+				) : hardware_bridge_t<D,SA, SB, G>(), serial_proto(
+					_path
+					, _kind
+					, hardware_bridge_t<D,SA, SB, G>::A
+					, hardware_bridge_t<D,SA, SB, G>::B
+				) {
+
+				}
+			};
 			template <unsigned SA, unsigned SB, typename G = void > class serial_proto_t
 				: protected bridge_t<SA, SB, G>
 				, public serial_proto {

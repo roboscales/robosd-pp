@@ -55,6 +55,10 @@ namespace robo{
 		{
 			return SIZE - count();
 		}
+		size_t size()const
+		{
+			return SIZE;
+		}
 		// очистить буфер
 		inline void clear()
 		{

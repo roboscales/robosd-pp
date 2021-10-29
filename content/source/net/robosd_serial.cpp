@@ -12,8 +12,8 @@ namespace robo {
 		iserial::~iserial(void) {}
 
 		bool iserial::reg(cstr _caption) {
-			int hash = fast_hash(_caption, 0);
-			ref_.set_key(hash);
+			int key = hash(_caption, 0);
+			ref_.set_key(key);
 			ref_.attach_to(list_());
 			return ref_.attached();
 		}
@@ -22,7 +22,7 @@ namespace robo {
 		}
 
 		::robo::net::iserial* iserial::query(cstr _caption) {
-			::robo::net::iserial* s = list_().find(fast_hash(_caption, 0));
+			::robo::net::iserial* s = list_().find(hash(_caption, 0));
 			if (s) {
 				s->ref_.dettach();
 				return s;
@@ -32,11 +32,11 @@ namespace robo {
 			}
 		}
 		::robo::net::iserial* iserial::find(cstr _caption) {
-			return list_().find(fast_hash(_caption, 0));
+			return list_().find(hash(_caption, 0));
 		}
 
 		iserial& iserial::query_ref(cstr  _caption) {
-			::robo::net::iserial* s = list_().find(fast_hash(_caption, 0));
+			::robo::net::iserial* s = list_().find(hash(_caption, 0));
 			if (s) {
 				s->ref_.dettach();
 				return *s;
@@ -66,6 +66,9 @@ namespace robo {
 		size_t serial_dummy::space(void) {
 			return 0;
 		}
+		size_t serial_dummy::space_max(void) {
+			return 1;
+		}
 
 		size_t serial_dummy::get(uint8_t* /*_data*/, size_t /*_max_size*/) {
 			return 0;
@@ -75,7 +78,7 @@ namespace robo {
 			return true;
 		}
 
-		uint8_t serial_dummy::get(void) {
+		size_t serial_dummy::get(uint8_t & /*_data*/) {
 			return 0;
 		}
 

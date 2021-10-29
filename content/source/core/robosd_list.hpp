@@ -286,7 +286,7 @@ namespace robo {
 					if(last_==nullptr){
 						last_= first_ = &_item;
 					} else{
-						last_->next_ = &_item;						
+						last_ = (last_->next_ = &_item);						
 					}
 					count_ ++;
 				}

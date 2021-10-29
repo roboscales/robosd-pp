@@ -94,7 +94,7 @@ namespace mexo{
 				~machine(void);
 					
 			public:
-				enum class mode { config, action, full  } actual_mode_ = mode::full;
+				enum class mode { none = 0,  tuning = 1, action = 2, config = 3, full =4  } actual_mode_ = mode::tuning;
 				static void begin(int _pool_size){
 					instance_().begin_(_pool_size);
 				}
@@ -114,5 +114,4 @@ namespace mexo{
 		};
 	}
 }
-
 #endif

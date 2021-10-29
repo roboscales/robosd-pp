@@ -51,7 +51,7 @@ namespace robo{
 					ref ref_;
 					key key_;
 					type type_;
-					iserial & serial_;
+					iserial * serial_;
 					struct {
 						time_us_t key_reset;
 						time_us_t tick;
@@ -62,7 +62,9 @@ namespace robo{
 				public:
 					port(
 						type _type
-						, iserial & _serial
+					);
+					void connect(
+						iserial * _serial
 						, time_us_t _key_reset_us
 					);
 					~port(void);
@@ -96,9 +98,10 @@ namespace robo{
 					virtual size_t space(void);
 					virtual size_t get(uint8_t* _data, size_t _max_size);
 					virtual bool put(const uint8_t* _data, size_t _size);
-					virtual uint8_t get(void);
+					virtual size_t get(uint8_t & _data);
 					virtual bool  put(uint8_t);
 					virtual void reset(void);
+					virtual size_t space_max(void);
 					abonent(
 						const uint8_t * _marker
 						, size_t _markerlen

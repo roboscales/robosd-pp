@@ -62,6 +62,7 @@ namespace robo {
 					int count = 0;
 				} used;
 				struct {
+					int payload = 0;
 					int size = 0;
 					int count = 0;
 				} total;

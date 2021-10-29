@@ -59,9 +59,9 @@ namespace robo {
 		, _silence_us
 	) {}
 
-	uint8_t freemaster::abonent::get(void) {
-		alive();
-		return robo::net::proto::switcher::abonent::get();
+	size_t  freemaster::abonent::get(uint8_t & _data)	{
+		alive();		
+		return robo::net::proto::switcher::abonent::get(_data);
 	};
 	#endif
 }
@@ -82,7 +82,9 @@ void FMSTR_SCI_PUTCHAR(FMSTR_U8 _data) {
 	robo::freemaster::serial()->put(_data);
 }
 FMSTR_U16 FMSTR_SCI_GETCHAR(void) {
-	return   robo::freemaster::serial()->get();
+	uint8_t tmp = 0;
+	robo::freemaster::serial()->get(tmp);
+	return tmp;
 }
 
 

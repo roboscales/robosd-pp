@@ -5,8 +5,8 @@
 
 namespace robo {
 	int hash(cstr _src, int _begin) {
-		const int p = 15;
-		const int m = 10009;
+		const int p = 31;
+		const int m = 1e9 + 9;
 		int hash_value = _begin;
 		int p_pow = 1;
 		const char_t* c;
@@ -17,13 +17,13 @@ namespace robo {
 		return hash_value;
 	}
 
-	int fast_hash(cstr _src, int _begin) {
-		unsigned short x = (unsigned short)_begin;
+	unsigned short fast_hash(cstr _src, unsigned short _begin) {
+		unsigned short x = _begin;
 		const char_t* c;
 		for (c = _src; *c; c++) {
 			x += 44111 * (*c);
 		}
-		return (int)x;
+		return x;
 	}
 	char const* fault_file_ = nullptr;
 	char const* fault_function_ = nullptr;
@@ -298,42 +298,55 @@ namespace robo {
 
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	void* system::mem_alloc_(size_t _sz) {
+		size_t _tsz;
 		void* ptr;
 		{
 			guard g__;
 			if (env::is_backend()) {
 				ptr = allocator::instance_.query(_sz);
 				ROBO_APP_ASSERT(ptr != nullptr);
+				_tsz = _sz+2;
 			}
 			else {
-				_sz += sizeof(size_t);
+				//_sz += sizeof(size_t);
 				ptr = env::mem_alloc(_sz);
 				ROBO_APP_ASSERT(ptr != nullptr);
-				*(size_t*)ptr = _sz;
-				ptr = ((size_t*)ptr) + 1;
+				//*(size_t*)ptr = _sz;
+				//ptr = ((size_t*)ptr) + 1;
+				static volatile size_t * psz;
+				psz = (((size_t*)ptr) - 1 );
+				_tsz = * psz;
 			}
 		}
-		memstat_.total.size += _sz;
-		memstat_.used.size += _sz;
+		memstat_.total.payload += _sz;
+		memstat_.total.size += _tsz;
+		memstat_.used.size += _tsz;
 		memstat_.total.count++;
 		memstat_.used.count++;
-		return ptr;
+		return (void *)ptr;
 	}
 
 
 	void system::mem_free_(void* _memo) {
 		guard g__;
-		size_t sz = allocator::instance_.owned(_memo);
+		size_t sz = allocator::instance_.owned(_memo);		
+		size_t _tsz;
 		if (sz > 0) {
 			allocator::instance_.release(_memo);
+			_tsz = sz+2;
 		}
 		else {
 			ROBO_APP_ASSERT(system::env::is_frontend());
-			_memo = (void*)(((size_t*)_memo) - 1);
-			sz = *((size_t*)_memo);
+			//_memo = (void*)(((size_t*)_memo) - 1);
+			//sz = *((size_t*)_memo);
+//			_tsz=*(((size_t*)_memo) - 1);
+				static volatile size_t * psz;
+				psz = (((size_t*)_memo) - 1 );
+				_tsz = * psz;
+
 			env::mem_free(_memo);
 		}
-		memstat_.used.size -= sz;
+		memstat_.used.size -= _tsz;
 		memstat_.used.count--;
 	}
 	#endif

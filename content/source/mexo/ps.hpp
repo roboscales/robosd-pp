@@ -87,6 +87,17 @@ namespace mexo {
 				}
 				return true;
 			}
+			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+				to_digit_scale::do_handler_create_vars(_vars, _master_key);
+				const config_s& config =  to_digit_scale:: template config_cast<config_s>();
+				if (var::machine::actual_mode() >= var::machine::mode::full) {
+					var::record::create(q::var::const_discret, config.range.duty.low, RT("duty.low"), _master_key, _vars);
+					var::record::create(q::var::const_discret, config.range.duty.hi, RT("duty.hi"), _master_key, _vars);
+					var::record::create(q::var::const_signal, config.range.voltage.low, RT("v.low"), _master_key, _vars);
+					var::record::create(q::var::const_signal, config.range.voltage.hi, RT("v.hi"), _master_key, _vars);
+				}
+			};
+
 		public:
 			struct config_s {
 				typename to_digit_scale::config_s ds;

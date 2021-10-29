@@ -345,13 +345,13 @@ namespace PS_TEMPLATE_NAME {
 			#endif
 			
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-			, current_filter(RT("cf"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
+			, current_filter(RT("c_f"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
 			#endif
 			#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-			, current_filter( RT("cf"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
+			, current_filter( RT("c_f"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter,_hardwaresys.sence_block().output())
 			#endif
 			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-			, current_diff_filter(RT("cdf"),&_hardwaresys.prioritet_subsystem(), _config.current_diff_filter, _present.current_diff_filter,_hardwaresys.sence_block().output_diff())
+			, current_diff_filter(RT("c_dif_f"),&_hardwaresys.prioritet_subsystem(), _config.current_diff_filter, _present.current_diff_filter,_hardwaresys.sence_block().output_diff())
 			#endif
 			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 			, current_regulator(

@@ -63,7 +63,7 @@ namespace robo {
 	void ROBO_EXPORT finish(void);*/
 
 	int ROBO_EXPORT hash(cstr _src, int _begin = 0);
-	int ROBO_EXPORT fast_hash(cstr _src, int _begin = 0);
+	//unsigned short ROBO_EXPORT fast_hash(cstr _src, unsigned short _begin = 0);
 	void ROBO_EXPORT crash(char const* _file, char const* _function, int _line);
 	enum class result { complete, resume, panic };
 

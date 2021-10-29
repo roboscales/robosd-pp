@@ -30,6 +30,20 @@ namespace mexo {
 		};
 		const signal_t& actual;
 		const signal_t& actual_diff;
+	protected:
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.modelGain, RT("mg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.diffGain, RT("dg"), _master_key, _vars);
+				var::record::create(var::uint8, config.control_shift, RT("co_sh"), _master_key, _vars);
+				var::record::create(var::uint8, config.model_shift, RT("mo_sh"), _master_key, _vars);
+			}
+		};
+
 	public:
 		quazzy_adapt(const config_s& _config
 					 , present_s& _present
@@ -166,6 +180,21 @@ namespace mexo {
 		};
 		const signal_t& actual;
 		const signal_t& actual_diff;
+	protected:
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::parameter, config.qa.propGain, RT("pg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.qa.modelGain, RT("mg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.qa.diffGain, RT("dg"), _master_key, _vars);
+				var::record::create(var::uint8, config.qa.control_shift, RT("co_sh"), _master_key, _vars);
+				var::record::create(var::uint8, config.qa.model_shift, RT("mo_sh"), _master_key, _vars);
+				var::record::create(q::var::signal, config.rampStep, RT("st"), _master_key, _vars);
+			}
+		};
+
 	private:
 		quazzy_adapt r_hi_;
 		quazzy_adapt r_low_;
@@ -285,6 +314,21 @@ namespace mexo {
 			long_signal_t force;
 		};
 		const signal_t& actual;
+		protected:
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.modelGain, RT("mg"), _master_key, _vars);
+				var::record::create(var::uint8, config.controlShift, RT("co_sh"), _master_key, _vars);
+				var::record::create(var::uint8, config.modelShift, RT("mo_sh"), _master_key, _vars);
+				var::record::create(q::var::signal, config.forceStep, RT("f_st"), _master_key, _vars);
+				var::record::create(q::var::signal, config.forceLim, RT("f_lim"), _master_key, _vars);
+			}
+		};
+
 	public:
 		motion(const config_s& _config
 					 , present_s& _present
@@ -429,6 +473,20 @@ namespace mexo {
 		const long_signal_t& actual;
 		const signal_t& actualDiff;
 		const signal_t& force;
+	protected:
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.diffGain, RT("dg"), _master_key, _vars);
+				var::record::create(var::uint8, config.controlShift, RT("co_sh"), _master_key, _vars);
+				var::record::create(q::var::parameter, config.diffQuadrGain, RT("qg"), _master_key, _vars);
+				var::record::create(q::var::signal, config.deadZone, RT("dz"), _master_key, _vars);
+				var::record::create(q::var::signal, config.crawlSpeed, RT("cr_sp"), _master_key, _vars);
+			}
+		};
 	public:
 		positioner(
 			const config_s& _config

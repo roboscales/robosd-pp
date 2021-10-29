@@ -28,18 +28,31 @@ namespace robo{
 
 				port::port(
 					type _type
-					, iserial & _serial
-					, time_us_t _key_reset_us
 				)
 				: ref_(*this)
 				, type_(_type)
-				, serial_(_serial)
+				, serial_( & ::robo::net::serial_dummy::instance() )
 				, abonent_(nullptr)
 				{
-					timeouts_.key_reset = _key_reset_us;
+//					timeouts_.key_reset = _key_reset_us;
 					timeouts_.tick = 0;
 					ref_.attach_to(core::instance_().ports_.ready);
 				}
+				
+				void port::connect(
+					iserial * _serial
+					, time_us_t _key_reset_us
+				)
+				{
+					if(_serial!=nullptr){
+						serial_ = _serial;
+					} else {
+						serial_ =  & ::robo::net::serial_dummy::instance();
+					}
+					timeouts_.key_reset = _key_reset_us;
+					timeouts_.tick = 0;
+				}
+				
 				port::~port(void){
 				}
 
@@ -59,10 +72,10 @@ namespace robo{
 						timeouts_.tick += _period;
 					}
 
-					if (serial_.available()){
-						key_.value[key_.len++] = serial_.get();
+					if( serial_->get(key_.value[key_.len] )){
+						key_.len++;
 						if ((!core::instance_().recognize_(this)) && (key_.len == ROBO_PROTO_SWITCH_MARKER_MAX_LEN)){
-							serial_.reset();
+							serial_->reset();
 							key_.len = 0;
 						}
 					}
@@ -98,7 +111,7 @@ namespace robo{
 				}
 				iserial * abonent::serial(void){
 					if (port_){
-						return &(port_->serial_);
+						return port_->serial_;
 					}
 					else {
 						return 0;
@@ -110,7 +123,7 @@ namespace robo{
 				size_t abonent::available(void){
 					if (key_.len > 0) return key_.len;
 					if (port_)
-						return port_->serial_.available();
+						return port_->serial_->available();
 					else
 						return 0;
 				}
@@ -125,21 +138,22 @@ namespace robo{
 					}
 					else {
 						if (port_){
-							return port_->serial_.get(_data, _max_size);
+							return port_->serial_->get(_data, _max_size);
 						}
 						else{
 							return 0;
 						}
 					}
 				}
-				uint8_t abonent::get(void){
+				size_t abonent::get(uint8_t & _data){
 					if (key_.len > 0){
 						key_.len--;
-						return *(key_.memo)++;
+						_data =  *(key_.memo)++;
+						return 1;
 					}
 					else {
 						if (port_)
-							return port_->serial_.get();
+							return port_->serial_->get(_data);
 						else
 							return 0;
 					}
@@ -147,22 +161,35 @@ namespace robo{
 				void abonent::reset(void){
 					key_.len = 0;
 					if (port_)
-						port_->serial_.reset();
+						port_->serial_->reset();
 				}
 				size_t abonent::space(void){
 					if (port_){
-						return port_->serial_.space();
+						return port_->serial_->space();
+					} else {
+						return 0;
+					}
+				}
+				size_t abonent::space_max(void){
+					if (port_){
+						return port_->serial_->space_max();
 					} else {
 						return 0;
 					}
 				}
 				bool  abonent::put(const uint8_t* _data, size_t _size) { 
 					alive();
-					return port_->serial_.put(_data, _size); 
+					if (port_){
+						return port_->serial_->put(_data, _size); 
+					}
+					return false;
 				};
 				bool  abonent::put(uint8_t _ch) { 
 					alive();
-					return port_->serial_.put(_ch);
+					if (port_){
+						return port_->serial_->put(_ch);
+					}
+					return false;
 				};
 
 				void abonent::poll_(time_us_t _period){

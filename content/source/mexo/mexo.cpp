@@ -148,7 +148,7 @@ namespace mexo {
 		ROBO_APP_ASSERT(is_frontend__);
 	}
 
-	node& node::root_(void) {
+	node& node::root(void) {
 		static node root__;
 		return root__;
 	}
@@ -170,16 +170,16 @@ namespace mexo {
 
 	node::node(cstr _name, node* _owner) : ref_(*this), map_ref_(*this, 0)
 		, name_(_name)
-		, owner_(_owner == nullptr ? &root_() : _owner) {
+		, owner_(_owner == nullptr ? &root() : _owner) {
 		int key;
 		if (_owner) {
 			key = owner_->map_ref_.key();
-			key = fast_hash(RT("."), key);
+			key = hash(RT("."), key);
 		}
 		else {
 			key = 0;
 		}
-		key = fast_hash(name_, key);
+		key = hash(name_, key);
 		map_ref_.set_key(key);
 		ROBO_APP_ASSERT(map_ref_.attach_to(map_()));
 		ref_.attach_to(owner_->childs_);
@@ -210,14 +210,46 @@ namespace mexo {
 	}
 
 	void node::create_vars(void){
-		root_().create_vars_();
-		var::machine::begin(root_().var_count_());
-		root_().create_vars_index_();
+		root().create_vars_();
+		var::machine::begin(root().var_count_());
+		root().create_vars_index_();
 	}
 
 	bool node::begin(void) {
-		return  root_().reconfig();
+		return  root().reconfig();
 	}
+
+	node * node::first_on_path(char_t * & _path, size_t & _len) {
+		if ( this != & node::root() ){
+			path_offset_ = ::robo::system::sprintf(_path,_len,RT("%s."), name_ );
+			_path += path_offset_;
+			_len -= path_offset_;
+		}
+		else {
+			path_offset_ = 0;
+		}
+		if(childs_.first()) {
+			return  childs_.first()->owner().first_on_path(_path,_len);
+		}	else {
+			return this;
+		}
+	};
+	node* node::next_on_path(char_t* & _path, size_t& _len) {
+		_path -= path_offset_;
+		_len += path_offset_;
+		*_path = (char_t)0;
+		ref* r = ref_.next();
+		if (r) {
+			return r->owner().first_on_path(_path,_len);
+		}
+		else {
+			if (owner_){
+				return owner_->next_on_path(_path, _len);
+			}else {
+				return nullptr;
+			}
+		}
+	};
 
 	bool task::do_reconfig(void) {
 		ROBO_LBREAKN(node::do_reconfig());

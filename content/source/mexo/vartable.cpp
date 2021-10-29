@@ -10,8 +10,8 @@ namespace mexo{
 		{
 			addr = _addr;
 			name = _name;
-			key = robo::fast_hash(RT("."),_master_key);
-			key = robo::fast_hash(_name,key);
+			key = robo::hash(RT("."),_master_key);
+			key = robo::hash(_name,key);
 			desc.memo = _type;
 			//machine::reg(this);
 		}			

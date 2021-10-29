@@ -282,8 +282,8 @@ namespace robo {
 						}
 					}
 					else if (cmd == 0xAA) {
-						remote_.reset();
-						local_.reset();
+						//remote_.reset();
+						//local_.reset();
 						declared_count_ = 0;
 					}
 				}

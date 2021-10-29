@@ -4,13 +4,9 @@
 #include <stdarg.h>
 
 #if ROBO_APP_TERMINAL_ENABLED == 1
-#ifndef TERMO_STREAMER_OUT_BUF_SIZE_BITS
-#define TERMO_STREAMER_OUT_BUF_SIZE_BITS 7
-#endif
 
 namespace robo{
 	namespace termo{
-		ring_t<TERMO_STREAMER_OUT_BUF_SIZE_BITS> out_buf_;
 		class core{
 			friend class command;
 			friend class itf;
@@ -61,10 +57,8 @@ namespace robo{
 				}
 			}
 			void put_nl_(void){
-				if (out_buf_.space() > 2){
-					out_buf_.put('\n');
-					out_buf_.put('\r');
-				}
+				serial_->put('\n');
+				serial_->put('\r');
 			}
 			core(void) 
 				: root_cmd_("@root", "", "<CR>", nullptr)
@@ -81,12 +75,12 @@ namespace robo{
 					top_();
 					terminated_ = false;
 					itf::events().connect();
-					exec_("w\r\n");
+					//exec_("w\r\n");
 				}
 				else{
 					serial_ = &robo::net::serial_dummy::instance();
 					itf::events().disconnect();
-					out_buf_.clear();
+					serial_->reset();
 					terminated_ = false;
 				}
 			}
@@ -99,21 +93,25 @@ namespace robo{
 			va_list args;
 			va_start(args, _format);
 			{
-				string::format_stream(out_buf_,_format,args);
+				string::format_stream(*core::instance_().serial_,_format,args);
 			}
 			va_end(args);
 		};
+		void itf::printf(cstr _format, va_list _args){
+			string::format_stream(*core::instance_().serial_,_format,_args);
+		};
+
 		void itf::prints(const char * _s){
 			if (_s){
-				size_t space = out_buf_.space();
+				size_t space = core::instance_().serial_->space();
 				while ((*_s) && (space--)){
-					out_buf_.put(*_s++);
+					core::instance_().serial_->put(*_s++);
 				}
 			}
 		};
 		void itf::put(char  _ch){
-			if( out_buf_.space() > 0){
-				out_buf_.put(_ch);
+			if( core::instance_().serial_->space() > 0){
+				core::instance_().serial_->put(_ch);
 			}
 		};
 		delegat::delegat(command & _command) 
@@ -812,8 +810,9 @@ namespace robo{
 
 			size_t sz = serial_->available();
 			if (sz){
-				while (sz--){
-					process_(serial_->get());
+				uint8_t tmp;
+				while (serial_->get(tmp)){
+					process_(tmp);
 				}
 				itf::events().alive();
 			}
@@ -827,15 +826,8 @@ namespace robo{
 				}
 			}
 
-			sz = out_buf_.count();
-			size_t av = serial_->space();
-			if (sz > av) sz = av;
-			while (sz--){
-				serial_->put(out_buf_.get());
-			}
-
 			if (terminated_){
-				if ((out_buf_.count() == 0) && (execs_.count()==0)){			
+				if ( execs_.count()==0 ){			
 					connect_to_(0);
 				}
 			}
@@ -869,7 +861,7 @@ namespace robo{
 			core::instance_().connect_to_(_serial);
 		}
 		bool itf::busy(void){
-			return out_buf_.count() > 0;
+			return core::instance_().serial_->busy();
 		}
 #if ROBO_APP_PROTO_SWITCH_ENABLED ==1
 

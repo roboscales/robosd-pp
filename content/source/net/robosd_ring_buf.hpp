@@ -30,41 +30,45 @@ public:
 		_writeCount++;
 	}
 	// чтение из буфера, возвращает текущий символ
-	inline DATA_T get()
+	inline DATA_T get(void)
 	{
 		return _data[_readCount++ & _mask];
 	}
 
 	// пуст ли буфер
-	inline bool available()const
+	inline bool available(void)const
 	{
 		return ((_writeCount - _readCount) & _masksz)  != 0;
 	}
 	// полон ли буфер
-	inline bool full()const
+	inline bool full(void)const
 	{
 		return ((unsigned)(_writeCount - _readCount) & (unsigned)~(_mask)) != 0;
 	}
 	// количество элементов в буфере
-	unsigned count()const
+	unsigned count(void)const
 	{
 		return (_writeCount - _readCount) & _masksz;
 	}
-	unsigned space()const
+	unsigned space(void)const
 	{
 		return SIZE - count();
 	}
+	unsigned size(void)const
+	{
+		return SIZE;
+	}
 	// очистить буфер
-	inline void clear()
+	inline void clear(void)
 	{
 		_readCount = 0;
 		_writeCount = 0;
 	}
-	ring_t(){
+	ring_t(void){
 		clear();
 		test = 1;
 	}
-	virtual ~ring_t(){
+	virtual ~ring_t(void){
 		clear();
 	}
 	bool put(const DATA_T * _data, unsigned _count){

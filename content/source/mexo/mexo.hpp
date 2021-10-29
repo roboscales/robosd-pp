@@ -175,21 +175,21 @@ namespace mexo {
 		node* owner_;
 		//bool auto_enabled_ = false;
 		state state_ = state::configure;
-
+		size_t path_offset_ = 0;
 		node(void);
 
-		static node& root_(void);
 		static map& map_(void);
 		void create_vars_(void);
 		void create_vars_index_(void);
 		int var_count_(void);
 	protected:
 		list& childs(void) { return childs_; }
-		var::record::list vars;
 		virtual bool do_reconfig(void) { return true; };		
 		virtual void do_create_vars(void){};
 	public:
-		node* owner() { return owner_; };
+		var::record::list vars;
+		static node& root(void);
+		node* owner(void) { return owner_; };
 		cstr name(void) { return name_; };
 		int key(void) { return map_ref_.key(); }
 
@@ -205,6 +205,10 @@ namespace mexo {
 		bool enabled(void) { return state_ == state::ready; };
 
 		static void create_vars(void);
+		
+		node* first_on_path(char_t * & _path, size_t & _len);
+		node* next_on_path(char_t* & _path, size_t& _len);
+
 	};
 
 	class dev : public node {
@@ -374,6 +378,7 @@ namespace mexo {
 	class prioritet_subsystem : public prioritet_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
+		prioritet_subsystem(cstr  _name, node* _owner) : prioritet_task(_name, false, _owner) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
@@ -381,6 +386,7 @@ namespace mexo {
 	class backend_subsystem : public backend_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
+		backend_subsystem(cstr  _name, node* _owner) : backend_task(_name, false, _owner) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : backend_task(_name, _autostart, _owner) {};
@@ -388,6 +394,7 @@ namespace mexo {
 	class frontend_subsystem : public frontend_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
+		frontend_subsystem(cstr  _name, node* _owner) : frontend_task(_name, false, _owner) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : frontend_task(_name, _autostart, _owner) {};

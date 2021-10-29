@@ -310,15 +310,20 @@ namespace mexo {
 			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
 		}
-		virtual void do_handler_var_reg(var::record::list & _master_vars,  int _master_key){
-			const config_s& config = handler::config_cast<config_s>();
-			::mexo::var::record::create( q::var::parameter, config.scale, RT("scale"), _master_key,_master_vars );
-			::mexo::var::record::create(var::uint8, config.shift , RT("sh"), _master_key,_master_vars );
-		}
 		
 		virtual void do_handler_adjust(void) {
 			//
 		}
+		
+		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
+			A::do_handler_create_vars(_vars,_master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::parameter, config.scale, RT("g"), _master_key, _vars );
+				var::record::create(var::uint8,  config.shift , RT("sh"), _master_key, _vars);
+			}
+		};
+
 	public:
 		to_digit_scale(const config_s& _config
 					   , present_s& _present
@@ -339,10 +344,19 @@ namespace mexo {
 		struct config_s {
 			typename A::config_s cb;
 			signal_t rampStep;
-			unsigned shift;
+			uint8_t shift;
 		};
 		typedef typename A::present_s present_s;
 	protected:
+
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+				var::record::create(q::var::signal, config.rampStep, RT("step"), _master_key, _vars);
+				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
+			}
+		};
 
 		virtual void execute(void) {
 			satstate_t remote = A::master_satstate;
@@ -442,6 +456,15 @@ namespace mexo {
 		parameter_t  gain;
 	protected:
 
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			A::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::config) {
+				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
+			}
+		};
+
+
 		void execute(void) {
 			const config_s& config = handler::config_cast<config_s>();
 			present_s& present = handler::present_cast<present_s>();
@@ -475,9 +498,9 @@ namespace mexo {
 			typename B::config_s fb;
 			parameter_t	gain;
 			struct {
-				unsigned gain;
-				unsigned presc;
-				unsigned value;
+				uint8_t gain;
+				uint8_t presc;
+				uint8_t value;
 			} shift;
 		};
 		struct present_s {
@@ -488,6 +511,18 @@ namespace mexo {
 		parameter_t gain1 = (parameter_t)0;
 		parameter_t gain2 = (parameter_t)0;
 	protected:
+
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			B::do_handler_create_vars(_vars, _master_key);
+			const config_s& config = handler::config_cast<config_s>();
+			if (var::machine::actual_mode() >= var::machine::mode::config) {
+				var::record::create(q::var::parameter, config.gain, RT("g"), _master_key, _vars);
+				var::record::create(var::uint8, config.shift.gain, RT("sh.g"), _master_key, _vars);
+				var::record::create(var::uint8, config.shift.gain, RT("sh.presc"), _master_key, _vars);
+				var::record::create(var::uint8, config.shift.gain, RT("sh.val"), _master_key, _vars);
+			}
+		};
+
 		void execute(void) {
 			present_s& present = handler::present_cast<present_s>();
 			const config_s& config = handler::config_cast<config_s>();

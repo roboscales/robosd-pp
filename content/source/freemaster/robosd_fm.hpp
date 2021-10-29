@@ -37,7 +37,7 @@ namespace robo {
 			virtual void stop(void);
 			virtual void start(void);
 		public:
-			virtual uint8_t get(void);
+			virtual size_t get(uint8_t & _data);
 			abonent(
 				time_us_t _lock_us
 				, time_us_t _silence_us
