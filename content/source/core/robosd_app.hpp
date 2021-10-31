@@ -60,7 +60,7 @@ namespace robo {
 			node(void);
 			virtual ~node(void);
 
-			static node* find(cstr _path) { return index_().find(fast_hash(_path)); }
+			static node* find(cstr _path) { return index_().find(hash(_path)); }
 		};
 
 

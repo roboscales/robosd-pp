@@ -62,7 +62,7 @@ namespace robo {
 			if (name_ && name_[0]) {
 				string ph;
 				path(ph);
-				index_ref_.set_key(fast_hash(ph));
+				index_ref_.set_key(hash(ph));
 				index_ref_.attach_to(index_());
 			}
 			return true;

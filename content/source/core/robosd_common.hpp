@@ -62,7 +62,7 @@ namespace robo {
 	bool ROBO_EXPORT active(void);
 	void ROBO_EXPORT finish(void);*/
 
-	int ROBO_EXPORT hash(cstr _src, int _begin = 0);
+	int32_t ROBO_EXPORT hash(cstr _src, int32_t _begin = 0);
 	//unsigned short ROBO_EXPORT fast_hash(cstr _src, unsigned short _begin = 0);
 	void ROBO_EXPORT crash(char const* _file, char const* _function, int _line);
 	enum class result { complete, resume, panic };
@@ -101,6 +101,10 @@ namespace robo {
 
 
 }
+
+#define PP_THIRD_ARG(a,b,c,...) c
+#define VA_OPT_SUPPORTED_I(...) PP_THIRD_ARG(__VA_OPT__(,),true,false,)
+#define VA_OPT_SUPPORTED VA_OPT_SUPPORTED_I(?)
 
 
 #ifndef ROBO_APP_CRASH

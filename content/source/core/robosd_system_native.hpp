@@ -29,7 +29,7 @@ namespace robo {
 				typedef  map::ref ref;
 				ref ref_;
 				proc* proc_;
-				functor(lib& _owner, proc* _proc) : ref_(*this, fast_hash(_proc->name) ), proc_(_proc) {
+				functor(lib& _owner, proc* _proc) : ref_(*this, hash(_proc->name) ), proc_(_proc) {
 					ref_.attach_to(_owner.procs_);
 				}
 			};
@@ -53,7 +53,7 @@ namespace robo {
 			static void *  proc_get(void* _instance, cstr _proc_name);
 			static void* load(cstr _lib_name);
 			static void free(void* _instance);
-			lib(cstr _name,  proc _procs[], int _proc_count) : ref_(*this, fast_hash(_name)) , name_(_name) {
+			lib(cstr _name,  proc _procs[], int _proc_count) : ref_(*this, hash(_name)) , name_(_name) {
 				if (ref_.attach_to(libs())) {
 					reg(_procs, _proc_count);
 				}

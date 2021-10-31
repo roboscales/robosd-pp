@@ -1,5 +1,6 @@
 #include "core/robosd_system.hpp"
-
+#include <cstdlib>
+#include <cstdio>
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_STD
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 namespace robo {

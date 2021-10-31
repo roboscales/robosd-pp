@@ -27,4 +27,8 @@
 
 #define ROBO_APP_FREEMASTER_SERIAL_ENABLED 1
 
+#define ROBO_SYSTEM_ALLOCATOR_SIZE 4096
+
 #include <stdint.h>
+
+#define ROBO_APP_MEXO_SIDE

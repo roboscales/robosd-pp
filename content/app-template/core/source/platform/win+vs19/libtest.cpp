@@ -1246,6 +1246,23 @@ public:
 			}
 		};
 		*/
+		class fake_adc {
+		public:
+			static inline uint32_t sence[3];
+			static void query(void) {
+				sence[0]++;
+				sence[2]--;
+				static int n = 0;
+				if (n < 3072) {
+					n++;
+				}
+				else {
+					sence[1] = 555;
+				}
+
+			}
+		};
+
 		TEST_METHOD(ps) {
 
 			::mexo::prioritet_subsystem prioritet_subsystem_(RT("hardware"), true);
@@ -1263,27 +1280,7 @@ public:
 				//, periodic_task_t<0, 14>
 			> voltage_ramp;
 
-			class fake_adc {
-			public:
 
-				static void query(void) {
-					sence[0]++;
-					sence[2]--;
-					static int n = 0;
-					if (n < 3072) {
-						n++;
-					}
-					else {
-						sence[1] = 555;
-					}
-
-				}
-				/*/fake_adc() {
-					sence[0] = 0;
-					sence[1] = 0;
-					sence[2] = 0xFFFF;
-				}*/
-			};
 
 			typedef ::mexo::sence_task_t <
 				::mexo::adc<types, fake_adc, 2>
@@ -1359,6 +1356,7 @@ public:
 				,{
 					{{24}}
 					,{{{25}},0,10,1000,0,7,9}
+					, 500
 				}
 			};
 			//present_s present_ = {};
@@ -1471,8 +1469,8 @@ public:
 			::mexo::machine::priority_loop();
 			::mexo::machine::backend_loop();
 			::mexo::machine::frontend_loop();
-			Assert::IsTrue(pwm_duty == -8400);
-			Assert::IsTrue(voltage_required == -32767);
+			Assert::IsTrue(pwm_duty == 0);
+			Assert::IsTrue(voltage_required == 0 );
 
 		}
 

@@ -236,7 +236,7 @@ namespace robo {
 			: contrltable_(_contrltable)
 			, map_ref_(*this, 0)
 			, instance_(_instance) {
-			map_ref_.set_key(fast_hash(instance_.name, 0));
+			map_ref_.set_key(hash(instance_.name, 0));
 			ROBO_ALARMN_F(map_ref_.attach_to(contrltable_.vars), "eroor attach var '%s' to map ", instance_.name);
 		}
 
@@ -372,16 +372,16 @@ namespace robo {
 		}
 
 		contrltable::fabric::fabric(cstr _type) : ref_(*this, 0) {
-			ref_.set_key(fast_hash(_type));
+			ref_.set_key(hash(_type));
 			ref_.attach_to(fabrics());
 		}
 
 		contrltable::fabric* contrltable::fabric::find(cstr _type) {
-			return fabrics().find(fast_hash(_type));
+			return fabrics().find(hash(_type));
 		}
 
 		contrltable::ivar* contrltable::find_var(cstr _name) {
-			return vars.find(fast_hash(_name));
+			return vars.find(hash(_name));
 		}
 		#endif
 

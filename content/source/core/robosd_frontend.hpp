@@ -200,7 +200,7 @@ namespace robo {
 				static map& map_(void);
 			public:
 				virtual  void  operator ()(command& _command) = 0;
-				performer(cstr _name) : ref_(*this, fast_hash(_name)) {
+				performer(cstr _name) : ref_(*this, hash(_name)) {
 					ROBO_ALARMN(ref_.attach_to(map_()));;
 				}
 				virtual ~performer(void) {};
@@ -229,7 +229,7 @@ namespace robo {
 				: confirm_(_confirm)
 				, execute_delegat_(this, &command::execute_)
 				, configure_delegat_(this, &command::configure_)
-				, id_(fast_hash(_name))
+				, id_(hash(_name))
 				, name_(_name) {}
 		};
 

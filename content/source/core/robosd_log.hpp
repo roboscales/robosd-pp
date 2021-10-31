@@ -12,19 +12,20 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 
-
-
-#define ROBO_LOG_MASK_DISABLED 0
+#if VA_OPT_SUPPORTED_I(?)
+#define ROBO_VA_COMMA(...) __VA_OPT__(,)
+#else
+#define ROBO_VA_COMMA(...) ,
 #endif
 
+#define ROBO_LOG_MASK_DISABLED 0
 
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_errlog
 //#define robo_errlog(format,...) ::robo::log::print(::robo::log::verb::error, ROBO_LOG_MASK_DISABLED,RT(format),__VA_ARGS__) 
 #if ROBO_UNICODE_ENABLED == 1
-#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__ __VA_OPT__(,) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  f RT( "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__ ROBO_VA_COMMA(__VA_ARGS__) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
 #else
-#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__ __VA_OPT__ (,) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
+#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__ ROBO_VA_COMMA(__VA_ARGS__) ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
 #endif
 
 #endif
@@ -34,7 +35,7 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_warninglog
-#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, robo::log::mask::disabled,RT(format),__VA_ARGS__)
+#define robo_warninglog(format,...) ::robo::log::print(::robo::log::verb::warning, robo::log::mask::disabled,RT(format) ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
 #endif
 #endif
 #else
@@ -43,7 +44,7 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_infolog
-#define robo_infolog(format,...) ::robo::log::print(::robo::log::verb::info, robo::log::mask::disabled,RT(format) , __VA_ARGS__)
+#define robo_infolog(format,...) ::robo::log::print(::robo::log::verb::info, robo::log::mask::disabled,RT(format) ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
 #define robo_infolog(format,...)
@@ -51,8 +52,8 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_detaillog
-#define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,format,__VA_ARGS__)
-#define robo_detaillog_(lvl,mask,format,...) ::robo::log::print(::robo::log::verb::detail_##lvl, mask, RT(format) ,__VA_ARGS__)
+#define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,format ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
+#define robo_detaillog_(lvl,mask,format,...) ::robo::log::print(::robo::log::verb::detail_##lvl, mask, RT(format) ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
 #define robo_detaillog(lvl,mask,format,...)

@@ -18,9 +18,3 @@
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__
 #define ROBO_UNUSED(x) ((void)(x))
-
-#if ROBO_UNICODE_ENABLED == 1
-#define robo_errlog(f,...) ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  f RT( "\r\n\t%S\r\n\t%S - %d" ), __VA_ARGS__ , ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
-#else
-#define robo_errlog(f,...)  ::robo::log::print(robo::log::verb::error, robo::log::mask::disabled,  RT( f "\r\n\t%s\r\n\t%s - %d" ), __VA_ARGS__ , ROBO_APP_PROC_NAME, ROBO_APP_PROC_FILE, ROBO_APP_PROC_LINE)
-#endif

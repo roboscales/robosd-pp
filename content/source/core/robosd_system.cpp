@@ -4,11 +4,11 @@
 #include <algorithm>
 
 namespace robo {
-	int hash(cstr _src, int _begin) {
-		const int p = 31;
-		const int m = 1e9 + 9;
-		int hash_value = _begin;
-		int p_pow = 1;
+	int32_t hash(cstr _src, int32_t _begin) {
+		const int32_t p = 31;
+		const int32_t m = 1000000009;
+		int32_t hash_value = _begin;
+		int32_t p_pow = 1;
 		const char_t* c;
 		for (c = _src; *c; c++) {
 			hash_value = (hash_value + (*c - 'a' + 1) * p_pow) % m;
@@ -71,7 +71,7 @@ namespace robo {
 		friend class system;
 		typedef ROBO_SYSTEM_ALLOCATOR_WORD_TYPE word;
 		typedef ROBO_SYSTEM_ALLOCATOR_SIZE_TYPE size;
-		enum { size_ = ROBO_SYSTEM_ALLOCATOR_SIZE, bits_ = ROBO_SYSTEM_ALLOCATOR_WORD_SIZE_BITS };
+		enum { size_ = (ROBO_SYSTEM_ALLOCATOR_SIZE>>ROBO_SYSTEM_ALLOCATOR_WORD_SIZE_BITS), bits_ = ROBO_SYSTEM_ALLOCATOR_WORD_SIZE_BITS };
 		struct {
 			size_t useful = 0;
 			size_t used = 0;
@@ -305,16 +305,12 @@ namespace robo {
 			if (env::is_backend()) {
 				ptr = allocator::instance_.query(_sz);
 				ROBO_APP_ASSERT(ptr != nullptr);
-				_tsz = _sz+2;
+				_tsz = _sz+sizeof(allocator::word);
 			}
 			else {
-				//_sz += sizeof(size_t);
 				ptr = env::mem_alloc(_sz);
 				ROBO_APP_ASSERT(ptr != nullptr);
-				//*(size_t*)ptr = _sz;
-				//ptr = ((size_t*)ptr) + 1;
-				static volatile size_t * psz;
-				psz = (((size_t*)ptr) - 1 );
+				size_t * psz = (((size_t*)ptr) - 1 );
 				_tsz = * psz;
 			}
 		}
@@ -323,7 +319,7 @@ namespace robo {
 		memstat_.used.size += _tsz;
 		memstat_.total.count++;
 		memstat_.used.count++;
-		return (void *)ptr;
+		return ptr;
 	}
 
 
@@ -333,16 +329,12 @@ namespace robo {
 		size_t _tsz;
 		if (sz > 0) {
 			allocator::instance_.release(_memo);
-			_tsz = sz+2;
+			_tsz = sz + sizeof(allocator::word);
 		}
 		else {
 			ROBO_APP_ASSERT(system::env::is_frontend());
-			//_memo = (void*)(((size_t*)_memo) - 1);
-			//sz = *((size_t*)_memo);
-//			_tsz=*(((size_t*)_memo) - 1);
-				static volatile size_t * psz;
-				psz = (((size_t*)_memo) - 1 );
-				_tsz = * psz;
+			size_t * psz = (((size_t*)_memo) - 1 );
+			_tsz = * psz;
 
 			env::mem_free(_memo);
 		}
@@ -384,7 +376,7 @@ void* operator new(size_t size) {
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	tmp = robo::system::mem::alloc(size);
 	#else
-	tmp = malloc(size);;
+	tmp = malloc(size);
 	#endif
 	ROBO_APP_ASSERT(tmp != nullptr)
 		return tmp;

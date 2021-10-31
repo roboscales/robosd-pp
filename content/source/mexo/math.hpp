@@ -353,7 +353,7 @@ namespace mexo {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
-				var::record::create(q::var::signal, config.rampStep, RT("step"), _master_key, _vars);
+				var::record::create(q::var::signal, config.rampStep, RT("st"), _master_key, _vars);
 				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
 			}
 		};

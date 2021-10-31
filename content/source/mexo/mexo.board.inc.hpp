@@ -49,15 +49,16 @@ namespace mexo{
 				, BOARD_FREEMASTER_ABONENT_SILENS_US
 			);
 #endif
-
+#if BOARD_TERMO_CONNECT_TYPE !=  BOARD_TERMO_CONNECT_TYPE_NONE
 			extern "C" int statprint_(void * /*param*/,char const * _format, ...){		
 				va_list args;
 				va_start(args, _format);
 				::robo::termo::itf::printf(_format,args);
+				::robo::termo::itf::printf("\r");
 				va_end(args);
 				return 0;
 			}
-
+#endif
 
 #if BOARD_TERMO_CONNECT_TYPE == BOARD_TERMO_CONNECT_TYPE_ABONENT
 //абонент  terminal
@@ -196,9 +197,11 @@ namespace mexo{
 						break;
 					case	MEMO:
 						{
+	#if ROBO_APP_ALLOC_ENABLED ==1							
 							const ::system::mem::stat & ms = ::system::get_mem_statistic();
 							::robo::termo::itf::printf(RT("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
 							::robo::termo::itf::printf(RT("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);							
+	#endif
 							__heapstats(&statprint_,nullptr);
 						}
 						break;
@@ -352,10 +355,6 @@ namespace mexo{
 			#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
 			#endif
 
-
-
-
-
 			namespace vartable{
 				::robo::termo::node root(
 					RT("vt")
@@ -369,7 +368,7 @@ namespace mexo{
 					char_t * path_ptr_ = nullptr;
 					size_t path_sz_ = 0;					
 				protected:
-					char_t path[ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE];
+					static inline char_t path[ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE];
 					::mexo::var::record::ref *  current_var = nullptr;
 					virtual void printf(void) = 0;
 						/*{						
@@ -462,14 +461,34 @@ namespace mexo{
 
 					}
 				}show_fm_;
+				class show_val:public show{
+				protected:
+					virtual void printf(void){				
+						char_t tmp[20];
+						current_var->sprintf(tmp,20);
+						::robo::termo::itf::printf(RT("%30s%-10s%s\n\r")
+							,path,current_var->name
+							,tmp
+						);
+					}
+				public:
+					show_val(void) :show(
+						RT("vl")
+						, RT("vartable values show")
+						, RT("vl  <CR>")
+						)
+					{
+
+					}
+				}show_val_;
 				
 				class show_records:public show{
 				protected:
 					virtual void printf(void){						
-						::robo::termo::itf::printf(RT("%20s%10s\t%p\t%11d\t%d\t%d\t%d\t%d\n\r")
+						::robo::termo::itf::printf(RT("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
 							,path,current_var->name
 							,current_var->addr
-							, (int)current_var->key
+							, (unsigned int)current_var->key
 							, (int)current_var->desc.len
 							, (int)current_var->desc.bsign
 							, (int)current_var->desc.bconst

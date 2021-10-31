@@ -10,13 +10,15 @@ namespace mexo{
 				uint16_t bsign:1;
 				uint16_t bconst:1;
 				uint16_t real:1;
+				uint16_t fault:5;
 			};
 			uint16_t memo;
+			uint8_t bytes[2];
 		};
 		constexpr inline int descriptor_enco( uint8_t _len, bool _bsign, bool _bconst, bool _real){
 			return (int) ((_len &0xFF)+(_bsign?0x100:0) + (_bconst?0x200:0) + (_real?0x400:0));
 		}
-
+		
 		typedef enum{
 			uint8 = 				descriptor_enco(1,false,	false,false)
 			,int8 = 				descriptor_enco(1,true,		false,false)
@@ -39,8 +41,24 @@ namespace mexo{
 			,const_real =			descriptor_enco(4,true,		true,true)
 			,const_ext = 			descriptor_enco(8,true,		true,true)
 		} types;
-		
-		
+		typedef enum {
+			index =0
+			, get =1
+			, put =2
+			, page_get =3
+			, page_put =4
+		} request;
+		enum {
+			error_mask = 0xf0
+			, max_len = 0x6
+		};
+		typedef enum{
+			invalid_key = 0x10
+			, invalid_index =0x20
+			, invalid_offset =0x30
+			, invalid_length =0x40
+		} error;
+#ifdef ROBO_APP_MEXO_SIDE
 		class record{		
 			void setup_(
 				types _type
@@ -57,7 +75,8 @@ namespace mexo{
 			robo::cstr name;
 			descriptor desc;
 			int key;
-
+			
+			size_t sprintf( ::robo::char_t * buf, size_t _max_sz);
 
 			typedef ::robo::list::unidir_t<record>::item  ref;
 			typedef ::robo::list::unidir_t<record> list;
@@ -91,6 +110,7 @@ namespace mexo{
 				int find_(int _key);
 				const record * get_(int _index);
 				void reg_( const record & _precord	);
+				int proto_( const  uint8_t * _buf_in, uint8_t * _buf_out);
 				~machine(void);
 					
 			public:
@@ -106,12 +126,10 @@ namespace mexo{
 				}
 				static mode actual_mode(void){ return instance_().actual_mode_; }
 				
-				static void reg(
-						const record & _precord				
-				){
-					return instance_().reg_(_precord);
-				}
+				static void reg(const record & _precord	){	return instance_().reg_(_precord);	}
+				static int proto( const uint8_t * _buf_in, uint8_t * _buf_out){ return instance_().proto_(_buf_in,_buf_out);}
 		};
+#endif
 	}
 }
 #endif

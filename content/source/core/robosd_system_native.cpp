@@ -24,7 +24,7 @@ namespace robo {
 		}
 
 		lib* lib::find_by_name_(cstr _name) {			
-			return libs().find(fast_hash(_name));
+			return libs().find(hash(_name));
 		}
 
 		lib* lib::find_by_instance_(const void* _instance) {
@@ -46,7 +46,7 @@ namespace robo {
 		}
 
 		lib::functor* lib::find_functor_by_name_(cstr _name) {
-			return procs_.find(fast_hash(_name));
+			return procs_.find(hash(_name));
 		}
 
 		bool lib::exists(cstr _name) {
