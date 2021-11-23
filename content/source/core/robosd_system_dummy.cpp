@@ -156,6 +156,9 @@ namespace robo {
 	void system::lib::free(void* _instance) {
 
 	}
+	bool system::lib::copy(cstr _src, cstr _dst) {
+		return false;
+	}
 
 	#endif
 

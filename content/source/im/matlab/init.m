@@ -1,0 +1,9 @@
+T = 0.001;
+Rs = 0.5;
+Ls = 0.001;
+J =0.0001;
+p =15;
+Fm = 1.25/p;
+Kv =0.1/p;
+A=[ -Rs/Ls 0 0; -0 -Rs/Ls -Fm/Ls; 0 Fm/J -Kv/J];
+EA= expm(A*T);

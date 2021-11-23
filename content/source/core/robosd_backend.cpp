@@ -370,7 +370,7 @@ namespace robo {
 			robo::system::guard __g;
 			if (current_msg_ != 0) {
 				current_msg_->tran.status = _result;
-				robo_detaillog(7, 0, "tran result - %d", (int)current_msg_->tran.status);
+				robo_detaillog(7,0,"tran result - %d", ((int)current_msg_->tran.status) );
 				system::env::wakeup();
 			}
 			else {
@@ -675,7 +675,7 @@ namespace robo {
 			ROBO_LBREAKN(tmp_name.load(name(), RT("BUS_NAME")));
 			bus* b = dynamic_cast<bus*>(find(tmp_name));
 			bus_ref_.set_key(dev_id_.value);
-			robo::system::printf(RT("%s - bus: %s - %x "), alias(), tmp_name.c_str(), (unsigned int)b);
+			robo::system::printf(RT("%s - bus: %s - %p "), alias(), tmp_name.c_str(), (void *)b);
 			if (b) {
 				ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
 				dev_id_.bus = b->id();

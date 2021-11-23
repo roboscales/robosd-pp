@@ -8,6 +8,7 @@
 #include "mexo/dev.front.hpp"
 #include "mexo/vartable.hpp"
 #include <initializer_list> 
+
 #ifndef APP_MEXO_SLOT_COUNT
 #define APP_MEXO_SLOT_COUNT 16
 #endif
@@ -179,15 +180,20 @@ namespace mexo {
 		node(void);
 
 		static map& map_(void);
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void create_vars_(void);
 		void create_vars_index_(void);
 		int var_count_(void);
+		static void create_vars(void);
+		#endif
 	protected:
 		list& childs(void) { return childs_; }
-		virtual bool do_reconfig(void) { return true; };		
-		virtual void do_create_vars(void){};
+		virtual bool do_reconfig(void) { return true; };
+		virtual void do_create_vars(void) {};
 	public:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		var::record::list vars;
+		#endif
 		static node& root(void);
 		node* owner(void) { return owner_; };
 		cstr name(void) { return name_; };
@@ -204,10 +210,8 @@ namespace mexo {
 
 		bool enabled(void) { return state_ == state::ready; };
 
-		static void create_vars(void);
-		
-		node* first_on_path(char_t * & _path, size_t & _len);
-		node* next_on_path(char_t* & _path, size_t& _len);
+		node* first_on_path(char_t*& _path, size_t& _len);
+		node* next_on_path(char_t*& _path, size_t& _len);
 
 	};
 
@@ -219,7 +223,7 @@ namespace mexo {
 		enum { idle_id = 0 };
 		typedef ::dev::action_s action_s;
 		typedef ::dev::feetback_s feetback_s;
-		
+
 		struct present_s {
 			int mode;
 		};
@@ -403,7 +407,7 @@ namespace mexo {
 	class periodic_subsystem : public periodic_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
-		periodic_subsystem(cstr  _name, node* _owner = nullptr): periodic_task( _name, _owner) {};
+		periodic_subsystem(cstr  _name, node* _owner = nullptr) : periodic_task(_name, _owner) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 
@@ -428,10 +432,12 @@ namespace mexo {
 			ROBO_LBREAKN(R::do_handler_reconfig());
 			return true;
 		}
-		virtual void	do_create_vars(void){
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		virtual void	do_create_vars(void) {
 			T::do_create_vars();
-			R::do_handler_create_vars(T::vars,T::key());
+			R::do_handler_create_vars(T::vars, T::key());
 		}
+		#endif
 
 	public:
 		handler_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
@@ -454,7 +460,9 @@ namespace mexo {
 	protected:
 		virtual bool do_handler_reconfig(void) { return true; };
 		virtual void do_handler_adjust(void) {};
-		virtual void do_handler_create_vars(var::record::list &/* _vars*/, int /*_master_key*/ ) {};
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		virtual void do_handler_create_vars(var::record::list&/* _vars*/, int /*_master_key*/) {};
+		#endif
 	public:
 		template <typename S>const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
 		template <typename P>  P& present_cast() { return reinterpret_cast <P&>(present_); }
@@ -494,8 +502,7 @@ namespace mexo {
 			, range(_range)
 			, master_satstate(_master_satstate)
 			, deseired(&dummy_input_)
-			, output(&dummy_output_) {
-		}
+			, output(&dummy_output_) {}
 		void set_output(O* _output) {
 			if (_output) {
 				output = _output;
@@ -512,7 +519,7 @@ namespace mexo {
 				deseired = &dummy_input_;
 			}
 		}
-		
+
 	protected:
 		void update_satstate(void) {
 			present_s& present = present_cast<present_s>();
@@ -530,15 +537,17 @@ namespace mexo {
 			do_handler_adjust();
 			return true;
 		}
-		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			present_s& present = present_cast<present_s>();
 			if (var::machine::actual_mode() == var::machine::mode::full) {
-				var::record::create(var::const_uint8, present.satstate.actual, RT("ss.ac"), _master_key, _vars );
+				var::record::create(var::const_uint8, present.satstate.actual, RT("ss.ac"), _master_key, _vars);
 				var::record::create(var::const_uint8, present.satstate.local, RT("ss.loc"), _master_key, _vars);
 			}
 		};
+		#endif
 	};
-	
+
 	template < typename T, typename B, typename S, typename ... Args> class controller_t
 		: public handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> {
 	public:
@@ -552,8 +561,7 @@ namespace mexo {
 			, satstate_t& _master_satstate
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {
-			}
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
 	};
 	template < typename B, typename S, typename ... Args> class controller_block_t
 		: public handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
@@ -568,8 +576,7 @@ namespace mexo {
 			, const satstate_t& _master_satstate
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {
-			}
+			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
 	};
 	template <  typename B, typename S, typename ... Args> class controller_task_t
 		: public handler_t<S, B, node, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
@@ -598,11 +605,11 @@ namespace mexo {
 		};
 		sence_handler(const config_s& _config, present_s& _present)
 			: handler(_config, _present.ref) {}
-		const O& output(void) { const present_s & present = present_cast<present_s>();  return present.output; }
-		const D& delta(void) {   const present_s & present = present_cast<present_s>();  return present.delta; }
+		const O& output(void) { const present_s& present = present_cast<present_s>();  return present.output; }
+		const D& delta(void) { const present_s& present = present_cast<present_s>();  return present.delta; }
 	};
 
-	template< typename R, typename S > class sence_block_t 
+	template< typename R, typename S > class sence_block_t
 		: public 	handler_t <	subsystem_handler, R, S	> {
 		typedef handler_t <	subsystem_handler, R, S	> BB;
 	public:
@@ -610,7 +617,7 @@ namespace mexo {
 			: BB(_name, _owner, _config, _present) {}
 	};
 
-	template< typename R, typename S> class sence_task_t 
+	template< typename R, typename S> class sence_task_t
 		: public handler_t <S, R, ::mexo::node> {
 		typedef handler_t <S, R, ::mexo::node> BB;
 	public:

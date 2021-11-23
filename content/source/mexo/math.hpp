@@ -28,6 +28,7 @@ namespace mexo {
 		typedef discret_t signal_t;
 		typedef discret_t parameter_t;
 		typedef long_discret_t long_signal_t;
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
 			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
 			constexpr static ::mexo::var::types long_discret = ::mexo::var::types::int32;
@@ -40,6 +41,7 @@ namespace mexo {
 			constexpr static ::mexo::var::types const_parameter = ::mexo::var::types::const_int16;
 			constexpr static ::mexo::var::types const_long_signal = ::mexo::var::types::const_int32;
 		};
+		#endif
 	};
 
 	struct real15 {
@@ -52,6 +54,7 @@ namespace mexo {
 		constexpr static signal_t min = std::numeric_limits<float>::lowest();
 		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
 			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
 			constexpr static ::mexo::var::types long_discret = ::mexo::var::types::int32;
@@ -64,6 +67,7 @@ namespace mexo {
 			constexpr static ::mexo::var::types const_parameter = ::mexo::var::types::const_real;
 			constexpr static ::mexo::var::types const_long_signal = ::mexo::var::types::const_real;
 		};
+		#endif
 	};
 
 
@@ -74,7 +78,10 @@ namespace mexo {
 		typedef typename  digit::signal_t signal_t;
 		typedef typename  digit::long_signal_t long_signal_t;
 		typedef typename  digit::parameter_t parameter_t;
+
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		typedef typename  digit::var var;
+		#endif
 		constexpr static signal_t max = digit::max;
 		constexpr static signal_t min = digit::min;
 		constexpr static long_signal_t long_max = digit::long_max;
@@ -314,7 +321,7 @@ namespace mexo {
 		virtual void do_handler_adjust(void) {
 			//
 		}
-		
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
 			A::do_handler_create_vars(_vars,_master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -323,7 +330,7 @@ namespace mexo {
 				var::record::create(var::uint8,  config.shift , RT("sh"), _master_key, _vars);
 			}
 		};
-
+		#endif
 	public:
 		to_digit_scale(const config_s& _config
 					   , present_s& _present
@@ -348,7 +355,7 @@ namespace mexo {
 		};
 		typedef typename A::present_s present_s;
 	protected:
-
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -357,7 +364,7 @@ namespace mexo {
 				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
 			}
 		};
-
+		#endif
 		virtual void execute(void) {
 			satstate_t remote = A::master_satstate;
 			const config_s& config = handler::config_cast<config_s>();
@@ -456,6 +463,7 @@ namespace mexo {
 		parameter_t  gain;
 	protected:
 
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -463,6 +471,7 @@ namespace mexo {
 				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
 			}
 		};
+		#endif
 
 
 		void execute(void) {
@@ -511,7 +520,7 @@ namespace mexo {
 		parameter_t gain1 = (parameter_t)0;
 		parameter_t gain2 = (parameter_t)0;
 	protected:
-
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			B::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -521,7 +530,8 @@ namespace mexo {
 				var::record::create(var::uint8, config.shift.gain, RT("sh.presc"), _master_key, _vars);
 				var::record::create(var::uint8, config.shift.gain, RT("sh.val"), _master_key, _vars);
 			}
-		};
+		}
+		#endif
 
 		void execute(void) {
 			present_s& present = handler::present_cast<present_s>();

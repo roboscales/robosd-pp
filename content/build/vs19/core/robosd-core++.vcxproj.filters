@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="robosd++/core">
+      <UniqueIdentifier>{72b686bb-ea8e-4a86-a9c1-cfe0b4a990ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="robosd++/core/platform/win+vs19">
+      <UniqueIdentifier>{851d9493-7a6e-4a29-8766-8c90f2519be2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\dllmain.cpp" />
+    <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ini.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_log.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_dummy.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_std.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\platform\win+vs19\robosd-system-win.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\robosd_app_tuning.hpp" />
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_common.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_delegat.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ini.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_lambda.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_list.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_log.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19\robosd_target.hpp">
+      <Filter>robosd++/core/platform/win+vs19</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp">
+      <Filter>robosd++/core</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

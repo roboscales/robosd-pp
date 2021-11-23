@@ -58,12 +58,12 @@ namespace robo {
 			//статистика
 			struct stat {
 				struct {
-					int size = 0;
+					size_t size = 0;
 					int count = 0;
 				} used;
 				struct {
-					int payload = 0;
-					int size = 0;
+					size_t payload = 0;
+					size_t size = 0;
 					int count = 0;
 				} total;
 			};
@@ -290,9 +290,11 @@ namespace robo {
 		#if ROBO_APP_LIB_ENABLED ==1
 		struct lib {
 			static void* proc_get(void* _handle, cstr _proc_name);
-			static bool exists(cstr _proc_name);
+			static bool exists(cstr _lib_name);
 			static void* load(cstr _lib_name);
 			static void free(void* _instance);
+			static bool copy(cstr _src, cstr _dst);
+			static bool remove(cstr _lib_name);
 		};
 		#endif
 

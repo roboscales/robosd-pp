@@ -16,7 +16,9 @@ namespace mexo {
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::begin();
 		#endif
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		node::create_vars();
+		#endif
 	}
 	void machine::start_(void) {
 		slots_ref_.start.execute();
@@ -184,9 +186,10 @@ namespace mexo {
 		ROBO_APP_ASSERT(map_ref_.attach_to(map_()));
 		ref_.attach_to(owner_->childs_);
 	}
-		
-	void node::create_vars_index_(void){
-		for (var::record::ref* r = vars.first(); r ;  r = r->next()) {
+
+	#if ROBO_APP_MEXO_VAR_ENABLED == 1		
+	void node::create_vars_index_(void) {
+		for (var::record::ref* r = vars.first(); r; r = r->next()) {
 			var::machine::reg(*r);
 		}
 		for (ref* r = childs_.first(); r; r = r->next()) {
@@ -194,58 +197,60 @@ namespace mexo {
 		}
 	}
 
-	void node::create_vars_(void){
+	void node::create_vars_(void) {
 		do_create_vars();
 		for (ref* r = childs_.first(); r; r = r->next()) {
 			r->owner().create_vars_();
 		}
 	}
-	
-	int node::var_count_(void){
+
+	int node::var_count_(void) {
 		int tmp = 0;
 		for (ref* r = childs_.first(); r; r = r->next()) {
-			tmp+= r->owner().var_count_();
+			tmp += r->owner().var_count_();
 		}
-		return tmp + vars.count() ;
+		return tmp + vars.count();
 	}
 
-	void node::create_vars(void){
+	void node::create_vars(void) {
 		root().create_vars_();
 		var::machine::begin(root().var_count_());
 		root().create_vars_index_();
 	}
-
+	#endif
 	bool node::begin(void) {
 		return  root().reconfig();
 	}
 
-	node * node::first_on_path(char_t * & _path, size_t & _len) {
-		if ( this != & node::root() ){
-			path_offset_ = ::robo::system::sprintf(_path,_len,RT("%s."), name_ );
+	node* node::first_on_path(char_t*& _path, size_t& _len) {
+		if (this != &node::root()) {
+			path_offset_ = ::robo::system::sprintf(_path, _len, RT("%s."), name_);
 			_path += path_offset_;
 			_len -= path_offset_;
 		}
 		else {
 			path_offset_ = 0;
 		}
-		if(childs_.first()) {
-			return  childs_.first()->owner().first_on_path(_path,_len);
-		}	else {
+		if (childs_.first()) {
+			return  childs_.first()->owner().first_on_path(_path, _len);
+		}
+		else {
 			return this;
 		}
 	};
-	node* node::next_on_path(char_t* & _path, size_t& _len) {
+	node* node::next_on_path(char_t*& _path, size_t& _len) {
 		_path -= path_offset_;
 		_len += path_offset_;
 		*_path = (char_t)0;
 		ref* r = ref_.next();
 		if (r) {
-			return r->owner().first_on_path(_path,_len);
+			return r->owner().first_on_path(_path, _len);
 		}
 		else {
-			if (owner_){
+			if (owner_) {
 				return owner_->next_on_path(_path, _len);
-			}else {
+			}
+			else {
 				return nullptr;
 			}
 		}

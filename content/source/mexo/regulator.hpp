@@ -31,6 +31,7 @@ namespace mexo {
 		const signal_t& actual;
 		const signal_t& actual_diff;
 	protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -43,7 +44,7 @@ namespace mexo {
 				var::record::create(var::uint8, config.model_shift, RT("mo_sh"), _master_key, _vars);
 			}
 		};
-
+		#endif
 	public:
 		quazzy_adapt(const config_s& _config
 					 , present_s& _present
@@ -181,6 +182,7 @@ namespace mexo {
 		const signal_t& actual;
 		const signal_t& actual_diff;
 	protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1		
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -194,7 +196,7 @@ namespace mexo {
 				var::record::create(q::var::signal, config.rampStep, RT("st"), _master_key, _vars);
 			}
 		};
-
+		#endif
 	private:
 		quazzy_adapt r_hi_;
 		quazzy_adapt r_low_;
@@ -315,6 +317,7 @@ namespace mexo {
 		};
 		const signal_t& actual;
 		protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1					
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -328,6 +331,7 @@ namespace mexo {
 				var::record::create(q::var::signal, config.forceLim, RT("f_lim"), _master_key, _vars);
 			}
 		};
+		#endif
 
 	public:
 		motion(const config_s& _config
@@ -474,6 +478,7 @@ namespace mexo {
 		const signal_t& actualDiff;
 		const signal_t& force;
 	protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1					
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = handler::config_cast<config_s>();
@@ -487,6 +492,7 @@ namespace mexo {
 				var::record::create(q::var::signal, config.crawlSpeed, RT("cr_sp"), _master_key, _vars);
 			}
 		};
+	#endif
 	public:
 		positioner(
 			const config_s& _config

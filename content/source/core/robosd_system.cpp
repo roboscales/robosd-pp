@@ -169,7 +169,7 @@ namespace robo {
 		}
 
 		size_t owned(void* _memo) {
-			int sz = reinterpret_cast<word*>(_memo) - memo_;
+			int sz = (int)(reinterpret_cast<word*>(_memo) - memo_);
 			if (sz > 0 && sz < size_) {
 				handler* tmp = (handler*)(((word*)_memo) - 1);
 				return  tmp->size;

@@ -90,8 +90,10 @@ namespace robo {
 			}
 			ROBO_LBREAKN(disabled_.count() == 0)
 
+			robo_applog("node '%s' is loaded", alias());
 
-				robo_applog("node '%s' is loaded", alias());
+			robo_detaillog(7, ::robo::log::mask::disabled, "aaa", 1, 33);
+
 			actual_state_ = state::stopped;
 			return true;
 		}

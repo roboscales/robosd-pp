@@ -7,7 +7,9 @@
 #include <fcntl.h>
 #include <thread>
 #if ROBO_UNICODE_ENABLED
+#ifndef UNICODE
 #define UNICODE
+#endif
 #endif
 
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
@@ -281,6 +283,53 @@ namespace robo {
 	}
 
 	void system::env::sleep(void) {}
-
 }
 #endif
+
+#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
+#include <windows.h>
+#include <cstdlib>
+namespace robo {
+	bool system::lib::exists(cstr _lib_name) {
+		HANDLE hFile = CreateFile(
+			_lib_name, // file (or device) name
+			0, // query access only
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, // share mode
+			NULL, // security attributes
+			OPEN_EXISTING, // disposition
+			FILE_FLAG_NO_BUFFERING | FILE_FLAG_SEQUENTIAL_SCAN, // flags & attributes
+			NULL // template file
+		);
+		if (INVALID_HANDLE_VALUE != hFile) {
+			CloseHandle(hFile);
+			return true;
+		}
+		return false;
+	}
+	void* system::lib::proc_get(void* _handle, cstr _proc_name) {
+		enum {nsz=255};
+		char buf[nsz];
+		size_t sz;
+		wcstombs_s(&sz, buf, nsz, _proc_name, _TRUNCATE);
+		return GetProcAddress((HMODULE)_handle, buf);
+	}
+	void* system::lib::load(cstr _lib_name) {
+		void * _pinst = (void *)LoadLibrary(_lib_name);
+		ROBO_LBREAKN_F(_pinst != nullptr, RT("error open lib '%s'"), _lib_name);
+		return nullptr;
+	}
+	void system::lib::free(void* _instance) {
+		ROBO_VBREAKN(FreeLibrary((HMODULE)_instance));
+	}
+	bool system::lib::copy(cstr _src, cstr _dst) {
+		ROBO_LBREAKN_F(CopyFile(_src,_dst,FALSE), RT("error copy lib from '%s' to '%s'"), _src,_dst);
+		return true;
+	}
+	bool system::lib::remove(cstr _lib_name) {
+		ROBO_LBREAKN_F(DeleteFile(_lib_name), RT("error remove lib '%s'"), _lib_name);		
+		return true;
+	}
+}
+#endif
+
+

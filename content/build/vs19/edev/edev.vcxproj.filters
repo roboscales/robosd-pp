@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\dllmain.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\im\edev\edev.cpp">
+      <Filter>im\edev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_gearbox.cpp">
+      <Filter>im\edev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_link.cpp">
+      <Filter>im\edev</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp">
+      <Filter>im\edev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_gearbox.hpp">
+      <Filter>im\edev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp">
+      <Filter>im\edev</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="im">
+      <UniqueIdentifier>{064a3d8a-3def-4bbe-8586-9c22af981113}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="im\edev">
+      <UniqueIdentifier>{b9597db3-a26c-4fe9-b2cc-4247309214b6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

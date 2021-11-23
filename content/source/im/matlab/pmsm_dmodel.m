@@ -1,0 +1,13 @@
+function Xk = pmsm_dmodel(U,X, EA, Rs,Ls,Fm,J, Kv,T)
+w = X(3);
+ws = Rs/Ls;
+
+IA = [...
+[  -Fm^2-Kv*ws*Ls, -Kv*w*Ls,           Fm*J*w];...
+[         Kv*w*Ls, -Kv*ws*Ls,          Fm*J*ws];...
+[         Fm*w*Ls, -Fm*ws*Ls,     -J*Ls*(w^2+ws^2)];...
+] /( Fm^2*ws + Kv*Ls*w^2 + Kv*Ls*ws^2);
+
+Xmax= -IA*[U(1)/Ls; U(2)/Ls; - U(3)/J];
+da = w*T;
+Xk = Xmax - EA* [cos(da) sin(da) 0;  -sin(da) cos(da) 0    ; 0 0 1]  *(Xmax-X');

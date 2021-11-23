@@ -52,7 +52,7 @@
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef robo_detaillog
-#define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,format ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
+#define robo_detaillog(lvl,mask,format,...) robo_detaillog_(lvl,mask,format , __VA_ARGS__)
 #define robo_detaillog_(lvl,mask,format,...) ::robo::log::print(::robo::log::verb::detail_##lvl, mask, RT(format) ROBO_VA_COMMA(__VA_ARGS__) __VA_ARGS__)
 #endif
 #else
@@ -239,8 +239,8 @@ namespace robo{
 }
 #endif
 
-#define robo_applog(format,...) robo_detaillog(4,robo::log::mask::app,format,__VA_ARGS__)
-#define robo_netlog(format,...) robo_detaillog(4,robo::log::mask::net,format,__VA_ARGS__)
+#define robo_applog(format,...) robo_detaillog(4,::robo::log::mask::app,format,__VA_ARGS__)
+#define robo_netlog(format,...) robo_detaillog(4,::robo::log::mask::net,format,__VA_ARGS__)
 
 
 #endif

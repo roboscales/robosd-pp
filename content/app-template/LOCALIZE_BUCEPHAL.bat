@@ -7,6 +7,7 @@ set settings=%COMPUTERNAME%
 set settings=%settings::=,%
 set settings=%settings:.=,%
 set settings=settings\%settings%
+set BUILD=%robosd%\build
 
 set prev=%CD%
 
@@ -35,6 +36,9 @@ MKLINK /J ".\reference\robosd-ref"  "%robosd%"\source
 
 IF EXIST ".\reference\json-ref"  RMDIR ".\reference\json-ref"
 MKLINK /J ".\reference\json-ref"  "%JSON%"  
+
+IF EXIST ".\reference\build-ref"  RMDIR ".\reference\build-ref"
+MKLINK /J ".\reference\build-ref"  "%BUILD%"  
 
 cd "%settings%"
 echo [LOCAL] > robosd-pp.ini

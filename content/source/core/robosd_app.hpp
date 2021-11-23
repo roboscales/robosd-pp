@@ -63,8 +63,6 @@ namespace robo {
 			static node* find(cstr _path) { return index_().find(hash(_path)); }
 		};
 
-
-
 		class wrapper;
 		class machine;
 

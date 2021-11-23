@@ -87,6 +87,7 @@ namespace mexo {
 				}
 				return true;
 			}
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				to_digit_scale::do_handler_create_vars(_vars, _master_key);
 				const config_s& config =  to_digit_scale:: template config_cast<config_s>();
@@ -96,7 +97,8 @@ namespace mexo {
 					var::record::create(q::var::const_signal, config.range.voltage.low, RT("v.low"), _master_key, _vars);
 					var::record::create(q::var::const_signal, config.range.voltage.hi, RT("v.hi"), _master_key, _vars);
 				}
-			};
+			}
+			#endif
 
 		public:
 			struct config_s {

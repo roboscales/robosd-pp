@@ -89,18 +89,25 @@ namespace robo {
 
 	}
 
-	bool system::lib::exists(cstr _proc_name) {
-		return native::lib::exists(_proc_name);
+	bool system::lib::exists(cstr _lib_name) {
+		return native::lib::exists(_lib_name);
 	}
-	void * system::lib::proc_get(void* _handle, cstr _proc_name) {
-		return native::lib::proc_get(_handle, _proc_name);
+	void * system::lib::proc_get(void* _handle, cstr  _lib_name) {
+		return native::lib::proc_get(_handle, _lib_name);
 	}
-	void *  system::lib::load( cstr _proc_name ) {
-		return native::lib::load( _proc_name );
+	void *  system::lib::load( cstr _lib_name) {
+		return native::lib::load(_lib_name);
 	}
 	void system::lib::free(void* _instance) {
-
+		native::lib::free(_instance);
 	}
+	bool system::lib::copy(cstr _src, cstr _dst) {
+		return false;
+	}
+	bool system::lib::remove(cstr _lib_name) {
+		return false;
+	}
+
 }
 #endif
 
