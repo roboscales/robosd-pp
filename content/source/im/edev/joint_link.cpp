@@ -1,27 +1,28 @@
 #include "im/edev/joint_link.hpp"
-#include "im/edev/edev.h"
+#include "im/edev/edev.hpp"
 #include "core/robosd_log.hpp"
-#include "robosd_target_api.h"
+
 namespace robo{
-	namespace im{
+	namespace edev{
 		namespace joint{
-			link::map &  link::map_(void){
-				static map map_;
-				return map_;
+			link::map &  links_(void){
+				static link::map links__;
+				return links__;
 			};
-			bool link::configure(int _id, const robo_string_t _section, float _model_period_sec){
-				ROBO_BREAKN(block::configure(_section, _model_period_sec));
-				caption.load(_section, RS("link"));
-				ref_.set_id(_id);
-				return (ref_.attach_to(map_()) == ROBO_SUCCESS);
+
+			bool link::do_load(void){
+				ref_.set_key(hash(path));
+				ROBO_LRET(ref_.attach_to(links_()));
 			}
 
 			iactuator dummy_actuator;
 			iload dummy_load;
-			link::link(void): ref_(this){
+
+			link::link(agent& _agent, cstr _name): agent::block(_agent, _name), ref_(*this,-1){
 				actuator = &dummy_actuator;
 				load = &dummy_load;
 			}
+
 			void link::connect_to_actuator(iactuator * _actuator){
 				if (_actuator){
 					actuator = _actuator;
@@ -30,6 +31,7 @@ namespace robo{
 					actuator = &dummy_actuator;
 				}
 			}
+
 			void link::connect_to_load(iload * _load){
 				if (_load){
 					load = _load;
@@ -37,10 +39,28 @@ namespace robo{
 				else{
 					load = &dummy_load;
 				}
-
 			}
-			link * link::find(int _id){
-				return map_().find(_id);
+
+			link* link::find(int _id) {
+				link* tmp = links_().find(_id);
+				if (tmp == nullptr) {
+					robo_errlog("link with id  0x%x doesn't found", _id);
+					return nullptr;
+				}
+				else {
+					return tmp;
+				}
+			}
+
+			link* link::find(cstr _name) {
+				link* tmp = find(hash(_name));
+				if (tmp == nullptr) {
+					robo_errlog("link with name %s doesn't found", _name);
+					return nullptr;
+				}
+				else {
+					return tmp;
+				}
 			}
 		}
 	}

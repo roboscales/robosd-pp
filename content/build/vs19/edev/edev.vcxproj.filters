@@ -5,11 +5,20 @@
     <ClCompile Include="..\..\..\robosd-ref\im\edev\edev.cpp">
       <Filter>im\edev</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_gearbox.cpp">
-      <Filter>im\edev</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_link.cpp">
       <Filter>im\edev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp">
+      <Filter>im\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp">
+      <Filter>im\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\dcservo.cpp">
+      <Filter>im\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\dcmachine.cpp">
+      <Filter>im\model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -17,11 +26,20 @@
     <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp">
       <Filter>im\edev</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_gearbox.hpp">
-      <Filter>im\edev</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp">
       <Filter>im\edev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp">
+      <Filter>im\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp">
+      <Filter>im\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\dcservo.hpp">
+      <Filter>im\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp">
+      <Filter>im\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +48,9 @@
     </Filter>
     <Filter Include="im\edev">
       <UniqueIdentifier>{b9597db3-a26c-4fe9-b2cc-4247309214b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="im\model">
+      <UniqueIdentifier>{ea6b59b0-95dd-4b2e-8afb-75de83c7b43a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

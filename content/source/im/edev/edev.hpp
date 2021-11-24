@@ -6,20 +6,63 @@
 #include "core/robosd_string.hpp"
 namespace robo {
 	namespace edev {
-		struct agent {
+
+		class ROBO_EXPORT agent {
+		public:
+			class ROBO_EXPORT block {
+			public:
+				typedef list::unsorted<block> list;
+				typedef list::ref ref;
+			private:
+				ref ref_;
+				bool load_(void);
+				friend class agent;
+			protected:
+				agent& owner;
+				string name;
+				string path;
+				block(agent& _agent, cstr _name);
+				virtual bool do_load(cstr _section) = 0;
+				virtual void do_try_load(cstr _section) = 0;
+				virtual void do_reconfig(void) = 0;
+				virtual void do_run(void) = 0;
+			};
+
 			typedef list::unique<agent, int> map;
 			typedef map::ref ref;
+
+		private:
+			friend class block;
+			ref ref_;
+			double next_time_ = 0.;
+			block::list blocks_;
+			void run_(double _time);
+			bool begin_(void);
+			bool attach_(cstr _name, cstr _lib, cstr _type, void* _instance);
+			static bool try_attach_(cstr _name, cstr _lib, cstr _type, void* _instance);
+		protected:
 			string type;
 			string name;
 			string lib;
 			void* lib_instance;
-			virtual bool run(double _period, double _time) = 0;
-			virtual bool begin(void) = 0;
-			virtual void finish(void) = 0;
+			virtual bool do_priotitet_run(double _time) = 0;
+			virtual bool do_background_run(double _time) = 0;
+			virtual bool do_begin(void);
+			virtual void do_reconfig(void) = 0;
+			virtual void do_finish(void) = 0;
+			agent(void) :ref_(*this,-1) {}
+		public:
+			double sample_time;
+			static agent* find(int _id);
+			static agent* find(cstr __name);
+			static void run(double _time);
+			bool begin(void);
+			void reconfig(void);
+			void finish(void);
 		};
 
 
-		struct channel : public agent {
+		struct ROBO_EXPORT channel : public agent {
 			struct driver {
 				enum class status { complete = 0, refuse = 1, run = 2 };
 				typedef list::unsorted<driver> list;
@@ -29,17 +72,11 @@ namespace robo {
 				//virtual status request( uint8_t * _in, size_t _in_size)=0;
 
 			};
-			string name;
 			driver::list drivers;
 			//virtual void receive(uint8_t* _out, size_t _sizs) = 0;
 			//virtual void send(uint8_t * _out, size_t _sizs) = 0;
 			//virtual bool busy(void) = 0;
 		};
-		ROBO_EXPORT agent* find_agent(int _id);
-		ROBO_EXPORT agent* find_agent(cstr __name);
-		ROBO_EXPORT void run(double _period, double _time);
-		ROBO_EXPORT bool begin(void);
-		ROBO_EXPORT void finish(void);
 		/*
 		
 		ROBO_EXPORT static bool load(agent & _agent, cstr _lib);

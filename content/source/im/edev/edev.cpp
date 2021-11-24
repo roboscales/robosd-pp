@@ -4,12 +4,52 @@
 #include "core/robosd_ini.hpp"
 namespace robo {
 	namespace edev {
+
+		agent::block::block(agent& _agent, cstr _name): owner(_agent), name(_name), ref_(*this) {
+			ref_.attach_to(_agent.blocks_);
+			path.format(RT("%s.%s"), owner.name.c_str(), name.c_str());
+		}
+
+		bool agent::block::load_(void) {
+			string section;
+			section.format(RT("%s.%s"), owner.type.c_str(), name.c_str() );
+			ROBO_LBREAKN(do_load(section.c_str()));
+			do_try_load(path.c_str());
+			return true;
+		}
+
 		static agent::map& agents_(void) {
 			static agent::map agents__;
 			return agents__;
 		}
+		cstr im_sect = RT("IMITATION_MODEL");
 
-		agent* find_agent(int _id) {
+		bool agent::attach_(cstr _name, cstr _lib, cstr _type, void* _instance) {
+			ref_.set_key(hash(_name));
+			ROBO_LBREAKN(ref_.attach_to(agents_()));
+			name = _name;
+			lib = _lib;
+			type = _type;
+			lib_instance = _instance;
+			return true;
+		}
+
+		bool agent::begin_(void) {
+			for (block::ref* p = blocks_.first(); p; p = p->next()) {
+				ROBO_LBREAKN(p->owner().load_());
+			}
+			for (block::ref* p = blocks_.first(); p; p = p->next()) {
+				p->owner().do_reconfig();
+			}
+			ROBO_LRET(do_begin());
+		}
+
+		bool agent::do_begin(void) {
+			if ( !ini::try_load(name, RT("SAMPLE_TIME_SEC"), sample_time) ) {
+				ROBO_LRET(ini::load(im_sect,RT("SAMPLE_TIME_SEC"), sample_time))
+			} else return true;
+		}
+		agent* agent::find(int _id) {
 			agent* tmp = agents_().find(_id);
 			if (tmp == nullptr) {
 				robo_errlog("agent for device 0x%x doesn't found", _id);
@@ -19,8 +59,8 @@ namespace robo {
 				return tmp;
 			}
 		}
-		agent* find_agent(cstr _name) {
-			agent* tmp = find_agent(hash(_name));
+		agent* agent::find(cstr _name) {
+			agent* tmp = find(hash(_name));
 			if (tmp == nullptr) {
 				robo_errlog("agent for device with name %s doesn't found", _name);
 				return nullptr;
@@ -30,54 +70,84 @@ namespace robo {
 			}
 		}
 
-		void run(double period, double time) {
+		void agent::run( double time) {
 			for (agent::ref* p = agents_().first(); p; p = p->next()) {
-				p->owner().run(period, time);
-
+				p->owner().run_(time);
 			}
 		}
 
-		bool begin(void) {
+		void agent::run_(double _time) {
+			if (_time >= next_time_) {
+				for (block::ref* p = blocks_.first(); p; p = p->next()) {
+					p->owner().do_run();
+				}
+				next_time_ += sample_time;
+				do_priotitet_run(_time);
+			}
+			do_background_run(_time);
+		}
+
+		bool agent::try_attach_(cstr _name, cstr _lib, cstr _type, void* _instance) {
+			robo_edev_query_f  query = (robo_edev_query_f)system::lib::proc_get(_instance, RT("get_agent"));
+			ROBO_LBREAKN(query != nullptr);
+			agent* ag = query();
+			ROBO_LBREAKN(ag != nullptr);
+			ROBO_LBREAKN(ag->attach_(_name, _lib, _type, _instance));
+			return true;
+		}
+		bool agent::begin(void) {
 			int tmp = 0;
 			string sec;
 			string lib;
 			string lib_copy;
 			string name;
 			string type;
-			ROBO_BREAKN(ini::load(RT("IMITATION_MODEL"), RT("DEV_COUNT"), tmp));
+			ROBO_LBREAKN(ini::load(im_sect, RT("DEV_COUNT"), tmp));
 			for (int i = 0; i < tmp; i++) {
 				sec.format(RT("IMITATION_MODEL_DEV_%d"), tmp);
-				ROBO_BREAKN(name.load(sec.c_str(), RT("NAME")));
-				ROBO_BREAKN(type.load(sec.c_str(), RT("TYPE")));
-
-				ROBO_BREAKN(lib.load(type.c_str(), RT("LIB")));
+				ROBO_LBREAKN(name.load(sec.c_str(), RT("NAME")));
+				ROBO_LBREAKN(type.load(sec.c_str(), RT("TYPE")));
+				ROBO_LBREAKN(lib.load(type.c_str(), RT("LIB")));
 				ROBO_LBREAKN_F(system::lib::exists(lib), "module isn't found  %s", lib.c_str());
 				lib_copy.format(RT("~%s-%s-%d"), name.c_str(), lib.c_str(), i);
 				if (system::lib::exists(lib_copy)) {
-					system::lib::
+					ROBO_LBREAKN(system::lib::remove(lib_copy));
 				}
-
-
+				ROBO_LBREAKN(system::lib::copy(lib,lib_copy));
+				ROBO_LBREAKN(system::lib::exists(lib_copy));//paranoia
+				void* instance = system::lib::load(lib_copy);
+				ROBO_LBREAKN(instance != nullptr);
+				if (!agent::try_attach_(name, type, lib, instance)) {
+					system::lib::free(instance);
+					ROBO_LBREAK_F(RT("agent '%s' isn't attached from lib '%s' "), name.c_str(), lib_copy.c_str());
+				} 
 			}
 			for (agent::ref* p = agents_().first(); p; p = p->next()) {
-				ROBO_LBREAKN(p->owner().begin());
+				ROBO_LBREAKN(p->owner().begin_());
 			}
+			reconfig();
 			return true;
 		}
 
-		void finish(double period, double time) {
+		void agent::finish(void) {
 			agent::ref* p;
 			for (p = agents_().first(); p; p = p->next()) {
-				p->owner().finish();
+				p->owner().do_finish();
 			}
-			while ( (p = agents_().first()) != nullptr ) {
-				agent* ag = & ( p->owner() );
-				if (ag->lib_instance) {
-					system::lib::free(ag->lib_instance);
-				}
+			agent* ag;
+			while ( (ag = agents_().pop()) != nullptr ) {
+				void* instance = ag->lib_instance;
+				ag = nullptr;//paranoia
+				system::lib::free(instance);
 			}
 		}
 
+		void agent::reconfig(void) {
+			agent::ref* p;
+			for (p = agents_().first(); p; p = p->next()) {
+				p->owner().do_reconfig();
+			}
+		}
 	}
 }
 

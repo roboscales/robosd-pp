@@ -1,11 +1,11 @@
 #ifndef robosd_system_std_hpp
 #define robosd_system_std_hpp
 
-#include "core/robosd_app.hpp"
 #include "core/robosd_log.hpp"
 
 
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_NATIVE
+#include "core/robosd_app.hpp"
 namespace robo {
 	namespace native {
 		class lib {

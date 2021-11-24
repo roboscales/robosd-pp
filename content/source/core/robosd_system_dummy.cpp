@@ -124,22 +124,13 @@ namespace robo {
 	#endif
 
 	#if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_DUMMY
-	cstr g_robo_ini_fn = nullptr;
 	bool system::ini::begin(cstr _ini) {
-		g_robo_ini_fn = _ini;
 		return true;
 	}
 	void system::ini::finish(void) {
-		g_robo_ini_fn = nullptr;
 	}
 	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
-		ROBO_LBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
-
-			#if ROBO_UNICODE_ENABLED == 1
-			return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
-		#else
-			return GetPrivateProfileStringA(_section, _key, _default, _value, (DWORD)_value_max, g_robo_ini_fn) > 0;
-		#endif
+		return false;
 	}
 	#endif
 

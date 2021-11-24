@@ -2,8 +2,7 @@
 #define  robo_system_hpp
 #include "core/robosd_common.hpp"
 #include "core/robosd_log.hpp"
-
-
+#include "core/robosd_list.hpp"
 
 #ifndef ROBO_APP_ENV_TYPE 
 #define ROBO_APP_ENV_TYPE  ROBO_APP_TYPE_NONE
@@ -33,9 +32,14 @@
 #define ROBO_APP_FORMATING_TYPE  ROBO_APP_TYPE_NONE
 #endif
 
+#ifndef ROBO_APP_SHARED_TYPE
+#define ROBO_APP_SHARED_TYPE  ROBO_APP_TYPE_NONE
+#endif
+
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_SHARED_ENABLED (ROBO_APP_SHARED_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_ALLOC_ENABLED (ROBO_APP_ALLOC_TYPE != ROBO_APP_TYPE_NONE)
 
 #if ROBO_APP_SYSTEM_ENABLED  == 1
@@ -48,13 +52,13 @@ namespace robo {
 	 *  backend работает вне контекста ОС, в реальном времени. Прерывать ее можно только на самое короткое
 	 *  время. например, чтобы поставить сообщение в очередь.
 	 */
-	class system {
+	class ROBO_EXPORT system {
 		/*!
 		 *  Выделение памяти. Для
 		 */
-		#if ROBO_APP_ALLOC_ENABLED ==1
+	#if ROBO_APP_ALLOC_ENABLED ==1
 	public:
-		struct mem {
+		struct ROBO_EXPORT mem {
 			//статистика
 			struct stat {
 				struct {
@@ -73,7 +77,7 @@ namespace robo {
 		static mem::stat& get_mem_statistic(void) { guard g__; return instance_().memstat_; }
 	private:
 		mem::stat memstat_;
-		#endif
+	#endif
 	private:
 		static system & instance_(void);
 		enum  class state { enabled = 178, unknown = -178 };
@@ -151,7 +155,7 @@ namespace robo {
 		/*!
 		 *  Это специфичные функции для аппаратуры и компилятора
 		 */
-		class  env {
+		class ROBO_EXPORT  env {
 			friend class guard;
 			friend class fall;
 			friend class system;
@@ -281,14 +285,15 @@ namespace robo {
 		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...);
 
 		#if ROBO_APP_INI_ENABLED ==1
-		struct ini {
+		struct ROBO_EXPORT ini {
 			static bool begin(cstr _ini);
 			static void finish(void);
 			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 		};
 		#endif
+
 		#if ROBO_APP_LIB_ENABLED ==1
-		struct lib {
+		struct ROBO_EXPORT lib {
 			static void* proc_get(void* _handle, cstr _proc_name);
 			static bool exists(cstr _lib_name);
 			static void* load(cstr _lib_name);
@@ -298,6 +303,33 @@ namespace robo {
 		};
 		#endif
 
+		#if ROBO_APP_SHARED_ENABLED ==1
+		class ROBO_EXPORT shared {
+			friend class guard;
+			void lock(void);
+			void unlock(void);
+			class driver;
+			driver* driver_=nullptr;
+		public:
+			typedef list::unique< shared, int> map;
+		private:
+		public:
+			class guard {
+				shared& owner_;
+			public:
+				guard(shared& _owner) : owner_(_owner) { _owner.lock(); }
+				~guard(void) { owner_.unlock(); }
+			};
+			bool open(cstr _name, size_t _sz);
+			void close(void);
+			void* memo(void);
+			size_t size(void);
+			shared(void);
+			~shared(void);
+			static shared * find(cstr _name);
+
+		};
+		#endif
 	};
 }
 #endif

@@ -127,6 +127,7 @@ namespace robo {
 #define ROBO_APP_ASSERT(x) 
 #endif
 
+
 #ifndef ROBO_EXPORT_FUNCTION_PREFIX
 #define ROBO_EXPORT_FUNCTION_PREFIX RT("")
 #endif
@@ -138,6 +139,10 @@ namespace robo {
 #ifndef ROBO_APP_NET_FLOW_ENABLED
 #define ROBO_APP_NET_FLOW_ENABLED 0
 #endif
+
+#ifndef ROBO_MEMORY_HEAP_ENABLED
+#define ROBO_MEMORY_HEAP_ENABLED 0
+#endif 
 
 #define ROBO_APP_TYPE_NONE 0
 #define ROBO_APP_TYPE_DUMMY 1

@@ -1,0 +1,59 @@
+#ifndef __robo_can_h
+#define __robo_can_h
+#include "core/robosd_common.hpp"
+#include "core/robosd_list.hpp"
+#include "core/robosd_delegat.hpp"
+namespace robo {
+	namespace net {
+		class ROBO_EXPORT ican {
+		public:
+			typedef list::unique<ican, int> map;
+			typedef map::ref ref;
+		private:
+			ref ref_;
+
+		public:
+			enum class event{
+				init
+				, deinit
+				, connect
+				, disconnect
+				, fault
+			} ;
+
+			delegat::base<void, uint16_t , uint8_t* , uint8_t   > *  on_receive = nullptr;
+			delegat::base<void, event>* on_event = nullptr;
+
+			virtual bool open(void) = 0;
+			virtual void close(void) = 0;
+			virtual bool send(uint16_t _id, uint8_t* _buf, uint8_t  _len) = 0;
+			virtual bool ready(void) = 0;
+			virtual void reset(void) = 0;
+			virtual void pool(void) = 0;
+
+			ican(void);
+			bool reg(cstr _caption);
+			void unreg(void);
+			static ican* find(cstr _caption);
+			static ican* query(cstr _caption);
+			static ican& query_ref(cstr _caption);
+			void  release(void);
+			static void forall(lambda<void(ican&)>& _operator);
+		};
+
+		class ROBO_EXPORT can_dummy :public ican {
+		private:
+			can_dummy(void) :ican() {}
+		public:
+			virtual bool open(void) { return false; }
+			virtual void close(void) {}
+			virtual bool send(uint16_t /*_id*/, uint8_t* /*_buf*/, uint8_t  /*_len*/) { return false; }
+			virtual bool ready(void) { return false; }
+			virtual void reset(void) {}
+			virtual void pool(void) {}
+			static can_dummy& instance(void);
+		};
+	}
+}
+
+#endif

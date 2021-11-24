@@ -2,6 +2,8 @@ chcp 1251
 set robosd=I:\SOURCETREE\robosd++\content\
 
 set JSON=I:\SOURCETREE\jsonsl
+set ARMA=%robosd%\exlib\armadilio
+set INILIB=%robosd%\exlib\miniini
 
 set settings=%COMPUTERNAME%
 set settings=%settings::=,%
@@ -39,6 +41,13 @@ MKLINK /J ".\reference\json-ref"  "%JSON%"
 
 IF EXIST ".\reference\build-ref"  RMDIR ".\reference\build-ref"
 MKLINK /J ".\reference\build-ref"  "%BUILD%"  
+
+IF EXIST ".\reference\arma-ref"  RMDIR ".\reference\arma-ref"
+MKLINK /J ".\reference\arma-ref"  "%ARMA%"  
+
+IF EXIST ".\reference\inlib-ref"  RMDIR ".\reference\inlib-ref"
+MKLINK /J ".\reference\inlib-ref"  "%INILIB%"
+
 
 cd "%settings%"
 echo [LOCAL] > robosd-pp.ini

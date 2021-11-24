@@ -117,14 +117,17 @@ namespace robo {
 namespace robo {
 	size_t system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
 		#if ROBO_UNICODE_ENABLED == 1
-		size_t sz = vswprintf_s(_dst, _max_sz, _format, _args);
+		int sz = vswprintf_s(_dst, _max_sz, _format, _args);
 		#else
-		size_t sz = vsprintf(_dst, _format, _args);
+		int sz = vsprintf(_dst, _format, _args);
 		#endif
-		if (sz < _max_sz - 1) {
-			_dst[sz] = 0;
+		if (sz > 0) {
+			if (sz < (int) _max_sz - 1) {
+				_dst[sz] = 0;
+			}
+			return (size_t) sz;
 		}
-		return sz;
+		else return 0;
 	}
 }
 #endif

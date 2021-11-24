@@ -104,18 +104,19 @@ namespace robo {
 			std::fill_n(memo_, size_ + 1, 0);
 		}
 		size offset_(size_t _sz) {
-			size deseired = (size)(_sz >> bits_);
-			size tmp = deseired << bits_;
+			size b = (size)bits_;
+			size deseired = (size)(_sz >> b);
+			size tmp = (size)(deseired << b);
 			if (tmp < _sz) {
 				deseired++; //данные не выровнены
 			}
-			return deseired + 1;
+			return (size) (deseired + 1);
 		}
 		void* query(size_t _sz) {
 
 			size offset = offset_(_sz);
 
-			size next_top = memo_top_ + offset;
+			size next_top = (size)(memo_top_ + offset);
 
 			statistic_.total.query += _sz;
 			statistic_.count.query++;

@@ -290,6 +290,7 @@ namespace robo {
 #include <windows.h>
 #include <cstdlib>
 namespace robo {
+	#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 	bool system::lib::exists(cstr _lib_name) {
 		HANDLE hFile = CreateFile(
 			_lib_name, // file (or device) name
@@ -311,7 +312,9 @@ namespace robo {
 		char buf[nsz];
 		size_t sz;
 		wcstombs_s(&sz, buf, nsz, _proc_name, _TRUNCATE);
-		return GetProcAddress((HMODULE)_handle, buf);
+		void* proc = GetProcAddress((HMODULE)_handle, buf);
+		ROBO_LBREAKN_F(proc != nullptr, RT("function isn't found '%s'"), _proc_name);
+		return proc;
 	}
 	void* system::lib::load(cstr _lib_name) {
 		void * _pinst = (void *)LoadLibrary(_lib_name);
@@ -329,6 +332,99 @@ namespace robo {
 		ROBO_LBREAKN_F(DeleteFile(_lib_name), RT("error remove lib '%s'"), _lib_name);		
 		return true;
 	}
+	#endif
+
+	#if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_WIN
+	cstr g_robo_ini_fn = nullptr;
+	bool system::ini::begin(cstr _ini) {
+		g_robo_ini_fn = _ini;
+		return true;
+	}
+	void system::ini::finish(void) {
+		g_robo_ini_fn = nullptr;
+	}
+	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
+		ROBO_LBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
+
+			#if ROBO_UNICODE_ENABLED == 1
+			return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
+		#else
+			return GetPrivateProfileStringA(_section, _key, _default, _value, (DWORD)_value_max, g_robo_ini_fn) > 0;
+		#endif
+	}
+	#endif
+
+	#if ROBO_APP_SHARED_TYPE == ROBO_APP_TYPE_WIN
+
+	class system::shared::driver {
+		friend class shared;
+		HANDLE hMap = NULL;
+		HANDLE hLock = NULL;
+		string name;
+		string locker_name;
+		size_t sz = 0;
+		void* memo;
+		bool open(cstr _name, size_t _sz) {
+			hMap = NULL;
+			hLock = NULL;
+			name = _name;
+			sz = _sz;
+			locker_name.format(RT("%s_LOCKER"), _name);
+			ROBO_JAMPN( (hLock = CreateMutex(NULL, FALSE, locker_name.c_str() )) != NULL, broke);
+			ROBO_JAMPN((hMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sz, name.c_str() )) != NULL, broke);
+			ROBO_JAMPN( (memo = (void *)MapViewOfFile(hMap,  FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0)) != NULL, broke);
+			return true;
+		broke:
+			close();
+			return false;
+		}
+		void close(void) {
+			if (memo != NULL) {
+				UnmapViewOfFile(memo);
+			}
+
+			if (hMap != NULL) {
+				CloseHandle(hMap);
+				hMap = NULL;
+			}
+
+			if (hLock != NULL) {
+				CloseHandle(hLock);
+				hLock = NULL;
+			}
+		}
+		void lock(void) {
+			WaitForSingleObject(hLock, 10000);
+		}
+		void unlock(void) {
+			ReleaseMutex(hLock);
+		}
+	};
+	system::shared::shared(void): driver_(new driver ) {
+	}
+	system::shared::~shared(void) {
+		delete driver_;
+	}
+	bool system::shared::open(cstr _name, size_t _sz) {
+		driver_->open(_name,_sz);
+	}
+	void system::shared::close(void) {
+		driver_->close();
+	}
+	void system::shared::lock(void) {
+		driver_->lock();
+	}
+	void system::shared::unlock(void) {
+		driver_->unlock();
+	}
+	size_t system::shared::size(void) {
+		return driver_->sz;
+	}
+	void * system::shared::memo(void) {
+		return driver_->memo;
+	}
+	#endif
+
 }
 #endif
 

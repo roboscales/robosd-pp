@@ -10,9 +10,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\dllmain.cpp" />
-    <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ini.cpp">
-      <Filter>robosd++/core</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_log.cpp">
       <Filter>robosd++/core</Filter>
     </ClCompile>
@@ -23,9 +20,6 @@
       <Filter>robosd++/core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_dummy.cpp">
-      <Filter>robosd++/core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp">
       <Filter>robosd++/core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_std.cpp">
@@ -68,9 +62,6 @@
       <Filter>robosd++/core/platform/win+vs19</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp">
-      <Filter>robosd++/core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,26 +3,31 @@
 
 
 namespace robo {
+	typedef std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > stds;
+	class string::base_string_ :public stds {};
 
 	char_t string_buffer_frontend[ROBO_STRING_BUFFER_SIZE];
 	char_t string_buffer_backend[ROBO_STRING_BUFFER_SIZE];
 
-	string::~string(void) {}
+	string::~string(void) {
+		delete value_;
+	}
 
-	string::string(void) : string_base() {}
+	string::string(void): value_(new base_string_) {
+	}
 
 
-	string::string(const string& _src) : string_base(_src) {}
+	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
 
-	string::string(cstr _format, va_list _args) : string_base() {
+	string::string(cstr _format, va_list _args)  {
 		ROBO_ALARMN(format(_format, _args))
 	}
 
-	string::string(cstr _format, ...) : string_base() {
+	string::string(cstr _format, ...) {
 		va_list args;
 		va_start(args, _format);
 		ROBO_ALARMN(format(_format, args))
-			va_end(args);
+		va_end(args);
 	}
 	
 	bool string::printf_backend_(stream_s & _s, cstr _format, va_list _args){
@@ -48,14 +53,14 @@ namespace robo {
 		stream_s stream;
 		if (system::env::is_backend()) {			
 			if(printf_backend_(stream, _format, _args)){
-				*((string_base*)this) = stream.memo;
+				*((stds*)value_) = stream.memo;
 				return true;
 			}
 		}
 		else {
 			system::critical c__;
 			if(printf_frontend_(stream, _format, _args)){
-				*((string_base*)this) = stream.memo;
+				*((stds*)value_) = stream.memo;
 				return true;
 			}
 		}
@@ -79,14 +84,14 @@ namespace robo {
 		#if ROBO_APP_INI_ENABLED == 1
 		if (system::env::is_backend()) {
 			if (system::ini::load_str(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
-				*((string_base*)this) = string_buffer_backend;
+				*((stds *)value_) = string_buffer_backend;
 				return true;
 			}
 		}
 		else {
 			system::critical c__;
 			if (system::ini::load_str(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
-				*((string_base*)this) = string_buffer_frontend;
+				*((stds*)value_) = string_buffer_frontend;
 				return true;
 			}
 		}
@@ -98,17 +103,28 @@ namespace robo {
 		#if ROBO_APP_ENV_ENABLED == 1
 		if (system::env::is_backend()) {
 			ROBO_LBREAKN(_converter((uint8_t*)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)));
-			*((string_base*)this) = string_buffer_backend;
+			*((stds*)value_) = string_buffer_backend;
 		}
 		else {
 			system::critical c__;
 			ROBO_LBREAKN(_converter((uint8_t*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)));
-			*((string_base*)this) = string_buffer_frontend;
+			*((stds*)value_) = string_buffer_frontend;
 		}
 		return true;
 		#else
 		return false;
 		#endif
 	}
+
+	cstr  string::c_str() const { return   value_->c_str(); };
+
+	string::operator  cstr () const { return  value_->c_str(); };
+	size_t string::length(void) {
+		return value_->length();
+	}
+	void string::clear(void) {
+		value_->clear();
+	}
+
 }
 

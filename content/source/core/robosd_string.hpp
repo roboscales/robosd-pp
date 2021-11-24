@@ -12,11 +12,12 @@
 
 namespace robo {
 
-	typedef std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > string_base;
-
 	class ROBO_EXPORT string
-		: public  string_base
 	{
+	private:
+		class base_string_;
+		base_string_ * value_;
+		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
 		virtual ~string(void);
 		string(void);
@@ -32,10 +33,10 @@ namespace robo {
 		bool tryload(cstr _section, cstr _key);
 
 		bool load(delegat::base<bool, uint8_t*, size_t >& _converter);
-
-		inline  cstr c_str() const { return   string_base::c_str(); };
-		inline operator cstr () const { return c_str(); }; //todo осмыслить
-
+		size_t length(void);
+		cstr c_str() const;
+		operator cstr () const; //todo осмыслить
+		void clear(void);
 		private:
 			struct stream_s{
 				const char_t * memo;

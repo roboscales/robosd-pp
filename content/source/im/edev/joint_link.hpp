@@ -1,12 +1,10 @@
-#ifndef __join_common_hpp
-#define __join_common_hpp
-#include "core/robosd_common.h"
-#include "im/models/models.hpp"
-#include "core/robosd_list.hpp"
-#include "core/robosd_cstring.hpp"
+#ifndef __join_link_hpp
+#define __join_link_hpp
+#include "im/edev/edev.hpp"
 namespace robo{
-	namespace im{
+	namespace edev{
 		namespace joint{
+
 			struct ROBO_EXPORT iactuator{
 				enum class istate { blocked, start, run };
 				float driveng_torque = 0.f;
@@ -27,24 +25,24 @@ namespace robo{
 				float tension_diff = 0.f;
 			};
 
-			class ROBO_EXPORT link :public robo::models::block{
+			class ROBO_EXPORT link:public agent::block {
 			public:
-				typedef robo::list::ref<link> ref;
-				typedef robo::list::map<link> map;
+				typedef ::robo::list::unique<link, int> map;
+				typedef map::ref ref;
 			private:
 				ref ref_;
-				static map &  map_(void);
+			protected:
+				virtual bool do_load(void);
 			public:
 				iactuator * actuator;
 				iload * load;
-				robo::string caption;
-				link(void);
-				bool configure(int _id, const robo_string_t _section, float _model_period_sec);
+				link(agent& _agent, cstr _name);
 				void connect_to_actuator(iactuator * _actuator);
 				void connect_to_load(iload * _load);
 				static link * find(int _id);
+				static link* find(cstr _caption);
 			};
-			typedef robo::models::block::parametr<float> parametr;
+			
 		}
 	}
 }
