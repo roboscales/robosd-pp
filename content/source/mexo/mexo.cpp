@@ -2,7 +2,17 @@
 #include "core/robosd_log.hpp"
 #include "net/robosd_flow.hpp"
 namespace mexo {
+	#if MEXO_DEBUG_TP1_ENABLED == 1
+	led<tp_driver>  tp;
 
+	#else
+
+
+	led<dummy_led>  tp;
+//	typedef dummy_led  tp;
+
+	#endif 
+	
 	machine machine::instance_;
 	machine::machine(void)
 		: slots_ref_(slots_())
@@ -24,14 +34,14 @@ namespace mexo {
 		slots_ref_.start.execute();
 	}
 	void machine::priority_loop_(void) {
-		tp::on(tp_verb::loop);
-		tp::on(tp_verb::priority);
+		tp.on(tp_verb::loop);
+		tp.on(tp_verb::priority);
 		fall__;
 		slots_ref_.priority.execute();
-		tp::off(tp_verb::priority);
+		tp.off(tp_verb::priority);
 	}
 	void machine::backend_loop_(void) {
-		tp::on(tp_verb::backend);
+		tp.on(tp_verb::backend);
 		fall__;
 		slots_ref_.backend.execute();
 		slots_ref_.periodic[slot_index_].execute();
@@ -42,16 +52,16 @@ namespace mexo {
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::backend_poll();
 		#endif
-		tp::off(tp_verb::backend);
-		tp::off(tp_verb::loop);
+		tp.off(tp_verb::backend);
+		tp.off(tp_verb::loop);
 	}
 	void machine::frontend_loop_(void) {
-		tp::on(tp_verb::frontend);
+		tp.on(tp_verb::frontend);
 		slots_ref_.frontend.execute();
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::frontend_poll();
 		#endif
-		tp::off(tp_verb::frontend);
+		tp.off(tp_verb::frontend);
 	}
 	machine::slots& machine::slots_(void) {
 		static machine::slots slots__;

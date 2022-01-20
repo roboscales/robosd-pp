@@ -14,16 +14,17 @@ namespace robo {
 	}
 
 	string::string(void): value_(new base_string_) {
+		*((stds*)value_) = RT("");
 	}
 
 
 	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
 
-	string::string(cstr _format, va_list _args)  {
+	string::string(cstr _format, va_list _args) : value_(new base_string_) {
 		ROBO_ALARMN(format(_format, _args))
 	}
 
-	string::string(cstr _format, ...) {
+	string::string(cstr _format, ...) : value_(new base_string_) {
 		va_list args;
 		va_start(args, _format);
 		ROBO_ALARMN(format(_format, args))
@@ -124,6 +125,16 @@ namespace robo {
 	}
 	void string::clear(void) {
 		value_->clear();
+	}
+
+	string& string::operator =(const string& _src) {
+		*((stds*)value_) = *((stds*)(_src.value_));
+		return *this;
+	}
+
+	string& string::operator =(cstr _src) {
+		*((stds*)value_) = _src;
+		return *this;
 	}
 
 }

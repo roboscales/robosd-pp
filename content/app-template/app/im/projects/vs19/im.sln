@@ -8,8 +8,32 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "robosd-core++", "..\..\..\..\reference\build-ref\vs19\core\robosd-core++.vcxproj", "{4A79D6D5-6EE3-468C-BEE1-133C00FF7150}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "edev", "..\..\..\..\reference\build-ref\vs19\edev\edev.vcxproj", "{AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A79D6D5-6EE3-468C-BEE1-133C00FF7150} = {4A79D6D5-6EE3-468C-BEE1-133C00FF7150}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "emu_can", "..\..\..\..\reference\build-ref\vs19\emu-can\emu_can.vcxproj", "{69E62DCC-6BD0-499F-9427-A506D992FEE6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30} = {AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30}
+		{4A79D6D5-6EE3-468C-BEE1-133C00FF7150} = {4A79D6D5-6EE3-468C-BEE1-133C00FF7150}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "emulator", "..\..\..\..\reference\build-ref\vs19\emulator\emulator.vcxproj", "{A7361E64-1441-431D-B19C-909D3013E117}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30} = {AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30}
+		{69E62DCC-6BD0-499F-9427-A506D992FEE6} = {69E62DCC-6BD0-499F-9427-A506D992FEE6}
+		{4A79D6D5-6EE3-468C-BEE1-133C00FF7150} = {4A79D6D5-6EE3-468C-BEE1-133C00FF7150}
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9} = {10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mexo-drive-1b", "..\..\..\mexo-drive\projects\vs19\mexo-drive.vcxproj", "{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30} = {AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30}
+		{69E62DCC-6BD0-499F-9427-A506D992FEE6} = {69E62DCC-6BD0-499F-9427-A506D992FEE6}
+		{4A79D6D5-6EE3-468C-BEE1-133C00FF7150} = {4A79D6D5-6EE3-468C-BEE1-133C00FF7150}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "addon_template_can", "addon_template.vcxproj", "{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +67,30 @@ Global
 		{69E62DCC-6BD0-499F-9427-A506D992FEE6}.Release|x64.Build.0 = Release|x64
 		{69E62DCC-6BD0-499F-9427-A506D992FEE6}.Release|x86.ActiveCfg = Release|Win32
 		{69E62DCC-6BD0-499F-9427-A506D992FEE6}.Release|x86.Build.0 = Release|Win32
+		{A7361E64-1441-431D-B19C-909D3013E117}.Debug|x64.ActiveCfg = Debug|x64
+		{A7361E64-1441-431D-B19C-909D3013E117}.Debug|x64.Build.0 = Debug|x64
+		{A7361E64-1441-431D-B19C-909D3013E117}.Debug|x86.ActiveCfg = Debug|Win32
+		{A7361E64-1441-431D-B19C-909D3013E117}.Debug|x86.Build.0 = Debug|Win32
+		{A7361E64-1441-431D-B19C-909D3013E117}.Release|x64.ActiveCfg = Release|x64
+		{A7361E64-1441-431D-B19C-909D3013E117}.Release|x64.Build.0 = Release|x64
+		{A7361E64-1441-431D-B19C-909D3013E117}.Release|x86.ActiveCfg = Release|Win32
+		{A7361E64-1441-431D-B19C-909D3013E117}.Release|x86.Build.0 = Release|Win32
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Debug|x64.ActiveCfg = Debug|x64
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Debug|x64.Build.0 = Debug|x64
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Debug|x86.ActiveCfg = Debug|Win32
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Debug|x86.Build.0 = Debug|Win32
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Release|x64.ActiveCfg = Release|x64
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Release|x64.Build.0 = Release|x64
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Release|x86.ActiveCfg = Release|Win32
+		{10FC5AF9-CEAE-4028-A4CB-D6F652832DD9}.Release|x86.Build.0 = Release|Win32
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Debug|x64.ActiveCfg = Debug|x64
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Debug|x64.Build.0 = Debug|x64
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Debug|x86.ActiveCfg = Debug|Win32
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Debug|x86.Build.0 = Debug|Win32
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Release|x64.ActiveCfg = Release|x64
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Release|x64.Build.0 = Release|x64
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Release|x86.ActiveCfg = Release|Win32
+		{A59C9EAA-29AB-4F81-998E-D71F70F2E1EE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

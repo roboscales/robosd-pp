@@ -70,23 +70,16 @@ namespace robo{
 					actuator.driveng_torque = current * Km;
 				}
 
-				bool ideal2::do_load(cstr _section) {
-					ROBO_LBREAKN(ini::load(_section, RT("Rs"), Rs));
-					ROBO_LBREAKN(ini::load(_section, RT("Ls"), Ls));
-					ROBO_LBREAKN(ini::load(_section, RT("Km"), Km));
-					ROBO_LBREAKN(ini::load(_section, RT("Ke"), Ke));
-					ROBO_LBREAKN(ini::load(_section, RT("J"), J));
-					ROBO_LBREAKN(ini::load(_section, RT("Kv"), Kv));
+				bool ideal2::do_load(cstr _specific_sect, cstr _common_sect) {
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Rs"), Rs));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ls"), Ls));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Km"), Km));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ke"), Ke));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("J"), J));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Kv"), Kv));
 					return true;
 				}
-				void ideal2::do_try_load(cstr _section) {
-					ini::try_load(_section, RT("Rs"), Rs);
-					ini::try_load(_section, RT("Ls"), Ls);
-					ini::try_load(_section, RT("Km"), Km);
-					ini::try_load(_section, RT("Ke"), Ke);
-					ini::try_load(_section, RT("J"), J);
-					ini::try_load(_section, RT("Kv"), Kv);
-				}
+
 			}
 		}
 	}

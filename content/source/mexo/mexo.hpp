@@ -29,12 +29,13 @@ namespace mexo {
 		void on(void);
 		void off(void);
 	};
-	typedef led_s<tp_driver>  tp;
+	extern led<tp_driver>  tp;
 
 	#else
 
 
-	typedef dummy_led  tp;
+	extern led<dummy_led>  tp;
+//	typedef dummy_led  tp;
 
 	#endif 
 
@@ -184,6 +185,7 @@ namespace mexo {
 		void create_vars_(void);
 		void create_vars_index_(void);
 		int var_count_(void);
+		public:
 		static void create_vars(void);
 		#endif
 	protected:

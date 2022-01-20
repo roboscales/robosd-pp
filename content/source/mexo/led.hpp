@@ -41,9 +41,9 @@ namespace mexo {
 		}
 	};
 
-	template <typename D> class led : public led_base<D>{
-		static led & instance_(){
-			static led instance__;
+	template <typename D> class led_s : public led_base<D>{
+		static led_s & instance_(){
+			static led_s instance__;
 			return instance__;
 		}
 	public:
@@ -54,22 +54,27 @@ namespace mexo {
 	};
 
 
-	template <typename D> class led_s : public led_base<D>{
-		static led_s instance_;
+	template <typename D> class led : public led_base<D>{
+		static led instance_;
 	public:
-		static void on(unsigned int _verb = 0) { instance_.on_(_verb); } 
-		static void off(unsigned int _verb = 0) { instance_.off_(_verb); } 
-		static void toggle(unsigned int _verb = 0) { instance_.toggle_(_verb); } 
-		static void set_verb(unsigned int _verb) { instance_.set_verb_(_verb); } 
+		void on(unsigned int _verb = 0) { instance_.on_(_verb); } 
+		void off(unsigned int _verb = 0) { instance_.off_(_verb); } 
+		void toggle(unsigned int _verb = 0) { instance_.toggle_(_verb); } 
+		void set_verb(unsigned int _verb) { instance_.set_verb_(_verb); } 
+		void perform( uint8_t _command, unsigned int _verb  = 0) { 
+			switch (_command){
+				case 1: on(_verb); break;
+				case 2: toggle(_verb); break;
+				default : off(_verb);
+			}
+		} 
 	};
-	template <typename D>  led_s<D> led_s<D>::instance_;
+	template <typename D>  led<D> led<D>::instance_;
 	
 	class  dummy_led {
 		public:
 			static void on(unsigned int _verb = 0) { }
 			static void off(unsigned int _verb = 0) {  }
-			static void toggle(unsigned int _verb = 0) {  }
-			static void set_verb(unsigned int _verb) {  }
 	};
 }
 

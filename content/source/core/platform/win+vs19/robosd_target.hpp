@@ -17,6 +17,12 @@
 #ifndef ROBO_EXPORT_RUNTIME_DECL
 #define ROBO_EXPORT_RUNTIME_DECL __cdecl
 #endif
+
+#ifndef ROBO_EXPORT_RUNTIME
+#define ROBO_EXPORT_RUNTIME _declspec(dllexport)
+#endif
+
+
 #define ROBO_APP_PROC_NAME __FUNCTION__
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__

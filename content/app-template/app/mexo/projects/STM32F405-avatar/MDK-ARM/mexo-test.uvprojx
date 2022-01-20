@@ -1,1105 +1,558 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="project_projx.xsd">
-    
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_projx.xsd">
+
   <SchemaVersion>2.1</SchemaVersion>
-    
+
   <Header>### uVision Project, (C) Keil Software</Header>
-    
+
   <Targets>
-        
     <Target>
-            
       <TargetName>mexo-test</TargetName>
-            
       <ToolsetNumber>0x4</ToolsetNumber>
-            
       <ToolsetName>ARM-ADS</ToolsetName>
-            
       <pCCUsed>6160000::V6.16::ARMCLANG</pCCUsed>
-            
       <uAC6>1</uAC6>
-            
       <TargetOption>
-                
         <TargetCommonOption>
-                    
           <Device>STM32F405RGTx</Device>
-                    
           <Vendor>STMicroelectronics</Vendor>
-                    
           <PackID>Keil.STM32F4xx_DFP.2.15.0</PackID>
-                    
           <PackURL>http://www.keil.com/pack/</PackURL>
-                    
           <Cpu>IRAM(0x20000000-0x20004FFF) IROM(0x8000000-0x800FFFF) CLOCK(8000000) CPUTYPE("Cortex-M3") TZ</Cpu>
-                    
-          <FlashUtilSpec/>
-                    
-          <StartupFile/>
-                    
-          <FlashDriverDll/>
-                    
+          <FlashUtilSpec></FlashUtilSpec>
+          <StartupFile></StartupFile>
+          <FlashDriverDll></FlashDriverDll>
           <DeviceId>0</DeviceId>
-                    
-          <RegisterFile/>
-                    
-          <MemoryEnv/>
-                    
-          <Cmp/>
-                    
-          <Asm/>
-                    
-          <Linker/>
-                    
-          <OHString/>
-                    
-          <InfinionOptionDll/>
-                    
-          <SLE66CMisc/>
-                    
-          <SLE66AMisc/>
-                    
-          <SLE66LinkerMisc/>
-                    
+          <RegisterFile></RegisterFile>
+          <MemoryEnv></MemoryEnv>
+          <Cmp></Cmp>
+          <Asm></Asm>
+          <Linker></Linker>
+          <OHString></OHString>
+          <InfinionOptionDll></InfinionOptionDll>
+          <SLE66CMisc></SLE66CMisc>
+          <SLE66AMisc></SLE66AMisc>
+          <SLE66LinkerMisc></SLE66LinkerMisc>
           <SFDFile>$$Device:STM32F103C8$SVD\STM32F103xx.svd</SFDFile>
-                    
           <bCustSvd>0</bCustSvd>
-                    
           <UseEnv>0</UseEnv>
-                    
-          <BinPath/>
-                    
-          <IncludePath/>
-                    
-          <LibPath/>
-                    
-          <RegisterFilePath/>
-                    
-          <DBRegisterFilePath/>
-                    
+          <BinPath></BinPath>
+          <IncludePath></IncludePath>
+          <LibPath></LibPath>
+          <RegisterFilePath></RegisterFilePath>
+          <DBRegisterFilePath></DBRegisterFilePath>
           <TargetStatus>
-                        
             <Error>0</Error>
-                        
             <ExitCodeStop>0</ExitCodeStop>
-                        
             <ButtonStop>0</ButtonStop>
-                        
             <NotGenerated>0</NotGenerated>
-                        
             <InvalidFlash>1</InvalidFlash>
-                      
           </TargetStatus>
-                    
           <OutputDirectory>mexo-test\</OutputDirectory>
-                    
           <OutputName>mexo-test</OutputName>
-                    
           <CreateExecutable>1</CreateExecutable>
-                    
           <CreateLib>0</CreateLib>
-                    
           <CreateHexFile>1</CreateHexFile>
-                    
           <DebugInformation>1</DebugInformation>
-                    
           <BrowseInformation>1</BrowseInformation>
-                    
           <ListingPath>.\mexo-test\</ListingPath>
-                    
           <HexFormatSelection>1</HexFormatSelection>
-                    
           <Merge32K>0</Merge32K>
-                    
           <CreateBatchFile>0</CreateBatchFile>
-                    
           <BeforeCompile>
-                        
             <RunUserProg1>0</RunUserProg1>
-                        
             <RunUserProg2>0</RunUserProg2>
-                        
-            <UserProg1Name/>
-                        
-            <UserProg2Name/>
-                        
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
-                        
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
-                        
             <nStopU1X>0</nStopU1X>
-                        
             <nStopU2X>0</nStopU2X>
-                      
           </BeforeCompile>
-                    
           <BeforeMake>
-                        
             <RunUserProg1>0</RunUserProg1>
-                        
             <RunUserProg2>0</RunUserProg2>
-                        
-            <UserProg1Name/>
-                        
-            <UserProg2Name/>
-                        
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
-                        
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
-                        
             <nStopB1X>0</nStopB1X>
-                        
             <nStopB2X>0</nStopB2X>
-                      
           </BeforeMake>
-                    
           <AfterMake>
-                        
             <RunUserProg1>0</RunUserProg1>
-                        
             <RunUserProg2>0</RunUserProg2>
-                        
-            <UserProg1Name/>
-                        
-            <UserProg2Name/>
-                        
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
-                        
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
-                        
             <nStopA1X>0</nStopA1X>
-                        
             <nStopA2X>0</nStopA2X>
-                      
           </AfterMake>
-                    
           <SelectedForBatchBuild>1</SelectedForBatchBuild>
-                    
-          <SVCSIdString/>
-                  
+          <SVCSIdString></SVCSIdString>
         </TargetCommonOption>
-                
         <CommonProperty>
-                    
           <UseCPPCompiler>0</UseCPPCompiler>
-                    
           <RVCTCodeConst>0</RVCTCodeConst>
-                    
           <RVCTZI>0</RVCTZI>
-                    
           <RVCTOtherData>0</RVCTOtherData>
-                    
           <ModuleSelection>0</ModuleSelection>
-                    
           <IncludeInBuild>1</IncludeInBuild>
-                    
           <AlwaysBuild>0</AlwaysBuild>
-                    
           <GenerateAssemblyFile>0</GenerateAssemblyFile>
-                    
           <AssembleAssemblyFile>0</AssembleAssemblyFile>
-                    
           <PublicsOnly>0</PublicsOnly>
-                    
           <StopOnExitCode>3</StopOnExitCode>
-                    
-          <CustomArgument/>
-                    
-          <IncludeLibraryModules/>
-                    
+          <CustomArgument></CustomArgument>
+          <IncludeLibraryModules></IncludeLibraryModules>
           <ComprImg>0</ComprImg>
-                  
         </CommonProperty>
-                
         <DllOption>
-                    
           <SimDllName>SARMCM3.DLL</SimDllName>
-                    
           <SimDllArguments>-REMAP -MPU</SimDllArguments>
-                    
           <SimDlgDll>DCM.DLL</SimDlgDll>
-                    
           <SimDlgDllArguments>-pCM4</SimDlgDllArguments>
-                    
           <TargetDllName>SARMCM3.DLL</TargetDllName>
-                    
           <TargetDllArguments>-MPU</TargetDllArguments>
-                    
           <TargetDlgDll>TCM.DLL</TargetDlgDll>
-                    
           <TargetDlgDllArguments>-pCM4</TargetDlgDllArguments>
-                  
         </DllOption>
-                
         <DebugOption>
-                    
           <OPTHX>
-                        
             <HexSelection>1</HexSelection>
-                        
             <HexRangeLowAddress>0</HexRangeLowAddress>
-                        
             <HexRangeHighAddress>0</HexRangeHighAddress>
-                        
             <HexOffset>0</HexOffset>
-                        
             <Oh166RecLen>16</Oh166RecLen>
-                      
           </OPTHX>
-                  
         </DebugOption>
-                
         <Utilities>
-                    
           <Flash1>
-                        
             <UseTargetDll>1</UseTargetDll>
-                        
             <UseExternalTool>0</UseExternalTool>
-                        
             <RunIndependent>0</RunIndependent>
-                        
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
-                        
             <Capability>1</Capability>
-                        
             <DriverSelection>4101</DriverSelection>
-                      
           </Flash1>
-                    
           <bUseTDR>1</bUseTDR>
-                    
           <Flash2>BIN\UL2V8M.DLL</Flash2>
-                    
-          <Flash3/>
-                    
-          <Flash4/>
-                    
-          <pFcarmOut/>
-                    
-          <pFcarmGrp/>
-                    
-          <pFcArmRoot/>
-                    
+          <Flash3></Flash3>
+          <Flash4></Flash4>
+          <pFcarmOut></pFcarmOut>
+          <pFcarmGrp></pFcarmGrp>
+          <pFcArmRoot></pFcArmRoot>
           <FcArmLst>0</FcArmLst>
-                  
         </Utilities>
-                
         <TargetArmAds>
-                    
           <ArmAdsMisc>
-                        
             <GenerateListings>0</GenerateListings>
-                        
             <asHll>1</asHll>
-                        
             <asAsm>1</asAsm>
-                        
             <asMacX>1</asMacX>
-                        
             <asSyms>1</asSyms>
-                        
             <asFals>1</asFals>
-                        
             <asDbgD>1</asDbgD>
-                        
             <asForm>1</asForm>
-                        
             <ldLst>0</ldLst>
-                        
             <ldmm>1</ldmm>
-                        
             <ldXref>1</ldXref>
-                        
             <BigEnd>0</BigEnd>
-                        
             <AdsALst>1</AdsALst>
-                        
             <AdsACrf>1</AdsACrf>
-                        
             <AdsANop>0</AdsANop>
-                        
             <AdsANot>0</AdsANot>
-                        
             <AdsLLst>1</AdsLLst>
-                        
             <AdsLmap>1</AdsLmap>
-                        
             <AdsLcgr>1</AdsLcgr>
-                        
             <AdsLsym>1</AdsLsym>
-                        
             <AdsLszi>1</AdsLszi>
-                        
             <AdsLtoi>1</AdsLtoi>
-                        
             <AdsLsun>1</AdsLsun>
-                        
             <AdsLven>1</AdsLven>
-                        
             <AdsLsxf>1</AdsLsxf>
-                        
             <RvctClst>1</RvctClst>
-                        
             <GenPPlst>1</GenPPlst>
-                        
             <AdsCpuType>"Cortex-M3"</AdsCpuType>
-                        
-            <RvctDeviceName/>
-                        
+            <RvctDeviceName></RvctDeviceName>
             <mOS>0</mOS>
-                        
             <uocRom>0</uocRom>
-                        
             <uocRam>0</uocRam>
-                        
             <hadIROM>1</hadIROM>
-                        
             <hadIRAM>1</hadIRAM>
-                        
             <hadXRAM>0</hadXRAM>
-                        
             <uocXRam>0</uocXRam>
-                        
             <RvdsVP>0</RvdsVP>
-                        
             <RvdsMve>0</RvdsMve>
-                        
             <RvdsCdeCp>0</RvdsCdeCp>
-                        
             <hadIRAM2>0</hadIRAM2>
-                        
             <hadIROM2>0</hadIROM2>
-                        
             <StupSel>8</StupSel>
-                        
             <useUlib>0</useUlib>
-                        
             <EndSel>0</EndSel>
-                        
             <uLtcg>0</uLtcg>
-                        
             <nSecure>0</nSecure>
-                        
             <RoSelD>3</RoSelD>
-                        
             <RwSelD>4</RwSelD>
-                        
             <CodeSel>0</CodeSel>
-                        
             <OptFeed>0</OptFeed>
-                        
             <NoZi1>0</NoZi1>
-                        
             <NoZi2>0</NoZi2>
-                        
             <NoZi3>0</NoZi3>
-                        
             <NoZi4>0</NoZi4>
-                        
             <NoZi5>0</NoZi5>
-                        
             <Ro1Chk>0</Ro1Chk>
-                        
             <Ro2Chk>0</Ro2Chk>
-                        
             <Ro3Chk>0</Ro3Chk>
-                        
             <Ir1Chk>1</Ir1Chk>
-                        
             <Ir2Chk>0</Ir2Chk>
-                        
             <Ra1Chk>0</Ra1Chk>
-                        
             <Ra2Chk>0</Ra2Chk>
-                        
             <Ra3Chk>0</Ra3Chk>
-                        
             <Im1Chk>1</Im1Chk>
-                        
             <Im2Chk>1</Im2Chk>
-                        
             <OnChipMemories>
-                            
               <Ocm1>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm1>
-                            
               <Ocm2>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm2>
-                            
               <Ocm3>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm3>
-                            
               <Ocm4>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm4>
-                            
               <Ocm5>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm5>
-                            
               <Ocm6>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </Ocm6>
-                            
               <IRAM>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x20000000</StartAddress>
-                                
                 <Size>0x5000</Size>
-                              
               </IRAM>
-                            
               <IROM>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x8000000</StartAddress>
-                                
                 <Size>0x10000</Size>
-                              
               </IROM>
-                            
               <XRAM>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </XRAM>
-                            
               <OCR_RVCT1>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT1>
-                            
               <OCR_RVCT2>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT2>
-                            
               <OCR_RVCT3>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT3>
-                            
               <OCR_RVCT4>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x8000000</StartAddress>
-                                
                 <Size>0x100000</Size>
-                              
               </OCR_RVCT4>
-                            
               <OCR_RVCT5>
-                                
                 <Type>1</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT5>
-                            
               <OCR_RVCT6>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT6>
-                            
               <OCR_RVCT7>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT7>
-                            
               <OCR_RVCT8>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x0</StartAddress>
-                                
                 <Size>0x0</Size>
-                              
               </OCR_RVCT8>
-                            
               <OCR_RVCT9>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x20000000</StartAddress>
-                                
                 <Size>0x20000</Size>
-                              
               </OCR_RVCT9>
-                            
               <OCR_RVCT10>
-                                
                 <Type>0</Type>
-                                
                 <StartAddress>0x10000000</StartAddress>
-                                
                 <Size>0x10000</Size>
-                              
               </OCR_RVCT10>
-                          
             </OnChipMemories>
-                        
-            <RvctStartVector/>
-                      
+            <RvctStartVector></RvctStartVector>
           </ArmAdsMisc>
-                    
           <Cads>
-                        
             <interw>1</interw>
-                        
             <Optim>1</Optim>
-                        
             <oTime>0</oTime>
-                        
             <SplitLS>0</SplitLS>
-                        
             <OneElfS>1</OneElfS>
-                        
             <Strict>0</Strict>
-                        
             <EnumInt>0</EnumInt>
-                        
             <PlainCh>0</PlainCh>
-                        
             <Ropi>0</Ropi>
-                        
             <Rwpi>0</Rwpi>
-                        
             <wLevel>3</wLevel>
-                        
             <uThumb>0</uThumb>
-                        
             <uSurpInc>0</uSurpInc>
-                        
             <uC99>1</uC99>
-                        
             <uGnu>0</uGnu>
-                        
             <useXO>1</useXO>
-                        
             <v6Lang>3</v6Lang>
-                        
             <v6LangP>9</v6LangP>
-                        
             <vShortEn>0</vShortEn>
-                        
             <vShortWch>0</vShortWch>
-                        
             <v6Lto>0</v6Lto>
-                        
             <v6WtE>0</v6WtE>
-                        
             <v6Rtti>1</v6Rtti>
-                        
             <VariousControls>
-                            
               <MiscControls>-mfpu=fpv4-sp-d16 -mfloat-abi=hard</MiscControls>
-                            
               <Define>USE_HAL_DRIVER,STM32F103xB,STM32F405xx</Define>
-                            
-              <Undefine/>
-                            
+              <Undefine></Undefine>
               <IncludePath>../Core/Inc;   ../../../../../reference/robosd-ref;   ../../../../../reference/robosd-ref/core/platform/keil+cpp6;   ../../../source/common;   ..\..\..\source\platform\STM32F405-avatar;   ../../../source/common/vercion/test;   ../Drivers/STM32F4xx_HAL_Driver/Inc;   ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;   ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;   ../Drivers/CMSIS/Include</IncludePath>
-                          
             </VariousControls>
-                      
           </Cads>
-                    
           <Aads>
-                        
             <interw>1</interw>
-                        
             <Ropi>0</Ropi>
-                        
             <Rwpi>0</Rwpi>
-                        
             <thumb>0</thumb>
-                        
             <SplitLS>0</SplitLS>
-                        
             <SwStkChk>0</SwStkChk>
-                        
             <NoWarn>0</NoWarn>
-                        
             <uSurpInc>0</uSurpInc>
-                        
             <useXO>0</useXO>
-                        
             <ClangAsOpt>4</ClangAsOpt>
-                        
             <VariousControls>
-                            
-              <MiscControls/>
-                            
-              <Define/>
-                            
-              <Undefine/>
-                            
-              <IncludePath/>
-                          
+              <MiscControls></MiscControls>
+              <Define></Define>
+              <Undefine></Undefine>
+              <IncludePath></IncludePath>
             </VariousControls>
-                      
           </Aads>
-                    
           <LDads>
-                        
             <umfTarg>1</umfTarg>
-                        
             <Ropi>0</Ropi>
-                        
             <Rwpi>0</Rwpi>
-                        
             <noStLib>0</noStLib>
-                        
             <RepFail>1</RepFail>
-                        
             <useFile>0</useFile>
-                        
-            <TextAddressRange/>
-                        
-            <DataAddressRange/>
-                        
-            <pXoBase/>
-                        
-            <ScatterFile/>
-                        
-            <IncludeLibs/>
-                        
-            <IncludeLibsPath/>
-                        
-            <Misc/>
-                        
-            <LinkerInputFile/>
-                        
-            <DisabledWarnings/>
-                      
+            <TextAddressRange></TextAddressRange>
+            <DataAddressRange></DataAddressRange>
+            <pXoBase></pXoBase>
+            <ScatterFile></ScatterFile>
+            <IncludeLibs></IncludeLibs>
+            <IncludeLibsPath></IncludeLibsPath>
+            <Misc></Misc>
+            <LinkerInputFile></LinkerInputFile>
+            <DisabledWarnings></DisabledWarnings>
           </LDads>
-                  
         </TargetArmAds>
-              
       </TargetOption>
-            
       <Groups>
-                
         <Group>
-                    
           <GroupName>source/common</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>mexo-test.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\source\common\mexo-test.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>mexo-test.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\source\common\mexo-test.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>mexo-model-test.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\source\common\mexo-model-test.cpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>source/platform</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>mexo-test-perephery.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\source\platform\STM32F405-avatar\mexo-test-perephery.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_app_tuning.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\source\platform\STM32F405-avatar\robosd_app_tuning.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>source/vercion/test</GroupName>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/core</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>robosd_common.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_common.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_delegat.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_delegat.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_lambda.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_lambda.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_list.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_list.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_log.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_log.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_log.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_log.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_ring.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_ring_buf.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_string.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_string.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_string.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_string.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_system.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_system.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_system.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\robosd_system.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/core/platform</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>robosd_target.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\core\platform\keil+cpp6\robosd_target.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/mexo</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>mexo.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\mexo.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>mexo.h</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\mexo.h</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>mexo.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\mexo.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>led.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\led.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>math.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\math.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>ps.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\ps.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>adc.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\adc.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>regulator.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\regulator.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>actuator.inc.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\actuator.inc.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>ps.inc.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\ps.inc.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>enco.hpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo\enco.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
           <GroupName>Application/User/Core</GroupName>
           <GroupOption>
@@ -1115,6 +568,8 @@
               <AssembleAssemblyFile>2</AssembleAssemblyFile>
               <PublicsOnly>2</PublicsOnly>
               <StopOnExitCode>11</StopOnExitCode>
+              <CustomArgument></CustomArgument>
+              <IncludeLibraryModules></IncludeLibraryModules>
               <ComprImg>1</ComprImg>
             </CommonProperty>
             <GroupArmAds>
@@ -1142,6 +597,12 @@
                 <v6Lto>2</v6Lto>
                 <v6WtE>2</v6WtE>
                 <v6Rtti>2</v6Rtti>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Cads>
               <Aads>
                 <interw>2</interw>
@@ -1154,6 +615,12 @@
                 <uSurpInc>2</uSurpInc>
                 <useXO>2</useXO>
                 <ClangAsOpt>0</ClangAsOpt>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Aads>
             </GroupArmAds>
           </GroupOption>
@@ -1175,6 +642,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1202,6 +671,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1223,6 +698,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1250,6 +727,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1271,6 +754,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1298,6 +783,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1319,6 +810,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1346,6 +839,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1367,6 +866,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1394,6 +895,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1415,6 +922,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1442,6 +951,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1463,6 +978,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1490,6 +1007,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1511,6 +1034,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1538,13 +1063,18 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
             </File>
           </Files>
         </Group>
-                
         <Group>
           <GroupName>Drivers/STM32F4xx_HAL_Driver</GroupName>
           <GroupOption>
@@ -1560,6 +1090,8 @@
               <AssembleAssemblyFile>2</AssembleAssemblyFile>
               <PublicsOnly>2</PublicsOnly>
               <StopOnExitCode>11</StopOnExitCode>
+              <CustomArgument></CustomArgument>
+              <IncludeLibraryModules></IncludeLibraryModules>
               <ComprImg>1</ComprImg>
             </CommonProperty>
             <GroupArmAds>
@@ -1587,6 +1119,12 @@
                 <v6Lto>2</v6Lto>
                 <v6WtE>2</v6WtE>
                 <v6Rtti>2</v6Rtti>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Cads>
               <Aads>
                 <interw>2</interw>
@@ -1599,6 +1137,12 @@
                 <uSurpInc>2</uSurpInc>
                 <useXO>2</useXO>
                 <ClangAsOpt>0</ClangAsOpt>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Aads>
             </GroupArmAds>
           </GroupOption>
@@ -1620,6 +1164,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1647,6 +1193,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1668,6 +1220,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1695,6 +1249,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1716,6 +1276,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1743,6 +1305,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1764,6 +1332,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1791,6 +1361,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1812,6 +1388,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1839,6 +1417,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1860,6 +1444,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1887,6 +1473,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1908,6 +1500,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1935,6 +1529,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -1956,6 +1556,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -1983,6 +1585,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2004,6 +1612,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2031,6 +1641,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2052,6 +1668,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2079,6 +1697,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2100,6 +1724,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2127,6 +1753,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2148,6 +1780,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2175,6 +1809,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2196,6 +1836,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2223,6 +1865,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2244,6 +1892,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2271,6 +1921,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2292,6 +1948,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2319,6 +1977,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2340,6 +2004,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2367,6 +2033,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2388,6 +2060,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2415,6 +2089,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2436,6 +2116,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2463,6 +2145,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2484,6 +2172,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2511,6 +2201,12 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
@@ -2532,6 +2228,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2559,13 +2257,18 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
             </File>
           </Files>
         </Group>
-                
         <Group>
           <GroupName>Drivers/CMSIS</GroupName>
           <GroupOption>
@@ -2581,6 +2284,8 @@
               <AssembleAssemblyFile>2</AssembleAssemblyFile>
               <PublicsOnly>2</PublicsOnly>
               <StopOnExitCode>11</StopOnExitCode>
+              <CustomArgument></CustomArgument>
+              <IncludeLibraryModules></IncludeLibraryModules>
               <ComprImg>1</ComprImg>
             </CommonProperty>
             <GroupArmAds>
@@ -2608,6 +2313,12 @@
                 <v6Lto>2</v6Lto>
                 <v6WtE>2</v6WtE>
                 <v6Rtti>2</v6Rtti>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Cads>
               <Aads>
                 <interw>2</interw>
@@ -2620,6 +2331,12 @@
                 <uSurpInc>2</uSurpInc>
                 <useXO>2</useXO>
                 <ClangAsOpt>0</ClangAsOpt>
+                <VariousControls>
+                  <MiscControls></MiscControls>
+                  <Define></Define>
+                  <Undefine></Undefine>
+                  <IncludePath></IncludePath>
+                </VariousControls>
               </Aads>
             </GroupArmAds>
           </GroupOption>
@@ -2646,6 +2363,8 @@
                   <AssembleAssemblyFile>2</AssembleAssemblyFile>
                   <PublicsOnly>2</PublicsOnly>
                   <StopOnExitCode>11</StopOnExitCode>
+                  <CustomArgument></CustomArgument>
+                  <IncludeLibraryModules></IncludeLibraryModules>
                   <ComprImg>1</ComprImg>
                 </CommonProperty>
                 <FileArmAds>
@@ -2673,167 +2392,96 @@
                     <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
+                    <VariousControls>
+                      <MiscControls></MiscControls>
+                      <Define></Define>
+                      <Undefine></Undefine>
+                      <IncludePath></IncludePath>
+                    </VariousControls>
                   </Cads>
                 </FileArmAds>
               </FileOption>
             </File>
           </Files>
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/net</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>robosd_flow.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_flow.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_flow.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_flow.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_flow_id.h</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_flow_id.h</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_ring_buf.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_ring_buf.hpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_serial.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_serial.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_serial.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\net\robosd_serial.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/fm</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>robosd_fm.cpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\freemaster\robosd_fm.cpp</FilePath>
-                          
             </File>
-                        
             <File>
-                            
               <FileName>robosd_fm.hpp</FileName>
-                            
               <FileType>5</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\freemaster\robosd_fm.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>robosd++/prf/AS5048A</GroupName>
-                    
           <Files>
-                        
             <File>
-                            
               <FileName>as5048a.hpp</FileName>
-                            
               <FileType>8</FileType>
-                            
               <FilePath>..\..\..\..\..\reference\robosd-ref\prf\AS5048A\as5048a.hpp</FilePath>
-                          
             </File>
-                      
           </Files>
-                  
         </Group>
-                
         <Group>
-                    
           <GroupName>::CMSIS</GroupName>
-                  
         </Group>
-              
       </Groups>
-          
     </Target>
-      
   </Targets>
-    
+
   <RTE>
-        
     <apis/>
-        
     <components>
-            
       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="5.4.0" condition="ARMv6_7_8-M Device">
-                
         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.7.0"/>
-                
         <targetInfos>
-                    
           <targetInfo name="mexo-test"/>
-                  
         </targetInfos>
-              
       </component>
-          
     </components>
-        
     <files/>
-      
   </RTE>
-  
+
 </Project>

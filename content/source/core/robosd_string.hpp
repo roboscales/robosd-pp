@@ -16,7 +16,7 @@ namespace robo {
 	{
 	private:
 		class base_string_;
-		base_string_ * value_;
+		base_string_ * value_ = nullptr;
 		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
 		virtual ~string(void);
@@ -25,7 +25,8 @@ namespace robo {
 		string(cstr _format, va_list _args);
 		string(cstr _format, ...);
 		string(cstr _template, cstr* _map, size_t _size);
-
+		string& operator =(const string& _src);
+		string& operator =(cstr _src);
 		bool format(cstr _format, va_list _args);
 		bool format(cstr _format, ...);
 

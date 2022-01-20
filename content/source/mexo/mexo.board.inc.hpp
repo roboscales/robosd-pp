@@ -1,5 +1,13 @@
-#ifndef BOARD_FREEMASTER_CONNECT_TYPE
 #include "mexo/mexo.board.common.hpp"
+#ifndef BOARD_NET_FLOW_COMMAND_ENABLED
+#define BOARD_NET_FLOW_COMMAND_ENABLED 0
+#endif 
+
+#ifndef BOARD_SETTINGS_STORE_ENABLE
+#define BOARD_SETTINGS_STORE_ENABLE 0
+#endif
+
+#ifndef BOARD_FREEMASTER_CONNECT_TYPE
 #define BOARD_FREEMASTER_CONNECT_TYPE BOARD_FREEMASTER_CONNECT_TYPE_ABONENT
 #define BOARD_TERMO_CONNECT_TYPE BOARD_TERMO_CONNECT_TYPE_ABONENT
 #endif
@@ -19,6 +27,10 @@
 #ifndef BOARD_TERMO_CONNECT_TYPE
 #define BOARD_TERMO_CONNECT_TYPE BOARD_TYPE_NONE
 #endif
+
+#ifndef BOARD_TERMO_PRINT_TYPE
+#define BOARD_TERMO_PRINT_TYPE BOARD_TERMO_PRINT_TYPE_NONE
+#endif 
 
 #if BOARD_FREEMASTER_CONNECT_TYPE != BOARD_FREEMASTER_CONNECT_TYPE_NONE
 #include "freemaster/robosd_fm.hpp"
@@ -143,10 +155,10 @@ namespace mexo{
 			public:
 				typedef enum  {
 					UNKNOWN
-	#if BOARD_MEXO_NET_FLOW_ENABLED
+	#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
 					, ADDR_GET
 	#endif
-	#if ROBO_APP_MEXO_SETTINGS_STORE_ENABLE == 1
+	#if BOARD_SETTINGS_STORE_ENABLE == 1
 					, SETTINGS_SAVE
 					, SETTINGS_LOAD
 					, SETTINGS_RESET
@@ -159,16 +171,16 @@ namespace mexo{
 			protected:
 				bool begin(){
 					switch (kind_){
-	#if BOARD_MEXO_NET_FLOW_ENABLED
+	#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
 					case	ADDR_GET:
 					{
-										uint8_t addr = mexo_net_flow_get_addr();
-										itf::printf("flow address : 0x%x%x ", (addr >> 4), addr & 0xF);
+										//uint8_t addr = mexo_net_flow_get_addr();
+										//itf::printf("flow address : 0x%x%x ", (addr >> 4), addr & 0xF);
 					}
 					return false;
 	#endif
 												
-	#if MEXO_SETTINGS_STORE_ENABLE == 1
+	#if BOARD_SETTINGS_STORE_ENABLE == 1
 					case	TERMO_MEXO_CMD_SETTINGS_SAVE:
 						if (mexo_settings_save() == ROBO_SUCCESS){
 							termo_abonent_printf("success");
@@ -192,17 +204,19 @@ namespace mexo{
 						else{
 							termo_abonent_printf("error");
 						}
-	#endif
+						#endif
 					case	RESET:
 						break;
 					case	MEMO:
 						{
-	#if ROBO_APP_ALLOC_ENABLED ==1							
+							#if ROBO_APP_ALLOC_ENABLED ==1							
 							const ::system::mem::stat & ms = ::system::get_mem_statistic();
 							::robo::termo::itf::printf(RT("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
 							::robo::termo::itf::printf(RT("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);							
-	#endif
+							#endif
+							#if BOARD_TERMO_PRINT_TYPE == BOARD_TERMO_PRINT_TYPE_KEIL
 							__heapstats(&statprint_,nullptr);
+							#endif
 						}
 						break;
 					case	UNKNOWN:
@@ -238,14 +252,14 @@ namespace mexo{
 				, &root
 			);
 
-			#if BOARD_MEXO_NET_FLOW_ENABLED == 1
-      static node flow(
+			#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
+      static ::robo::termo::node flow(
 				"flow"
 				, "flow settings commands"//const char * note; 
 				, "flow <CR>" //const char * usage;                 
 				, &root
 			);
-      static node flow_addr(
+      static ::robo::termo::node flow_addr(
 				"addr"
 				, "flow address commands"//const char * note; 
 				, "addr <CR>" //const char * usage;                 

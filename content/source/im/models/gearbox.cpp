@@ -107,36 +107,20 @@ namespace robo{
 						load->tension_diff = driver.tension_diff;
 					}
 
-					void nonline::do_try_load(cstr _section) {
-						ini::try_load(_section, RT("driver_tension_max"), driver.config.tension_max);
-						ini::try_load(_section, RT("driver_torque_max"), driver.config.torque_max);
-						ini::try_load(_section, RT("driver_dead_zone"), driver.config.dead_zone);
-						ini::try_load(_section, RT("load_viscous_gain"), driver.load_viscous_gain);
-						ini::try_load(_section, RT("driver_gear_ratio"), driver.gear_ratio);
-						ini::try_load(_section, RT("supply_enabled"), supply.enabled);
+					bool nonline::do_load(cstr _specific_sect, cstr _common_sect) {
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_tension_max"), driver.config.tension_max));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_torque_max"), driver.config.torque_max));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_dead_zone"), driver.config.dead_zone));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_viscous_gain"), driver.load_viscous_gain));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_gear_ratio"), driver.gear_ratio));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_enabled"), supply.enabled));
 
 						if (supply.enabled == 1) {
-							ini::try_load(_section, RT("supply_min"), supply.config.min);
-							ini::try_load(_section, RT("supply_max"), supply.config.max);
-							ini::try_load(_section, RT("supply_tension_max"), supply.config.tension_max);
-							ini::try_load(_section, RT("supply_torque_max"), supply.config.torque_max);
-							ini::try_load(_section, RT("supply_desipation_gain"), supply.desipation_gain);
-						}
-					}
-					bool nonline::do_load(cstr _section) {
-						ROBO_LBREAKN(ini::load(_section, RT("driver_tension_max"), driver.config.tension_max));
-						ROBO_LBREAKN(ini::load(_section, RT("driver_torque_max"), driver.config.torque_max));
-						ROBO_LBREAKN(ini::load(_section, RT("driver_dead_zone"), driver.config.dead_zone));
-						ROBO_LBREAKN(ini::load(_section, RT("load_viscous_gain"), driver.load_viscous_gain));
-						ROBO_LBREAKN(ini::load(_section, RT("driver_gear_ratio"), driver.gear_ratio));
-						ROBO_LBREAKN(ini::load(_section, RT("supply_enabled"), supply.enabled));
-
-						if (supply.enabled == 1) {
-							ROBO_LBREAKN(ini::load(_section, RT("supply_min"), supply.config.min));
-							ROBO_LBREAKN(ini::load(_section, RT("supply_max"), supply.config.max));
-							ROBO_LBREAKN(ini::load(_section, RT("supply_tension_max"), supply.config.tension_max));
-							ROBO_LBREAKN(ini::load(_section, RT("supply_torque_max"), supply.config.torque_max));
-							ROBO_LBREAKN(ini::load(_section, RT("supply_desipation_gain"), supply.desipation_gain));
+							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_min"), supply.config.min));
+							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_max"), supply.config.max));
+							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_tension_max"), supply.config.tension_max));
+							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_torque_max"), supply.config.torque_max));
+							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_desipation_gain"), supply.desipation_gain));
 						}
 						return true;
 					}
@@ -158,19 +142,13 @@ namespace robo{
 						nonline::do_reconfig();
 						base.crawl_speed = base.crawl_speed_grad * PI / 180.f * driver.gear_ratio;
 					}
-					void friction::do_try_load(cstr _section) {
-						nonline::do_try_load(_section);
-						ini::try_load(_section, RT("friction_rest"), base.rest);
-						ini::try_load(_section, RT("friction_dry"), base.dry);
-						ini::try_load(_section, RT("friction_tension_gain"), base.tension_gain);
-						ini::try_load(_section, RT("friction_crawl_speed_grad"), base.crawl_speed_grad);
-					}
-					bool friction::do_load(cstr _section) {
-						ROBO_LBREAKN(nonline::do_load(_section));
-						ROBO_LBREAKN(ini::load(_section, RT("friction_rest"), base.rest));
-						ROBO_LBREAKN(ini::load(_section, RT("friction_dry"), base.dry));
-						ROBO_LBREAKN(ini::load(_section, RT("friction_tension_gain"), base.tension_gain));
-						ROBO_LBREAKN(ini::load(_section, RT("friction_crawl_speed_grad"), base.crawl_speed_grad));
+
+					bool friction::do_load(cstr _specific_sect, cstr _common_sect) {
+						ROBO_LBREAKN(nonline::do_load(_specific_sect, _common_sect));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("friction_rest"), base.rest));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("friction_dry"), base.dry));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("friction_tension_gain"), base.tension_gain));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("friction_crawl_speed_grad"), base.crawl_speed_grad));
 						return true;
 					}
 					friction::result friction::run_(float _fric) {
@@ -284,21 +262,15 @@ namespace robo{
 
 					}
 
-					bool brake::do_load(cstr _section) {
-						ROBO_LBREAKN(friction::do_load(_section));
-						ROBO_LBREAKN(ini::load(_section, RT("brake_friction_dry"), set_dry));
-						ROBO_LBREAKN(ini::load(_section, RT("brake_friction_rest"), set_rest));
-						ROBO_LBREAKN(ini::load(_section, RT("brake_set_time_us"), set_time_us));
-						ROBO_LBREAKN(ini::load(_section, RT("brake_release_time_us"), release_time_us));
+					bool brake::do_load(cstr _specific_sect, cstr _common_sect) {
+						ROBO_LBREAKN(friction::do_load(_specific_sect, _common_sect));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("brake_friction_dry"), set_dry));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("brake_friction_rest"), set_rest));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("brake_set_time_us"), set_time_us));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("brake_release_time_us"), release_time_us));
 						return true;
 					}
-					void brake::do_try_load(cstr _section) {
-						friction::do_try_load(_section);
-						ini::try_load(_section, RT("brake_friction_dry"), set_dry);
-						ini::try_load(_section, RT("brake_friction_rest"), set_rest);
-						ini::try_load(_section, RT("brake_set_time_us"), set_time_us);
-						ini::try_load(_section, RT("brake_release_time_us"), release_time_us);
-					}
+
 					void brake::do_reconfig(void) {
 						friction::do_reconfig();
 						const float tau_scale = 4.6f;

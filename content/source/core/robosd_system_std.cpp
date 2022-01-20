@@ -117,9 +117,9 @@ namespace robo {
 namespace robo {
 	size_t system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
 		#if ROBO_UNICODE_ENABLED == 1
-		int sz = vswprintf_s(_dst, _max_sz, _format, _args);
+		int sz = vswprintf(_dst, _max_sz, _format, _args);
 		#else
-		int sz = vsprintf(_dst, _format, _args);
+		int sz = vsnprintf(_dst, _max_sz, _format, _args);
 		#endif
 		if (sz > 0) {
 			if (sz < (int) _max_sz - 1) {

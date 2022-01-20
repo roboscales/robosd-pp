@@ -9,20 +9,24 @@ namespace robo {
 		public:
 			typedef list::unique<ican, int> map;
 			typedef map::ref ref;
-		private:
-			ref ref_;
-
-		public:
-			enum class event{
+			enum class event {
 				init
 				, deinit
 				, connect
 				, disconnect
 				, fault
-			} ;
+			};
+			typedef delegat::base<void, ican&, uint16_t, uint8_t*, uint8_t   > on_receive_f;
+			typedef delegat::base<void, ican&, event> on_event_f;
+		private:
+			ref ref_;
 
-			delegat::base<void, uint16_t , uint8_t* , uint8_t   > *  on_receive = nullptr;
-			delegat::base<void, event>* on_event = nullptr;
+		protected:
+			on_receive_f * on_receive;
+			on_event_f * on_event;
+		public:
+			void set_on_receive(on_receive_f* _on_receive);
+			void set_on_event(on_event_f* _on_event);
 
 			virtual bool open(void) = 0;
 			virtual void close(void) = 0;

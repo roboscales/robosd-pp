@@ -166,7 +166,7 @@
     <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\platform\win+vs19\robosd-system-win.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp" />
-    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_dummy.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_std.cpp" />
     <ClCompile Include="..\dllmain.cpp" />
   </ItemGroup>
@@ -182,6 +182,7 @@
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp" />
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp" />
     <ClInclude Include="..\robosd_app_tuning.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -33,44 +33,26 @@ namespace robo{
 					dcmachine::ideal2::do_reconfig();
 				}
 
-				bool ideal::do_load(cstr _section) {
-					ROBO_LBREAKN(ini::load(_section, RT("Rs"), Rs));
-					ROBO_LBREAKN(ini::load(_section, RT("Ls"), Ls));
-					ROBO_LBREAKN(ini::load(_section, RT("Kv"), Kv));
+				bool ideal::do_load(cstr _specific_sect, cstr _common_sect) {
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Rs"), Rs));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ls"), Ls));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Kv"), Kv));
 
-					ROBO_LBREAKN(ini::load(_section, RT("load_inert_kgm2"), load_inert_kgm2));
-					ROBO_LBREAKN(ini::load(_section, RT("load_max_kgsm"), load_max_kgsm));
-					ROBO_LBREAKN(ini::load(_section, RT("speed_max_gps"), speed_max_gps));
-					ROBO_LBREAKN(ini::load(_section, RT("position_max_ms"), position_max_ms));
-					ROBO_LBREAKN(ini::load(_section, RT("position_min_ms"), position_min_ms));
-					ROBO_LBREAKN(ini::load(_section, RT("position_max_g"), position_max_g));
-					ROBO_LBREAKN(ini::load(_section, RT("position_min_g"), position_min_g));
-					ROBO_LBREAKN(ini::load(_section, RT("voltage_max"), voltage_max));
-					ROBO_LBREAKN(ini::load(_section, RT("flux_score"), flux_score));
-					ROBO_LBREAKN(ini::load(_section, RT("beta_score"), beta_score));
-					ROBO_LBREAKN(ini::load(_section, RT("prop_score"), prop_score));
-					ROBO_LBREAKN(ini::load(_section, RT("load_score"), load_score));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_inert_kgm2"), load_inert_kgm2));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_max_kgsm"), load_max_kgsm));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("speed_max_gps"), speed_max_gps));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("position_max_ms"), position_max_ms));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("position_min_ms"), position_min_ms));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("position_max_g"), position_max_g));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("position_min_g"), position_min_g));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("voltage_max"), voltage_max));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("flux_score"), flux_score));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("beta_score"), beta_score));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("prop_score"), prop_score));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_score"), load_score));
 					return true;
 				}
-
-				void ideal::do_try_load(cstr _section) {
-					ini::try_load(_section, RT("Rs"), Rs);
-					ini::try_load(_section, RT("Ls"), Ls);
-					ini::try_load(_section, RT("Kv"), Kv);
-
-					ini::try_load(_section, RT("load_inert_kgm2"), load_inert_kgm2);
-					ini::try_load(_section, RT("load_max_kgsm"), load_max_kgsm);
-					ini::try_load(_section, RT("speed_max_gps"), speed_max_gps);
-					ini::try_load(_section, RT("position_max_ms"), position_max_ms);
-					ini::try_load(_section, RT("position_min_ms"), position_min_ms);
-					ini::try_load(_section, RT("position_max_g"), position_max_g);
-					ini::try_load(_section, RT("position_min_g"), position_min_g);
-					ini::try_load(_section, RT("voltage_max"), voltage_max);
-					ini::try_load(_section, RT("flux_score"), flux_score);
-					ini::try_load(_section, RT("beta_score"), beta_score);
-					ini::try_load(_section, RT("prop_score"), prop_score);
-					ini::try_load(_section, RT("load_score"), load_score);
-				}
+								
 
 				void ideal::set_duty_ms(float  _position_ms) {
 					if (_position_ms > position_max_ms) _position_ms = position_max_ms;

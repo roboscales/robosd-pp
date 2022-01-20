@@ -36,8 +36,7 @@ namespace robo{
 					float Ko;
 
 				protected:
-					virtual bool do_load(cstr _section);
-					virtual void do_try_load(cstr _section);
+					virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 					virtual void do_reconfig(void);
 					virtual void do_run(void);
 				public:

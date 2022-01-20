@@ -191,6 +191,8 @@ namespace mexo {
 				return 3;
 			}
 			}
+
+			return 0;
 		}
 
 		size_t record::sprintf(::robo::char_t* buf, size_t _max_sz) {

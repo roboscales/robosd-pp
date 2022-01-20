@@ -19,40 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\emuManchester\emuManchesterNet.vcxproj.filters" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\core\robosd_cell.c" />
-    <ClCompile Include="..\..\..\..\..\..\im\emulator\emulator.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\core\platform\win\vs\vs13\robosd_target_api.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\platform\win\vs\vs13\robosd_target_tuning.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\platform\win\vs\vs13\__robosd_head_begin.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\platform\win\vs\vs13\__robosd_head_end.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_buffer.inc.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_cell.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_common.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_convert.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_core.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_crc.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_cstring.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_guard.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_ini.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_list.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_log.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_mem.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_module.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_os.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_ring.inc.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_ring_buf.hpp" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_string.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_tran.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_types.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_vartable.h" />
-    <ClInclude Include="..\..\..\..\..\..\core\robosd_vartype_common.h" />
-    <ClInclude Include="..\..\..\..\..\..\im\edev\edev.h" />
-    <ClInclude Include="..\..\..\..\..\..\im\edev\joint_common.h" />
+    <ClCompile Include="..\..\..\robosd-ref\im\emulator\emulator.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A7361E64-1441-431D-B19C-909D3013E117}</ProjectGuid>
@@ -108,7 +75,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);..\..\..\..\..\..\;..\..\..\..\..\..\core\platform\win;..\..\..\..\..\..\core\platform\win\vs\vs13;..\..\..\tuning</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\arma-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LibraryPath>
   </PropertyGroup>
@@ -116,7 +83,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);..\..\..\..\..\..\;..\..\..\..\..\..\core\platform\win;..\..\..\..\..\..\core\platform\win\vs\vs13;..\..\..\tuning</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\arma-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LibraryPath>
   </PropertyGroup>
@@ -124,7 +91,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);..\..\..\..\..\..\;..\..\..\..\..\..\core\platform\win;..\..\..\..\..\..\core\platform\win\vs\vs13;..\..\..\tuning</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\arma-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LibraryPath>
   </PropertyGroup>
@@ -132,7 +99,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(WindowsSDK_IncludePath);$(VC_IncludePath);..\..\..\..\..\..\;..\..\..\..\..\..\core\platform\win;..\..\..\..\..\..\core\platform\win\vs\vs13;..\..\..\tuning</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\arma-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LibraryPath>
   </PropertyGroup>
@@ -147,7 +114,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd_core.lib;emulator-lib.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;edev.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -165,7 +132,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd_core.lib;emulator-lib.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;edev.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -187,7 +154,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd_core.lib;emulator-lib.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;edev.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -209,7 +176,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd_core.lib;emulator-lib.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;edev.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>

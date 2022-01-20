@@ -392,6 +392,52 @@ void operator delete(void* ptr) {
 
 }
 
+#if ROBO_APP_SHARED_ENABLED ==1
+namespace robo {
+	static system::shared::map& shareds_(void) {
+		static system::shared::map shareds__;
+		return shareds__;
+	}
+	bool system::shared::open(cstr _path, size_t _sz) {
+		ref_.set_key(hash(_path));
+		ROBO_LBREAKN(driver_open(_path, _sz));
+		ROBO_LBREAKN(ref_.attach_to(shareds_()));
+		return true;
+	}
+	void system::shared::close(void) {
+		driver_close();
+		ref_.dettach();
+	}
+	system::shared* system::shared::find(cstr _name) {
+		shared* s = shareds_().find(hash(_name, 0));
+		if (s) {
+			return s;
+		}
+		else {
+			robo_errlog("shared '%s' isn't found !", _name);
+			return nullptr;
+		}
+	}
+}
+#endif
 
+#if ROBO_APP_CONSOL_ENABLED == 1
+namespace robo {
+	system::consol::on_break_f g_consol_on_break_dummy = [](system::consol::event /*_ev*/) {};
+	system::consol::on_break_f g_consol_on_break = g_consol_on_break_dummy;
+	void system::consol::stop(event _ev) {
+		g_consol_on_break(_ev);
+	}
+	bool system::consol::begin(const on_break_f& _on_break) {
+		ROBO_LBREAKN(driver_begin());
+		g_consol_on_break = _on_break;
+		return true;
+	}
+	void system::consol::finish(void) {
+		g_consol_on_break = g_consol_on_break_dummy;
+		driver_finish();
+	}
+}
+#endif
 #endif
 

@@ -6,8 +6,19 @@ namespace robo {
 			static ican::map cans__;
 			return cans__;
 		}
+		delegat::dummy<void, ican&, uint16_t, uint8_t*, uint8_t   > can_dummy_on_receive;
+		delegat::dummy<void, ican&, ican::event> can_dummy_on_event;
+
 		ican::ican(void) 
 			: ref_(*this, -1) {
+			on_receive = &can_dummy_on_receive;
+			on_event = &can_dummy_on_event;
+		}
+		void ican::set_on_receive(on_receive_f* _on_receive) {
+			on_receive = _on_receive == nullptr ? &can_dummy_on_receive : _on_receive;
+		}
+		void ican::set_on_event(on_event_f* _on_event) {
+			on_event = _on_event == nullptr ? &can_dummy_on_event : _on_event;
 		}
 		bool ican::reg(cstr _caption) {
 			ref_.set_key(hash(_caption));

@@ -9,11 +9,20 @@ namespace robo {
 	namespace ini {
 		template <typename T>	bool try_load(cstr _sect, cstr _key, T& _value) {
 			string value;
-			return value.load(_sect, _key) && value.to_number(_value);
+			return value.tryload(_sect, _key) && value.to_number(_value);
 		}
 
 		template <typename T>	bool load(cstr _sect, cstr _key, T& _value) {
 			ROBO_LRET_F( try_load(_sect, _key, _value), "error load number param %s/%s", _sect, _key);
+		}
+
+		template <typename T>	bool load(cstr _sect_first, cstr _sect_second, cstr _key, T& _value) {
+			if (try_load(_sect_first, _key, _value)) {
+				return true;
+			}
+			else {
+				ROBO_LRET_F(try_load(_sect_second, _key, _value), "error load number param %s/%s", _sect_second, _key);
+			}
 		}
 
 		template<typename T> bool try_load_arr(cstr _section, cstr _key, T * _values, size_t _count) {

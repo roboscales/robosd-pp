@@ -29,7 +29,8 @@
 #if ROBO_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t
 #define ROBO_CONST_STRING wchar_t const *
-#define RT(s) L##s
+#define RT(s) RT_(s)
+#define RT_(s) L##s
 #else
 #define ROBO_CHAR char
 #define ROBO_CONST_STRING char const *
@@ -69,6 +70,12 @@ namespace robo {
 
 	template<typename T>
 	constexpr T pi = T(3.1415926535897932385);
+
+	template<typename T>
+	constexpr T grad2rad = pi<T> / T(180.0) ;
+
+	template<typename T>
+	constexpr T rad2grad = T(180.0) / pi<T>;
 
 	double constexpr csqrt_helper(double x, double curr, double prev) {
 		return curr == prev

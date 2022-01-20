@@ -10,6 +10,10 @@
 #ifndef UNICODE
 #define UNICODE
 #endif
+#else
+#ifdef UNICODE
+#undef UNICODE
+#endif
 #endif
 
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
@@ -107,14 +111,11 @@ namespace robo {
 
 #include <windows.h>
 namespace robo {
-	#if ROBO_APP_MODULE_ENABLED == 1
 	time_us_t current_time_us_;
 	time_us_t current_time_ms_;
 	time_us_t period_us_;
 	LARGE_INTEGER tickCurrent_;
 	double us_per_tick_;
-	CRITICAL_SECTION critical_;
-	CRITICAL_SECTION guard_;
 	LARGE_INTEGER ticksPerSecond_;
 	LARGE_INTEGER tickNext_;
 	DWORD tick_per_period_;
@@ -138,6 +139,9 @@ namespace robo {
 		return true;
 	}
 
+	#if ROBO_APP_MODULE_ENABLED == 1
+	CRITICAL_SECTION critical_;
+	CRITICAL_SECTION guard_;
 
 	bool system::env::begin(void) {
 		InitializeCriticalSection(&critical_);
@@ -161,7 +165,6 @@ namespace robo {
 	}
 
 	void system::env::stop(void) {}
-
 	result system::env::startup(void) {
 		return result::complete;
 	}
@@ -186,17 +189,10 @@ namespace robo {
 		}
 
 	}
-
-	#endif
-
-	void system::env::abort(void) {
-		::abort();
-	}
-
 	void* system::env::critical_enter(void) {
 		if (init_) {
 			EnterCriticalSection(&critical_);
-		}
+}
 		return nullptr;
 	}
 
@@ -258,6 +254,52 @@ namespace robo {
 		backend_thread_id_ = dummy_thread_id_;
 	}
 
+	#else
+
+	void* system::env::critical_enter(void) {
+		return nullptr;
+	}
+
+	void system::env::critical_leave(void* _context) {
+		ROBO_UNUSED(_context);
+	}
+	bool g_fall_ = false;
+	bool system::env::is_frontend(void) {
+		return g_fall_==false;
+	}
+
+	bool system::env::is_backend(void) {
+		return g_fall_ == true;
+	}
+
+	void* system::env::enter(void) {
+		return nullptr;
+	}
+
+	void system::env::leave(void* _context) {
+		ROBO_UNUSED(_context);
+	}
+
+	void system::env::lock(void) {
+	}
+
+	void system::env::unlock(void) {
+	}
+	
+	void system::env::fall(void) {
+		g_fall_ = true;
+	}
+
+	void system::env::comeback(void) {
+		g_fall_ = false;
+	}
+
+#endif
+
+	void system::env::abort(void) {
+		::abort();
+	}
+
 	time_us_t system::env::time_us(void) {
 		return current_time_us_;
 	}
@@ -289,6 +331,8 @@ namespace robo {
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>
 #include <cstdlib>
+#endif
+
 namespace robo {
 	#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 	bool system::lib::exists(cstr _lib_name) {
@@ -308,18 +352,22 @@ namespace robo {
 		return false;
 	}
 	void* system::lib::proc_get(void* _handle, cstr _proc_name) {
-		enum {nsz=255};
-		char buf[nsz];
+		#if ROBO_UNICODE_ENABLED
 		size_t sz;
+		enum { nsz = 255 };
+		char buf[nsz];
 		wcstombs_s(&sz, buf, nsz, _proc_name, _TRUNCATE);
 		void* proc = GetProcAddress((HMODULE)_handle, buf);
+		#else
+		void* proc = GetProcAddress((HMODULE)_handle, _proc_name);
+		#endif
 		ROBO_LBREAKN_F(proc != nullptr, RT("function isn't found '%s'"), _proc_name);
 		return proc;
 	}
 	void* system::lib::load(cstr _lib_name) {
 		void * _pinst = (void *)LoadLibrary(_lib_name);
 		ROBO_LBREAKN_F(_pinst != nullptr, RT("error open lib '%s'"), _lib_name);
-		return nullptr;
+		return _pinst;
 	}
 	void system::lib::free(void* _instance) {
 		ROBO_VBREAKN(FreeLibrary((HMODULE)_instance));
@@ -340,6 +388,9 @@ namespace robo {
 		g_robo_ini_fn = _ini;
 		return true;
 	}
+	cstr system::ini::source(void) {
+		return g_robo_ini_fn;
+	}
 	void system::ini::finish(void) {
 		g_robo_ini_fn = nullptr;
 	}
@@ -349,7 +400,7 @@ namespace robo {
 			#if ROBO_UNICODE_ENABLED == 1
 			return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
 		#else
-			return GetPrivateProfileStringA(_section, _key, _default, _value, (DWORD)_value_max, g_robo_ini_fn) > 0;
+			return GetPrivateProfileStringA(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
 		#endif
 	}
 	#endif
@@ -371,7 +422,7 @@ namespace robo {
 			sz = _sz;
 			locker_name.format(RT("%s_LOCKER"), _name);
 			ROBO_JAMPN( (hLock = CreateMutex(NULL, FALSE, locker_name.c_str() )) != NULL, broke);
-			ROBO_JAMPN((hMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sz, name.c_str() )) != NULL, broke);
+			ROBO_JAMPN((hMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (DWORD)sz, name.c_str() )) != NULL, broke);
 			ROBO_JAMPN( (memo = (void *)MapViewOfFile(hMap,  FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0)) != NULL, broke);
 			return true;
 		broke:
@@ -400,21 +451,21 @@ namespace robo {
 			ReleaseMutex(hLock);
 		}
 	};
-	system::shared::shared(void): driver_(new driver ) {
+	system::shared::shared(void): driver_(new driver ), ref_(*this,-1) {
 	}
 	system::shared::~shared(void) {
 		delete driver_;
 	}
-	bool system::shared::open(cstr _name, size_t _sz) {
-		driver_->open(_name,_sz);
+	bool system::shared::driver_open(cstr _name, size_t _sz) {
+		return driver_->open(_name,_sz);
 	}
-	void system::shared::close(void) {
+	void system::shared::driver_close(void) {
 		driver_->close();
 	}
-	void system::shared::lock(void) {
+	void system::shared::driver_lock(void) {
 		driver_->lock();
 	}
-	void system::shared::unlock(void) {
+	void system::shared::driver_unlock(void) {
 		driver_->unlock();
 	}
 	size_t system::shared::size(void) {
@@ -425,7 +476,49 @@ namespace robo {
 	}
 	#endif
 
+	#if ROBO_APP_CONSOL_TYPE == ROBO_APP_TYPE_WIN
+		//namespace consol {
+		PHANDLER_ROUTINE g_robo_consol_old_hander;
+
+		BOOL CtrlHandler(DWORD fdwCtrlType) {
+			switch (fdwCtrlType) {
+				// Handle the CTRL-C signal.
+			case CTRL_C_EVENT:
+			system::consol::stop(system::consol::event::keypbrd);
+			return(TRUE);
+
+			// CTRL-CLOSE: confirm that the user wants to exit.
+			case CTRL_CLOSE_EVENT:
+			system::consol::stop(system::consol::event::app);
+			return(TRUE);
+
+			// Pass other signals to the next handler.
+			case CTRL_BREAK_EVENT:
+			system::consol::stop(system::consol::event::keypbrd);
+			return (TRUE);
+
+			case CTRL_LOGOFF_EVENT:
+			system::consol::stop(system::consol::event::app);
+			return TRUE;
+
+			case CTRL_SHUTDOWN_EVENT:
+			system::consol::stop(system::consol::event::app);
+			return TRUE;
+
+			default:
+			return FALSE;
+			}
+		}
+
+		bool system::consol::driver_begin(void){
+			ROBO_LRET( (SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE) == TRUE) );
+		}
+		void system::consol::driver_finish(void) {
+			SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, FALSE);
+		}
+
+	#endif
 }
-#endif
+
 
 

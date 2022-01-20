@@ -29,8 +29,7 @@ namespace robo{
 					};
 					class ROBO_EXPORT nonline : public link {
 					protected:
-						virtual bool do_load(cstr _section);
-						virtual void do_try_load(cstr _section);
+						virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 						virtual void do_reconfig(void);
 						virtual void do_run(void);
 					public:
@@ -81,8 +80,7 @@ namespace robo{
 						enum class result { STOP, START, RUN };
 						result run_(float _fric);
 					protected:
-						virtual bool do_load(cstr _section);
-						virtual void do_try_load(cstr _section);
+						virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 						virtual void do_reconfig(void);
 						virtual void do_run(void);
 					public:
@@ -120,10 +118,9 @@ namespace robo{
 						float set_gama;
 						enum class state { set, release } state_ = state::set;
 					protected:
-						virtual bool do_load(cstr _section);
+						virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 						virtual void do_reconfig(void);
 						virtual void do_run(void);
-						virtual void do_try_load(cstr _section);
 
 					public:
 						brake(agent& _agent, cstr _name);

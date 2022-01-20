@@ -3,6 +3,7 @@
 #include "core/robosd_common.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_list.hpp"
+#include "core/robosd_delegat.hpp"
 
 #ifndef ROBO_APP_ENV_TYPE 
 #define ROBO_APP_ENV_TYPE  ROBO_APP_TYPE_NONE
@@ -35,6 +36,12 @@
 #ifndef ROBO_APP_SHARED_TYPE
 #define ROBO_APP_SHARED_TYPE  ROBO_APP_TYPE_NONE
 #endif
+
+#ifndef ROBO_APP_CONSOL_TYPE
+#define ROBO_APP_CONSOL_TYPE ROBO_APP_TYPE_NONE
+#endif
+
+#define ROBO_APP_CONSOL_ENABLED  (ROBO_APP_CONSOL_TYPE != ROBO_APP_TYPE_NONE)
 
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
@@ -224,6 +231,7 @@ namespace robo {
 			 *      @param [in,out] _memo
 			 */
 			static void mem_free(void* _memo);
+
 			#endif
 		public:
 
@@ -287,6 +295,7 @@ namespace robo {
 		#if ROBO_APP_INI_ENABLED ==1
 		struct ROBO_EXPORT ini {
 			static bool begin(cstr _ini);
+			static cstr source(void);
 			static void finish(void);
 			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 		};
@@ -306,28 +315,46 @@ namespace robo {
 		#if ROBO_APP_SHARED_ENABLED ==1
 		class ROBO_EXPORT shared {
 			friend class guard;
-			void lock(void);
-			void unlock(void);
+			void driver_lock(void);
+			void driver_unlock(void);
+			bool driver_open(cstr _path, size_t _sz);
+			void driver_close(void);
 			class driver;
 			driver* driver_=nullptr;
 		public:
 			typedef list::unique< shared, int> map;
+			typedef map::ref ref;			
 		private:
+			ref ref_;
 		public:
 			class guard {
 				shared& owner_;
 			public:
-				guard(shared& _owner) : owner_(_owner) { _owner.lock(); }
-				~guard(void) { owner_.unlock(); }
+				guard(shared& _owner) : owner_(_owner) { _owner.driver_lock(); }
+				~guard(void) { owner_.driver_unlock(); }
 			};
-			bool open(cstr _name, size_t _sz);
-			void close(void);
 			void* memo(void);
 			size_t size(void);
 			shared(void);
 			~shared(void);
+			bool open(cstr _path, size_t _sz);
+			void close(void);
 			static shared * find(cstr _name);
 
+		};
+		#endif
+
+		#if ROBO_APP_CONSOL_ENABLED == 1
+		class ROBO_EXPORT consol {
+		private:
+			static bool driver_begin(void);
+			static void driver_finish(void);
+		public:
+			enum class event {app, keypbrd, other};
+			typedef lambda<void(event)> on_break_f;
+			static void stop(event _ev);
+			static bool begin(const on_break_f & _on_break);
+			static void finish(void);
 		};
 		#endif
 	};
