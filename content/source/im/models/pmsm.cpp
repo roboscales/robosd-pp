@@ -1,26 +1,12 @@
 #include "im/models/pmsm.hpp"
 #include "core/robosd_ini.hpp"
 #include <iostream>
-namespace robo{
-	namespace im{
-		namespace models{
-			namespace pmsm{				
-
-				ideal2::isettings::isettings(ideal2 & _owner)
-                    :
-                     Ls(_owner, _owner.Ls)
-                    , Rs(_owner, _owner.Rs)
-					, Fm(_owner, _owner.Fm)
-					, J(_owner, _owner.J)
-					, Kv(_owner, _owner.Kv)
-					, p(_owner, _owner.p)
-				{
-
-				}
-
-
-				ideal2::ideal2() 
-					: block()
+namespace robo {
+	namespace edev {
+		namespace joint {
+			namespace pmsm {
+				ideal2::ideal2(agent& _agent, cstr _name)
+					: agent::block(_agent, _name)
 					, A(3,3)
                     , IA(3,3)
                     , EA1(3, 3)
@@ -28,14 +14,12 @@ namespace robo{
                     , X(3, 1)
                     , Xmax(3, 1)
                     , U(3, 1)
-                    , settings(*this)
-
 				{
 					X(0) = 0;
 					X(1) = 0;
 					X(2) = 0;
 				}
-				void ideal2::reconfig(void){
+				void ideal2::do_reconfig(void){
 					ws = Rs / Ls;
 					ws2 = ws*ws;
 
@@ -67,7 +51,7 @@ namespace robo{
 					A(2, 0) = 0;
 					A(2, 1) = Fm / J;
 					A(2, 2) = - Kv / J;
-					EA1 = arma::expmat(A*model_period_sec);
+					EA1 = arma::expmat(A * owner.sample_time);
 					EA2.zeros(3, 3);
 					EA2(2, 2) = 1;
 				}
@@ -75,7 +59,7 @@ namespace robo{
 					voltage.set_abc(_a_V, _b_V, _c_V, electro.position);
 				}
 
-				void ideal2::run(void){
+				void ideal2::do_run(void){
 					if (powerOn){
 						if (actuator.state != joint::iactuator::istate::blocked){
 
@@ -110,7 +94,7 @@ namespace robo{
 							U(1) = voltage.dq.q / Ls;
 							U(2) = -actuator.contr_torque/ p / J;
 							Xmax = -IA*U;
-							float wT = w*model_period_sec;
+							float wT = (float)( owner.sample_time * w ) ;
 							EA2(0, 0) = cos(wT);
 							EA2(0, 1) = sin(wT);
 							EA2(1, 0) = -sin(wT);
@@ -120,8 +104,8 @@ namespace robo{
 
 
 							float els = X(2);
-							electro.position += (els + electro.speed)*model_period_sec / 2;
-							electro.phase = fmod(electro.position + 3.14159265358979f, 2 * 3.14159265358979f) - 3.14159265358979f;
+							electro.position += (float)( owner.sample_time *(els + electro.speed) / 2. );
+							electro.phase = fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
 							electro.speed = els;
 
 							actuator.position = electro.position / p;
@@ -141,10 +125,10 @@ namespace robo{
 					}
 					else {
 						if (actuator.state != joint::iactuator::istate::blocked){
-							X(2) -= (actuator.contr_torque / p + X(2)*Kv) / J*model_period_sec;
+							X(2) -= (float)(owner.sample_time * (actuator.contr_torque / p + X(2)*Kv) / J);
 							float els = X(2);
-							electro.position += (els + electro.speed)*model_period_sec / 2;
-							electro.phase = fmod(electro.position + 3.14159265358979f, 2 * 3.14159265358979f) - 3.14159265358979f;
+							electro.position += (float) ( owner.sample_time *(els + electro.speed)/ 2. );
+							electro.phase = fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
 							electro.speed = els;
 							actuator.position = electro.position / p;
 							actuator.speed = electro.speed / p;
@@ -157,25 +141,23 @@ namespace robo{
 						actuator.driveng_torque = 0.f;
 						current.set_dq(0, 0, electro.position);
 					}
-
-
 				}
 
-				bool ideal2::setup(void){
+				bool ideal2::do_load(cstr _specific_sect, cstr _common_sect) {
 					float Un;
 					float nxx;
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("Rs"), &Rs);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("Ls"), &Ls);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("J"), &J);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("Kv"), &Kv);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("p"), &p);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("Un"), &Un);
-					ROBO_BREAKEN_LOAD_FLOAT(ini_section, RS("nxx"), &nxx);
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Rs"), Rs));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ls"), Ls));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("J"), J));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Kv"), Kv));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("p"), p));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Un"), Un));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("nxx"), nxx));
 					Kv = Kv / p;
 					J = J / p / p;
 					Rs = Rs * 3.f / 2.f;
 					Ls = Ls * 3.f / 2.f;
-					Fm = Un / (nxx*p*3.14159265358979f/30.f);
+					Fm = Un / (nxx * p * pi<float> / 30.f);
 					return true;
 				}
 			}

@@ -1,164 +1,165 @@
-#include "mexo/mexo.board.common.hpp"
-#ifndef BOARD_NET_FLOW_COMMAND_ENABLED
-#define BOARD_NET_FLOW_COMMAND_ENABLED 0
-#endif 
+#include "mexo/mexo.env.common.hpp"
+#include "mexo/mexo.hpp"
+#include "mexo/math.hpp"
 
-#ifndef BOARD_SETTINGS_STORE_ENABLE
-#define BOARD_SETTINGS_STORE_ENABLE 0
-#endif
 
-#ifndef BOARD_FREEMASTER_CONNECT_TYPE
-#define BOARD_FREEMASTER_CONNECT_TYPE BOARD_FREEMASTER_CONNECT_TYPE_ABONENT
-#define BOARD_TERMO_CONNECT_TYPE BOARD_TERMO_CONNECT_TYPE_ABONENT
-#endif
-
-#ifndef  BOARD_PROTO_SWITCH_ENABLED
-#define BOARD_PROTO_SWITCH_ENABLED 0
-#endif
-
-#ifndef BOARD_TYPE_NONE
-#define BOARD_TYPE_NONE 0
-#endif
- 
-#ifndef BOARD_FREEMASTER_CONNECT_TYPE
-#define BOARD_FREEMASTER_CONNECT_TYPE BOARD_TYPE_NONE
-#endif
-
-#ifndef BOARD_TERMO_CONNECT_TYPE
-#define BOARD_TERMO_CONNECT_TYPE BOARD_TYPE_NONE
-#endif
-
-#ifndef BOARD_TERMO_PRINT_TYPE
-#define BOARD_TERMO_PRINT_TYPE BOARD_TERMO_PRINT_TYPE_NONE
-#endif 
-
-#if BOARD_FREEMASTER_CONNECT_TYPE != BOARD_FREEMASTER_CONNECT_TYPE_NONE
+#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 #include "freemaster/robosd_fm.hpp"
 #endif
 
-#if BOARD_TERMO_CONNECT_TYPE != BOARD_TERMO_CONNECT_TYPE_NONE
+#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
 #include "terminal/robosd_termo.hpp"
 #endif
 
-#include "mexo/mexo.hpp"
 
 #include "mexo/vartable.hpp"
 
+
+#if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
+#include "net/robosd_flow.hpp"
+#endif
+
 namespace mexo{
-	namespace board{
+	namespace env {
+		#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_ABONENT
+		//абонент  freemaster
+		#ifndef ENV_FREEMASTER_ABONENT_LOCK_US
+		#define ENV_FREEMASTER_ABONENT_LOCK_US 100000
+		#endif 
 
-#if BOARD_FREEMASTER_CONNECT_TYPE == BOARD_FREEMASTER_CONNECT_TYPE_ABONENT
-//абонент  freemaster
-#ifndef BOARD_FREEMASTER_ABONENT_LOCK_US
-#define BOARD_FREEMASTER_ABONENT_LOCK_US 100000
-#endif 
+		#ifndef ENV_FREEMASTER_ABONENT_SILENS_US
+		#define ENV_FREEMASTER_ABONENT_SILENS_US 10000000
+		#endif 
+		::robo::freemaster::abonent freemaster_abonent(
+			ENV_FREEMASTER_ABONENT_LOCK_US
+			, ENV_FREEMASTER_ABONENT_SILENS_US
+		);
+		#endif
+		#if ENV_TERMO_CONNECT_TYPE !=  ENV_TERMO_CONNECT_TYPE_NONE
+		extern "C" int statprint_(void* /*param*/, char const* _format, ...) {
+			va_list args;
+			va_start(args, _format);
+			::robo::termo::itf::printf(_format, args);
+			::robo::termo::itf::printf("\r");
+			va_end(args);
+			return 0;
+		}
+		#endif
 
-#ifndef BOARD_FREEMASTER_ABONENT_SILENS_US
-#define BOARD_FREEMASTER_ABONENT_SILENS_US 10000000
-#endif 
-			::robo::freemaster::abonent freemaster_abonent(
-				BOARD_FREEMASTER_ABONENT_LOCK_US
-				, BOARD_FREEMASTER_ABONENT_SILENS_US
-			);
-#endif
-#if BOARD_TERMO_CONNECT_TYPE !=  BOARD_TERMO_CONNECT_TYPE_NONE
-			extern "C" int statprint_(void * /*param*/,char const * _format, ...){		
-				va_list args;
-				va_start(args, _format);
-				::robo::termo::itf::printf(_format,args);
-				::robo::termo::itf::printf("\r");
-				va_end(args);
-				return 0;
-			}
-#endif
+		#if ENV_TERMO_CONNECT_TYPE == ENV_TERMO_CONNECT_TYPE_ABONENT
+		//абонент  terminal
+		#ifndef ENV_TERMO_ABONENT_LOCK_US
+		#define ENV_TERMO_ABONENT_LOCK_US 100000
+		#endif
+		#ifndef ENV_TERMO_ABONENT_SILENS_US
+		#define ENV_TERMO_ABONENT_SILENS_US 10000000
+		#endif
 
-#if BOARD_TERMO_CONNECT_TYPE == BOARD_TERMO_CONNECT_TYPE_ABONENT
-//абонент  terminal
-#ifndef BOARD_TERMO_ABONENT_LOCK_US
-#define BOARD_TERMO_ABONENT_LOCK_US 100000
-#endif
-#ifndef BOARD_TERMO_ABONENT_SILENS_US
-#define BOARD_TERMO_ABONENT_SILENS_US 10000000
-#endif
+		::robo::termo::abonent termo_abonent(
+			(const uint8_t*)"***"
+			, 3
+			, ENV_TERMO_ABONENT_LOCK_US
+			, ENV_TERMO_ABONENT_SILENS_US
+		);
 
-			::robo::termo::abonent termo_abonent(
-					(const uint8_t *)"***"
-					, 3
-					, BOARD_TERMO_ABONENT_LOCK_US
-					, BOARD_TERMO_ABONENT_SILENS_US
-			);
+		#endif
 
-#endif
-		
-#if BOARD_FREEMASTER_CONNECT_TYPE == BOARD_FREEMASTER_CONNECT_TYPE_ABONENT \
-		|| BOARD_TERMO_CONNECT_TYPE == BOARD_TERMO_CONNECT_TYPE_ABONENT
-#define BOARD_SWITCH_PORT_ENABLED  1
-#else
-#define BOARD_SWITCH_PORT_ENABLED  0
-#endif
+		#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_ABONENT \
+		|| ENV_TERMO_CONNECT_TYPE == ENV_TERMO_CONNECT_TYPE_ABONENT
+		#ifdef ENV_SWITCH_PORT0_SERIAL_PATH  
+		#define ENV_SWITCH_PORT0_ENABLED  1
+		#else
+		#define ENV_SWITCH_PORT0_ENABLED  0
+		#endif
+		#ifdef ENV_SWITCH_PORT1_SERIAL_PATH  
+		#define ENV_SWITCH_PORT1_ENABLED  1
+		#else
+		#define ENV_SWITCH_PORT1_ENABLED  0
+		#endif
+		#else
+		#define ENV_SWITCH_PORT0_ENABLED  0
+		#endif
 
-#if BOARD_SWITCH_PORT_ENABLED ==1
-#ifndef BOARD_SWITCH_KEY_TIMEOUT_US
-#define BOARD_SWITCH_KEY_TIMEOUT_US 1000000
-#endif
-#ifndef BOARD_SWITCH_PORT_TYPE
-#define BOARD_SWITCH_PORT_TYPE ::robo::net::proto::switcher::port::PACKET
-#endif
-#ifndef BOARD_SWITCH_PORT_PATH
-#define BOARD_SWITCH_PORT_PATH RT("")
-#endif
-			::robo::net::proto::switcher::port switch_port_(BOARD_SWITCH_PORT_TYPE);
-#endif
+		#if ENV_SWITCH_PORT0_ENABLED ==1 || ENV_SWITCH_PORT1_ENABLED ==1
+		#ifndef ENV_SWITCH_KEY_TIMEOUT_US
+		#define ENV_SWITCH_KEY_TIMEOUT_US 1000000
+		#endif
 
-			::mexo::machine::slot::simple start(
+		#ifndef ENV_SWITCH_PORT0_TYPE
+		#define ENV_SWITCH_PORT0_TYPE ::robo::net::proto::switcher::port::PACKET
+		#endif
+
+
+		#ifndef ENV_SWITCH_PORT1_SERIAL_TYPE
+		#define ENV_SWITCH_PORT1_SERIAL_TYPE ::robo::net::proto::switcher::port::SERIAL
+		#endif
+
+
+		#if ENV_SWITCH_PORT0_ENABLED == 1
+		::robo::net::proto::switcher::port switch_port0_(ENV_SWITCH_PORT0_TYPE);
+		#endif
+		#if ENV_SWITCH_PORT1_ENABLED == 1
+		::robo::net::proto::switcher::port switch_port1_(ENV_SWITCH_PORT1_TYPE);
+		#endif
+		#endif
+		::robo::time_us_t  time_us = 0;
+		::mexo::machine::slot::simple start(
 			::mexo::machine::slot::kind::start
 			, [] {
-					#if BOARD_SWITCH_PORT_ENABLED == 1
-					switch_port_.connect(::robo::net::iserial::query(BOARD_SWITCH_PORT_PATH),BOARD_SWITCH_KEY_TIMEOUT_US);
-					#endif
-					#if BOARD_FREEMASTER_CONNECT_TYPE == BOARD_FREEMASTER_CONNECT_TYPE_ABONENT
-					::robo::freemaster::connect( /*::robo::net::iserial::query(serial0_PATH)*/ &freemaster_abonent );
-					#endif
-					#if BOARD_TERMO_CONNECT_TYPE == BOARD_TERMO_CONNECT_TYPE_ABONENT
-					::robo::termo::itf::connect(&termo_abonent);
-					::robo::termo::itf::set_prompt(">");
-					#endif
+				#if ENV_SWITCH_PORT0_ENABLED == 1
+				switch_port0_.connect(::robo::net::iserial::query<::robo::net::iserial>(ENV_SWITCH_PORT0_SERIAL_PATH), ENV_SWITCH_KEY_TIMEOUT_US);
+				#endif
+				#if ENV_SWITCH_PORT1_ENABLED == 1
+				switch_port1_.connect(::robo::net::iserial::query<::robo::net::iserial>(ENV_SWITCH_PORT1_SERIAL_PATH), ENV_SWITCH_KEY_TIMEOUT_US);
+				#endif
+				#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_ABONENT
+				::robo::freemaster::connect( /*::robo::net::iserial::query(serial0_PATH)*/ &freemaster_abonent);
+				#endif
+				#if ENV_TERMO_CONNECT_TYPE == ENV_TERMO_CONNECT_TYPE_ABONENT
+				::robo::termo::itf::connect(&termo_abonent);
+				::robo::termo::itf::set_prompt(">");
+				#endif
+
+				var::record::create(::mexo::var::types::const_uint32, time_us, RT("tm_us"));
+
 			});
+
 
 			::mexo::machine::slot::simple frontend_pool_ (
 				::mexo::machine::slot::kind::frontend
 				,	[]{
 					static volatile robo::time_us_t g_time_us_t = 0;
 					static time_us_t tick_prev_us = 0;
-					#if BOARD_FREEMASTER_CONNECT_TYPE != BOARD_FREEMASTER_CONNECT_TYPE_NONE
+					#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 					robo::freemaster::poll();
 					#endif
-					#if BOARD_TERMO_CONNECT_TYPE != BOARD_TERMO_CONNECT_TYPE_NONE
+					#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
 					robo::termo::itf::poll();
 					#endif
 					g_time_us_t = robo::system::env::realtime_us();
-					#if BOARD_SWITCH_PORT_ENABLED  == 1
+					#if ENV_SWITCH_PORT0_ENABLED  == 1 || ENV_SWITCH_PORT1_ENABLED  == 1
 					robo::net::proto::switcher::core::poll(g_time_us_t - tick_prev_us);
 					#endif
-					tick_prev_us = g_time_us_t;
+					time_us =  tick_prev_us = g_time_us_t;
+
 				}
 			);
 
-			#if BOARD_FREEMASTER_CONNECT_TYPE != BOARD_FREEMASTER_CONNECT_TYPE_NONE
+			#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 			::mexo::machine::slot::simple backend_(
 				::mexo::machine::slot::kind::backend
 				,	&robo::freemaster::recorder	
 			);	
 			#endif
-			#if BOARD_TERMO_CONNECT_TYPE != BOARD_TERMO_CONNECT_TYPE_NONE
+			#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
 			class imexo_cmd : public ::robo::termo::node {
 			public:
 				typedef enum  {
 					UNKNOWN
-	#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
+	#if ENV_NET_FLOW_COMMAND_ENABLED == 1
 					, ADDR_GET
 	#endif
-	#if BOARD_SETTINGS_STORE_ENABLE == 1
+	#if ENV_SETTINGS_STORE_ENABLE == 1
 					, SETTINGS_SAVE
 					, SETTINGS_LOAD
 					, SETTINGS_RESET
@@ -171,7 +172,7 @@ namespace mexo{
 			protected:
 				bool begin(){
 					switch (kind_){
-	#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
+	#if ENV_NET_FLOW_COMMAND_ENABLED == 1
 					case	ADDR_GET:
 					{
 										//uint8_t addr = mexo_net_flow_get_addr();
@@ -180,7 +181,7 @@ namespace mexo{
 					return false;
 	#endif
 												
-	#if BOARD_SETTINGS_STORE_ENABLE == 1
+	#if ENV_SETTINGS_STORE_ENABLE == 1
 					case	TERMO_MEXO_CMD_SETTINGS_SAVE:
 						if (mexo_settings_save() == ROBO_SUCCESS){
 							termo_abonent_printf("success");
@@ -214,7 +215,7 @@ namespace mexo{
 							::robo::termo::itf::printf(RT("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
 							::robo::termo::itf::printf(RT("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);							
 							#endif
-							#if BOARD_TERMO_PRINT_TYPE == BOARD_TERMO_PRINT_TYPE_KEIL
+							#if ENV_TERMO_PRINT_TYPE == ENV_TERMO_PRINT_TYPE_KEIL
 							__heapstats(&statprint_,nullptr);
 							#endif
 						}
@@ -232,27 +233,27 @@ namespace mexo{
 				}
 			};
       static ::robo::termo::node root(
-				"board"
-				, "board commands"
+				"ENV"
+				, "ENV commands"
 				, "addr <CR>"
 				, robo::termo::itf::root()
 			);
       static imexo_cmd reset(
 				imexo_cmd::kind::RESET
 				, "reset"
-				, "board CPU reset"
+				, "ENV CPU reset"
 				, "<CR>"
 				, &root
 			);
       static imexo_cmd memo(
 				imexo_cmd::kind::MEMO
 				, "memo"
-				, "board memory usage"
+				, "ENV memory usage"
 				, "<CR>"
 				, &root
 			);
 
-			#if BOARD_NET_FLOW_COMMAND_ENABLED == 1
+			#if ENV_NET_FLOW_COMMAND_ENABLED == 1
       static ::robo::termo::node flow(
 				"flow"
 				, "flow settings commands"//const char * note; 
@@ -270,7 +271,7 @@ namespace mexo{
 				uint8_t addr_;
 			protected:
 				virtual bool setup(void){
-					if (board::mexo_net_flow_set_addr(addr_)){
+					if (ENV::mexo_net_flow_set_addr(addr_)){
 						itf::printf("success");
 					} else {
 						itf::printf("error");
@@ -319,7 +320,7 @@ namespace mexo{
 				{
 					{ 0 }
 					, "settings"
-						, "board settings commands"
+						, "ENV settings commands"
 						, "<CR>"
 						, &mexo_cmd_class
 				};
@@ -329,7 +330,7 @@ namespace mexo{
 					{
 						{ 0 }
 						, "reset"
-							, "board settings reset"
+							, "ENV settings reset"
 							, "<CR>"
 							, &mexo_cmd_class
 					}
@@ -341,7 +342,7 @@ namespace mexo{
 					{
 						{ 1 }
 						, "load"
-							, "board settings load"
+							, "ENV settings load"
 							, "<CR>"
 							, &mexo_cmd_class
 					}
@@ -353,7 +354,7 @@ namespace mexo{
 					{
 						{ 2 }
 						, "save"
-							, "board settings save"
+							, "ENV settings save"
 							, "<CR>"
 							, &mexo_cmd_class
 					}
@@ -396,7 +397,7 @@ namespace mexo{
 					virtual bool begin(void){
 						path_ptr_ = path;
 						path_sz_ = ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE;
-						current_node_ = ::mexo::node::root().first_on_path(path_ptr_,path_sz_);
+						current_node_ = &::mexo::node::root();// .first_on_path(path_ptr_, path_sz_);
 						if(current_node_){
 							current_var = current_node_->vars.first();
 							::robo::termo::itf::printf(RT("vartable\n\r"));
@@ -415,15 +416,21 @@ namespace mexo{
 						}
 						if(current_node_){
 							if(current_var){
-									printf();
-									current_var=current_var->next();
-									return true;
+								printf();
+								current_var=current_var->next();
+								return true;
 							}else {
-								current_node_ = current_node_->next_on_path(path_ptr_,path_sz_);
-								if(current_node_){
+								if (current_node_ == &::mexo::node::root()) {
+									current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
+								}
+								else {
+									current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
+								}
+								if (current_node_) {
 									current_var = current_node_->vars.first();
 									return true;
-								} else {
+								}
+								else {
 									return false;
 								}
 							}
@@ -459,10 +466,10 @@ namespace mexo{
 				class show_fml:public show{
 				protected:
 					virtual void printf(void){						
-						::robo::termo::itf::printf(RT("%s%s\t%p\t%d\n\r")
+						::robo::termo::itf::printf(RT("%s%s\t%d\t%x\n\r")
 							,path,current_var->name
-							,current_var->addr
-							, (int)current_var->desc.len
+						, (int)current_var->desc.len
+						,uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr)- FMSTR_ADDRESS_OFFSET)
 						);
 					}
 				public:
@@ -523,4 +530,132 @@ namespace mexo{
 #endif	
 
 	}	
+
+
+	#if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
+	
+	#ifndef ENV_NET_FLOW_PORT_PATH
+	#error ENV_NET_FLOW_PORT_PATH isn't defined'
+	#endif 
+
+	#ifndef ENV_NET_FLOW_ECHO_ENABLED
+	#define ENV_NET_FLOW_ECHO_ENABLED 0
+	#endif 
+	#if ENV_NET_FLOW_ECHO_ENABLED == 1
+
+	#ifndef ENV_NET_FLOW_ECHO_SUBA
+	#define ENV_NET_FLOW_ECHO_SUBA 0x01
+	#endif
+
+	#ifndef ENV_NET_FLOW_ECHO_SUBA_ANSW
+	#define ENV_NET_FLOW_ECHO_SUBA_ANSW 0x01
+	#endif
+
+	#ifndef ENV_NET_FLOW_ECHO_PERFORMER_PATH
+	#define ENV_NET_FLOW_ECHO_PERFORMER_PATH RT("echo")
+	#endif
+
+
+	class flow_echo_performer : public ::robo::net::flow::performer{ 
+	public:
+		flow_echo_performer(void) : performer(ENV_NET_FLOW_ECHO_PERFORMER_PATH, ::robo::net::flow::performer::kind_t::frontend) {}
+		virtual void execute(void) {
+			static uint8_t old_data[8];
+			static size_t old_sz;
+			if (in_msg) {
+				put_answer(in_msg->data(), in_msg->size());
+				old_sz = in_msg->size();
+				std::copy_n(in_msg->data(), old_sz, old_data);
+			}
+			else {
+				put_answer(old_data, old_sz);
+			}
+		} 
+	}; 
+	flow_echo_performer flow_echo_performer_;
+	::robo::net::flow::rout_record flow_echo_rout_record_(
+		 ENV_NET_FLOW_PORT_PATH
+		, ENV_NET_FLOW_ECHO_PERFORMER_PATH
+		, ENV_NET_FLOW_ECHO_SUBA
+		, ENV_NET_FLOW_ECHO_SUBA_ANSW
+	);
+	#endif
+
+	#ifndef ENV_NET_FLOW_SERIAL0_ENABLED
+	#define ENV_NET_FLOW_SERIAL0_ENABLED 0
+	#endif 
+
+	#if ENV_NET_FLOW_SERIAL0_ENABLED
+	
+	#ifndef ENV_NET_FLOW_SERIAL0_SUBA
+	#define ENV_NET_FLOW_SERIAL0_SUBA 0x0F
+	#endif
+
+	#ifndef ENV_NET_FLOW_SERIAL0_SUBA_ANSW
+	#define ENV_NET_FLOW_SERIAL0_SUBA_ANSW 0x0F
+	#endif
+
+	#ifndef ENV_NET_FLOW_SERIAL0_INPUT_BITS
+	#define ENV_NET_FLOW_SERIAL0_INPUT_BITS 10
+	#endif
+
+	#ifndef ENV_NET_FLOW_SERIAL0_OUTPUT_BITS
+	#define ENV_NET_FLOW_SERIAL0_OUTPUT_BITS 4
+	#endif
+
+	#ifndef ENV_NET_FLOW_SERIAL0_PERFORMER_PATH
+	#define ENV_NET_FLOW_SERIAL0_PERFORMER_PATH RT("serial0")
+	#endif
+
+	::robo::net::flow::serial_proto_t<ENV_NET_FLOW_SERIAL0_INPUT_BITS, ENV_NET_FLOW_SERIAL0_OUTPUT_BITS, void>  
+		flow_serial0_performer_(ENV_NET_FLOW_SERIAL0_PERFORMER_PATH, ENV_NET_FLOW_SERIAL0_PATH, ::robo::net::flow::performer::kind_t::frontend);
+
+	::robo::net::flow::rout_record flow_serial0_rout_record_(
+		 ENV_NET_FLOW_PORT_PATH
+		, ENV_NET_FLOW_SERIAL0_PERFORMER_PATH
+		, ENV_NET_FLOW_SERIAL0_SUBA
+		, ENV_NET_FLOW_SERIAL0_SUBA_ANSW
+	);
+	
+
+	#endif
+
+	#ifndef ENV_NET_FLOW_VAR_ENABLED
+	#define ENV_NET_FLOW_VAR_ENABLED 0
+	#endif 
+	#if ENV_NET_FLOW_VAR_ENABLED == 1
+
+	#ifndef ENV_NET_FLOW_VAR_SUBA
+	#define ENV_NET_FLOW_VAR_SUBA 0x0B
+	#endif
+
+	#ifndef ENV_NET_FLOW_VAR_SUBA_ANSW
+	#define ENV_NET_FLOW_VAR_SUBA_ANSW 0x0B
+	#endif
+
+	#ifndef ENV_NET_FLOW_VAR_PERFORMER_PATH
+	#define ENV_NET_FLOW_VAR_PERFORMER_PATH RT("var")
+	#endif
+
+	class flow_var_performer : public ::robo::net::flow::performer {
+	public:
+		flow_var_performer(void) : performer(ENV_NET_FLOW_VAR_PERFORMER_PATH, ::robo::net::flow::performer::kind_t::frontend) {}
+		virtual void execute(void) {
+			static uint8_t answer[8];
+			if (in_msg) {
+				put_answer(answer, ::mexo::var::machine::proto(in_msg->data(), answer));
+			}
+		}
+	};
+	flow_var_performer flow_var_performer_;
+	::robo::net::flow::rout_record flow_var_rout_record_(
+		 ENV_NET_FLOW_PORT_PATH
+		, ENV_NET_FLOW_VAR_PERFORMER_PATH
+		, ENV_NET_FLOW_VAR_SUBA
+		, ENV_NET_FLOW_VAR_SUBA_ANSW
+	);
+	#endif
+#endif
+
+
 }

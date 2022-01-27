@@ -5,29 +5,20 @@
 #include <math.h>
 namespace mexo {
 
-	enum class  dsignal_bits {
-		i7 = 8
-		, i13 = 13
-		, i15 = 16
-		, i31 = 32
-		, i63 = 64
-	};
-	template<dsignal_bits bits, dsignal_bits long_bits> struct dsigna {
-		enum {
-			max = (1 << ((int)bits - 1)) - 1
-			, min = (-max)
-			, long_max = (1 << ((int)long_bits - 1)) - 1
-			, long_min = -long_max
-			, ones = max
-		};
-	};
-
-	struct int15 : public dsigna<dsignal_bits::i15, dsignal_bits::i31> {
+	struct int15  {
 		typedef int16_t discret_t;
 		typedef int32_t long_discret_t;
 		typedef discret_t signal_t;
 		typedef discret_t parameter_t;
-		typedef long_discret_t long_signal_t;
+		typedef int32_t long_signal_t;
+		constexpr static signal_t max = std::numeric_limits<signal_t>::max() ;
+		constexpr static signal_t min = -max;
+		constexpr static signal_t ones = max;
+		constexpr static long_signal_t long_max = std::numeric_limits<long_signal_t>::max();
+		constexpr static long_signal_t long_min = -long_max;
+		constexpr static int bits = 15;
+		constexpr static int long_bits = 31;
+		constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
 			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
@@ -54,6 +45,7 @@ namespace mexo {
 		constexpr static signal_t min = std::numeric_limits<float>::lowest();
 		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
+		constexpr static int discret_bits = 15;
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
 			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
@@ -178,6 +170,33 @@ namespace mexo {
 				}
 			}
 		}
+		struct scaler {
+			range_s <signal_t> _range;
+			signal_t signal_lo = 0;
+			discret_t discret_lo = 0;
+			signal_t signal_hi = 0;
+			discret_t discret_hi = 0;
+			long_signal_t gain = 0;
+			typedef fixed_point<digit> types;
+			void reconfig(signal_t _signal_hi, signal_t _signal_lo, discret_t _discret_hi, discret_t _discret_lo) {
+				signal_hi = _signal_hi;
+				signal_lo = _signal_lo;
+				discret_hi = _discret_hi;
+				discret_lo = _discret_lo;
+				gain = (long_signal_t)(discret_hi - discret_lo);
+				gain <<= (1+ digit::bits);
+				gain += (signal_hi - signal_lo) / 2; //округление
+				gain /= (signal_hi - signal_lo);
+			}
+			void run(signal_t _signal, discret_t & _discret) {
+				if (_signal > signal_hi) _signal = signal_hi;
+				if (_signal < signal_lo) _signal = signal_lo;
+				long_signal_t tmp = gain * (_signal - signal_lo);
+				tmp += (1 << digit::bits);
+				tmp >>= (1 + digit::bits);
+				_discret = (discret_t)tmp;
+			}
+		};
 
 	};
 
@@ -303,6 +322,7 @@ namespace mexo {
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
 		typedef typename q::discret_t discret_t;
+		typedef typename q types;
 		struct config_s {
 			typename A::config_s cb;
 			parameter_t scale;

@@ -27,3 +27,7 @@
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__
 #define ROBO_UNUSED(x) ((void)(x))
+
+#ifndef ROBO_ZEROS_STRUCT
+#define ROBO_ZEROS_STRUCT
+#endif

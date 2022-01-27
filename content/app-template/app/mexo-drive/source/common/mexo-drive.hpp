@@ -1,5 +1,6 @@
 #ifndef mexo_drive_1b_hpp
 #define mexo_drive_1b_hpp
+#include "mexo/mexo.env.common.hpp"
 #ifdef VERCION_1B
 #include "mexo-drive-1b.proto.hpp"
 #include "mexo-drive-1b.settings.hpp"

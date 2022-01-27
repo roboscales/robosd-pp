@@ -2,11 +2,10 @@
 #include "core/robosd_log.hpp"
 #include "net/robosd_flow.hpp"
 namespace mexo {
-	#if MEXO_DEBUG_TP1_ENABLED == 1
+	#if ROBO_APP_MEXO_DEBUG_TP1_ENABLED == 1
 	led<tp_driver>  tp;
 
 	#else
-
 
 	led<dummy_led>  tp;
 //	typedef dummy_led  tp;
@@ -75,7 +74,7 @@ namespace mexo {
 		case slot::kind::start:
 		return start;
 		break;
-		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		case slot::kind::priority:
 		return priority;
 		break;
@@ -94,7 +93,7 @@ namespace mexo {
 	void  machine::slots::free(void) {
 		begin.free();
 		start.free();
-		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		priority.free();
 		#endif
 		backend.free();

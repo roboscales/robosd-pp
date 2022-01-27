@@ -5,33 +5,24 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_lambda.hpp"
 #include  "robosd_ring_buf.hpp"
+#include "net/robosd_net_link.hpp"
 
 namespace robo {
 	namespace net {
-		class ROBO_EXPORT iserial {
+		class ROBO_EXPORT iserial: public link {
 			typedef ::robo::list::unique<iserial, int> list;
 			typedef list::ref ref;
 			static list& list_(void);
-			ref ref_;
 		public:
 			virtual size_t available(void) = 0;
-			virtual size_t space(void) = 0;
-			virtual size_t space_max(void) = 0;
-			bool busy(void){	return ( space_max() >   space() ); };
 			virtual size_t get(uint8_t* _data, size_t _max_size) = 0;
 			virtual bool put(const uint8_t* _data, size_t _size) = 0;
 			virtual size_t get(uint8_t & _data) = 0;
 			virtual bool  put(uint8_t) = 0;
 			virtual void reset(void) = 0;
-			virtual ~iserial(void);
-			iserial(void);
-			bool reg(cstr _caption);
-			void unreg(void);
-			static iserial* find(cstr _caption);
-			static iserial* query(cstr _caption);
-			static iserial& query_ref(cstr _caption);
-			void  release(void);
-			static void forall(lambda<void(iserial&)>& _operator);
+			virtual ~iserial(void){};
+			iserial(void):link(){};
+			
 		};
 
 		class ROBO_EXPORT serial_dummy :public iserial {

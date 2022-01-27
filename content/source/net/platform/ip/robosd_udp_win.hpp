@@ -35,7 +35,7 @@ namespace win {
     public:
         virtual void reset(void){};
         virtual size_t space(void){ return 0xFFFF; };
-        virtual size_t max_space(void){  return 0xFFFF; };
+        virtual size_t space_max(void){  return 0xFFFF; };
         udp(void);
         virtual bool begin(::robo::cstr _alias);
         virtual void finish(void);

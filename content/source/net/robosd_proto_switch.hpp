@@ -27,12 +27,12 @@ namespace robo{
 					marker(const uint8_t * _value, size_t _len) : value(_value), len(_len){}
 				};
 				struct ROBO_EXPORT key{
-					uint8_t len;
+					size_t len;
 					uint8_t value[ROBO_PROTO_SWITCH_MARKER_MAX_LEN];
 					bool operator == (const marker & _marker);
 					key(void);
 					struct ROBO_EXPORT buffer{
-						uint8_t len;
+						size_t len;
 						uint8_t * memo;
 						uint8_t value[ROBO_PROTO_SWITCH_MARKER_MAX_LEN];
 						void operator = (const key & _key);
@@ -62,6 +62,11 @@ namespace robo{
 				public:
 					port(
 						type _type
+					);
+					port(
+						type _type
+						, iserial* _serial
+						, time_us_t _key_reset_us
 					);
 					void connect(
 						iserial * _serial

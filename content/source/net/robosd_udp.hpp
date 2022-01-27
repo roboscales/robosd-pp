@@ -6,7 +6,7 @@
 
 namespace robo{
     namespace net{
-        class ROBO_EXPORT udp: public link{
+        class ROBO_EXPORT udp: public port{
              int outcom_port_ = -1;
              int incom_port_ = -1;
              ::robo::string  network_;

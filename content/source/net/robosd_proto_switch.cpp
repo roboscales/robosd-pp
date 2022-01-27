@@ -39,6 +39,26 @@ namespace robo{
 					ref_.attach_to(core::instance_().ports_.ready);
 				}
 				
+				port::port(
+					type _type
+					, iserial* _serial
+					, time_us_t _key_reset_us
+				)
+					: ref_(*this)
+					, type_(_type)
+					, abonent_(nullptr) 
+				{
+					timeouts_.tick = 0;
+					ref_.attach_to(core::instance_().ports_.ready);
+					if (_serial != nullptr) {
+						serial_ = _serial;
+					}
+					else {
+						serial_ = &::robo::net::serial_dummy::instance();
+					}
+					timeouts_.key_reset = _key_reset_us;
+				}
+
 				void port::connect(
 					iserial * _serial
 					, time_us_t _key_reset_us

@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\..\robosd-ref\im\models\dcmachine.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\im\models\dcservo.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\im\models\pmsm.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp" />
     <ClCompile Include="..\dllmain.cpp" />
   </ItemGroup>
@@ -33,6 +34,7 @@
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcservo.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp" />
     <ClInclude Include="..\robosd_app_tuning.hpp" />
   </ItemGroup>

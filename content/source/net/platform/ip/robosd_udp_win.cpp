@@ -122,7 +122,7 @@ namespace win {
             (const struct sockaddr *) &outcom_addr__,
             sizeof(outcom_addr__));
         if (r == SOCKET_ERROR) {
-            robo_errlog("socket %s send error", alias() );
+            robo_errlog("socket %s send error", alias().c_str() );
             return false;
         } else {
             return true;

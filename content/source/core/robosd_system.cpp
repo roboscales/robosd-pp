@@ -399,9 +399,11 @@ namespace robo {
 		return shareds__;
 	}
 	bool system::shared::open(cstr _path, size_t _sz) {
-		ref_.set_key(hash(_path));
+		int id = hash(_path);		
+		ref_.set_key(id);
 		ROBO_LBREAKN(driver_open(_path, _sz));
-		ROBO_LBREAKN(ref_.attach_to(shareds_()));
+		if(find(id)==nullptr)
+			ROBO_LBREAKN(ref_.attach_to(shareds_()));
 		return true;
 	}
 	void system::shared::close(void) {
@@ -409,7 +411,7 @@ namespace robo {
 		ref_.dettach();
 	}
 	system::shared* system::shared::find(cstr _name) {
-		shared* s = shareds_().find(hash(_name, 0));
+		shared* s = find( hash(_name, 0) );
 		if (s) {
 			return s;
 		}
@@ -417,6 +419,9 @@ namespace robo {
 			robo_errlog("shared '%s' isn't found !", _name);
 			return nullptr;
 		}
+	}
+	system::shared* system::shared::find(int _id) {
+		return shareds_().find(_id);
 	}
 }
 #endif

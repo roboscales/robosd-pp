@@ -340,6 +340,7 @@ namespace robo {
 			bool open(cstr _path, size_t _sz);
 			void close(void);
 			static shared * find(cstr _name);
+			static shared* find(int _id);
 
 		};
 		#endif

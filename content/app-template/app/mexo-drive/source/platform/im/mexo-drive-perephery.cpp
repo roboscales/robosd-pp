@@ -58,6 +58,29 @@ namespace mexo_drive {
 		virtual void set_local_ini(cstr _ini) { system::ini::begin(_ini); }
 
 	} agent_;
+
+	class can_port_driver {
+	public:
+		static inline cstr path = ENV_NET_FLOW_PORT_PATH;
+		typedef flow_msg_can_id_t id_t;
+		enum { suba_count = 16, packet_size = 8, msg_pool_size = 4 };
+		static void send(unsigned _id, const uint8_t* _data, size_t _size);
+	};
+
+	typedef ::robo::net::flow::port_t<can_port_driver> can0_t;
+	can0_t can0;
+	void can_port_driver::send(unsigned _id, const uint8_t* _data, size_t _size) {
+		if (_size > 0) {
+			CAN_TxHeaderTypeDef header;
+			header.DLC = _size;
+			header.ExtId = 0;
+			header.IDE = CAN_ID_STD;
+			header.RTR = CAN_RTR_DATA;
+			header.StdId = _id;
+			HAL_CAN_AddTxMessage(&hcan1, &header, (uint8_t*)_data, (uint32_t*)CAN_TX_MAILBOX0);
+		}
+	}
+
 }
 
 extern "C" {

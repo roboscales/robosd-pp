@@ -20,6 +20,9 @@
     <ClCompile Include="..\..\..\robosd-ref\im\models\dcmachine.cpp">
       <Filter>im\model</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\pmsm.cpp">
+      <Filter>im\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\robosd_app_tuning.hpp" />
@@ -39,6 +42,9 @@
       <Filter>im\model</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp">
+      <Filter>im\model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp">
       <Filter>im\model</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,7 +7,6 @@ namespace robo{
 		namespace joint {
 			namespace gearbox {
 				namespace elastic {
-					const float PI = 3.14159265359f;
 					ideal::ideal(agent& _agent, cstr _name) : joint::link(_agent,_name) {}
 					void ideal::do_run(void) {
 						observer.position = actuator->position / gear_ratio;
@@ -125,13 +124,13 @@ namespace robo{
 						return true;
 					}
 					void nonline::do_reconfig(void) {
-						driver.tension_max = driver.config.tension_max * PI / 180.f;
+						driver.tension_max = driver.config.tension_max * grad2rad<float>;
 						driver.hook_gain = driver.config.torque_max / driver.tension_max;
-						driver.dead_zone = driver.config.dead_zone * PI / 180.f;
+						driver.dead_zone = driver.config.dead_zone * grad2rad<float>;
 						if (supply.enabled == 1) {
-							supply.max = supply.config.max * PI / 180.f;
-							supply.min = supply.config.min * PI / 180.f;
-							supply.tension_max = supply.config.tension_max * PI / 180.f;
+							supply.max = supply.config.max * grad2rad<float>;
+							supply.min = supply.config.min * grad2rad<float>;
+							supply.tension_max = supply.config.tension_max * grad2rad<float>;
 							supply.gain = supply.config.torque_max / supply.tension_max;
 						}
 
@@ -140,7 +139,7 @@ namespace robo{
 					friction::friction(agent& _agent, cstr _name) : nonline(_agent,_name) {}
 					void friction::do_reconfig(void) {
 						nonline::do_reconfig();
-						base.crawl_speed = base.crawl_speed_grad * PI / 180.f * driver.gear_ratio;
+						base.crawl_speed = base.crawl_speed_grad * grad2rad<float> * driver.gear_ratio;
 					}
 
 					bool friction::do_load(cstr _specific_sect, cstr _common_sect) {

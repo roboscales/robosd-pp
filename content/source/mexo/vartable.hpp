@@ -105,9 +105,21 @@ namespace mexo {
 				return r;
 			}
 
-		};
+			template<typename T>	static ref* create(
+				types _type
+				, const T& _addr
+				, robo::cstr _name
+			) {				
+				return create<T>(_type,_addr, _name, ::mexo::node::root().key(), ::mexo::node::root().vars );
+			}
 
+		};
+		#ifndef ROBO_APP_MEXO_VAR_MODE
+		#define ROBO_APP_MEXO_VAR_MODE tuning
+		#endif
 		class machine {
+		public:
+			enum class mode { none = 0, tuning = 1, action = 2, config = 3, full = 4 } actual_mode_ = mode::ROBO_APP_MEXO_VAR_MODE;
 		private:
 			const record** index_ = nullptr;
 			int index_size_ = 0;
@@ -121,7 +133,6 @@ namespace mexo {
 			~machine(void);
 
 		public:
-			enum class mode { none = 0, tuning = 1, action = 2, config = 3, full = 4 } actual_mode_ = mode::tuning;
 			static void begin(int _pool_size) {
 				instance_().begin_(_pool_size);
 			}

@@ -199,7 +199,7 @@ namespace robo {
 					)
 					, remote_(_remote)
 					, local_(_local) {
-					ROBO_APP_ASSERT(_local.reg(_command_path));
+					ROBO_APP_ASSERT(_local.begin(_command_path));
 				}
 				net::iserial& local(void){return local_;}
 			protected:
@@ -227,6 +227,7 @@ namespace robo {
 			public:
 				serial_proto_t(
 					cstr _path
+					, cstr  _serial_path
 					, kind_t _kind
 				) : bridge_t<SA, SB, G>(), serial_proto(
 					_path
@@ -234,15 +235,15 @@ namespace robo {
 					, bridge_t<SA, SB, G>::A
 					, bridge_t<SA, SB, G>::B
 				) {
-
+					bridge_t<SA, SB, G>::B.begin(_serial_path);
 				}
 			};
 		}
 	}
 }
 
-#define FLOW_PERFORMER_RAND_RECORD( C,P, E) FLOW_PERFORMER_RAND_RECORD_( C,P, E )
-#define FLOW_PERFORMER_RAND_RECORD_(C,P, E) \
+#define FLOW_PERFORMER_CUSTOM_RECORD( C,P, E) FLOW_PERFORMER_CUSTOM_RECORD_( C,P, E )
+#define FLOW_PERFORMER_CUSTOM_RECORD_(C,P, E) \
 class C##_##P##_performer_  : public ::robo::net::flow::performer { \
 public:\
 	C##_##P##_performer_ (void) : performer(C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND) {}\

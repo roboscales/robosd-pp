@@ -9,12 +9,17 @@
 #include "mexo/vartable.hpp"
 #include <initializer_list> 
 
-#ifndef APP_MEXO_SLOT_COUNT
-#define APP_MEXO_SLOT_COUNT 16
+#ifndef ROBO_APP_MEXO_SLOT_COUNT
+#define ROBO_APP_MEXO_SLOT_COUNT 16
 #endif
 
-#ifndef APP_MEXO_PRIORITY_SLOT_ENABLE
-#define APP_MEXO_PRIORITY_SLOT_ENABLE 1
+#ifndef ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE
+#define ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE 1
+#endif
+
+
+#ifndef ROBO_APP_MEXO_DEBUG_TP1_ENABLED
+#define ROBO_APP_MEXO_DEBUG_TP1_ENABLED 0
 #endif
 
 using namespace robo;
@@ -22,7 +27,7 @@ namespace mexo {
 	struct tp_verb {
 		enum { frontend = 1, backend = 2, priority = 3, loop = 4 };
 	};
-	#if MEXO_DEBUG_TP1_ENABLED == 1
+	#if ROBO_APP_MEXO_DEBUG_TP1_ENABLED == 1
 	class tp_driver {
 		//реализацию принудительно делегируем в perephery проекта
 	protected:
@@ -41,7 +46,7 @@ namespace mexo {
 
 	class machine {
 	public:
-		enum { slot_count = APP_MEXO_SLOT_COUNT };
+		enum { slot_count = ROBO_APP_MEXO_SLOT_COUNT };
 		class slots;
 		class slot {
 		public:
@@ -125,7 +130,7 @@ namespace mexo {
 			friend class machine;
 			slot begin;
 			slot start;
-			#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+			#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 			slot priority;
 			#endif
 			slot backend;
@@ -143,7 +148,7 @@ namespace mexo {
 		static slots& slots_(void);
 		void begin_(void);
 		void start_(void);
-		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		void priority_loop_(void);
 		#endif
 		void backend_loop_(void);
@@ -154,7 +159,7 @@ namespace mexo {
 		~machine(void);
 		static void begin(void) { instance_.begin_(); }
 		static void start(void) { instance_.start_(); }
-		#if APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		static void priority_loop(void) { instance_.priority_loop_(); }
 		#endif
 		static void backend_loop(void) { instance_.backend_loop_(); }
@@ -701,6 +706,95 @@ namespace mexo {
 			: handler(_config, present_)
 			, input(_input) {}
 	};
+
+	template < typename I, typename O> class finall_controller_handler : public handler {
+		I dummy_input_;
+	protected:
+		I* deseired;
+	public:
+		const satstate_t& actual_satstate(void) { return handler::present_cast<present_s>().actual_satstate; }
+
+		typedef I input_t;
+
+		struct present_s {
+			handler::present_s ref;
+			satstate_t actual_satstate;
+		};
+		finall_controller_handler(
+			const config_s& _config
+			, present_s& _present
+		)
+			: handler(_config, _present.ref)
+			, dummy_input_(0)
+			, deseired(&dummy_input_) {
+
+		}
+		void set_input(I* _input) {
+			if (_input) {
+				deseired = _input;
+			}
+			else {
+				deseired = &dummy_input_;
+			}
+		}
+
+	protected:
+		virtual bool do_handler_reconfig(void) {
+			ROBO_LBREAKN(handler::do_handler_reconfig());
+			do_handler_adjust();
+			return true;
+		}
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+			present_s& present = present_cast<present_s>();
+			if (var::machine::actual_mode() == var::machine::mode::full) {
+				var::record::create(var::const_uint8, present.actual_satstate, RT("ss"), _master_key, _vars);
+			}
+		};
+		#endif
+	};
+
+	template < typename T, typename B, typename S, typename ... Args> class finall_controller_t
+		: public handler_t<T, B, S, Args...> {
+	public:
+		typedef  handler_t<T, B, S, Args...> BB;
+		finall_controller_t(
+			cstr  _name
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, args...) {}
+	};
+	template < typename B, typename S, typename ... Args> class finall_controller_block_t
+		: public handler_t<subsystem_handler, B, S, Args...> {
+	public:
+		typedef  handler_t<subsystem_handler, B, S, Args...> BB;
+		finall_controller_block_t(
+			cstr  _name
+			, S* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, args...) {}
+	};
+	template <  typename B, typename S, typename ... Args> class finall_controller_task_t
+		: public handler_t<S, B, node, Args...> {
+	public:
+		typedef  handler_t<S, B, node, Args...> BB;
+		finall_controller_task_t(
+			cstr  _name
+			, node* _owner
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, args...) {}
+	};
+
+
 }
 #endif
 

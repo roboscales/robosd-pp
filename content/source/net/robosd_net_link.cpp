@@ -14,10 +14,11 @@ namespace robo{
             return backend_poll_map__;
         }
 
-        link::link(): ref_(*this,0), poll_ref_(*this,0), reader_(nullptr){
+        link::link(): ref_(*this,0), poll_ref_(*this,0){
         };
 
         link::~link(void){
+            finish();
         }
 
         bool link::begin(cstr _alias) {
@@ -33,10 +34,42 @@ namespace robo{
             ref_.dettach();
         }
 
+        bool link::start_poll(bool _backend) {
+            //todo  проверить состояние - только при загрузке!
+            if (_backend) {
+                return  poll_ref_.attach_to(backend_poll_map_());
+            }
+            else {
+                return  poll_ref_.attach_to(frontend_poll_map_());
+            }
+        }
 
-        bool link::listen(cstr _alias, reader * _reader ){
+        void link::release(void) {
+            ref_.attach_to(map_());
+        }
+
+        void  link::stop_poll(void) {
+            poll_ref_.dettach();
+        }
+
+        void link::frontend_poll(void) {
+            for (auto it = frontend_poll_map_().first(); it; it = it->next()) {
+                it->owner().poll();
+            }
+        }
+        void link::backend_poll(void) {
+            for (auto it = backend_poll_map_().first(); it; it = it->next()) {
+                it->owner().poll();
+            }
+        }
+
+        port::port() : reader_(nullptr) {};
+
+        port::~port(void) {}
+
+        bool port::listen(cstr _alias, reader * _reader ){
             if(_reader) {
-                link * u = map_().find( hash(_alias,0) );
+                port* u = query<port>(_alias);
                 ROBO_LBREAKN(u!=nullptr);
                 u->reader_ = _reader;
                 return true;
@@ -44,7 +77,7 @@ namespace robo{
                 ROBO_LBREAK();
             }
         };
-        bool link::listen( reader *  _reader ){
+        bool port::listen( reader *  _reader ){
             if(_reader) {
                 reader_ = _reader;
                 return true;
@@ -53,42 +86,17 @@ namespace robo{
             }
         }
 
-        link* link::find( cstr _alias) {
-            return map_().find(hash(_alias, 0));
-        };
 
-        void link::listen(reader &  _reader ){
+        void port::listen(reader &  _reader ){
             reader_ = &_reader;
         }
-        bool link::start_poll(bool _backend){
-            //todo  проверить состояние - только при загрузке!
-            if(_backend){
-                return  poll_ref_.attach_to(backend_poll_map_());
-            } else {
-                return  poll_ref_.attach_to(frontend_poll_map_());
-            }
-        }
 
-        void  link::stop_poll(void){
-            poll_ref_.dettach();
-        }
 
-        void link::frontend_poll(void){
-            for(auto it = frontend_poll_map_().first(); it;it=it->next()){
-                it->owner().poll();
-            }
-        }
-        void link::backend_poll(void){
-            for(auto it = backend_poll_map_().first(); it;it=it->next()){
-                it->owner().poll();
-            }
-        }
-
-        bool link::post(const uint8_t * _data, size_t _len){
+        bool port::post(const uint8_t * _data, size_t _len){
             //todo статистику сюда
             return do_post(_data, _len);
         }
-        void link::receive(const uint8_t * _data, size_t _len){
+        void port::receive(const uint8_t * _data, size_t _len){
             //todo статистику сюда
             if(reader_) (*reader_)(_data, _len);
         }
