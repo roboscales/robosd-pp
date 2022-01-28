@@ -127,12 +127,18 @@ namespace mexo {
 			}
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+				A::do_handler_create_vars(_vars, _master_key);
 				const config_s& config =  A::config_cast<config_s>();
+				present_s& present = A::present_cast<present_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
+					::mexo::var::record::create(::mexo::var::const_uint8, command_, RT("cmd"));
+					::mexo::var::record::create(::mexo::var::const_uint8, status_, RT("status"));
+
 					var::record::create(types::var::const_discret, config.duty.low, RT("duty.low"), _master_key, _vars);
 					var::record::create(types::var::const_discret, config.duty.hi, RT("duty.hi"), _master_key, _vars);
 					var::record::create(types::var::const_signal, config.voltage.low, RT("v.low"), _master_key, _vars);
 					var::record::create(types::var::const_signal, config.voltage.hi, RT("v.hi"), _master_key, _vars);
+					scaler::create_var(present.duty, _master_key, _vars );
 				}
 			}
 			#endif
@@ -192,25 +198,23 @@ namespace mexo {
 				: A(_name, _owner, _config, _present) {}
 		};
 
-		template<typename q> struct dc_scaler: public q::scaler {
+		template<typename q> struct dc_scaler : public q::scaler {
 			typedef typename q::signal_t signal_t;
 			typedef typename q::discret_t discret_t;
 			typedef signal_t voltage_t;
 			typedef discret_t duty_t;
-			void run(voltage_t _voltage, duty_t & _discret) {
+			void run(voltage_t _voltage, duty_t& _discret) {
 				q::scaler::run(_voltage, _discret)
 			}
+			static void create_var(const  duty_t& _duty, int  _master_key, var::record::list& _list) {
+				var::record::create(types::var::const_discret, _duty, RT("duty"), _master_key, _list);
+			}
 		};
+
 		template<typename q> struct abc_scaler : public q::scaler {
 			typedef typename q::signal_t signal_t;
 			typedef typename q::discret_t discret_t;
-			struct voltage_t {
-				signal_t A;
-				signal_t B;
-				signal_t C;
-				voltage_t(void) { A = B = C = 0; }
-				voltage_t(signal_t _value) { A = B = C = _value; }
-			};
+			typedef abc_t<q> voltage_t;
 			struct duty_t {
 				discret_t A;
 				discret_t B;
@@ -221,67 +225,159 @@ namespace mexo {
 				q::scaler::run(_voltage.B, _duty.B);
 				q::scaler::run(_voltage.C, _duty.C);
 			}
+			static void create_var(const duty_t& _duty, int  _master_key	, var::record::list& _list) {
+				var::record::create(types::var::const_discret, _duty.A, RT("duty.A"), _master_key, _list);
+				var::record::create(types::var::const_discret, _duty.B, RT("duty.B"), _master_key, _list);
+				var::record::create(types::var::const_discret, _duty.C, RT("duty.C"), _master_key, _list);
+			}
 		};
 		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
 		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
 		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
-		/*
-		namespace inverter {
-			class voltage {
-			public:
-				typedef typename signal2ph_s deseired_t;
-				typedef typename signal3ph_s actual_t;
+		
+		template<typename q> class inverter
+			: public function_handler< dq_t<q>, abc_t<q> > {
+			typedef function_handler< dq_t<q>, abc_t<q> > A;
+		public:
 
+			typedef typename abc_t<q> abc_t;
+			typedef typename ab_t<q> ab_t;
+			typedef typename dq_t<q> dq_t;
+			typedef typename cs_t<q> cs_t;
+			typedef typename q::signal_t signal_t;
+			typedef typename q::long_signal_t long_signal_t;
 
-				class math {
-				public:
-					struct dummy {
-						deseired_t& dq;
-						deseired_t ab;
-						actual_t ABC;
-						dummy(deseired_t& _dq) : dq(_dq) {}
-					} voltage_;
-				protected:
-					transform transform_;
-				public:
-					const actual_t& actual() { return voltage_.ABC; };
-					virtual void perform(void) {
-						transform_.backward(voltage_.dq, voltage_.ab);
-						voltage_.ab >> voltage_.ABC;
-					}
-					void rotate(const signal_t& _angle) {
-						transform_.set_angle(_angle);
-						perform();
-					}
-					math(deseired_t& _voltage_dq) : voltage_(_voltage_dq) {}
-				};
-			protected:
-				math math_;
-			public:
-				const actual_t& actual(void) {
-					return math_.actual();
-				}
+			typedef typename A::config_s config_s;
+			struct present_s : public  A::present_s {
+				ab_t ab;
+				abc_t abc;
+			};
 
-				voltage(const actual_t& _standalone_desirted)
-					: range(standalone_range)
-				{
-					ROBO_UNUSED(_standalone_desirted);
-					standalone_range = {};
-				}
-
-				bool applay(const config_s& _config) {
-					math_.rampStep = _config.rampGain;
-					if ((_config.default > _config.range.lo) && (_config.default < _config.range.hi)) {
-						standalone_range = _config.range;
-						math_.actual = _config.default;
-						return true;
-					}
-					else {
-						return false;
-					}
+		protected:
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+				A::do_handler_create_vars(_vars, _master_key);
+				present_s& present = handler::present_cast<present_s>();
+				if (var::machine::actual_mode() >= var::machine::mode::full) {
+					var::record::create(q::var::const_signal, present.output.A, RT("pwm.A"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.output.B, RT("pwm.B"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.output.C, RT("pwm.C"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.abc.A, RT("v.A"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.abc.B, RT("v.B"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.abc.C, RT("v.C"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.cs.si, RT("ab.sin"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.cs.co, RT("ab.cos"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
 				}
 			};
-		}*/
+			#endif
+			virtual void execute(void) {
+
+				constexpr static signal_t sqrt3_div_2 = q::round( robo::csqrt<double>(3.0) / 2 * q::max );
+				constexpr static signal_t sqrt2_div_2 = q::round(robo::csqrt<double>(2.0) / 2 * q::max);
+				constexpr static signal_t sqrt2_div_4 = q::round(robo::csqrt<double>(2.0) / 4 * q::max);
+				//constexpr static signal_t scale = q::round( 2.0 / csqrt<double>(6.0)  * q::max );
+				constexpr static signal_t one_div_sqer3 = q::round( 1.0 / csqrt<double>(3.0)  * q::max );
+				constexpr static signal_t one_div_2 = q::round( 0.5 * q::max);
+				constexpr static long_signal_t sqrt2 = (long_signal_t)(2/csqrt<double>(2.0) * q::max);
+				/*
+				constexpr static long_signal_t hi = (long_signal_t)( sqrt2_div_2 );
+				constexpr static long_signal_t lo = (long_signal_t)( -sqrt2_div_2 )  ;
+				*/
+				constexpr static long_signal_t hi = q::max;
+				constexpr static long_signal_t lo = -q::max;
+
+				constexpr static signal_t scale = q::round((csqrt<double>(2.0) - 1.0) * q::max);
+				constexpr static signal_t scale2 = q::round((2/csqrt<double>(3.0) - 1.0) * q::max);
+
+				present_s& present = handler::present_cast<present_s>();
+
+				present.ab.transform(input);
+
+
+				present.abc.A = present.ab.alfa;
+				present.abc.B = q::dot(present.ab.beta, sqrt3_div_2, -present.ab.alfa, one_div_2);
+				present.abc.C = q::dot(present.ab.beta, -sqrt3_div_2, -present.ab.alfa, one_div_2);
+
+
+
+				/*
+				q::long_signal_t pwmA = q::l_add(one_div_2, present.abc.A, one_div_sqer3);
+				q::long_signal_t pwmB = q::l_add(one_div_2, present.abc.B , one_div_sqer3);
+				q::long_signal_t pwmC = q::l_add(one_div_2, present.abc.C , one_div_sqer3);
+				*/
+
+				q::long_signal_t pwmA = present.abc.A;
+				q::long_signal_t pwmB = present.abc.B;
+				q::long_signal_t pwmC = present.abc.C;
+				pwmA = pwmA + q::s_mult(pwmA, scale2);
+				pwmB = pwmB + q::s_mult(pwmB, scale2);
+				pwmC = pwmC + q::s_mult(pwmC, scale2);
+
+
+				if (pwmA > hi) {
+					q::signal_t d = pwmA - hi;
+					pwmB = pwmB - d;
+					pwmC = pwmC - d;
+					pwmA = hi;
+				}
+				if (pwmB > hi) {
+					q::signal_t d = pwmB - hi;
+					pwmA = pwmA - d;
+					pwmC = pwmC - d;
+					pwmB = hi;
+				}
+				if (pwmC > hi) {
+					q::signal_t d = pwmC - hi;
+					pwmA = pwmA - d;
+					pwmB = pwmB - d;
+					pwmC = hi;
+				}
+
+				if (pwmA < lo) {
+					q::signal_t d = pwmA - lo;
+					pwmB = pwmB - d;
+					pwmC = pwmC - d;
+					pwmA = lo;
+				}
+				if (pwmB < lo) {
+					q::signal_t d = pwmB - lo;
+					pwmA = pwmA - d;
+					pwmC = pwmC - d;
+					pwmB = lo;
+				}
+				if (pwmC < lo) {
+					q::signal_t d = pwmC - lo;
+					pwmA = pwmA - d;
+					pwmB = pwmB - d;
+					pwmC = lo;
+				}
+				/*
+				pwmA = pwmA + q::s_mult(pwmA, scale);
+				pwmB = pwmB + q::s_mult(pwmB, scale);
+				pwmC = pwmC + q::s_mult(pwmC, scale);
+				*/
+				present.output.A = (signal_t)saturate<long_signal_t>( pwmA, q::min, q::max);
+				present.output.B = (signal_t)saturate<long_signal_t>( pwmB, q::min, q::max);
+				present.output.C = (signal_t)saturate<long_signal_t>( pwmC, q::min, q::max);
+
+			}
+
+			virtual void do_handler_adjust(void) {
+				present_s& present = handler::present_cast<present_s>();
+				present.output.A = present.output.B = present.output.C = (typename q::signal_t)0;
+			}
+		public:
+			inverter(const config_s& _config
+					, present_s& _present
+					, const dq_t & _input
+			)
+				: A(_config, _present, _input) {}
+		};
+
+
+
 		/*
 			class current {
 			public:

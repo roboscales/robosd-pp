@@ -95,11 +95,18 @@ namespace robo {
 
 
 
-	template<typename T>
+	/*template<typename T>
 	constexpr T one_div_sqrt3 = T(1) / csqrt(T(3));
 
 	template<typename T>
+	constexpr T one_div_sqrt2 = T(1) / csqrt(T(2));
+
+	template<typename T>
 	constexpr T sqrt3_div_2 = csqrt(T(3)) / T(2);
+
+	template<typename T>
+	constexpr T sqrt2_div_2 = csqrt(T(2)) / T(2);
+	*/
 
 
 	template<typename T, unsigned C> struct array {

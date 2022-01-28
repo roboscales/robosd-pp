@@ -6,7 +6,7 @@ namespace robo{
 		namespace joint{
 
 			struct ROBO_EXPORT iactuator{
-				enum class istate { blocked, start, run };
+				enum class istate { blocked = 0, start = 1, run = 2};
 				float driveng_torque = 0.f;
 				float contr_torque = 0.f;
 				float speed = 0.f;

@@ -642,6 +642,10 @@ namespace mexo {
 			handler::present_s ref;
 			output_t output;
 		};
+		output_t& output(void) {
+			present_s& present = handler::present_cast<present_s>();
+			return present.output;
+		}
 		function_handler(
 			const config_s& _config
 			, present_s& _present
@@ -794,7 +798,7 @@ namespace mexo {
 			: BB(_name, _owner, _config, _present, args...) {}
 	};
 
-
+	
 }
 #endif
 

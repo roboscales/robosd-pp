@@ -19,6 +19,7 @@ namespace mexo {
 		constexpr static int bits = 15;
 		constexpr static int long_bits = 31;
 		constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
+
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
 			constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
@@ -33,6 +34,16 @@ namespace mexo {
 			constexpr static ::mexo::var::types const_long_signal = ::mexo::var::types::const_int32;
 		};
 		#endif
+		static constexpr int15::signal_t round(double _x) {
+			if (_x > 0) {
+				return (int15::signal_t)(_x + 0.5);
+			}
+			else {
+				return (int15::signal_t)(_x - 0.5);
+			}
+		}
+		static signal_t sin(signal_t _angle);
+		static signal_t cos(signal_t _angle);
 	};
 
 	struct real15 {
@@ -62,6 +73,15 @@ namespace mexo {
 		#endif
 	};
 
+	template <typename T> T saturate(T _x, T  _lo, T _hi) {
+		if (_x < _lo) {
+			_x = _lo;
+		}
+		else if (_x > _hi) {
+			_x = _hi;
+		}
+		return _x;
+	}
 
 	template< typename digit > struct fixed_point {
 
@@ -80,9 +100,17 @@ namespace mexo {
 		constexpr static long_signal_t long_min = digit::long_min;
 		constexpr static signal_t ones = digit::ones;
 		constexpr static signal_t pi = digit::max;
-		constexpr static signal_t one_div_sqrt3 = (digit::max * robo::one_div_sqrt3<signal_t>);
-		constexpr static signal_t sqrt3_div_2 = (digit::max * robo::sqrt3_div_2<signal_t>);
-
+		static constexpr int15::signal_t round(double _x) {
+			return digit::round(_x);
+		}
+		/*/constexpr static signal_t one_div_2 = digit::round(0.5 * max);
+		constexpr static signal_t one_div_3 = digit::round( (1.0/3.0) * max);
+		constexpr static signal_t two_div_3 = digit::round((2.0 / 3.0) * max);
+		constexpr static signal_t one_div_sqrt3 = digit::round( max * robo::one_div_sqrt3<double> );
+		constexpr static signal_t one_div_sqrt2 = digit::round(max * robo::one_div_sqrt2<double>);
+		constexpr static signal_t sqrt3_div_2 = digit::round(max * robo::sqrt3_div_2<double>);
+		constexpr static signal_t sqrt2_div_2 = digit::round(max * robo::sqrt2_div_2<double>);
+		*/
 		template <typename T> static satstate_t round_s(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
@@ -170,6 +198,9 @@ namespace mexo {
 				}
 			}
 		}
+		
+
+
 		struct scaler {
 			range_s <signal_t> _range;
 			signal_t signal_lo = 0;
@@ -178,7 +209,7 @@ namespace mexo {
 			discret_t discret_hi = 0;
 			long_signal_t gain = 0;
 			typedef fixed_point<digit> types;
-			void reconfig(signal_t _signal_hi, signal_t _signal_lo, discret_t _discret_hi, discret_t _discret_lo) {
+			void reconfig(signal_t _signal_lo, signal_t _signal_hi, discret_t _discret_lo, discret_t _discret_hi) {
 				signal_hi = _signal_hi;
 				signal_lo = _signal_lo;
 				discret_hi = _discret_hi;
@@ -191,13 +222,103 @@ namespace mexo {
 			void run(signal_t _signal, discret_t & _discret) {
 				if (_signal > signal_hi) _signal = signal_hi;
 				if (_signal < signal_lo) _signal = signal_lo;
-				long_signal_t tmp = gain * (_signal - signal_lo);
+				long_signal_t tmp =  gain * (_signal - signal_lo);
 				tmp += (1 << digit::bits);
 				tmp >>= (1 + digit::bits);
-				_discret = (discret_t)tmp;
+				_discret = (discret_t) ( discret_lo +  tmp );
 			}
 		};
 
+		union long_signal_u {
+			long_signal_t value;
+			struct {
+				uint16_t first;
+				signal_t second;
+			};
+		};
+
+		static signal_t scale_l(long_signal_t _t) {
+			return ((long_signal_u*)(&_t))->second;
+		}
+
+		static signal_t s_extract(long_signal_u& v) {
+			if (v.value == 0) {
+				return 0;
+			}
+			else {
+				if (v.value > 0) {
+					if (v.second < max / 2) {
+						if (v.first > max) {
+							return (v.second << 1) + 1;
+						}
+						else {
+							return (v.second << 1);
+						}
+					}
+					else {
+						return max;
+					}
+				}
+				else {
+					if (v.second > min / 2) {
+						if (v.first < min) {
+							return -(((-v.second) << 1) + 1);
+						}
+						else {
+							return v.second << 1;
+						}
+					}
+					else {
+						return min;
+					}
+				}
+			}
+		}
+
+
+		static signal_t s_mult(signal_t x1, signal_t x2) {
+			long_signal_u tmp;
+			tmp.value = (long_signal_t)x1 * x2;
+			return  s_extract(tmp);
+		}
+
+		static signal_t s_add(long_signal_u& acc, signal_t x1, signal_t x2) {
+			acc.value += (long_signal_t)x1 * x2;
+			return  s_extract(acc);
+		}
+
+		static signal_t dot(signal_t _x1, signal_t _y1, signal_t _x2, signal_t _y2) {
+			long_signal_u tmp;
+			tmp.value = (long_signal_t)(_x1) *_y1 + (long_signal_t)(_x2) *_y2 ;
+			return s_extract(tmp);
+		}
+
+		static signal_t s_add(signal_t _x0, signal_t _x2, signal_t _y2) {
+			long_signal_u tmp;
+			tmp.value = (long_signal_t)(_x0) + (long_signal_t)(_x2)*_y2;
+			return s_extract(tmp);
+		}
+
+		static signal_t sin(signal_t _angle) {
+			return digit::sin(_angle);
+		}
+
+		static signal_t cos(signal_t _angle) {
+			return digit::cos(_angle);
+		}
+		static long_signal_t  l_add(signal_t _x0, long_signal_t _x2, signal_t _y2) {
+			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
+			if (tmp > 0) {
+				tmp += (1 << 14);
+				tmp >>= 15;
+			}
+			else {
+				tmp -= (1 << 14);
+				tmp = -((-tmp) >> 15);
+			}
+			
+			return tmp;
+		}
 	};
 
 
@@ -587,6 +708,63 @@ namespace mexo {
 		)
 			: B(_config.fb, _present.fb, _input) {}
 	};
+
+	template<typename q> struct cs_t {
+		typedef typename  q::signal_t signal_t;
+		signal_t si;
+		signal_t co;
+		cs_t(void) { si = co = (signal_t)0; }
+		cs_t(signal_t _value) { co = si = _value; }
+		void rotate(signal_t _angle) {
+			si = q::sin(_angle);
+			co = q::cos(_angle);
+		}
+	};
+	template<typename q> struct ab_t;
+	template<typename q> struct dq_t {
+		typedef typename  q::signal_t signal_t;
+		typedef typename  q::long_signal_t long_signal_t;
+		signal_t d;
+		signal_t q;
+		signal_t angle;
+		dq_t(void) {
+			d = q = (signal_t)0;
+			angle = (long_signal_t)0;
+		}
+		dq_t(signal_t _value) { d = q = _value; }
+	};
+
+	template<typename q> struct ab_t {
+		typedef typename  q::signal_t signal_t;
+		signal_t alfa;
+		signal_t beta;
+		cs_t<q> cs;
+		ab_t(void) { alfa = beta = (signal_t)0; }
+		ab_t(signal_t _value) { alfa = beta = _value; }
+		void transform(const dq_t<q>& _dq) {
+			cs.rotate(_dq.angle);
+			constexpr static signal_t sqrt2_div_2 = q::round(robo::csqrt<double>(2.0) / 2 * q::max);
+			signal_t d = q::s_mult(_dq.d, sqrt2_div_2);
+			signal_t q = q::s_mult(_dq.q, sqrt2_div_2);
+
+			alfa = q::dot(cs.co, d, - cs.si, q);
+			beta = q::dot(cs.si, d, cs.co, q);
+		}
+	};
+
+	template<typename q> struct abc_t {
+		typedef typename  q::signal_t signal_t;
+		signal_t A;
+		signal_t B;
+		signal_t C;
+		abc_t(void) { A = B = C = (signal_t)0; }
+		abc_t(signal_t _value) { A = B = C = _value; }
+	};
+	
+
+	
+	
+
 
 
 	/*
