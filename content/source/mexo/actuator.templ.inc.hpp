@@ -2,11 +2,14 @@
 #include "mexo/actuator.templ.prepare.hpp"
 
 #include "mexo/ps.templ.inc.hpp"
+ 
 namespace ACTUATOR_TEMPLATE_NAME {
-	template <typename types, typename hardwaresys_t>  class dev_t: public ACTUATOR_PS_TEMPLATE_NAME :: dev_t<types,hardwaresys_t> {
+	template <typename types, typename hardwaresys_t>  class dev_t: public   ACTUATOR_PS_TEMPLATE_NAME::dev_t<types, hardwaresys_t> {
 	int slot_index_;
 public:
-	
+	typedef action_t<types> action_s;
+	typedef feedback_t<types> feedback_s;
+
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 || \
 		ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED==1 || \
@@ -52,18 +55,6 @@ public:
 	#endif
 		
 	typedef ACTUATOR_PS_TEMPLATE_NAME :: dev_t<types,hardwaresys_t> ps_t;
-
-	struct action_s {
-		typename ps_t::action_s ps;
-		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
-		|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-			typename types::signal_t speed;
-		#endif
-		#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
-		|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-			typename types::long_signal_t position;
-		#endif
-	};
 
 	struct config_s {
 		typename ps_t::config_s ps;

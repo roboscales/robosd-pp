@@ -298,6 +298,23 @@ namespace mexo {
 			tmp.value = (long_signal_t)(_x0) + (long_signal_t)(_x2)*_y2;
 			return s_extract(tmp);
 		}
+		template< typename T> static T s_rshift(T _x, uint8_t _dg) {
+			if (_x  == T(0) || (_dg==0)) {
+				return _x;
+			}
+			else {
+				if (_x > 0) {
+					_x += (1 << (_dg-1) );
+					_x >>= _dg;
+				}
+				else {
+					_x -= (1 << (_dg-1));
+					// Две инверсии. Выяснить надоли так делать!
+					_x = -( (-_x) >> _dg );
+				}
+			}
+			return _x;
+		}
 
 		static signal_t sin(signal_t _angle) {
 			return digit::sin(_angle);
@@ -306,18 +323,9 @@ namespace mexo {
 		static signal_t cos(signal_t _angle) {
 			return digit::cos(_angle);
 		}
-		static long_signal_t  l_add(signal_t _x0, long_signal_t _x2, signal_t _y2) {
+		static long_signal_t  l_add(long_signal_t _x0, long_signal_t _x2, signal_t _y2) {
 			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
-			if (tmp > 0) {
-				tmp += (1 << 14);
-				tmp >>= 15;
-			}
-			else {
-				tmp -= (1 << 14);
-				tmp = -((-tmp) >> 15);
-			}
-			
-			return tmp;
+			return s_rshift<long_signal_t>(tmp)
 		}
 	};
 

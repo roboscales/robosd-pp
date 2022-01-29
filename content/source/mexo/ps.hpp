@@ -234,10 +234,10 @@ namespace mexo {
 		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
 		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
 		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
-		
-		template<typename q> class inverter
-			: public function_handler< dq_t<q>, abc_t<q> > {
-			typedef function_handler< dq_t<q>, abc_t<q> > A;
+
+		template<typename C> class inverter
+			: public pwm< C > {
+			typedef control_handler< dq_t<q>, abc_t<q> > A;
 		public:
 
 			typedef typename abc_t<q> abc_t;
@@ -250,7 +250,7 @@ namespace mexo {
 			typedef typename A::config_s config_s;
 			struct present_s : public  A::present_s {
 				ab_t ab;
-				abc_t abc;
+				uint8_t swm;
 			};
 
 		protected:
@@ -262,105 +262,94 @@ namespace mexo {
 					var::record::create(q::var::const_signal, present.output.A, RT("pwm.A"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.output.B, RT("pwm.B"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.output.C, RT("pwm.C"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.abc.A, RT("v.A"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.abc.B, RT("v.B"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.abc.C, RT("v.C"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.cs.si, RT("ab.sin"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.cs.co, RT("ab.cos"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
+					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
 				}
 			};
 			#endif
+			
+
+			long_signal_t sum_x_ya(signal_t x, signal_t y, signal_t a) {
+				long_signal_t tmp = ((long_signal_t)y) * a;
+				tmp = q::s_rshift<long_signal_t>(tmp, 15);
+				tmp += x;
+				return tmp;
+			}
+			
 			virtual void execute(void) {
-
-				constexpr static signal_t sqrt3_div_2 = q::round( robo::csqrt<double>(3.0) / 2 * q::max );
-				constexpr static signal_t sqrt2_div_2 = q::round(robo::csqrt<double>(2.0) / 2 * q::max);
-				constexpr static signal_t sqrt2_div_4 = q::round(robo::csqrt<double>(2.0) / 4 * q::max);
-				//constexpr static signal_t scale = q::round( 2.0 / csqrt<double>(6.0)  * q::max );
-				constexpr static signal_t one_div_sqer3 = q::round( 1.0 / csqrt<double>(3.0)  * q::max );
-				constexpr static signal_t one_div_2 = q::round( 0.5 * q::max);
-				constexpr static long_signal_t sqrt2 = (long_signal_t)(2/csqrt<double>(2.0) * q::max);
-				/*
-				constexpr static long_signal_t hi = (long_signal_t)( sqrt2_div_2 );
-				constexpr static long_signal_t lo = (long_signal_t)( -sqrt2_div_2 )  ;
-				*/
-				constexpr static long_signal_t hi = q::max;
-				constexpr static long_signal_t lo = -q::max;
-
-				constexpr static signal_t scale = q::round((csqrt<double>(2.0) - 1.0) * q::max);
-				constexpr static signal_t scale2 = q::round((2/csqrt<double>(3.0) - 1.0) * q::max);
+				constexpr static signal_t one_div_2 = q::round(0.5 * q::max);
+				constexpr static signal_t sqrt3_div_2 = q::round(robo::csqrt<double>(3.0) / 2 * q::max);
+				constexpr static signal_t scale = q::round((2 / csqrt<double>(2.0) - 1.0) * q::max);
 
 				present_s& present = handler::present_cast<present_s>();
 
 				present.ab.transform(input);
 
-
-				present.abc.A = present.ab.alfa;
-				present.abc.B = q::dot(present.ab.beta, sqrt3_div_2, -present.ab.alfa, one_div_2);
-				present.abc.C = q::dot(present.ab.beta, -sqrt3_div_2, -present.ab.alfa, one_div_2);
-
-
-
-				/*
-				q::long_signal_t pwmA = q::l_add(one_div_2, present.abc.A, one_div_sqer3);
-				q::long_signal_t pwmB = q::l_add(one_div_2, present.abc.B , one_div_sqer3);
-				q::long_signal_t pwmC = q::l_add(one_div_2, present.abc.C , one_div_sqer3);
-				*/
-
-				q::long_signal_t pwmA = present.abc.A;
-				q::long_signal_t pwmB = present.abc.B;
-				q::long_signal_t pwmC = present.abc.C;
-				pwmA = pwmA + q::s_mult(pwmA, scale2);
-				pwmB = pwmB + q::s_mult(pwmB, scale2);
-				pwmC = pwmC + q::s_mult(pwmC, scale2);
-
-
-				if (pwmA > hi) {
-					q::signal_t d = pwmA - hi;
-					pwmB = pwmB - d;
-					pwmC = pwmC - d;
-					pwmA = hi;
+				long_signal_t pwmA;
+				long_signal_t pwmB;
+				long_signal_t pwmC;
+				present.swm = 1;
+				signal_t x, y, z;
+				signal_t v2 = q::s_rshift<signal_t>(present.ab.beta, 1);
+				x = present.ab.beta;
+				y = sum_x_ya(v2, present.ab.alfa, sqrt3_div_2);
+				z = sum_x_ya(v2, present.ab.alfa, -sqrt3_div_2);
+				if (y < 0) {
+					if (z < 0) {
+						pwmA = y  - z;
+						pwmB = pwmA + 2*z;
+						pwmC = pwmA - 2 * y;
+						present.swm = 5;
+					}
+					else {
+						if (x > 0) {
+							pwmA =  -x + y;
+							pwmC = pwmA - 2 * y;
+							pwmB = pwmC + 2 * x;
+							present.swm = 3;
+						}
+						else {
+							pwmA =  x - z;
+							pwmB = pwmA + 2 * z;
+							pwmC = pwmB - 2 * x ;
+							present.swm = 4;
+						}
+					}
 				}
-				if (pwmB > hi) {
-					q::signal_t d = pwmB - hi;
-					pwmA = pwmA - d;
-					pwmC = pwmC - d;
-					pwmB = hi;
-				}
-				if (pwmC > hi) {
-					q::signal_t d = pwmC - hi;
-					pwmA = pwmA - d;
-					pwmB = pwmB - d;
-					pwmC = hi;
+				else {
+					if (z < 0) {
+						if (x > 0) {
+							pwmA =  x - z;
+							pwmB = pwmA + 2 * z;
+							pwmC = pwmB - 2 * x;
+							present.swm = 1;
+						}
+						else {
+							pwmA =  - x + y;
+							pwmC = pwmA  - 2 * y;
+							pwmB = pwmC + 2 * x;
+							present.swm = 6;
+						}
+					}
+					else {
+						pwmA =  y - z;
+						pwmB = pwmA + 2 * z;
+						pwmC = pwmA - 2 * y;
+						present.swm = 2;
+					}
 				}
 
-				if (pwmA < lo) {
-					q::signal_t d = pwmA - lo;
-					pwmB = pwmB - d;
-					pwmC = pwmC - d;
-					pwmA = lo;
-				}
-				if (pwmB < lo) {
-					q::signal_t d = pwmB - lo;
-					pwmA = pwmA - d;
-					pwmC = pwmC - d;
-					pwmB = lo;
-				}
-				if (pwmC < lo) {
-					q::signal_t d = pwmC - lo;
-					pwmA = pwmA - d;
-					pwmB = pwmB - d;
-					pwmC = lo;
-				}
-				/*
-				pwmA = pwmA + q::s_mult(pwmA, scale);
-				pwmB = pwmB + q::s_mult(pwmB, scale);
-				pwmC = pwmC + q::s_mult(pwmC, scale);
-				*/
-				present.output.A = (signal_t)saturate<long_signal_t>( pwmA, q::min, q::max);
-				present.output.B = (signal_t)saturate<long_signal_t>( pwmB, q::min, q::max);
-				present.output.C = (signal_t)saturate<long_signal_t>( pwmC, q::min, q::max);
+				pwmA += q::s_mult(pwmA, scale);
+				pwmB += q::s_mult(pwmB, scale);
+				pwmC += q::s_mult(pwmC, scale);
+
+				present.output.A = (signal_t)saturate<long_signal_t>(pwmA, q::min, q::max);
+				present.output.B = (signal_t)saturate<long_signal_t>(pwmB, q::min, q::max);
+				present.output.C = (signal_t)saturate<long_signal_t>(pwmC, q::min, q::max);
+
 
 			}
 

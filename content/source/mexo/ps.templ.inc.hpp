@@ -1,6 +1,5 @@
 #define TEMPL_BEGIN
 #include "mexo/ps.templ.prepare.hpp"
-
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 #include "mexo/ps.hpp"
@@ -8,6 +7,8 @@
 namespace PS_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t : public ::mexo::ps::dev {
 	public:
+		typedef action_t<types> action_s;
+		typedef feedback_t<types> feedback_s;
 
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
@@ -64,8 +65,6 @@ namespace PS_TEMPLATE_NAME {
 		filter_b current_diff_filter;
 		#endif 
 
-		typedef action_t<types> action_s;
-		typedef feedback_t<types> feedback_s;
 
 		struct config_s {
 			int tag;
@@ -143,7 +142,6 @@ namespace PS_TEMPLATE_NAME {
 
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys.pwm_block().set_output(&present.pwm_duty);
 			hardwaresys.pwm_block().set_input(&present.voltage_required);
 			voltage_regulator.set_output(&present.voltage_required);
 			voltage_regulator.set_input(&present.voltage_deseired);

@@ -1,5 +1,5 @@
 #ifdef  TEMPL_BEGIN
-
+ 
 #ifndef ACTUATOR_TEMPLATE_NAME
 #define ACTUATOR_TEMPLATE_NAME actuator
 #define actuator_MOTOR_POSTITION_MEASSURY_ENABLED 1

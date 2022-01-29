@@ -1,27 +1,30 @@
 
 #define TEMPL_BEGIN
 #include "mexo/actuator.templ.prepare.hpp"
+
 #include "mexo/ps.templ.front.inc.hpp"
 
 namespace ACTUATOR_TEMPLATE_NAME {
 	template<typename types> struct action_t {
-		ACTUATOR_PS_TEMPLATE_NAME::action_t<types> dev;
-		bool invers;
-		typename types::signal_t voltage;
-		#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-		typename types::signal_t current;
+		ACTUATOR_PS_TEMPLATE_NAME::action_t<types> ps;
+		
+		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
+		|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+		typename types::signal_t speed;
+		#endif
+		#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
+		|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+		typename types::long_signal_t position;
 		#endif
 	};
 	template<typename types>struct feedback_t {
-		ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> dev;
+		ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
 		typename types::signal_t voltage;
 		#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
 		typename types::signal_t current;
 		#endif
 	};
 };
-
-
 
 #define TEMPL_FINISH
 #include "mexo/actuator.templ.prepare.hpp"
