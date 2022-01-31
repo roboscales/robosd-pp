@@ -276,6 +276,8 @@ namespace mexo {
 		idle_mode idle;
 		dev(cstr  _name, action_s& _action, present_s& _present);
 		void switch_to(int _mode);
+	protected:
+		virtual void do_create_vars(void);
 	private:
 		friend class mode;
 		mode::map modes_;
@@ -711,7 +713,7 @@ namespace mexo {
 			, input(_input) {}
 	};
 
-	template < typename I, typename O> class finall_controller_handler : public handler {
+	template < typename I> class finall_controller_handler : public handler {
 		I dummy_input_;
 	protected:
 		I* deseired;

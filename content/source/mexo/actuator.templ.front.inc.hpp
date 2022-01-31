@@ -2,6 +2,7 @@
 #define TEMPL_BEGIN
 #include "mexo/actuator.templ.prepare.hpp"
 
+#define PS_TEMPLATE_NAME ACTUATOR_PS_TEMPLATE_NAME 
 #include "mexo/ps.templ.front.inc.hpp"
 
 namespace ACTUATOR_TEMPLATE_NAME {

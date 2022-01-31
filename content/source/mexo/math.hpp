@@ -732,14 +732,14 @@ namespace mexo {
 	template<typename q> struct dq_t {
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
-		signal_t d;
-		signal_t q;
+		signal_t lateral;
+		signal_t cross;
 		signal_t angle;
 		dq_t(void) {
-			d = q = (signal_t)0;
+			cross = lateral = (signal_t)0;
 			angle = (long_signal_t)0;
 		}
-		dq_t(signal_t _value) { d = q = _value; }
+		dq_t(signal_t _value) { lateral = cross = _value; }
 	};
 
 	template<typename q> struct ab_t {
@@ -752,11 +752,11 @@ namespace mexo {
 		void transform(const dq_t<q>& _dq) {
 			cs.rotate(_dq.angle);
 			constexpr static signal_t sqrt2_div_2 = q::round(robo::csqrt<double>(2.0) / 2 * q::max);
-			signal_t d = q::s_mult(_dq.d, sqrt2_div_2);
-			signal_t q = q::s_mult(_dq.q, sqrt2_div_2);
+			signal_t lateral = q::s_mult(_dq.lateral, sqrt2_div_2);
+			signal_t cross = q::s_mult(_dq.cross, sqrt2_div_2);
 
-			alfa = q::dot(cs.co, d, - cs.si, q);
-			beta = q::dot(cs.si, d, cs.co, q);
+			alfa = q::dot(cs.co, lateral, - cs.si, cross);
+			beta = q::dot(cs.si, lateral, cs.co, cross);
 		}
 	};
 

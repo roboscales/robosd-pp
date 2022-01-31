@@ -52,21 +52,21 @@ namespace mexo {
 
 		template < typename C > class pwm
 			: public ps::control
-			, public finall_controller_handler< typename C::scaler::voltage_t, typename C::scaler::duty_t> {
-			typedef finall_controller_handler<  typename C::scaler::voltage_t, typename C::scaler::duty_t> A;
+			, public finall_controller_handler< typename C::inverter::signal_t> {
+			typedef finall_controller_handler<  typename C::inverter::signal_t> A;
 		public:
-			typedef typename C::scaler scaler;
-			typedef typename scaler::types types;
+			typedef typename C::inverter inverter_t;
+			typedef typename inverter_t::types types;
 			struct config_s {
 				typename A::config_s cb;				
-				range_s < typename scaler::discret_t > duty;
-				range_s < typename scaler::signal_t > voltage;
+				range_s < typename inverter_t::discret_t > duty;
+				range_s < typename inverter_t::signal_t > voltage;
 			};
 			struct present_s {
 				typename A::present_s cb;
-				typename scaler::duty_t duty;
+				typename inverter_t::present_s inverter;
 			};
-			typename scaler scaler_;
+			typename inverter_t inverter;
 		protected:
 			void execute(void) {
 				present_s& present = A::present_cast<present_s>();
@@ -84,8 +84,8 @@ namespace mexo {
 				case status::boot:
 				if (C::do_boot()) {
 					present.cb.actual_satstate = satstate_t::none;
-					scaler_.run(*A::deseired, present.duty);
-					C::boot_complete(present.duty);
+					inverter.run(*A::deseired);
+					C::boot_complete(present.inverter.duty);
 					status_ = status::on;
 					return;
 				}
@@ -95,8 +95,8 @@ namespace mexo {
 				case status::on:
 				if (command_ == command::on) {
 					present.cb.actual_satstate = satstate_t::none;
-					scaler_.run(*A::deseired, present.duty);
-					C::do_run(present.duty);
+					inverter.run(*A::deseired);
+					C::do_run(present.inverter.duty);
 					return;
 				}
 				else {
@@ -119,7 +119,7 @@ namespace mexo {
 			virtual bool do_handler_reconfig(void) {
 				ROBO_LBREAKN(A::do_handler_reconfig());
 				const config_s& config = A::config_cast<config_s>();
-				scaler_.reconfig(config.voltage.low, config.voltage.hi, config.duty.low, config.duty.hi);
+				inverter.reconfig(config.voltage.low, config.voltage.hi, config.duty.low, config.duty.hi);
 				if (status_ == status::configure) {
 					status_ = status::off;
 				}
@@ -138,7 +138,7 @@ namespace mexo {
 					var::record::create(types::var::const_discret, config.duty.hi, RT("duty.hi"), _master_key, _vars);
 					var::record::create(types::var::const_signal, config.voltage.low, RT("v.low"), _master_key, _vars);
 					var::record::create(types::var::const_signal, config.voltage.hi, RT("v.hi"), _master_key, _vars);
-					scaler::create_var(present.duty, _master_key, _vars );
+					inverter.create_var(_master_key, _vars );
 				}
 			}
 			#endif
@@ -146,9 +146,10 @@ namespace mexo {
 		public:
 
 			pwm(const config_s& _config, present_s& _present)
-				: A(_config.cb, _present.cb) {}
+				: A(_config.cb, _present.cb), inverter(_present.inverter) {}
 
-			const range_s < typename C::scaler::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().range.voltage; }
+			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().voltage; }
+			//void set_voltage_req(const C::inverter::signal_t* _voltage_req) { set_input(_voltage_req); }
 		};
 
 		template< typename T, typename D, typename O> class pwm_t
@@ -198,95 +199,59 @@ namespace mexo {
 				: A(_name, _owner, _config, _present) {}
 		};
 
-		template<typename q> struct dc_scaler : public q::scaler {
+		template<typename q> struct dc_inverter : public q::scaler {
 			typedef typename q::signal_t signal_t;
 			typedef typename q::discret_t discret_t;
-			typedef signal_t voltage_t;
 			typedef discret_t duty_t;
-			void run(voltage_t _voltage, duty_t& _discret) {
-				q::scaler::run(_voltage, _discret)
+			struct present_s {
+				duty_t duty;
+			};
+			present_s& present;
+			void run(signal_t _voltage) {
+				q::scaler::run(_voltage, present.duty)
 			}
-			static void create_var(const  duty_t& _duty, int  _master_key, var::record::list& _list) {
-				var::record::create(types::var::const_discret, _duty, RT("duty"), _master_key, _list);
+			static void create_var(int  _master_key, var::record::list& _list) {
+				var::record::create(types::var::const_discret, _present.duty, RT("duty"), _master_key, _list);
 			}
+			dc_inverter(present_s _present) : present(_present) {}
 		};
 
-		template<typename q> struct abc_scaler : public q::scaler {
+		template<typename q> struct abc_inverter : public q::scaler {
 			typedef typename q::signal_t signal_t;
 			typedef typename q::discret_t discret_t;
-			typedef abc_t<q> voltage_t;
+			typedef typename q::long_signal_t long_signal_t;
+			typedef abc_t<q> abc_t;
+			typedef ab_t<q> ab_t;
+			typedef dq_t<q> dq_t;
+			typedef cs_t<q> cs_t;
+
 			struct duty_t {
 				discret_t A;
 				discret_t B;
 				discret_t C;
 			};
-			void run(const voltage_t & _voltage, duty_t& _duty) {
-				q::scaler::run(_voltage.A, _duty.A);
-				q::scaler::run(_voltage.B, _duty.B);
-				q::scaler::run(_voltage.C, _duty.C);
-			}
-			static void create_var(const duty_t& _duty, int  _master_key	, var::record::list& _list) {
-				var::record::create(types::var::const_discret, _duty.A, RT("duty.A"), _master_key, _list);
-				var::record::create(types::var::const_discret, _duty.B, RT("duty.B"), _master_key, _list);
-				var::record::create(types::var::const_discret, _duty.C, RT("duty.C"), _master_key, _list);
-			}
-		};
-		//typedef ramp_b<signal_t, signal_t>  voltage_regulator_b;
-		//typedef filter_b<signal_t, signal_t, parameter_t>  current_filter_b;
-		//typedef quazzy_adapt_b<signal_t, signal_t, parameter_t>  current_regulator_b;
 
-		template<typename C> class inverter
-			: public pwm< C > {
-			typedef control_handler< dq_t<q>, abc_t<q> > A;
-		public:
-
-			typedef typename abc_t<q> abc_t;
-			typedef typename ab_t<q> ab_t;
-			typedef typename dq_t<q> dq_t;
-			typedef typename cs_t<q> cs_t;
-			typedef typename q::signal_t signal_t;
-			typedef typename q::long_signal_t long_signal_t;
-
-			typedef typename A::config_s config_s;
-			struct present_s : public  A::present_s {
+			struct present_s {
+				dq_t dq_required;
 				ab_t ab;
+				abc_t pwm;
 				uint8_t swm;
+				duty_t duty;
 			};
-
-		protected:
-			#if ROBO_APP_MEXO_VAR_ENABLED == 1
-			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
-				A::do_handler_create_vars(_vars, _master_key);
-				present_s& present = handler::present_cast<present_s>();
-				if (var::machine::actual_mode() >= var::machine::mode::full) {
-					var::record::create(q::var::const_signal, present.output.A, RT("pwm.A"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.output.B, RT("pwm.B"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.output.C, RT("pwm.C"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.cs.si, RT("ab.sin"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.cs.co, RT("ab.cos"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
-					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
-				}
-			};
-			#endif
-			
-
+			present_s& present;
 			long_signal_t sum_x_ya(signal_t x, signal_t y, signal_t a) {
 				long_signal_t tmp = ((long_signal_t)y) * a;
 				tmp = q::s_rshift<long_signal_t>(tmp, 15);
 				tmp += x;
 				return tmp;
 			}
-			
-			virtual void execute(void) {
+			void run(const signal_t _voltage) {
 				constexpr static signal_t one_div_2 = q::round(0.5 * q::max);
 				constexpr static signal_t sqrt3_div_2 = q::round(robo::csqrt<double>(3.0) / 2 * q::max);
 				constexpr static signal_t scale = q::round((2 / csqrt<double>(2.0) - 1.0) * q::max);
 
-				present_s& present = handler::present_cast<present_s>();
-
-				present.ab.transform(input);
+				present.dq_required.cross = _voltage;
+				present.ab.transform(present.dq_required);
 
 				long_signal_t pwmA;
 				long_signal_t pwmB;
@@ -299,22 +264,22 @@ namespace mexo {
 				z = sum_x_ya(v2, present.ab.alfa, -sqrt3_div_2);
 				if (y < 0) {
 					if (z < 0) {
-						pwmA = y  - z;
-						pwmB = pwmA + 2*z;
+						pwmA = y - z;
+						pwmB = pwmA + 2 * z;
 						pwmC = pwmA - 2 * y;
 						present.swm = 5;
 					}
 					else {
 						if (x > 0) {
-							pwmA =  -x + y;
+							pwmA = -x + y;
 							pwmC = pwmA - 2 * y;
 							pwmB = pwmC + 2 * x;
 							present.swm = 3;
 						}
 						else {
-							pwmA =  x - z;
+							pwmA = x - z;
 							pwmB = pwmA + 2 * z;
-							pwmC = pwmB - 2 * x ;
+							pwmC = pwmB - 2 * x;
 							present.swm = 4;
 						}
 					}
@@ -322,20 +287,20 @@ namespace mexo {
 				else {
 					if (z < 0) {
 						if (x > 0) {
-							pwmA =  x - z;
+							pwmA = x - z;
 							pwmB = pwmA + 2 * z;
 							pwmC = pwmB - 2 * x;
 							present.swm = 1;
 						}
 						else {
-							pwmA =  - x + y;
-							pwmC = pwmA  - 2 * y;
+							pwmA = -x + y;
+							pwmC = pwmA - 2 * y;
 							pwmB = pwmC + 2 * x;
 							present.swm = 6;
 						}
 					}
 					else {
-						pwmA =  y - z;
+						pwmA = y - z;
 						pwmB = pwmA + 2 * z;
 						pwmC = pwmA - 2 * y;
 						present.swm = 2;
@@ -346,23 +311,43 @@ namespace mexo {
 				pwmB += q::s_mult(pwmB, scale);
 				pwmC += q::s_mult(pwmC, scale);
 
-				present.output.A = (signal_t)saturate<long_signal_t>(pwmA, q::min, q::max);
-				present.output.B = (signal_t)saturate<long_signal_t>(pwmB, q::min, q::max);
-				present.output.C = (signal_t)saturate<long_signal_t>(pwmC, q::min, q::max);
+				present.pwm.A = (signal_t)saturate<long_signal_t>(pwmA, q::min, q::max);
+				present.pwm.B = (signal_t)saturate<long_signal_t>(pwmB, q::min, q::max);
+				present.pwm.C = (signal_t)saturate<long_signal_t>(pwmC, q::min, q::max);
 
-
+				q::scaler::run(present.pwm.A, present.duty.A);
+				q::scaler::run(present.pwm.B, present.duty.B);
+				q::scaler::run(present.pwm.C, present.duty.C);
 			}
 
-			virtual void do_handler_adjust(void) {
-				present_s& present = handler::present_cast<present_s>();
-				present.output.A = present.output.B = present.output.C = (typename q::signal_t)0;
+			void create_var(int  _master_key	, var::record::list& _vars) {
+				if (var::machine::actual_mode() >= var::machine::mode::full) {
+					var::record::create(types::var::const_discret, present.duty.A, RT("duty.A"), _master_key, _vars);
+					var::record::create(types::var::const_discret, present.duty.B, RT("duty.B"), _master_key, _vars);
+					var::record::create(types::var::const_discret, present.duty.C, RT("duty.C"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.pwm.A, RT("pwm.A"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.pwm.B, RT("pwm.B"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.pwm.C, RT("pwm.C"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.cs.si, RT("ab.sin"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.cs.co, RT("ab.cos"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.dq_required.cross, RT("dq.cross"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.dq_required.lateral, RT("dq.lat"), _master_key, _vars);
+					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
+				}
 			}
-		public:
-			inverter(const config_s& _config
-					, present_s& _present
-					, const dq_t & _input
-			)
-				: A(_config, _present, _input) {}
+
+			abc_inverter(present_s _present) : present(_present) {}
+
+			void lateral_voltage_set(signal_t _voltage) {
+				present.dq_required.lateral = _voltage;
+			}
+
+			void lateral_angle_set(signal_t _angle) {
+				present.dq_required.angle_ = _angle;
+			}
+
 		};
 
 

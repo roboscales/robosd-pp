@@ -36,10 +36,16 @@ namespace robo {
 			for (block::ref* p = blocks_.first(); p; p = p->next()) {
 				ROBO_LBREAKN(p->owner().load_());
 			}
+
+			ROBO_LBREAKN(do_begin());
+
+
+
 			for (block::ref* p = blocks_.first(); p; p = p->next()) {
 				p->owner().do_reconfig();
 			}
-			ROBO_LRET(do_begin());
+
+			return true;
 		}
 
 		bool agent::do_begin(void) {

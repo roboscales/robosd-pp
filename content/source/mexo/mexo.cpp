@@ -257,7 +257,7 @@ namespace mexo {
 		}
 		else {
 			if (owner_) {
-				return owner_->next_on_path(_path, _len);
+				return owner_;// ->next_on_path(_path, _len);
 			}
 			else {
 				return nullptr;
@@ -413,6 +413,16 @@ namespace mexo {
 		, ref_(*this, _index) {
 		ref_.attach_to(_dev.modes_);
 	};
+	void dev::do_create_vars(void) {
+		if (var::machine::actual_mode() >= var::machine::mode::full) {
+			var::record::create( var::const_uint8, present_.mode, RT("dev.mode"), key() , vars );
+		}
+		if (var::machine::actual_mode() >= var::machine::mode::config) {
+			var::record::create(var::uint8, action_.mode, RT("act.dev.mode"), key(), vars);
+			var::record::create(var::uint8, action_.actual, RT("act.dev.actual"), key(), vars);
+		}
+	}
+
 }
 
 #include "mexo/mexo.h"

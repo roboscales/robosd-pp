@@ -397,7 +397,7 @@ namespace mexo{
 					virtual bool begin(void){
 						path_ptr_ = path;
 						path_sz_ = ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE;
-						current_node_ = &::mexo::node::root();// .first_on_path(path_ptr_, path_sz_);
+						current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
 						if(current_node_){
 							current_var = current_node_->vars.first();
 							::robo::termo::itf::printf(RT("vartable\n\r"));
@@ -420,12 +420,7 @@ namespace mexo{
 								current_var=current_var->next();
 								return true;
 							}else {
-								if (current_node_ == &::mexo::node::root()) {
-									current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
-								}
-								else {
-									current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
-								}
+								current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
 								if (current_node_) {
 									current_var = current_node_->vars.first();
 									return true;

@@ -134,7 +134,19 @@ namespace PS_TEMPLATE_NAME {
 			#endif
 			typename types::signal_t dummy;
 		};
+protected:
+		void do_create_vars(void) {
+			::mexo::ps::dev::do_create_vars();
 
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
+				const action_s& action = action_cast<action_s>();
+				::mexo::var::record::create(::mexo::var::uint8, action.invers, RT("act.invers"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.v"), key(), vars);
+				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.c"), key(), vars);
+				#endif
+			}
+		}
 
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 	protected:
@@ -155,12 +167,12 @@ namespace PS_TEMPLATE_NAME {
 		virtual void voltage_mode_stop(void) {
 			off();
 			voltage_regulator.stop();
-			hardwaresys.pwm_block().set_output(nullptr);
 			hardwaresys.pwm_block().set_input(nullptr);
 			voltage_regulator.set_output(nullptr);
 			voltage_regulator.set_input(nullptr);
 		}
 		friend class voltage_mode_t;
+
 	public:
 		class voltage_mode_t :public ::mexo::ps::dev::mode {
 		protected:
@@ -381,6 +393,7 @@ namespace PS_TEMPLATE_NAME {
 				#include "mexo/ps.templ.settings.inc.hpp"
 				;
 		}
+
 	};
 }
 

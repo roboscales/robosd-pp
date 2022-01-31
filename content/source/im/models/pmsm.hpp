@@ -43,7 +43,7 @@ namespace robo{
 					struct{
 						float speed = 0.f;
 						float phase = 0.f;
-						float position = 0.f;
+						double position = 0.f;
 					} electro;
 
 					power::ph3 current;
