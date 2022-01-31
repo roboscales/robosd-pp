@@ -105,6 +105,7 @@ namespace robo {
                 : member < base< R, Args... >,C, R, Args... >(_instance, _member) {
             }
         };
+
     }
 }
 #endif

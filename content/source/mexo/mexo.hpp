@@ -116,6 +116,28 @@ namespace mexo {
 				}
 			};
 
+
+			template<typename C> class member : public ::robo::delegat::member<delegat, C, void> {
+				typedef ::robo::delegat::member<delegat, C, void> A;
+			public:
+				member(C* _instance, void (C::* _member) (void)) : A(_instance, _member) {}
+				member(slot::kind _kind, C* _instance, void(C::* _member)(void) ): A(_instance, _member) {
+					attach(_kind);
+				}
+				member(int _index, C* _instance, void (C::* _member) (void) ) : A(_instance, _member) {
+					attach(_index);
+				}
+				member(const int* _index, int _count, C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
+					attach(_index, _count);
+				}
+				template <size_t N>  member(int(&_index)[N], C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
+					attach(_index);
+				}
+				member(std::initializer_list<int> _index, C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
+					attach(_index);
+				}
+			};
+
 		private:
 			friend class machine;
 			friend class slots;

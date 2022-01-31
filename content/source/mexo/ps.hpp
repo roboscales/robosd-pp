@@ -213,7 +213,7 @@ namespace mexo {
 			static void create_var(int  _master_key, var::record::list& _list) {
 				var::record::create(types::var::const_discret, _present.duty, RT("duty"), _master_key, _list);
 			}
-			dc_inverter(present_s _present) : present(_present) {}
+			dc_inverter(present_s & _present) : present(_present) {}
 		};
 
 		template<typename q> struct abc_inverter : public q::scaler {
@@ -334,22 +334,22 @@ namespace mexo {
 					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.cross, RT("dq.cross"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.lateral, RT("dq.lat"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.dq_required.angle, RT("dq.angle"), _master_key, _vars);
 					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
 				}
 			}
 
-			abc_inverter(present_s _present) : present(_present) {}
+			abc_inverter(present_s & _present) : present(_present) {}
 
 			void lateral_voltage_set(signal_t _voltage) {
 				present.dq_required.lateral = _voltage;
 			}
 
-			void lateral_angle_set(signal_t _angle) {
-				present.dq_required.angle_ = _angle;
+			void set_angle(signal_t _angle) {
+				present.dq_required.angle = _angle;
 			}
 
 		};
-
 
 
 		/*

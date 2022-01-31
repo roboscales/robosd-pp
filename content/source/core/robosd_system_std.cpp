@@ -125,6 +125,9 @@ namespace robo {
 			if (sz < (int) _max_sz - 1) {
 				_dst[sz] = 0;
 			}
+			else {
+				_dst[_max_sz-1] = 0;
+			}
 			return (size_t) sz;
 		}
 		else return 0;

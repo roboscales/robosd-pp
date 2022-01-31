@@ -143,7 +143,7 @@ protected:
 				::mexo::var::record::create(::mexo::var::uint8, action.invers, RT("act.invers"), key(), vars);
 				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.v"), key(), vars);
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.c"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, action.current, RT("act.c"), key(), vars);
 				#endif
 			}
 		}
