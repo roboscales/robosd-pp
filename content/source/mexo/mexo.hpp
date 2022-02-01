@@ -626,7 +626,7 @@ namespace mexo {
 	};
 
 
-	template < typename O, typename D = O> class sence_handler : public handler {
+/*	template < typename O, typename D = O> class sence_handler : public handler {
 	protected:
 	public:
 		struct present_s {
@@ -655,7 +655,7 @@ namespace mexo {
 		sence_task_t(cstr _name, ::mexo::node* _owner, const typename BB::config_s& _config, typename  BB::present_s& _present)
 			: BB(_name, _owner, _config, _present) {}
 	};
-
+	*/
 	template < typename I, typename O> class function_handler : public handler {
 	protected:
 		const I& input;

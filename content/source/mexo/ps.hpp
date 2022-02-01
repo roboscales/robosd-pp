@@ -225,6 +225,7 @@ namespace mexo {
 			typedef dq_t<q> dq_t;
 			typedef cs_t<q> cs_t;
 
+
 			struct duty_t {
 				discret_t A;
 				discret_t B;
@@ -237,6 +238,7 @@ namespace mexo {
 				abc_t pwm;
 				uint8_t swm;
 				duty_t duty;
+				cs_t cs;
 			};
 			present_s& present;
 			long_signal_t sum_x_ya(signal_t x, signal_t y, signal_t a) {
@@ -251,7 +253,7 @@ namespace mexo {
 				constexpr static signal_t scale = q::round((2 / csqrt<double>(2.0) - 1.0) * q::max);
 
 				present.dq_required.cross = _voltage;
-				present.ab.transform(present.dq_required);
+				present.ab.scale_inverce(present.dq_required, present.cs);
 
 				long_signal_t pwmA;
 				long_signal_t pwmB;
@@ -328,13 +330,13 @@ namespace mexo {
 					var::record::create(q::var::const_signal, present.pwm.A, RT("pwm.A"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.B, RT("pwm.B"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.C, RT("pwm.C"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.cs.si, RT("ab.sin"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.ab.cs.co, RT("ab.cos"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.cs.si, RT("ab.sin"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.cs.co, RT("ab.cos"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.cross, RT("dq.cross"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.lateral, RT("dq.lat"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.dq_required.angle, RT("dq.angle"), _master_key, _vars);
+					var::record::create(q::var::const_signal, present.cs.angle, RT("dq.angle"), _master_key, _vars);
 					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
 				}
 			}
@@ -345,8 +347,8 @@ namespace mexo {
 				present.dq_required.lateral = _voltage;
 			}
 
-			void set_angle(signal_t _angle) {
-				present.dq_required.angle = _angle;
+			void angle_set(signal_t _angle) {
+				present.cs.rotate(_angle);
 			}
 
 		};

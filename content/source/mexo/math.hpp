@@ -721,23 +721,24 @@ namespace mexo {
 		typedef typename  q::signal_t signal_t;
 		signal_t si;
 		signal_t co;
+		signal_t angle;
 		cs_t(void) { si = co = (signal_t)0; }
 		cs_t(signal_t _value) { co = si = _value; }
 		void rotate(signal_t _angle) {
-			si = q::sin(_angle);
-			co = q::cos(_angle);
+			angle = _angle;
+			si = q::sin(angle);
+			co = q::cos(angle);
 		}
 	};
 	template<typename q> struct ab_t;
+	template<typename q> struct abc_t;
 	template<typename q> struct dq_t {
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
 		signal_t lateral;
 		signal_t cross;
-		signal_t angle;
 		dq_t(void) {
 			cross = lateral = (signal_t)0;
-			angle = (long_signal_t)0;
 		}
 		dq_t(signal_t _value) { lateral = cross = _value; }
 	};
@@ -746,27 +747,54 @@ namespace mexo {
 		typedef typename  q::signal_t signal_t;
 		signal_t alfa;
 		signal_t beta;
-		cs_t<q> cs;
 		ab_t(void) { alfa = beta = (signal_t)0; }
 		ab_t(signal_t _value) { alfa = beta = _value; }
-		void transform(const dq_t<q>& _dq) {
-			cs.rotate(_dq.angle);
+
+		void scale_inverce(const dq_t<q>& _dq, const cs_t<q> & _cs) {
 			constexpr static signal_t sqrt2_div_2 = q::round(robo::csqrt<double>(2.0) / 2 * q::max);
 			signal_t lateral = q::s_mult(_dq.lateral, sqrt2_div_2);
 			signal_t cross = q::s_mult(_dq.cross, sqrt2_div_2);
 
-			alfa = q::dot(cs.co, lateral, - cs.si, cross);
-			beta = q::dot(cs.si, lateral, cs.co, cross);
+			alfa = q::dot(_cs.co, lateral, -_cs.si, cross);
+			beta = q::dot(_cs.si, lateral, _cs.co, cross);
+		}
+
+		void inverce(const dq_t<q>& _dq, const cs_t<q>& _cs) {
+			
+			alfa = q::dot(_cs.co, _dq.lateral, -_cs.si, _dq.cross);
+			beta = q::dot(_cs.si, _dq.lateral, _cs.co, _dq.cross);
+		}
+
+		void transform(dq_t<q>& _dq, const cs_t<q>& _cs) {
+			constexpr static signal_t one_div_sqrt3 = q::round( robo::csqrt<double>(2.0/3.0)/2 * q::max);
+			_dq.lateral = q::dot(_cs.co, alfa, _cs.si, beta);
+			_dq.cross = q::dot(-_cs.si, alfa, _cs.co, beta);
 		}
 	};
 
 	template<typename q> struct abc_t {
 		typedef typename  q::signal_t signal_t;
+		typedef typename  q::long_signal_t long_signal_t;
 		signal_t A;
 		signal_t B;
 		signal_t C;
 		abc_t(void) { A = B = C = (signal_t)0; }
 		abc_t(signal_t _value) { A = B = C = _value; }
+		void transform(ab_t<q>& _ab) {
+			constexpr static signal_t one_div_sqrt3 = q::round( 1.0 / robo::csqrt<double>(3.0) * q::max);
+			_ab.alfa = A;
+			typename q::long_signal_u tmp;
+			tmp.value = (long_signal_t(2) * B + A) * one_div_sqrt3;
+			_ab.beta = q::s_extract(tmp);
+		}
+		void inverce(const ab_t<q>& _ab) {
+			constexpr static signal_t one_div_2 = q::round(0.5 * q::max);
+			constexpr static signal_t sqrt3_div_2 = q::round(robo::csqrt<double>(3.0) / 2 * q::max);
+			A = _ab.alfa;
+			B = q::dot(_ab.alfa, -one_div_2,_ab.beta, sqrt3_div_2)
+			C = -A - B;
+		}
+
 	};
 	
 
