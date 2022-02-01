@@ -343,7 +343,7 @@ namespace mexo {
 
 			abc_inverter(present_s & _present) : present(_present) {}
 
-			void lateral_voltage_set(signal_t _voltage) {
+			void lat_voltage_set(signal_t _voltage) {
 				present.dq_required.lateral = _voltage;
 			}
 
@@ -351,6 +351,9 @@ namespace mexo {
 				present.cs.rotate(_angle);
 			}
 
+			signal_t  & lat_voltage_ref(void) {
+				return present.dq_required.lateral;
+			}
 		};
 
 

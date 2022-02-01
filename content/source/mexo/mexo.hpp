@@ -50,7 +50,7 @@ namespace mexo {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, priority, backend, frontend };
+			enum class kind { begin = slot_count, start, priority, control, backend, frontend };
 			class delegat : public ::robo::delegat::base<void> {
 			public:
 				typedef list::unsorted<delegat> list;
@@ -152,9 +152,8 @@ namespace mexo {
 			friend class machine;
 			slot begin;
 			slot start;
-			#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 			slot priority;
-			#endif
+			slot control;
 			slot backend;
 			slot frontend;
 			slot periodic[slot_count];
@@ -338,6 +337,16 @@ namespace mexo {
 		prioritet_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 	};
 
+	class control_task : public task {
+		machine::slot::delegat::ref ref_;
+	protected:
+		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::control); };
+		virtual void do_stop(void) { guard__; ref_.dettach(); };
+		control_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+	public:
+		control_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+	};
+
 	class backend_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
@@ -417,6 +426,14 @@ namespace mexo {
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
+	};
+	class control_subsystem : public control_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+		control_subsystem(cstr  _name, node* _owner) : control_task(_name, false, _owner) {};
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+		control_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : control_task(_name, _autostart, _owner) {};
 	};
 	class backend_subsystem : public backend_task, public subsystem {
 	protected:

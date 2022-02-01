@@ -32,6 +32,7 @@ namespace mexo {
 	void machine::start_(void) {
 		slots_ref_.start.execute();
 	}
+	#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 	void machine::priority_loop_(void) {
 		tp.on(tp_verb::loop);
 		tp.on(tp_verb::priority);
@@ -39,11 +40,17 @@ namespace mexo {
 		slots_ref_.priority.execute();
 		tp.off(tp_verb::priority);
 	}
+	#endif
+
 	void machine::backend_loop_(void) {
 		tp.on(tp_verb::backend);
 		fall__;
-		slots_ref_.backend.execute();
+		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE != 1
+		slots_ref_.priority.execute();
+		#endif
 		slots_ref_.periodic[slot_index_].execute();
+		slots_ref_.control.execute();
+		slots_ref_.backend.execute();
 		slot_index_++;
 		if (slot_index_ == slot_count) {
 			slot_index_ = 0;
@@ -70,21 +77,22 @@ namespace mexo {
 		switch (_kind) {
 		case slot::kind::begin:
 		return begin;
-		break;
+		
 		case slot::kind::start:
 		return start;
-		break;
-		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
+		
 		case slot::kind::priority:
 		return priority;
-		break;
-		#endif
+		
+		case slot::kind::control:
+		return control;
+		
 		case slot::kind::backend:
 		return backend;
-		break;
+		
 		case slot::kind::frontend:
 		return frontend;
-		break;
+		
 		default:
 		ROBO_APP_CRASH();
 		return dummy;
@@ -93,9 +101,8 @@ namespace mexo {
 	void  machine::slots::free(void) {
 		begin.free();
 		start.free();
-		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		priority.free();
-		#endif
+		control.free();
 		backend.free();
 		frontend.free();
 		dummy.free();

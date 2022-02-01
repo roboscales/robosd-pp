@@ -300,8 +300,8 @@ public:
 			::mexo::ps::dev::mode(_index, RT("mod_po_cl"), _owner) {}
 	} position_ov_voltage_cl_mode;
 	#endif
-	dev_t (hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present, int _slot_index)
-		: ps_t(_hardwaresys, _name, _action.ps, _config.ps, _present.ps )
+	dev_t (cstr _name, action_s& _action, config_s& _config, present_s& _present, int _slot_index)
+		: ps_t(_name, _action.ps, _config.ps, _present.ps )
 		, slot_index_(_slot_index)
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		, motion_ov_current(

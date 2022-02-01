@@ -257,10 +257,22 @@ namespace mexo {
 			current_abc_sence(const config_s& _config, present_s& _present, const  cs_t<q>& _cs)
 				: B(_config, _present.adc)
 				, cs_(_cs) {}
-			typename q::signal_t& current_ref(void) { return present.current.cross; }
-			typename q::signal_t& current_delta_ref(void) { return present.delta.cross; }
-			typename q::signal_t& lat_current_ref(void) { return present.current.lateral; }
-			typename q::signal_t& lat_current_delta_ref(void) { return present.delta.lateral; }
+			typename q::signal_t& current_ref(void) { 
+				present_s& present = handler::present_cast<present_s>(); 
+				return present.current.cross; 
+			}
+			typename q::signal_t& current_delta_ref(void) { 
+				present_s& present = handler::present_cast<present_s>(); 
+				return present.delta.cross; 
+			}
+			typename q::signal_t& lat_current_ref(void) { 
+				present_s& present = handler::present_cast<present_s>(); 
+				return present.current.lateral; 
+			}
+			typename q::signal_t& lat_current_delta_ref(void) { 
+				present_s& present = handler::present_cast<present_s>(); 
+				return present.delta.lateral; 
+			}
 
 		protected:
 			void execute(void) {

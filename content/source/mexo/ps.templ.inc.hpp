@@ -13,7 +13,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::ramp<types>
-			, ::mexo::backend_subsystem
+			, ::mexo::control_subsystem
 		> voltage_regulator_b;
 		voltage_regulator_b voltage_regulator;
 		#endif
@@ -21,7 +21,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::quazzy_adapt<types>
-			, ::mexo::backend_subsystem
+			, ::mexo::control_subsystem
 			, const typename types::signal_t&
 			, const typename types::signal_t&
 		> current_regulator_b;
@@ -31,7 +31,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::limmiter<types>
-			, ::mexo::prioritet_subsystem
+			, ::mexo::control_subsystem
 			, const typename types::signal_t&
 			, const typename types::signal_t&
 			, const ::mexo::range_s<typename types::signal_t>&
@@ -108,9 +108,9 @@ namespace PS_TEMPLATE_NAME {
 			#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 			typename current_limmiter_b::present_s current_limmiter;
 			#endif
-
+			
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-			typename types::discret_t pwm_duty;
+			//typename types::discret_t pwm_duty;
 			typename types::signal_t voltage_required;
 			#endif		
 
@@ -137,7 +137,6 @@ namespace PS_TEMPLATE_NAME {
 protected:
 		void do_create_vars(void) {
 			::mexo::ps::dev::do_create_vars();
-
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
 				const action_s& action = action_cast<action_s>();
 				::mexo::var::record::create(::mexo::var::uint8, action.invers, RT("act.invers"), key(), vars);
@@ -146,6 +145,18 @@ protected:
 				::mexo::var::record::create(typename types::var::signal, action.current, RT("act.c"), key(), vars);
 				#endif
 			}
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
+				const present_s& present = present_cast<present_s>();
+
+				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+				::mexo::var::record::create(typename types::var::signal, present.voltage_required, RT("req.v"), key(), vars);
+				#endif		
+
+				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				#endif
+			}
+
 		}
 
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
@@ -154,11 +165,11 @@ protected:
 
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
 			voltage_regulator.set_output(&present.voltage_required);
 			voltage_regulator.set_input(&present.voltage_deseired);
 
-			hardwaresys.reconfig();
+			hardwaresys_t::reconfig();
 			voltage_regulator.reconfig();
 			voltage_regulator.start();
 			on();
@@ -167,7 +178,7 @@ protected:
 		virtual void voltage_mode_stop(void) {
 			off();
 			voltage_regulator.stop();
-			hardwaresys.pwm_block().set_input(nullptr);
+			hardwaresys_t::power_supply_block.set_input(nullptr);
 			voltage_regulator.set_output(nullptr);
 			voltage_regulator.set_input(nullptr);
 		}
@@ -209,7 +220,7 @@ protected:
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
 		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,_present.current_diff_filter.fb.output
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,hardwaresys.sence_block().output_diff()
+		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,hardwaresys_t::current_sence_block.current_delta_ref()
 		#endif
 		#else
 		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,_present.dummy
@@ -217,12 +228,12 @@ protected:
 		#else
 		#if POWER_SUPPLY_CURRENT_DIFF_ENABLED==1
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.sence_block().output(),_present.current_diff_filter.fb.output
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),_present.current_diff_filter.fb.output
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.sence_block().output(),hardwaresys.sence_block().output_diff()
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),hardwaresys_t::current_sence_block.current_delta_ref()
 		#endif
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.sence_block().output(),_present.dummy
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),_present.dummy
 		#endif	
 		#endif
 		#endif
@@ -232,12 +243,11 @@ protected:
 		void mode_current_start(void) {
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys.pwm_block().set_output(&present.pwm_duty);
-			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
 			current_regulator.set_output(&present.voltage_required);
 			current_regulator.set_input(&present.current_deseired);
 
-			hardwaresys.reconfig();
+			hardwaresys_t::reconfig();
 			current_regulator.reconfig();
 			current_regulator.start();
 			on();
@@ -245,8 +255,7 @@ protected:
 		void mode_current_stop(void) {
 			off();
 			current_regulator.stop();
-			hardwaresys.pwm_block().set_output(nullptr);
-			hardwaresys.pwm_block().set_input(nullptr);
+			hardwaresys_t::power_supply_block.set_input(nullptr);
 			current_regulator.set_output(nullptr);
 			current_regulator.set_input(nullptr);
 		}
@@ -286,12 +295,11 @@ protected:
 		void mode_limmiter_start(void) {
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys.pwm_block().set_output(&present.pwm_duty);
-			hardwaresys.pwm_block().set_input(&present.voltage_required);
+			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
 			current_limmiter.set_output(&present.voltage_required);
 			current_limmiter.set_input(&present.voltage_deseired);
-			present.voltage_range_desired = hardwaresys.pwm_block().pwm_voltage_limits();
-			hardwaresys.reconfig();
+			present.voltage_range_desired = hardwaresys_t::power_supply_block.pwm_voltage_limits();
+			hardwaresys_t::power_supply_block.reconfig();
 			current_limmiter.reconfig();
 			current_limmiter.start();
 			on();
@@ -299,8 +307,7 @@ protected:
 		void mode_limmiter_stop(void) {
 			off();
 			current_limmiter.stop();
-			hardwaresys.pwm_block().set_output(nullptr);
-			hardwaresys.pwm_block().set_input(nullptr);
+			hardwaresys_t::power_supply_block.set_input(nullptr);
 			current_limmiter.set_output(nullptr);
 			current_limmiter.set_input(nullptr);
 		}
@@ -335,7 +342,6 @@ protected:
 				::mexo::ps::dev::mode(_index, RT("mod_c_lm"), _owner) {}
 		};
 		#endif
-		hardwaresys_t& hardwaresys;
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		voltage_mode_t voltage_mode;
 		#endif
@@ -345,23 +351,21 @@ protected:
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		current_limmiter_mode_t current_limmiter_mode;
 		#endif
-		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
-			: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.pwm_block())
-			, hardwaresys(_hardwaresys)
-
+		dev_t(cstr _name, action_s& _action, config_s& _config, present_s& _present)
+			: ::mexo::ps::dev(_name, _action.dev, _present.dev, hardwaresys_t::power_supply_block )
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, _hardwaresys.pwm_block().pwm_voltage_limits(), _hardwaresys.pwm_block().actual_satstate())
-			, voltage_mode(1, *this)
+			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys_t::power_supply_block.pwm_voltage_limits(), hardwaresys_t::power_supply_block.actual_satstate())
+			, voltage_mode(1, *this) 
 			#endif
 
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter, _hardwaresys.sence_block().output())
+			, current_filter(RT("c_f"), &hardwaresys_t::prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys_t::current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &_hardwaresys.prioritet_subsystem(), _config.current_filter, _present.current_filter, _hardwaresys.sence_block().output())
+			, current_filter(RT("c_f"), &hardwaresys_t::prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys_t::current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-			, current_diff_filter(RT("c_dif_f"), &_hardwaresys.prioritet_subsystem(), _config.current_diff_filter, _present.current_diff_filter, _hardwaresys.sence_block().output_diff())
+			, current_diff_filter(RT("c_dif_f"), &hardwaresys_t::prioritet_subsystem, _config.current_diff_filter, _present.current_diff_filter, hardwaresys_t::current_sence_block.current_delta_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 			, current_regulator(
@@ -370,7 +374,7 @@ protected:
 				, _config.current_regulator
 				, _present.current_regulator
 				, _present.voltage_range_desired
-				, _hardwaresys.pwm_block().actual_satstate()
+				, hardwaresys_t::power_supply_block.actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 			)
 			, current_mode(2, *this)
@@ -381,8 +385,8 @@ protected:
 				, this
 				, _config.current_limmiter
 				, _present.current_limmiter
-				, _hardwaresys.pwm_block().pwm_voltage_limits()
-				, _hardwaresys.pwm_block().actual_satstate()
+				, hardwaresys_t::power_supply_block.pwm_voltage_limits()
+				, hardwaresys_t::power_supply_block.actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 				, _present.current_range_desired
 			)
