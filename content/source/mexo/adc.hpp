@@ -293,6 +293,30 @@ namespace mexo {
 			}
 			virtual void do_handler_adjust(void) {}
 		};
+
+		template <class q, class D> class current_abc_sensor_t : public ::mexo::handler_t <
+			subsystem_handler
+			, current_abc_sence<q, D >
+			, prioritet_subsystem
+			, const cs_t<q>&
+		> {
+			typedef handler_t <
+				subsystem_handler
+				, current_abc_sence<types, D>
+				, prioritet_subsystem
+				, const cs_t<q>&
+			> A;
+		public:
+			;
+			current_abc_sensor_t(
+				cstr _name
+				, prioritet_subsystem* _owner
+				, const A::config_s& _config
+				, A::present_s& _present
+				, const cs_t<types>& _cs
+			)
+				: A(_name, _owner, _config, _present, _cs) {}
+		};
 	}
 
 }

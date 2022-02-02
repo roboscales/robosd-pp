@@ -5,20 +5,19 @@
 namespace mexo {
 	namespace enco {
 		template <typename q, typename D > class increment
-			: public sence_handler< typename q::long_signal_t, typename q::signal_t > {
-			typedef  sence_handler< typename q::long_signal_t, typename q::signal_t > A;
+			: public handler, protected D {
 		public:
 			typedef typename D::unative_t unative_t;
 			typedef typename D::native_t native_t;
-
+			typedef typename q::long_signal_t long_signal_t;
 			struct config_s {
-				typename A::config_s	sb;
+				handler::config_s	sb;
 				typename q::parameter_t scale;
 				unsigned native_shift;
 			};
 
 			struct present_s {
-				typename A::present_s	sb;
+				handler::present_s	sb;
 				struct {
 					unative_t actual;
 					unative_t ceiled;
@@ -28,6 +27,8 @@ namespace mexo {
 					unsigned fault;
 					unsigned total;
 				} counter;
+				long_signal_t delta;
+				long_signal_t position;
 			};
 		private:
 		protected:
@@ -39,19 +40,18 @@ namespace mexo {
 				present.counter.total++;
 				if(!D::error()){
 					present.native.actual = D::native();
+					native_t tmp = present.native.actual << config.native_shift;
+					native_t  tmp_delta = tmp - present.native.ceiled;
+					present.native.ceiled = tmp;
+					present.native.delta = (((native_t)(tmp_delta)) >> config.native_shift);
+					present.delta = (typename q::signal_t)present.native.delta * config.scale;
 				} else {
 					present.counter.fault++;
 					present.native.actual +=  present.native.delta;
 					present.native.ceiled += (present.native.delta<<config.native_shift);
-					present.sb.output += present.sb.delta;
 				}
 				
-				native_t tmp = present.native.actual << config.native_shift;
-				native_t  tmp_delta = tmp - present.native.ceiled;
-				present.native.ceiled = tmp;
-				present.native.delta = (((native_t)(tmp_delta)) >> config.native_shift);
-				present.sb.delta = (typename q::signal_t)present.native.delta * config.scale;
-				present.sb.output += present.sb.delta;
+				present.position += present.delta;
 			}
 
 			virtual bool do_handler_reconfig(void) {
@@ -59,8 +59,29 @@ namespace mexo {
 			}
 		public:
 			increment(const config_s& _config, present_s& _present)
-				: A(_config.sb, _present.sb) {}
+				: handler(_config.sb, _present.sb) {}
 		};
+
+		template <class q, class D> class increment_t : public ::mexo::handler_t <
+			subsystem_handler
+			, increment<q, D >
+			, prioritet_subsystem
+		> {
+			typedef handler_t <
+				subsystem_handler
+				, increment<types, D>
+				, prioritet_subsystem
+			> A;
+		public:
+			;
+			increment_t(
+				cstr _name
+				, prioritet_subsystem* _owner
+				, const A::config_s& _config
+				, A::present_s& _present
+			)
+				: A(_name, _owner, _config, _present) {}
+		};		
 	}
 }
 #endif
