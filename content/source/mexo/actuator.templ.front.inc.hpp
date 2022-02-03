@@ -20,10 +20,6 @@ namespace ACTUATOR_TEMPLATE_NAME {
 	};
 	template<typename types>struct feedback_t {
 		ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
-		typename types::signal_t voltage;
-		#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-		typename types::signal_t current;
-		#endif
 	};
 };
 

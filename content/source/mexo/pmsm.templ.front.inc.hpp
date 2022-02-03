@@ -5,9 +5,7 @@
 #define ACTUATOR_PS_TEMPLATE_NAME PMSM_PS_CROSS_TEMPLATE_NAME
 
 #include "mexo/actuator.templ.front.inc.hpp"
-
 namespace PMSM_TEMPLATE_NAME {
-
 	template<typename types> struct action_t {
 		::PMSM_ACTUATOR_TEMPLATE_SUB_NAME::action_t<types> actuator;
 		typename types::long_signal_t freq;

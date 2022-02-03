@@ -7,6 +7,7 @@
 namespace PS_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t : public ::mexo::ps::dev {
 	public:
+		hardwaresys_t& hardwaresys;
 		typedef action_t<types> action_s;
 		typedef feedback_t<types> feedback_s;
 
@@ -165,11 +166,11 @@ protected:
 
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
+			hardwaresys.power_supply_block.set_input(&present.voltage_required);
 			voltage_regulator.set_output(&present.voltage_required);
 			voltage_regulator.set_input(&present.voltage_deseired);
 
-			hardwaresys_t::reconfig();
+			hardwaresys.reconfig();
 			voltage_regulator.reconfig();
 			voltage_regulator.start();
 			on();
@@ -178,7 +179,7 @@ protected:
 		virtual void voltage_mode_stop(void) {
 			off();
 			voltage_regulator.stop();
-			hardwaresys_t::power_supply_block.set_input(nullptr);
+			hardwaresys.power_supply_block.set_input(nullptr);
 			voltage_regulator.set_output(nullptr);
 			voltage_regulator.set_input(nullptr);
 		}
@@ -220,7 +221,7 @@ protected:
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
 		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,_present.current_diff_filter.fb.output
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,hardwaresys_t::current_sence_block.current_delta_ref()
+		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,hardwaresys.current_sence_block.current_delta_ref()
 		#endif
 		#else
 		#define POWER_SUPPLY_ACTUAL_SIGNALS _present.current_filter.fb.output,_present.dummy
@@ -228,12 +229,12 @@ protected:
 		#else
 		#if POWER_SUPPLY_CURRENT_DIFF_ENABLED==1
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),_present.current_diff_filter.fb.output
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.current_sence_block.current_ref(),_present.current_diff_filter.fb.output
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),hardwaresys_t::current_sence_block.current_delta_ref()
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.current_sence_block.current_ref(),hardwaresys.current_sence_block.current_delta_ref()
 		#endif
 		#else
-		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.current_ref(),_present.dummy
+		#define POWER_SUPPLY_ACTUAL_SIGNALS hardwaresys.current_sence_block.current_ref(),_present.dummy
 		#endif	
 		#endif
 		#endif
@@ -243,11 +244,11 @@ protected:
 		void mode_current_start(void) {
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
+			hardwaresys.power_supply_block.set_input(&present.voltage_required);
 			current_regulator.set_output(&present.voltage_required);
 			current_regulator.set_input(&present.current_deseired);
 
-			hardwaresys_t::reconfig();
+			hardwaresys.reconfig();
 			current_regulator.reconfig();
 			current_regulator.start();
 			on();
@@ -255,7 +256,7 @@ protected:
 		void mode_current_stop(void) {
 			off();
 			current_regulator.stop();
-			hardwaresys_t::power_supply_block.set_input(nullptr);
+			hardwaresys.power_supply_block.set_input(nullptr);
 			current_regulator.set_output(nullptr);
 			current_regulator.set_input(nullptr);
 		}
@@ -295,11 +296,11 @@ protected:
 		void mode_limmiter_start(void) {
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys_t::power_supply_block.set_input(&present.voltage_required);
+			hardwaresys.power_supply_block.set_input(&present.voltage_required);
 			current_limmiter.set_output(&present.voltage_required);
 			current_limmiter.set_input(&present.voltage_deseired);
-			present.voltage_range_desired = hardwaresys_t::power_supply_block.pwm_voltage_limits();
-			hardwaresys_t::power_supply_block.reconfig();
+			present.voltage_range_desired = hardwaresys.power_supply_block.pwm_voltage_limits();
+			hardwaresys.power_supply_block.reconfig();
 			current_limmiter.reconfig();
 			current_limmiter.start();
 			on();
@@ -307,7 +308,7 @@ protected:
 		void mode_limmiter_stop(void) {
 			off();
 			current_limmiter.stop();
-			hardwaresys_t::power_supply_block.set_input(nullptr);
+			hardwaresys.power_supply_block.set_input(nullptr);
 			current_limmiter.set_output(nullptr);
 			current_limmiter.set_input(nullptr);
 		}
@@ -351,21 +352,22 @@ protected:
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		current_limmiter_mode_t current_limmiter_mode;
 		#endif
-		dev_t(cstr _name, action_s& _action, config_s& _config, present_s& _present)
-			: ::mexo::ps::dev(_name, _action.dev, _present.dev, hardwaresys_t::power_supply_block )
+		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
+			: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.power_supply_block )
+			, hardwaresys(_hardwaresys)
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys_t::power_supply_block.pwm_voltage_limits(), hardwaresys_t::power_supply_block.actual_satstate())
+			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())
 			, voltage_mode(1, *this) 
 			#endif
 
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &hardwaresys_t::prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys_t::current_sence_block.current_ref())
+			, current_filter(RT("c_f"), &hardwaresys.prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &hardwaresys_t::prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys_t::current_sence_block.current_ref())
+			, current_filter(RT("c_f"), &hardwaresys.prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-			, current_diff_filter(RT("c_dif_f"), &hardwaresys_t::prioritet_subsystem, _config.current_diff_filter, _present.current_diff_filter, hardwaresys_t::current_sence_block.current_delta_ref())
+			, current_diff_filter(RT("c_dif_f"), &hardwaresys.prioritet_subsystem, _config.current_diff_filter, _present.current_diff_filter, hardwaresys.current_sence_block.current_delta_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 			, current_regulator(
@@ -374,7 +376,7 @@ protected:
 				, _config.current_regulator
 				, _present.current_regulator
 				, _present.voltage_range_desired
-				, hardwaresys_t::power_supply_block.actual_satstate()
+				, hardwaresys.power_supply_block.actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 			)
 			, current_mode(2, *this)
@@ -385,8 +387,8 @@ protected:
 				, this
 				, _config.current_limmiter
 				, _present.current_limmiter
-				, hardwaresys_t::power_supply_block.pwm_voltage_limits()
-				, hardwaresys_t::power_supply_block.actual_satstate()
+				, hardwaresys.power_supply_block.pwm_voltage_limits()
+				, hardwaresys.power_supply_block.actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 				, _present.current_range_desired
 			)

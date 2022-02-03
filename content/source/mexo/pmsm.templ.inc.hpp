@@ -106,7 +106,7 @@ namespace PMSM_TEMPLATE_NAME {
 		
 		#define LAT_ACTUAL_SIGNALS _present.lat_current.filter.fb.output,_present.lat_current.diff_filter.fb.output
 		#else
-		#define LAT_ACTUAL_SIGNALS _present.lat_current.filter.fb.output,hardwaresys_t::current_sence_block.lat_current_delta_ref()
+		#define LAT_ACTUAL_SIGNALS _present.lat_current.filter.fb.output,hardwaresys.current_sence_block.lat_current_delta_ref()
 		#endif
 		#else
 		#define LAT_ACTUAL_SIGNALS _present.lat_current.filter.fb.output,_present.dummy
@@ -114,12 +114,12 @@ namespace PMSM_TEMPLATE_NAME {
 		#else
 		#if LAT_CURRENT_DIFF_ENABLED==1
 		#if LAT_CURRENT_DIFF_FILTER_ENABLED==1
-		#define LAT_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.lat_current_ref(),_present.lat_current.diff_filter.fb.output
+		#define LAT_ACTUAL_SIGNALS hardwaresys.current_sence_block.lat_current_ref(),_present.lat_current.diff_filter.fb.output
 		#else
-		#define LAT_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.lat_current_ref(),hardwaresys_t::current_sence_block.lat_current_delta_ref()
+		#define LAT_ACTUAL_SIGNALS hardwaresys.current_sence_block.lat_current_ref(),hardwaresys.current_sence_block.lat_current_delta_ref()
 		#endif
 		#else
-		#define LAT_ACTUAL_SIGNALS hardwaresys_t::current_sence_block.lat_current_ref(),_present.actuator.dummy
+		#define LAT_ACTUAL_SIGNALS hardwaresys.current_sence_block.lat_current_ref(),_present.actuator.dummy
 		#endif	
 		#endif
 		#endif
@@ -144,11 +144,11 @@ namespace PMSM_TEMPLATE_NAME {
 			break;
 			case mode_sync_voltage:
 				present.angle_req += present.freq_req;
-				hardwaresys_t::power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
+				hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
 			break;
 			case mode_sync_current:
 				present.angle_req += present.freq_req;
-				hardwaresys_t::power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
+				hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
 				break;
 			default:
 			break;
@@ -182,14 +182,14 @@ namespace PMSM_TEMPLATE_NAME {
 
 		void synchro_voltage_mode_start(void) {
 			present_s& present = present_cast<present_s>();
-			hardwaresys_t::power_supply_block.set_input(&present.actuator.ps.voltage_deseired);
-			hardwaresys_t::reconfig();
+			hardwaresys.power_supply_block.set_input(&present.actuator.ps.voltage_deseired);
+			hardwaresys.reconfig();
 			on();
 		}
 
 		virtual void synchro_voltage_mode_stop(void) {
 			off();
-			hardwaresys_t::power_supply_block.set_input(nullptr);
+			hardwaresys.power_supply_block.set_input(nullptr);
 		}
 		virtual void synchro_voltage_mode_applay_action(void) {
 			const action_s& action = action_cast<action_s>();
@@ -197,7 +197,7 @@ namespace PMSM_TEMPLATE_NAME {
 			present.actuator.ps.voltage_deseired = action.actuator.ps.voltage;
 			present.freq_req = action.freq;
 			present.angle_req = action.angle;
-			hardwaresys_t::power_supply_block.inverter.lat_voltage_set(action.voltage_lateral);
+			hardwaresys.power_supply_block.inverter.lat_voltage_set(action.voltage_lateral);
 		}
 
 		class synchro_voltage_mode_t :public ::mexo::ps::dev::mode {
@@ -226,14 +226,14 @@ namespace PMSM_TEMPLATE_NAME {
 		void synchro_current_mode_start(void) {
 			present_s& present = present_cast<present_s>();
 
-			hardwaresys_t::power_supply_block.set_input(&present.actuator.ps.voltage_required);
+			hardwaresys.power_supply_block.set_input(&present.actuator.ps.voltage_required);
 			current_regulator.set_output(&present.actuator.ps.voltage_required);
 			current_regulator.set_input(&present.actuator.ps.current_deseired);
 
-			lat_current_regulator.set_output(&hardwaresys_t::power_supply_block.inverter.lat_voltage_ref());
+			lat_current_regulator.set_output(&hardwaresys.power_supply_block.inverter.lat_voltage_ref());
 			lat_current_regulator.set_input(&present.lat_current.deseired);
 
-			hardwaresys_t::reconfig();
+			hardwaresys.reconfig();
 
 			current_regulator.reconfig();
 			current_regulator.start();
@@ -247,7 +247,7 @@ namespace PMSM_TEMPLATE_NAME {
 		void synchro_current_mode_stop(void) {
 			off();
 			current_regulator.stop();
-			hardwaresys_t::power_supply_block.set_input(nullptr);
+			hardwaresys.power_supply_block.set_input(nullptr);
 			current_regulator.set_output(nullptr);
 			current_regulator.set_input(nullptr);
 
@@ -319,21 +319,21 @@ namespace PMSM_TEMPLATE_NAME {
 
 	public:
 
-		dev_t (cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
-			: actuator_t( _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
+		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
+			: actuator_t(_hardwaresys, _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
 			, inverter_controller(::mexo::machine::slot::kind::control ,this, &dev_t::inverter_controller_run)
 			, synchro_voltage_mode_(mode_sync_voltage,*this)
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
 			, synchro_current_mode_(mode_sync_current, *this)
 			#endif
 			#if LAT_CURRENT_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &hardwaresys_t::prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, hardwaresys_t::current_sence_block.lat_current_ref())
+			, lat_current_filter(RT("lc_f"), &hardwaresys.prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, hardwaresys.current_sence_block.lat_current_ref())
 			#endif
 			#if LAT_CURRENT_FAST_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &hardwaresys_t::prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, hardwaresys_t::current_sence_block.lat_current_ref())
+			, lat_current_filter(RT("lc_f"), &hardwaresys.prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, hardwaresys.current_sence_block.lat_current_ref())
 			#endif
 			#if LAT_CURRENT_DIFF_FILTER_ENABLED==1
-			, lat_current_diff_filter(RT("lc_dif_f"), &hardwaresys_t::prioritet_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, hardwaresys_t::current_sence_block.lat_current_delta_ref())
+			, lat_current_diff_filter(RT("lc_dif_f"), &hardwaresys.prioritet_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, hardwaresys.current_sence_block.lat_current_delta_ref())
 			#endif
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
 			, lat_current_regulator(
@@ -342,7 +342,7 @@ namespace PMSM_TEMPLATE_NAME {
 				, _config.lat_current.regulator
 				, _present.lat_current.regulator
 				, _present.voltage_range_desired
-				, hardwaresys_t::power_supply_block.actual_satstate()
+				, hardwaresys.power_supply_block.actual_satstate()
 				, LAT_ACTUAL_SIGNALS
 			) 
 			#endif

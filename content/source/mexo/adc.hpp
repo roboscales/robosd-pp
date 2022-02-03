@@ -294,7 +294,7 @@ namespace mexo {
 			virtual void do_handler_adjust(void) {}
 		};
 
-		template <class q, class D> class current_abc_sensor_t : public ::mexo::handler_t <
+		template <typename q, typename D> class current_abc_sensor_t : public ::mexo::handler_t <
 			subsystem_handler
 			, current_abc_sence<q, D >
 			, prioritet_subsystem
@@ -302,18 +302,17 @@ namespace mexo {
 		> {
 			typedef handler_t <
 				subsystem_handler
-				, current_abc_sence<types, D>
+				, current_abc_sence<q, D>
 				, prioritet_subsystem
 				, const cs_t<q>&
 			> A;
 		public:
-			;
 			current_abc_sensor_t(
 				cstr _name
 				, prioritet_subsystem* _owner
-				, const A::config_s& _config
-				, A::present_s& _present
-				, const cs_t<types>& _cs
+				, const typename A::config_s& _config
+				, typename  A::present_s& _present
+				, const cs_t<q>& _cs
 			)
 				: A(_name, _owner, _config, _present, _cs) {}
 		};
