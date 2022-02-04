@@ -86,7 +86,7 @@ namespace mexo {
 		
 		case slot::kind::control:
 		return control;
-		
+
 		case slot::kind::backend:
 		return backend;
 		
@@ -138,27 +138,29 @@ namespace mexo {
 		}
 	}
 
-	void machine::slot::delegat::attach(slot::kind _kind) {
+	void machine::slot::delegat::attach(slot::kind _kind, delegat* _prev) {
 		ROBO_APP_ASSERT(is_frontend__);
 		ref* r = new ref(*this);
 		guard__;
-		r->attach_to(machine::slots_()[_kind].delegats_);
+		r->attach_after(machine::slots_()[_kind].delegats_, _prev );
 	}
 
-	void machine::slot::delegat::attach(int _index) {
+	void machine::slot::delegat::attach(int _index, delegat* _prev) {
 		ROBO_APP_ASSERT(is_frontend__);
 		ref* r = new ref(*this);
 		guard__;
-		r->attach_to(machine::slots_()[_index].delegats_);
+		r->attach_after(machine::slots_()[_index].delegats_, _prev);
 	}
 
-	void machine::slot::delegat::attach(ref& _ref, int _index) {
+	void machine::slot::delegat::attach(ref& _ref, int _index, delegat* _prev) {
 		guard__;
-		_ref.attach_to(machine::slots_()[_index].delegats_);
+		_ref.attach_after(machine::slots_()[_index].delegats_, _prev);
 	}
-	void machine::slot::delegat::attach(ref& _ref, slot::kind _kind) {
+	
+
+	void machine::slot::delegat::attach(ref& _ref, slot::kind _kind, delegat* _prev) {
 		guard__;
-		_ref.attach_to(machine::slots_()[_kind].delegats_);
+		_ref.attach_after(machine::slots_()[_kind].delegats_, _prev);
 	}
 
 
@@ -290,7 +292,7 @@ namespace mexo {
 		machine::slot::delegat::ref** pref = refs_;
 		int* ix = index_;
 		for (size_t n = 0; n < ref_count_; ++n, ++pref, ++ix) {
-			machine::slot::delegat::attach(**pref, *ix);
+			machine::slot::delegat::attach(**pref, *ix, nullptr);
 		}
 	}
 
@@ -342,8 +344,14 @@ namespace mexo {
 		: task(_name, _autostart, _owner) {
 		setup(_index);
 	}
+	periodic_task::periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, periodic_task* _prev)
+		: task(_name, _autostart, _prev) {
+		setup(_index);
+	}
 	periodic_task::periodic_task(cstr  _name, node* _owner)
 		: task(_name, false, _owner) {}
+	periodic_task::periodic_task(cstr  _name, periodic_task* _prev)
+		: task(_name, false, _prev) {}
 
 	periodic_task::~periodic_task(void) {
 		machine::slot::delegat::ref** pref = refs_;
@@ -357,7 +365,22 @@ namespace mexo {
 		: node(_name, _subsystem ? _subsystem->owned_node() : nullptr)
 		, ref_(*this) {
 		if (_subsystem) {
+			subsystem_ = _subsystem;
 			ref_.attach_to(_subsystem->handlers);
+		}
+		else {
+			subsystem_ = nullptr;
+		}
+	}
+	subsystem_handler::subsystem_handler(cstr  _name, subsystem_handler* _prev)
+		: node(_name, _prev ? _prev->owner() : nullptr)
+		, ref_(*this) {
+		if (_prev  ) {
+			subsystem_ = _prev->subsystem_;
+			ref_.attach_after(subsystem_->handlers, _prev);
+		}
+		else {
+			subsystem_ = nullptr;
 		}
 	}
 
@@ -369,7 +392,7 @@ namespace mexo {
 		, backend_ref_(backend_)
 		, action_(_action)
 		, present_(_present) {
-		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend);
+		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend, nullptr);
 		present_.mode = idle_id;
 	}
 

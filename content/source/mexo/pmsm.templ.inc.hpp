@@ -20,7 +20,7 @@ namespace PMSM_TEMPLATE_NAME {
 		#if LAT_CURRENT_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::quazzy_adapt<types>
-			, ::mexo::control_subsystem
+			, ::mexo::backend_subsystem
 			, const typename types::signal_t&
 			, const typename types::signal_t&
 		> lat_current_regulator_b;
@@ -133,9 +133,22 @@ namespace PMSM_TEMPLATE_NAME {
 			
 			if (old_mode_id_ != present.actuator.ps.dev.mode) {
 				switch (::mexo::dev::idle_id) {
+					switch (old_mode_id_) {
+					case mode_sync_current:
+					case mode_sync_voltage:
+					break;
+					default:
+					lat_current_regulator.stop();
+					lat_current_regulator.set_output(nullptr);
+					lat_current_regulator.set_input(nullptr);
+					};
 				case ::mexo::dev::idle_id:
+				case mode_sync_current:
+				case mode_sync_voltage:
 				break;
-				}
+				default:
+				break;
+				};
 				old_mode_id_ = present.actuator.ps.dev.mode;
 			}
 
@@ -151,6 +164,10 @@ namespace PMSM_TEMPLATE_NAME {
 				hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
 				break;
 			default:
+				lat_current_regulator.set_output(&hardwaresys.power_supply_block.inverter.lat_voltage_ref());
+				lat_current_regulator.set_input(&present.lat_current.deseired);
+				lat_current_regulator.reconfig();
+				lat_current_regulator.start();
 			break;
 			//
 			}
@@ -217,7 +234,7 @@ namespace PMSM_TEMPLATE_NAME {
 
 		public:
 			synchro_voltage_mode_t(int _index, dev_t& _owner) :
-				::mexo::ps::dev::mode(_index, RT("mod_sv"), _owner) {}
+			::mexo::ps::dev::mode(_index, RT("mod_sv"), _owner) {}
 		} synchro_voltage_mode_;
 
 
@@ -316,12 +333,15 @@ namespace PMSM_TEMPLATE_NAME {
 			}
 		}
 
-
+		::robo::delegat::srmember< dev_t, void> enco_converter_;
+		void enco_convert(void) {
+			//hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
+		}
 	public:
 
 		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
 			: actuator_t(_hardwaresys, _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
-			, inverter_controller(::mexo::machine::slot::kind::control ,this, &dev_t::inverter_controller_run)
+			, inverter_controller(::mexo::machine::slot::kind::backend ,this, &dev_t::inverter_controller_run)
 			, synchro_voltage_mode_(mode_sync_voltage,*this)
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
 			, synchro_current_mode_(mode_sync_current, *this)
@@ -346,7 +366,7 @@ namespace PMSM_TEMPLATE_NAME {
 				, LAT_ACTUAL_SIGNALS
 			) 
 			#endif
-
+			, enco_converter_(*this, &dev_t::enco_convert)
 		{
 			#if LAT_CURRENT_FILTER_ENABLED==1
 			_config.lat_current.filter =

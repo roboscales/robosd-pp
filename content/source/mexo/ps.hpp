@@ -152,50 +152,48 @@ namespace mexo {
 			//void set_voltage_req(const C::inverter::signal_t* _voltage_req) { set_input(_voltage_req); }
 		};
 
-		template< typename T, typename D, typename O> class pwm_t
+		/*template< typename T, typename D, typename O, typename P> class pwm_t
 			: public ::mexo::finall_controller_t<
 			T
 			, pwm<D>
 			, O
+			,P
 			> {
 			typedef ::mexo::finall_controller_t <
 				T
 				, pwm< D>
 				, O
+				, P
 			> A;
 		public:
-			pwm_t(cstr _name, O* _owner, const typename  pwm<D>::config_s& _config, typename  pwm<D>::present_s& _present)
+			pwm_t(cstr _name, O* _owner, P * _prev, const typename  pwm<D>::config_s& _config, typename  pwm<D>::present_s& _present)
 				: A(_name, _owner, _config, _present) {}
-		};
+		};*/
 
 
-		template< typename D, typename O> class pwm_block_t : public pwm_t <
-			::mexo::subsystem_handler
-			, D
+		template< typename D, typename O> class pwm_block_t : public finall_controller_block_t <
+			pwm<D>
 			, O
 		> {
-		public:
-			typedef pwm_t <
-				::mexo::subsystem_handler
-				, D
+			typedef finall_controller_block_t <
+				pwm<D>
 				, O
 			> A;
-			pwm_block_t(cstr _name, O* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
-				: A(_name, _owner, _config, _present) {}
+		public:
+			pwm_block_t(cstr _name, O* _owner, subsystem_handler * _prev, const typename A::config_s& _config, typename  A::present_s& _present)
+				: A(_name, _owner, _prev, _config, _present) {}
 		};
 
-		template< typename D, typename O> class pwm_task_t : public pwm_t <
-			O
-			, D
-			, ::mexo::node
+		template< typename D, typename O> class pwm_task_t : public finall_controller_task_t <
+			pwm<D>
+			, O
 		> {
-		public:
-			typedef pwm_t <
-				O
-				, D
-				, ::mexo::node
+			typedef finall_controller_task_t <
+				pwm<D>
+				, O
 			> A;
-			pwm_task_t(cstr _name, ::mexo::node* _owner, const typename A::config_s& _config, typename  A::present_s& _present)
+		public:
+			pwm_task_t(cstr _name, ::mexo::node* _owner, task * _task, const typename A::config_s& _config, typename  A::present_s& _present)
 				: A(_name, _owner, _config, _present) {}
 		};
 

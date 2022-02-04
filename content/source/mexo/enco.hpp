@@ -42,6 +42,7 @@ namespace mexo {
 				output_t position;
 			};
 		private:
+			::robo::delegat::base<void> * converter_ = nullptr;
 		protected:
 			virtual void do_handler_adjust(void) {
 			}
@@ -73,6 +74,9 @@ namespace mexo {
 					}
 					present.acc += present.delta;
 					present.position = present.acc >> value_shift;
+					if ( converter_ != nullptr ) {
+						(*converter_)();
+					}
 				}
 				else {
 					if (!D::error()) {
@@ -116,12 +120,14 @@ namespace mexo {
 		public:
 			increment_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
+			void set_converte(::robo::delegat::base<void> * _converter) {
+				converter_ = _converter;
+			}
+			const present_s& present(void) { return  handler::present_cast<present_s>() };
 		};
 
-		template <typename q, typename D, typename  S, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment32_t
-			:public ::mexo::handler_t<
-				subsystem_handler
-				,increment_machine <
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment32_t
+			: public increment_machine <
 					q
 					, D
 					, 32
@@ -132,100 +138,9 @@ namespace mexo {
 					, uint32_t
 					, typename q::signal_t
 					, typename q::long_signal_t
-					>
-				, S
-			>
+				>
 			{
-			typedef ::mexo::handler_t<
-				subsystem_handler
-				, increment_machine <
-					q
-					, D
-					, 32
-					, raw_resolution
-					, actual_resolution
-					, inverce
-					, int32_t
-					, uint32_t
-					, typename q::signal_t
-					, typename q::long_signal_t
-				>
-				, S
-			> A;
-			protected:
-
-		public:
-			increment32_t(
-				cstr _name
-				, S * _owner
-				, const typename A::config_s& _config
-				, typename  A::present_s& _present
-			)
-				: A(_name, _owner, _config, _present) {}
-		};
-		template <typename q, typename D, typename  S, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment16_t
-			:public ::mexo::handler_t<
-				subsystem_handler
-				, increment_machine <
-					q
-					, D
-					, 16
-					, raw_resolution
-					, actual_resolution
-					, inverce
-					, int16_t
-					, uint16_t
-					, typename q::signal_t
-					, typename q::long_signal_t
-				>
-				, S
-			> {
-			typedef ::mexo::handler_t<
-				subsystem_handler
-				, increment_machine <
-					q
-					, D
-					, 16
-					, raw_resolution
-					, actual_resolution
-					, inverce
-					, int16_t
-					, uint16_t
-					, typename q::signal_t
-					, typename q::long_signal_t
-				>
-				, S
-			> A;
-		public:
-			increment16_t(
-				cstr _name
-				, S* _owner
-				, const typename A::config_s& _config
-				, typename  A::present_s& _present
-			)
-				: A(_name, _owner, _config, _present) {}
-		};
-
-		template <typename q, typename D, typename  S, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment64_t
-			:public ::mexo::handler_t<
-			subsystem_handler
-			, increment_machine <
-			q
-			, D
-			, 32
-			, raw_resolution
-			, actual_resolution
-			, inverce
-			, int32_t
-			, uint32_t
-			, int32_t
-			, int64_t
-			>
-			, S
-			> {
-			typedef ::mexo::handler_t<
-				subsystem_handler
-				, increment_machine <
+			typedef increment_machine <
 				q
 				, D
 				, 32
@@ -234,22 +149,84 @@ namespace mexo {
 				, inverce
 				, int32_t
 				, uint32_t
-				, int32_t
-				, int64_t
-				>
-				, S
+				, typename q::signal_t
+				, typename q::long_signal_t
 			> A;
-		
+			protected:
 
 		public:
-			increment64_t(
-				cstr _name
-				, S* _owner
-				, const typename A::config_s& _config
-				, typename  A::present_s& _present
-			)
-				: A(_name, _owner, _config, _present) {}
+			increment32_t(const typename A::config_s& _config, typename A::present_s& _present)
+				: A(_config, _present) {}
 		};
+
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment16_t
+			: public
+			increment_machine <
+			q
+			, D
+			, 16
+			, raw_resolution
+			, actual_resolution
+			, inverce
+			, int16_t
+			, uint16_t
+			, typename q::signal_t
+			, typename q::long_signal_t
+			>
+		{
+			typedef increment_machine <
+				q
+				, D
+				, 16
+				, raw_resolution
+				, actual_resolution
+				, inverce
+				, int16_t
+				, uint16_t
+				, typename q::signal_t
+				, typename q::long_signal_t
+			> A;
+		protected:
+
+		public:
+			increment16_t(const typename A::config_s& _config, typename A::present_s& _present)
+				: A(_config, _present) {}
+		};
+
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution, bool inverce > class increment64_t
+			: public
+			increment_machine <
+			q
+			, D
+			, 32
+			, raw_resolution
+			, actual_resolution
+			, inverce
+			, int32_t
+			, uint32_t
+			, typename int32_t
+			, typename int64_t
+			>
+		{
+			typedef increment_machine <
+				q
+				, D
+				, 32
+				, raw_resolution
+				, actual_resolution
+				, inverce
+				, int32_t
+				, uint32_t
+				, typename int32_t
+				, typename int64_t
+			> A;
+		protected:
+
+		public:
+			increment64_t(const typename A::config_s& _config, typename A::present_s& _present)
+				: increment_machine(_config, _present) {}
+		};
+	
 	}
 }
 #endif

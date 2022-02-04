@@ -14,7 +14,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::ramp<types>
-			, ::mexo::control_subsystem
+			, ::mexo::control_task
 		> voltage_regulator_b;
 		voltage_regulator_b voltage_regulator;
 		#endif
@@ -22,7 +22,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::quazzy_adapt<types>
-			, ::mexo::control_subsystem
+			, ::mexo::control_task
 			, const typename types::signal_t&
 			, const typename types::signal_t&
 		> current_regulator_b;
@@ -32,7 +32,7 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		typedef ::mexo::controller_task_t <
 			::mexo::limmiter<types>
-			, ::mexo::control_subsystem
+			, ::mexo::control_task
 			, const typename types::signal_t&
 			, const typename types::signal_t&
 			, const ::mexo::range_s<typename types::signal_t>&
@@ -361,13 +361,13 @@ protected:
 			#endif
 
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &hardwaresys.prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
+			, current_filter(RT("c_f"), &_hardwaresys.current_sence_block, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-			, current_filter(RT("c_f"), &hardwaresys.prioritet_subsystem, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
+			, current_filter(RT("c_f"), &_hardwaresys.current_sence_block, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
-			, current_diff_filter(RT("c_dif_f"), &hardwaresys.prioritet_subsystem, _config.current_diff_filter, _present.current_diff_filter, hardwaresys.current_sence_block.current_delta_ref())
+			, current_diff_filter(RT("c_dif_f"), &_hardwaresys.current_sence_block, _config.current_diff_filter, _present.current_diff_filter, hardwaresys.current_sence_block.current_delta_ref())
 			#endif
 			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 			, current_regulator(

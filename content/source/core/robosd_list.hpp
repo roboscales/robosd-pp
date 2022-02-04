@@ -17,9 +17,17 @@ namespace robo {
 			base_ref* next = nullptr;
 			base_ref* prev = nullptr;
 			base_ref(T& _owner) : owner_(_owner) {};
-			void attach_to(base<T>& _list, base_ref<T>* _next) {
+			void attach_to(base<T>& _list) {
 				dettach();
-				_list.add_p(this, _next);
+				_list.add_before_p(this, nullptr);
+			}
+			void attach_after(base<T>& _list, base_ref<T>* _prev) {
+				dettach();
+				_list.add_after_p(this, _prev);
+			}
+			void attach_before(base<T>& _list, base_ref<T>* _next) {
+				dettach();
+				_list.add_before_p(this, _next);
 			}
 		public:
 			virtual ~base_ref(void) {
@@ -47,7 +55,10 @@ namespace robo {
 			int count_ = 0;
 		protected:
 			friend class base_ref<T>;
-			void  add_p(base_ref<T>* _ref, base_ref<T>* _next) {
+			void  add_before_p(base_ref<T>* _ref, base_ref<T>* _next) {
+				if (_next) {
+					ROBO_APP_ASSERT(_next->list_ == this)
+				}
 				if (first == nullptr) {
 					first = _ref;
 					last = _ref;
@@ -72,6 +83,45 @@ namespace robo {
 							_ref->prev = _next->prev;
 							_next->prev = _ref;
 							_ref->next = _next;
+						}
+					}
+				}
+				count_++;
+				_ref->list_ = this;
+				ROBO_APP_ASSERT(last->next == 0);
+				if (_ref != first) {
+					ROBO_APP_ASSERT(_ref->prev != 0);
+				}
+			}
+
+			void  add_after_p(base_ref<T>* _ref, base_ref<T>* _prev) {
+				if (_prev) {
+					ROBO_APP_ASSERT(_prev->list_ == this)
+				}
+				if (first == nullptr) {
+					first = _ref;
+					last = _ref;
+					_ref->prev = nullptr;
+					_ref->next = nullptr;
+				}
+				else {
+					if (_prev == nullptr) {
+						last->next = _ref;
+						_ref->prev = last;
+						last = _ref;
+					}
+					else {
+						if (_prev == last) {
+							_prev->next = _ref;
+							_ref->prev = _prev;
+							_ref->next = nullptr;
+							last = _ref;
+						}
+						else {
+							_prev->next->prev = _ref;
+							_ref->next = _prev->next->prev;
+							_prev->next = _ref;
+							_ref->prev = _prev;
 						}
 					}
 				}
@@ -124,6 +174,14 @@ namespace robo {
 				}
 			}
 
+			base_ref<T> * locate(T * _own) {
+				for (base_ref<T>* p = first; p != nullptr; p = p->next) {
+					if (&(p->owner()) == _own) {
+						return p;
+					}
+				}
+				return nullptr;
+			}
 		};
 
 		template<typename T> class ROBO_EXPORT unsorted : public base<T> {
@@ -133,8 +191,20 @@ namespace robo {
 				ref(T& _owner) : base_ref<T>(_owner) {};
 				/** добавить ссылку в конец списка */
 				void attach_to(unsorted& _L) {
-					base_ref<T>::dettach();
-					base_ref<T>::attach_to(_L, nullptr);
+					base_ref<T>::attach_to(_L);
+				}
+				void attach_before(unsorted& _L, base_ref<T>* _prev) {
+					base_ref<T>::attach_before(_L, _prev);
+				}
+				void attach_after(unsorted& _L, base_ref<T>* _next) {
+					base_ref<T>::attach_after(_L, _next);
+				}
+
+				void attach_before(unsorted& _L, T * _prev) {
+					base_ref<T>::attach_before(_L, _L.locate(_prev));
+				}
+				void attach_after(unsorted& _L, T * _next) {
+					base_ref<T>::attach_after(_L, _L.locate(_next));
 				}
 
 				/** предыдущая ссылка в списке */
@@ -166,20 +236,17 @@ namespace robo {
 						for (pair* p = _list.first(); p != nullptr; p = p->next()) {
 							if (unique && p->key_ == key_) return false;
 							if (p->key_ > key_) {
-								base_ref<T>::dettach();
-								base_ref<T>::attach_to(_list, p);
+								base_ref<T>::attach_before(_list, p);
 								return true;
 							}
 						}
 					}
 					else {
-						base_ref<T>::dettach();
-						base_ref<T>::attach_to(_list, nullptr);
+						base_ref<T>::attach_to(_list);
 						return true;
 					}
 				}
-				base_ref<T>::dettach();
-				base_ref<T>::attach_to(_list, nullptr);
+				base_ref<T>::attach_to(_list);
 				return true;
 			}
 

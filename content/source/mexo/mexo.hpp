@@ -56,22 +56,22 @@ namespace mexo {
 				typedef list::unsorted<delegat> list;
 				typedef list::ref ref;
 				virtual ~delegat(void) {}
-				void attach(slot::kind _kind);
-				static void attach(ref& _ref, int _index);
-				static void attach(ref& _ref, slot::kind _kind);
-				void attach(int _index);
+				void attach(slot::kind _kind, delegat * _prev);
+				static void attach(ref& _ref, int _index, delegat* _prev);
+				static void attach(ref& _ref, slot::kind _kind, delegat* _prev);
+				void attach(int _index, delegat* _prev);
 
-				void attach(const int* _index, int _count) {
+				void attach(const int* _index, int _count, delegat* _prev) {
 					for (int i = 0; i < _count; ++i, ++_index) {
-						attach(*_index);
+						attach(*_index, _prev);
 					}
 				}
-				template <size_t N> void attach(int(&index)[N]) {
-					attach(index, N);
+				template <size_t N> void attach(int(&index)[N], delegat* _prev) {
+					attach(index, N,  _prev);
 				}
-				void attach(std::initializer_list<int> _index) {
+				void attach(std::initializer_list<int> _index, delegat* _prev) {
 					for (const auto x : _index) {
-						attach(x);
+						attach(x, _prev);
 					}
 				}
 			};
@@ -79,40 +79,40 @@ namespace mexo {
 			class lambda : public ::robo::delegat::lambda<delegat, void> {
 			public:
 				lambda(const ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {}
-				lambda(slot::kind _kind, const ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
-					attach(_kind);
+				lambda(slot::kind _kind, const ::robo::lambda< void(void)>& _lambda, delegat* _prev = nullptr) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_kind, _prev);
 				}
-				lambda(int _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
-					attach(_index);
+				lambda(int _index, const  ::robo::lambda< void(void)>& _lambda, delegat* _prev = nullptr) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
-				lambda(const int* _index, int _count, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
-					attach(_index, _count);
+				lambda(const int* _index, int _count, const  ::robo::lambda< void(void)>& _lambda, delegat* _prev = nullptr) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index, _count, _prev);
 				}
-				template <size_t N>  lambda(int(&_index)[N], const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
-					attach(_index);
+				template <size_t N>  lambda(int(&_index)[N], const  ::robo::lambda< void(void)>& _lambda, delegat* _prev = nullptr) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
-				lambda(std::initializer_list<int> _index, const  ::robo::lambda< void(void)>& _lambda) : ::robo::delegat::lambda<delegat, void>(_lambda) {
-					attach(_index);
+				lambda(std::initializer_list<int> _index, const  ::robo::lambda< void(void)>& _lambda, delegat* _prev = nullptr) : ::robo::delegat::lambda<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
 			};
 
 			class simple : public ::robo::delegat::simple<delegat, void> {
 			public:
 				simple(void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {}
-				simple(slot::kind _kind, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
-					attach(_kind);
+				simple(slot::kind _kind, void (*_lambda)(void), delegat* _prev = nullptr) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_kind, _prev);
 				}
-				simple(int _index, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
-					attach(_index);
+				simple(int _index, void (*_lambda)(void), delegat* _prev = nullptr) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
-				simple(const int* _index, int _count, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
-					attach(_index, _count);
+				simple(const int* _index, int _count, void (*_lambda)(void), delegat* _prev = nullptr) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index, _count, _prev);
 				}
-				template <size_t N>  simple(int(&_index)[N], void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
-					attach(_index);
+				template <size_t N>  simple(int(&_index)[N], void (*_lambda)(void), delegat* _prev = nullptr) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
-				simple(std::initializer_list<int> _index, void (*_lambda)(void)) : ::robo::delegat::simple<delegat, void>(_lambda) {
-					attach(_index);
+				simple(std::initializer_list<int> _index, void (*_lambda)(void), delegat* _prev = nullptr) : ::robo::delegat::simple<delegat, void>(_lambda) {
+					attach(_index, _prev);
 				}
 			};
 
@@ -121,22 +121,23 @@ namespace mexo {
 				typedef ::robo::delegat::member<delegat, C, void> A;
 			public:
 				member(C* _instance, void (C::* _member) (void)) : A(_instance, _member) {}
-				member(slot::kind _kind, C* _instance, void(C::* _member)(void) ): A(_instance, _member) {
-					attach(_kind);
+				member(slot::kind _kind, C* _instance, void(C::* _member)(void), delegat* _prev = nullptr): A(_instance, _member) {
+					attach(_kind, _prev);
 				}
-				member(int _index, C* _instance, void (C::* _member) (void) ) : A(_instance, _member) {
-					attach(_index);
+				member(int _index, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+					attach(_index, _prev);
 				}
-				member(const int* _index, int _count, C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
-					attach(_index, _count);
+				member(const int* _index, int _count, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+					attach(_index, _count, _prev);
 				}
-				template <size_t N>  member(int(&_index)[N], C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
-					attach(_index);
+				template <size_t N>  member(int(&_index)[N], C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+					attach(_index, _prev);
 				}
-				member(std::initializer_list<int> _index, C* _instance, void (C::* _member) (void)) : A(_instance, _member) {
-					attach(_index);
+				member(std::initializer_list<int> _index, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+					attach(_index, _prev);
 				}
 			};
+
 
 		private:
 			friend class machine;
@@ -316,9 +317,10 @@ namespace mexo {
 	private:
 		bool autostart_;
 	protected:
-		virtual void  do_start(void) = 0;
+		virtual void  do_start(delegat* _prev = nullptr) = 0;
 		virtual void do_stop(void) = 0;
 		task(cstr  _name, bool _autostart, node* _owner = nullptr) :node(_name, _owner), autostart_(_autostart) {};
+		task(cstr  _name, bool _autostart, task* _prev) :node(_name, _prev?_prev->owner():nullptr ), autostart_(_autostart) {};
 		virtual bool do_reconfig(void);
 	public:
 		void start(void);
@@ -328,43 +330,52 @@ namespace mexo {
 	class prioritet_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) {
-			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority);
+		virtual void do_start(delegat* _prev = nullptr) {
+			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority, _prev);
 		};
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		prioritet_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+		prioritet_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
+		prioritet_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		prioritet_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+		prioritet_task(cstr  _name, bool _autostart, prioritet_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
+
 
 	class control_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::control); };
+		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::control, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		control_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+		control_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
+		control_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		control_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+		control_task(cstr  _name, bool _autostart, prioritet_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
 
 	class backend_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend); };
+		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		backend_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+		backend_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
+		backend_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		backend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+		backend_task(cstr  _name, bool _autostart, backend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
 
 	class frontend_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
-		virtual void do_start(void) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend); };
+		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		frontend_task(cstr  _name, node* _owner = nullptr) : task(_name, false, _owner), ref_(*this) {};
+		frontend_task(cstr  _name, node* _owner ) : task(_name, false, _owner), ref_(*this) {};
+		frontend_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		frontend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+		frontend_task(cstr  _name, bool _autostart, frontend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
 
 
@@ -374,19 +385,24 @@ namespace mexo {
 		int* index_ = nullptr;
 	protected:
 		void clean(void);
-		periodic_task(cstr  _name, node* _owner = nullptr);
+		periodic_task(cstr  _name, node* _owner);
+		periodic_task(cstr  _name, periodic_task* _prev);
 		virtual void do_start(void);
 		virtual void do_stop(void);
 	public:
 		void setup(std::initializer_list<int> _index);
 		void setup(int _ix);
 		periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr);
+		periodic_task(cstr  _name, bool _autostart, std::initializer_list<int> _index, periodic_task * _prev);
 		virtual ~periodic_task(void);
 	};
 
 	template<int ... Nums> class periodic_task_t : public periodic_task {
 	public:
 		periodic_task_t(cstr  _name, node* _owner = nullptr) : periodic_task(_name, _owner) {
+			periodic_task::setup({ Nums ... });
+		}
+		periodic_task_t(cstr  _name, periodic_task* _prev) : periodic_task(_name, _prev) {
 			periodic_task::setup({ Nums ... });
 		}
 	};
@@ -400,10 +416,12 @@ namespace mexo {
 		typedef list::ref ref;
 	private:
 		ref ref_;
+		subsystem* subsystem_ = nullptr;
 	public:
 	protected:
 		friend class subsystem;
 		subsystem_handler(cstr  _name, subsystem* _subsystem);
+		subsystem_handler(cstr  _name, subsystem_handler* _prev);
 		virtual void operator ()(void) = 0;
 	};
 
@@ -423,43 +441,56 @@ namespace mexo {
 	protected:
 		virtual node* owned_node(void) { return this; };
 		prioritet_subsystem(cstr  _name, node* _owner) : prioritet_task(_name, false, _owner) {};
+		prioritet_subsystem(cstr  _name, prioritet_subsystem* _prev) : prioritet_task(_name, false, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
+		prioritet_subsystem(cstr  _name, bool _autostart, prioritet_subsystem* _prev) : prioritet_task(_name, _autostart, _prev) {};
 	};
-	class control_subsystem : public control_task, public subsystem {
-	protected:
-		virtual node* owned_node(void) { return this; };
-		control_subsystem(cstr  _name, node* _owner) : control_task(_name, false, _owner) {};
-	public:
-		virtual void operator ()(void) { subsystem::run(); };
-		control_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : control_task(_name, _autostart, _owner) {};
-	};
+
 	class backend_subsystem : public backend_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
 		backend_subsystem(cstr  _name, node* _owner) : backend_task(_name, false, _owner) {};
+		backend_subsystem(cstr  _name, backend_subsystem* _prev) : backend_task(_name, false, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : backend_task(_name, _autostart, _owner) {};
+		backend_subsystem(cstr  _name, bool _autostart, backend_subsystem* _prev) : backend_task(_name, _autostart, _prev) {};
 	};
+
+	class control_subsystem : public control_task, public subsystem {
+	protected:
+		virtual node* owned_node(void) { return this; };
+		control_subsystem(cstr  _name, node* _owner) : control_task(_name, false, _owner) {};
+		control_subsystem(cstr  _name, control_subsystem* _prev) : control_task(_name, false, _prev) {};
+	public:
+		virtual void operator ()(void) { subsystem::run(); };
+		control_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : control_task(_name, _autostart, _owner) {};
+		control_subsystem(cstr  _name, bool _autostart, control_subsystem* _prev) : control_task(_name, _autostart, _prev) {};
+	};
+
 	class frontend_subsystem : public frontend_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
 		frontend_subsystem(cstr  _name, node* _owner) : frontend_task(_name, false, _owner) {};
+		frontend_subsystem(cstr  _name, frontend_subsystem* _prev) : frontend_task(_name, false, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : frontend_task(_name, _autostart, _owner) {};
+		frontend_subsystem(cstr  _name, bool _autostart, frontend_subsystem* _prev) : frontend_task(_name, _autostart, _prev) {};
 	};
 
 	class periodic_subsystem : public periodic_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
 		periodic_subsystem(cstr  _name, node* _owner = nullptr) : periodic_task(_name, _owner) {};
+		periodic_subsystem(cstr  _name, periodic_subsystem * _prev) : periodic_task(_name, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
 
 		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : periodic_task(_name, _autostart, _index, _owner) {};
+		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, periodic_subsystem* _prev) : periodic_task(_name, _autostart, _index, _prev) {};
 	};
 
 	template <typename A> struct range_s {
@@ -467,7 +498,7 @@ namespace mexo {
 		A hi;
 	};
 
-	template< typename T, typename R, typename S, typename ... Args > class handler_t : public T, public  R {
+	template< typename T, typename R, typename S, typename P, typename ... Args > class handler_t : public T, public  R {
 	public:
 		typedef typename R::config_s config_s;
 		typedef typename R::present_s present_s;
@@ -490,6 +521,9 @@ namespace mexo {
 	public:
 		handler_t(cstr  _name, S* _owner, const config_s& _config, present_s& _present, Args ... args)
 			: T(_name, _owner)
+			, R(_config, _present, args...) {}
+		handler_t(cstr  _name, P* _prev, const config_s& _config, present_s& _present, Args ... args)
+			: T(_name,  _prev)
 			, R(_config, _present, args...) {}
 	};
 
@@ -517,6 +551,58 @@ namespace mexo {
 		handler(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
 	};
 
+	//==================================
+	 
+	template < typename B, typename S, typename ... Args> class handler_block_t
+	: public handler_t<subsystem_handler, B, S, subsystem_handler, Args...>{
+		typedef handler_t<subsystem_handler, B, S, subsystem_handler, Args...> BB;
+	public:
+	typedef typename BB::config_s config_s;
+	typedef typename BB::present_s present_s;
+	
+	handler_block_t(
+		cstr  _name
+		, S* _owner
+		, const config_s& _config
+		, present_s& _present
+		, Args ...args
+	) : BB(_name,_owner, _config, _present, args...){}
+	handler_block_t(
+		cstr  _name
+		, subsystem_handler* _prev
+		, const config_s& _config
+		, present_s& _present
+		, Args ... args
+	)
+		: BB(_name, _prev, _config, _present, args...) {}
+	};
+
+	template <  typename B, typename S, typename ... Args> class handler_task_t
+		: public handler_t<S, B, node, task, Args...> {
+		typedef  handler_t<S, B, node, task, Args...> BB;
+	public:
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
+		handler_task_t(
+			cstr  _name
+			, node* _owner
+			, const config_s& _config
+			, present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _owner, _config, _present, args...) {}
+
+		handler_task_t(
+			cstr  _name
+			, task* _prev
+			, const typename BB::config_s& _config
+			, typename BB::present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, args...) {}
+	};
+
+	
 
 	template < typename I, typename O> class controller_handler : public handler {
 		I dummy_input_ = (I)0;
@@ -595,54 +681,66 @@ namespace mexo {
 		};
 		#endif
 	};
-
-	template < typename T, typename B, typename S, typename ... Args> class controller_t
-		: public handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> {
-	public:
-		typedef  handler_t<T, B, S, const range_s<typename B::output_t>&, satstate_t, Args...> BB;
-		controller_t(
-			cstr  _name
-			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
-			, const range_s<typename B::output_t>& _range
-			, satstate_t& _master_satstate
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
-	};
+	
 	template < typename B, typename S, typename ... Args> class controller_block_t
-		: public handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+		: public handler_t<subsystem_handler, B, S, subsystem_handler, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+		typedef  handler_t<subsystem_handler, B, S, subsystem_handler, const range_s<typename B::output_t>&, const satstate_t&, Args...> BB;
 	public:
-		typedef  handler_t<subsystem_handler, B, S, const range_s<typename B::output_t>&, const satstate_t&, Args...> BB;
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
+
 		controller_block_t(
 			cstr  _name
 			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, const config_s& _config
+			, present_s& _present
 			, const range_s<typename B::output_t>& _range
 			, const satstate_t& _master_satstate
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+			: BB(_name, _owner,  _config, _present, _range, _master_satstate, args...) {}
+
+		controller_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, const config_s& _config
+			, present_s& _present
+			, const range_s<typename B::output_t>& _range
+			, const satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, _range, _master_satstate, args...) {}
 	};
+
 	template <  typename B, typename S, typename ... Args> class controller_task_t
-		: public handler_t<S, B, node, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+		: public handler_t<S, B, node, task, const range_s<typename B::output_t>&, const satstate_t&, Args...> {
+		typedef  handler_t<S, B, node, task, const range_s<typename B::output_t>&, const  satstate_t&, Args...> BB;
 	public:
-		typedef  handler_t<S, B, node, const range_s<typename B::output_t>&, const  satstate_t&, Args...> BB;
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
 		controller_task_t(
 			cstr  _name
 			, node* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, const config_s& _config
+			, present_s& _present
 			, const range_s<typename B::output_t>& _range
 			, const satstate_t& _master_satstate
 			, Args ... args
 		)
 			: BB(_name, _owner, _config, _present, _range, _master_satstate, args...) {}
+		controller_task_t(
+			cstr  _name
+			, task* _prev
+			, const config_s& _config
+			, present_s& _present
+			, const range_s<typename B::output_t>& _range
+			, const satstate_t& _master_satstate
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, _range, _master_satstate, args...) {}
 	};
 
-
+	
 /*	template < typename O, typename D = O> class sence_handler : public handler {
 	protected:
 	public:
@@ -696,49 +794,57 @@ namespace mexo {
 			, input(_input) {}
 	};
 
-	template < typename T, typename R, typename S, typename ... Args> class function_t
-		: public handler_t<T, R, S, const typename R::input_t&, Args...> {
-		typedef  handler_t<T, R, S, const typename R::input_t&, Args...> BB;
-	public:
-		function_t(
-			cstr  _name
-			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
-			, const typename R::input_t& _input
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _present, _input, args...) {}
-	};
 	template < typename R, typename S, typename ... Args> class function_block_t
-		: public handler_t<subsystem_handler, R, S, const typename R::input_t&, Args...> {
-		typedef  handler_t<subsystem_handler, R, S, const typename R::input_t&, Args...> BB;
+		: public handler_t<subsystem_handler, R, S, subsystem_handler, const typename R::input_t&, Args...> {
+		typedef  handler_t<subsystem_handler, R, S, subsystem_handler, const typename R::input_t&, Args...> BB;
 	public:
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
 		function_block_t(
 			cstr  _name
 			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, const config_s& _config
+			, present_s& _present
 			, const typename R::input_t& _input
 			, Args ... args
 		)
 			: BB(_name, _owner, _config, _present, _input, args...) {}
+		function_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, const config_s& _config
+			, present_s& _present
+			, const typename R::input_t& _input
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, _input, args...) {}
 	};
 	template <  typename R, typename S, typename ... Args> class function_task_t
-		: public handler_t<S, R, node, const typename R::input_t&, Args...> {
-		typedef  handler_t<S, R, node, const typename R::input_t&, Args...> BB;
+		: public handler_t<S, R, node, task, const typename R::input_t&, Args...> {
+		typedef  handler_t<S, R, node, task, const typename R::input_t&, Args...> BB;
 	public:
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
 		function_task_t(
 			cstr  _name
 			, node* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, const config_s& _config
+			, present_s& _present
 			, const typename R::input_t& _input
 			, Args ... args
 		)
 			: BB(_name, _owner, _config, _present, _input, args...) {}
+		function_task_t(
+			cstr  _name
+			, task* _prev
+			, const config_s& _config
+			, present_s& _present
+			, const typename R::input_t& _input
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, _input, args...) {}
 	};
-
+	/*
 	template < typename I> class scope_handler : public handler {
 	protected:
 		const I& input;
@@ -750,7 +856,7 @@ namespace mexo {
 		)
 			: handler(_config, present_)
 			, input(_input) {}
-	};
+	};*/
 
 	template < typename I> class finall_controller_handler : public handler {
 		I dummy_input_;
@@ -772,7 +878,6 @@ namespace mexo {
 			: handler(_config, _present.ref)
 			, dummy_input_(0)
 			, deseired(&dummy_input_) {
-
 		}
 		void set_input(I* _input) {
 			if (_input) {
@@ -799,44 +904,54 @@ namespace mexo {
 		#endif
 	};
 
-	template < typename T, typename B, typename S, typename ... Args> class finall_controller_t
-		: public handler_t<T, B, S, Args...> {
-	public:
-		typedef  handler_t<T, B, S, Args...> BB;
-		finall_controller_t(
-			cstr  _name
-			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
-			, Args ... args
-		)
-			: BB(_name, _owner, _config, _present, args...) {}
-	};
 	template < typename B, typename S, typename ... Args> class finall_controller_block_t
-		: public handler_t<subsystem_handler, B, S, Args...> {
+		: public handler_t<subsystem_handler, B, S, subsystem_handler, Args...> {
+		typedef  handler_t<subsystem_handler, B, S, subsystem_handler, Args...> BB;
 	public:
-		typedef  handler_t<subsystem_handler, B, S, Args...> BB;
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
+
 		finall_controller_block_t(
 			cstr  _name
 			, S* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, const config_s& _config
+			, present_s& _present
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, args...) {}
+			: BB(_name, _owner,  _config, _present, args...) {}
+		finall_controller_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, const config_s& _config
+			, present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, args...) {}
 	};
+
 	template <  typename B, typename S, typename ... Args> class finall_controller_task_t
-		: public handler_t<S, B, node, Args...> {
+		: public handler_t<S, B, node, task, Args...> {
+		typedef  handler_t<S, B, node, task, Args...> BB;
 	public:
-		typedef  handler_t<S, B, node, Args...> BB;
+		typedef typename BB::config_s config_s;
+		typedef typename BB::present_s present_s;
 		finall_controller_task_t(
 			cstr  _name
 			, node* _owner
-			, const typename BB::config_s& _config
-			, typename BB::present_s& _present
+			, task * _prev
+			, const config_s& _config
+			, present_s& _present
 			, Args ... args
 		)
-			: BB(_name, _owner, _config, _present, args...) {}
+			: BB(_name, _owner, _prev, _config, _present, args...) {}
+		finall_controller_task_t(
+			cstr  _name
+			, task* _prev
+			, const config_s& _config
+			, present_s& _present
+			, Args ... args
+		)
+			: BB(_name, _prev, _config, _present, args...) {}
 	};
 
 	

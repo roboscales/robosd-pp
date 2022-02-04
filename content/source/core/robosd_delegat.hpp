@@ -68,6 +68,17 @@ namespace robo {
             }
         };
 
+        template <class B, class C, typename R, typename ... Args> class ROBO_EXPORT rmember : public B {
+            C& instance_;
+            R(C::* member_) (Args... args);
+        public:
+            virtual R operator ()(Args... args) {
+                return (instance_.*member_)(args...);
+            }
+            rmember(C & _instance, R(C::* _member) (Args ... args))
+                : instance_(_instance)
+                , member_(_member) {}
+        };
 
 //        template <typename R, typename ... Args> class ROBO_EXPORT ssimple :
   //          public simple< base< R, Args... >,  R, Args... > {
@@ -104,6 +115,13 @@ namespace robo {
             smember(C* _instance, R(C::* _member) (Args ... args))
                 : member < base< R, Args... >,C, R, Args... >(_instance, _member) {
             }
+        };
+
+        template <class C, typename R, typename ... Args> class ROBO_EXPORT srmember
+            : public  rmember < base<R, Args... >, C, R, Args... > {
+        public:
+            srmember(C & _instance, R(C::* _member) (Args ... args))
+                : rmember < base< R, Args... >, C, R, Args... >(_instance, _member) {}
         };
 
     }

@@ -233,11 +233,11 @@ namespace mexo {
 		};
 
 		template < typename q, typename D  > class current_abc_sence : public machine<q, D> {
-			typedef machine<q, D> B;
 		public:
+			typedef machine<q, D> BB;
 			typedef typename q::signal_t signal_t;
 		private:
-			const cs_t<q>& cs_;
+			const cs_t<q> & cs_;
 		public:
 			typedef typename q::discret_t discret_t;
 			typedef typename q::long_signal_t long_signal_t;
@@ -245,9 +245,9 @@ namespace mexo {
 			typedef ab_t<q> ab_t;
 			typedef dq_t<q> dq_t;
 
-			typedef typename B::config_s config_s;
+			typedef typename BB::config_s config_s;
 			struct present_s {
-				typename B::present_s	adc;
+				typename BB::present_s	adc;
 				abc_t abc;
 				ab_t ab;
 				dq_t current;
@@ -255,8 +255,9 @@ namespace mexo {
 			};
 
 			current_abc_sence(const config_s& _config, present_s& _present, const  cs_t<q>& _cs)
-				: B(_config, _present.adc)
-				, cs_(_cs) {}
+				: BB(_config, _present.adc)
+				, cs_(_cs) 
+			{}
 			typename q::signal_t& current_ref(void) { 
 				present_s& present = handler::present_cast<present_s>(); 
 				return present.current.cross; 
@@ -276,7 +277,7 @@ namespace mexo {
 
 		protected:
 			void execute(void) {
-				B::execute();
+				BB::execute();
 				present_s& present = handler::present_cast<present_s>();
 				dq_t tmp = present.current;
 
@@ -292,30 +293,7 @@ namespace mexo {
 
 			}
 			virtual void do_handler_adjust(void) {}
-		};
-
-		template <typename q, typename D> class current_abc_sensor_t : public ::mexo::handler_t <
-			subsystem_handler
-			, current_abc_sence<q, D >
-			, prioritet_subsystem
-			, const cs_t<q>&
-		> {
-			typedef handler_t <
-				subsystem_handler
-				, current_abc_sence<q, D>
-				, prioritet_subsystem
-				, const cs_t<q>&
-			> A;
-		public:
-			current_abc_sensor_t(
-				cstr _name
-				, prioritet_subsystem* _owner
-				, const typename A::config_s& _config
-				, typename  A::present_s& _present
-				, const cs_t<q>& _cs
-			)
-				: A(_name, _owner, _config, _present, _cs) {}
-		};
+		};		
 	}
 
 }
