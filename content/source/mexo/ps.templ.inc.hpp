@@ -8,8 +8,9 @@ namespace PS_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t : public ::mexo::ps::dev {
 	public:
 		hardwaresys_t& hardwaresys;
-		typedef action_t<types> action_s;
-		typedef feedback_t<types> feedback_s;
+		typedef ::mexo::front::PS_TEMPLATE_NAME::action_t<types> action_s;
+		typedef ::mexo::front::PS_TEMPLATE_NAME::feedback_t<types> feedback_s;
+		typedef ::mexo::front::PS_TEMPLATE_NAME::mode mode;
 
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <
@@ -155,6 +156,7 @@ protected:
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, present.current_deseired, RT("desrd.c"), key(), vars);
 				#endif
 			}
 
@@ -357,7 +359,7 @@ protected:
 			, hardwaresys(_hardwaresys)
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())
-			, voltage_mode(1, *this) 
+			, voltage_mode(mode::voltage, *this) 
 			#endif
 
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
@@ -379,7 +381,7 @@ protected:
 				, hardwaresys.power_supply_block.actual_satstate()
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 			)
-			, current_mode(2, *this)
+			, current_mode(mode::current, *this)
 			#endif
 			#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 			, current_limmiter(
@@ -392,7 +394,7 @@ protected:
 				, POWER_SUPPLY_ACTUAL_SIGNALS
 				, _present.current_range_desired
 			)
-			, current_limmiter_mode(16, *this)
+			, current_limmiter_mode(mode::voltage_cl, *this)
 			#endif
 		{
 			_config =

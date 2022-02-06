@@ -288,11 +288,11 @@ namespace mexo {
 		do_stop();
 	}
 
-	void periodic_task::do_start(void) {
+	void periodic_task::do_start(delegat* _prev) {
 		machine::slot::delegat::ref** pref = refs_;
 		int* ix = index_;
 		for (size_t n = 0; n < ref_count_; ++n, ++pref, ++ix) {
-			machine::slot::delegat::attach(**pref, *ix, nullptr);
+			machine::slot::delegat::attach(**pref, *ix, _prev);
 		}
 	}
 
@@ -393,25 +393,25 @@ namespace mexo {
 		, action_(_action)
 		, present_(_present) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend, nullptr);
-		present_.mode = idle_id;
+		present_.mode = front::dev::mode::idle;
 	}
 
 	void dev::switch_to(int _mode_id) {
 		ROBO_APP_ASSERT(is_backend__);
 		if (_mode_id != present_.mode) {
-			if (present_.mode != idle_id) {
+			if (present_.mode != front::dev::mode::idle) {
 				actual_mode_->do_stop();
 			}
 
-			if (_mode_id == idle_id) {
+			if (_mode_id == front::dev::mode::idle) {
 				actual_mode_ = &idle;
-				present_.mode = idle_id;
+				present_.mode = front::dev::mode::idle;
 			}
 			else {
 				mode* m = modes_.find(_mode_id);
 				if (m == nullptr || !m->enabled()) {
 					actual_mode_ = &idle;
-					present_.mode = idle_id;
+					present_.mode = front::dev::mode::idle;
 				}
 				else {
 					m->do_start();

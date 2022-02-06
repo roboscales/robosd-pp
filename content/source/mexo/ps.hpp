@@ -50,7 +50,7 @@ namespace mexo {
 
 		};
 
-		template < typename C > class pwm
+		template < typename C, typename ... Args > class pwm
 			: public ps::control
 			, public finall_controller_handler< typename C::inverter::signal_t> {
 			typedef finall_controller_handler<  typename C::inverter::signal_t> A;
@@ -69,7 +69,7 @@ namespace mexo {
 			typename inverter_t inverter;
 		protected:
 			void execute(void) {
-				present_s& present = A::present_cast<present_s>();
+				present_s& present = present_cast<present_s>();
 
 				switch (status_) {
 				case status::off:
@@ -145,10 +145,10 @@ namespace mexo {
 
 		public:
 
-			pwm(const config_s& _config, present_s& _present)
-				: A(_config.cb, _present.cb), inverter(_present.inverter) {}
+			pwm(const config_s& _config, present_s& _present, Args ... args)
+				: A(_config.cb, _present.cb), inverter(_present.inverter, args...) {}
 
-			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().voltage; }
+			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return config_cast<config_s>().voltage; }
 			//void set_voltage_req(const C::inverter::signal_t* _voltage_req) { set_input(_voltage_req); }
 		};
 
@@ -171,7 +171,7 @@ namespace mexo {
 		};*/
 
 
-		template< typename D, typename O> class pwm_block_t : public finall_controller_block_t <
+		template< typename D, typename O, typename ... Args> class pwm_block_t : public finall_controller_block_t <
 			pwm<D>
 			, O
 		> {
@@ -180,11 +180,13 @@ namespace mexo {
 				, O
 			> A;
 		public:
-			pwm_block_t(cstr _name, O* _owner, subsystem_handler * _prev, const typename A::config_s& _config, typename  A::present_s& _present)
-				: A(_name, _owner, _prev, _config, _present) {}
+			pwm_block_t(cstr _name, O* _owner, const typename A::config_s& _config, typename  A::present_s& _present, Args ... args)
+				: A(_name, _owner,_config, _present, args...) {}
+			pwm_block_t(cstr _name, subsystem_handler* _prev, const typename A::config_s& _config, typename  A::present_s& _present, Args ... args)
+				: A(_name,  _prev, _config, _present, args...) {}
 		};
 
-		template< typename D, typename O> class pwm_task_t : public finall_controller_task_t <
+		template< typename D, typename O, typename ... Args> class pwm_task_t : public finall_controller_task_t <
 			pwm<D>
 			, O
 		> {
@@ -193,8 +195,8 @@ namespace mexo {
 				, O
 			> A;
 		public:
-			pwm_task_t(cstr _name, ::mexo::node* _owner, task * _task, const typename A::config_s& _config, typename  A::present_s& _present)
-				: A(_name, _owner, _config, _present) {}
+			pwm_task_t(cstr _name, ::mexo::node* _owner, task * _task, const typename A::config_s& _config, typename  A::present_s& _present, Args ... args)
+				: A(_name, _owner, _config, _present, args...) {}
 		};
 
 		template<typename q> struct dc_inverter : public q::scaler {
@@ -222,6 +224,7 @@ namespace mexo {
 			typedef ab_t<q> ab_t;
 			typedef dq_t<q> dq_t;
 			typedef cs_t<q> cs_t;
+			const cs_t & cs;
 
 
 			struct duty_t {
@@ -236,7 +239,6 @@ namespace mexo {
 				abc_t pwm;
 				uint8_t swm;
 				duty_t duty;
-				cs_t cs;
 			};
 			present_s& present;
 			long_signal_t sum_x_ya(signal_t x, signal_t y, signal_t a) {
@@ -251,7 +253,7 @@ namespace mexo {
 				constexpr static signal_t scale = q::round((2 / csqrt<double>(2.0) - 1.0) * q::max);
 
 				present.dq_required.cross = _voltage;
-				present.ab.scale_inverce(present.dq_required, present.cs);
+				present.ab.scale_inverce(present.dq_required, cs);
 
 				long_signal_t pwmA;
 				long_signal_t pwmB;
@@ -328,25 +330,18 @@ namespace mexo {
 					var::record::create(q::var::const_signal, present.pwm.A, RT("pwm.A"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.B, RT("pwm.B"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.C, RT("pwm.C"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.cs.si, RT("ab.sin"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.cs.co, RT("ab.cos"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.alfa, RT("ab.alfa"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.ab.beta, RT("ab.beta"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.cross, RT("dq.cross"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.dq_required.lateral, RT("dq.lat"), _master_key, _vars);
-					var::record::create(q::var::const_signal, present.cs.angle, RT("dq.angle"), _master_key, _vars);
 					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
 				}
 			}
 
-			abc_inverter(present_s & _present) : present(_present) {}
+			abc_inverter(present_s & _present, const cs_t& _cs) : present(_present), cs(_cs) {}
 
 			void lat_voltage_set(signal_t _voltage) {
 				present.dq_required.lateral = _voltage;
-			}
-
-			void angle_set(signal_t _angle) {
-				present.cs.rotate(_angle);
 			}
 
 			signal_t  & lat_voltage_ref(void) {

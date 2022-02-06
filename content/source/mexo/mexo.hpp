@@ -249,9 +249,8 @@ namespace mexo {
 	protected:
 		virtual void on_idle(void) {};
 	public:
-		enum { idle_id = 0 };
-		typedef ::dev::action_s action_s;
-		typedef ::dev::feetback_s feetback_s;
+		typedef front::dev::action_s action_s;
+		typedef front::dev::feetback_s feetback_s;
 
 		struct present_s {
 			int mode;
@@ -292,7 +291,7 @@ namespace mexo {
 
 		public:
 			virtual	void operator()(void) {};
-			idle_mode(dev& _dev) : dev::mode(idle_id, RT("idle"), _dev) {};
+			idle_mode(dev& _dev) : dev::mode(front::dev::mode::idle, RT("idle"), _dev) {};
 		};
 
 		idle_mode idle;
@@ -387,7 +386,7 @@ namespace mexo {
 		void clean(void);
 		periodic_task(cstr  _name, node* _owner);
 		periodic_task(cstr  _name, periodic_task* _prev);
-		virtual void do_start(void);
+		virtual void do_start(delegat* _prev = nullptr);
 		virtual void do_stop(void);
 	public:
 		void setup(std::initializer_list<int> _index);
@@ -424,6 +423,86 @@ namespace mexo {
 		subsystem_handler(cstr  _name, subsystem_handler* _prev);
 		virtual void operator ()(void) = 0;
 	};
+
+	//делегируем метод от произвольного объекта в подсистему
+	template < typename C > class member_block_t : public subsystem_handler {
+		C& instance_;
+		void (C::* member_) (void);
+	public:
+		member_block_t(
+			cstr  _name
+			, subsystem* _subsystem
+			, C& _instance
+			, void (C::* _member) (void)
+		) 
+			:subsystem_handler(_name, _subsystem)
+			, instance_(_instance)
+			, member_(_member) 
+		{
+		};
+		member_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, C& _instance
+			, void (C::* _member) (void)
+		) :subsystem_handler(_name, _prev) 
+		, instance_(_instance)
+		, member_(_member) 
+		{
+		};
+		virtual void operator ()(void) {
+			(instance_.*member_)();
+		}
+	};
+
+	//делегируем статический метод в подсистему
+	template < typename C > class simple_block_t : public subsystem_handler {
+		void (*delegat_) (void);
+	public:
+		simple_block_t(
+			cstr  _name
+			, subsystem* _subsystem
+			, void (* _delegat) (void)
+		)
+			:subsystem_handler(_name, _subsystem)
+			, delegat_(_delegat) {};
+
+		simple_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, void (*_delegat) (void)
+		) :subsystem_handler(_name, _prev)
+			, delegat_(_delegat) {};
+
+		virtual void operator ()(void) {
+			delegat_();
+		}
+	};
+	//делегируем лямбду в подсистему
+	template < typename C > class lambda_block_t : public subsystem_handler {
+		const ::robo::lambda< void(void) > lambda_;
+	public:
+		lambda_block_t(
+			cstr  _name
+			, subsystem* _subsystem
+			, const ::robo::lambda< void (void) >& _lambda
+		)
+			:subsystem_handler(_name, _subsystem)
+			, lambda_(_lambda) {};
+
+		lambda_block_t(
+			cstr  _name
+			, subsystem_handler* _prev
+			, const ::robo::lambda< void(void) >& _lambda
+		) 
+			:subsystem_handler(_name, _prev)
+			, lambda_(_lambda) {};
+
+		virtual void operator ()(void) {
+			 lambda_();
+		}
+	};
+
 
 	class subsystem {
 	protected:
@@ -525,6 +604,9 @@ namespace mexo {
 		handler_t(cstr  _name, P* _prev, const config_s& _config, present_s& _present, Args ... args)
 			: T(_name,  _prev)
 			, R(_config, _present, args...) {}
+		present_s& present_ref(void) { return   present_cast<present_s>(); };
+		config_s& config_ref(void) { return  config_cast(config_s); };
+
 	};
 
 
@@ -615,7 +697,7 @@ namespace mexo {
 		const range_s<O>& range;
 		const satstate_t& master_satstate;
 		const  O   actual_output(void) { return  *output; }
-		const satstate_t& actual_satstate(void) { return handler::present_cast<present_s>().satstate.actual; }
+		const satstate_t& actual_satstate(void) { return present_cast<present_s>().satstate.actual; }
 
 		typedef I input_t;
 		typedef O output_t;
@@ -782,8 +864,7 @@ namespace mexo {
 			output_t output;
 		};
 		output_t& output(void) {
-			present_s& present = handler::present_cast<present_s>();
-			return present.output;
+			return present_cast<present_s>().output;
 		}
 		function_handler(
 			const config_s& _config
@@ -863,7 +944,7 @@ namespace mexo {
 	protected:
 		I* deseired;
 	public:
-		const satstate_t& actual_satstate(void) { return handler::present_cast<present_s>().actual_satstate; }
+		const satstate_t& actual_satstate(void) { return present_cast<present_s>().actual_satstate; }
 
 		typedef I input_t;
 
@@ -896,9 +977,8 @@ namespace mexo {
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
-			present_s& present = present_cast<present_s>();
 			if (var::machine::actual_mode() == var::machine::mode::full) {
-				var::record::create(var::const_uint8, present.actual_satstate, RT("ss"), _master_key, _vars);
+				var::record::create(var::const_uint8, present_cast<present_s>().actual_satstate, RT("ss"), _master_key, _vars);
 			}
 		};
 		#endif

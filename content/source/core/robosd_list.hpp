@@ -118,8 +118,8 @@ namespace robo {
 							last = _ref;
 						}
 						else {
-							_prev->next->prev = _ref;
-							_ref->next = _prev->next->prev;
+							_ref->next = _prev->next;
+							_ref->next->prev = _ref;
 							_prev->next = _ref;
 							_ref->prev = _prev;
 						}

@@ -8,8 +8,9 @@ namespace ACTUATOR_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t: public   ACTUATOR_PS_TEMPLATE_NAME::dev_t<types, hardwaresys_t> {
 	int slot_index_;
 public:
-	typedef action_t<types> action_s;
-	typedef feedback_t<types> feedback_s;
+	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::action_t<types> action_s;
+	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::feedback_t<types> feedback_s;
+	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::mode mode;
 
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 || \
@@ -368,10 +369,10 @@ public:
 		)
 		#endif 		
 		#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED ==1
-		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem(), _config.speed_filter, _present.speed_filter, _hardwaresys.enco_block().delta())
+		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem, _config.speed_filter, _present.speed_filter, _hardwaresys.motor_enco_block.delta_ref())
 		#endif
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
-		, speed_ov_current_mode(3, *this)
+		, speed_ov_current_mode(mode::speed_ov_current, *this)
 		#endif
 		#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
 		, speed_ov_voltage_cl_mode(17,*this)
@@ -456,6 +457,43 @@ public:
 		positioner_ov_current.setup(_slot_index);
 		#endif
 	}
+	protected:
+		void do_create_vars(void) {
+			ps_t::do_create_vars();
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
+				const action_s& action = action_cast<action_s>();
+
+				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				::mexo::var::record::create(typename types::var::signal, action.speed, RT("act.sp"), key(), vars);
+				#endif
+				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				typename types::long_signal_t position;
+				#endif
+			}
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
+				const present_s& present = present_cast<present_s>();
+				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				::mexo::var::record::create(typename types::var::signal, present.speed_deseired, RT("desrd.sp"), key(), vars);
+				#endif
+				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				::mexo::var::record::create(typename types::var::long_signal, present.position_deseired, RT("desrd.sp"), key(), vars);
+				#endif
+				/*
+
+				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+				::mexo::var::record::create(typename types::var::signal, present.voltage_required, RT("req.v"), key(), vars);
+				#endif		
+
+				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				#endif*/
+			}
+
+		}
 };
 }
 

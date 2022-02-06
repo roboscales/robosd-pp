@@ -4,24 +4,44 @@
 
 #define PS_TEMPLATE_NAME ACTUATOR_PS_TEMPLATE_NAME 
 #include "mexo/ps.templ.front.inc.hpp"
+namespace mexo {
+	namespace front {
+		namespace ACTUATOR_TEMPLATE_NAME {
+			struct mode : public ACTUATOR_PS_TEMPLATE_NAME::mode {
+				enum {
+					cl_ofset = 16
+					#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  
+					,speed_ov_current =3
+					#endif
+					#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  
+					,position_ov_current =4
+					#endif
+					#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
+					,speed_ov_voltage_cl = 1 + cl_ofset
+					#endif
+					#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
+					,position_ov_voltage_cl = 2 + cl_ofset
+					#endif
+				};
+			};
+			template<typename types> struct action_t {
+				ACTUATOR_PS_TEMPLATE_NAME::action_t<types> ps;
 
-namespace ACTUATOR_TEMPLATE_NAME {
-	template<typename types> struct action_t {
-		ACTUATOR_PS_TEMPLATE_NAME::action_t<types> ps;
-		
-		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
-		|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-		typename types::signal_t speed;
-		#endif
-		#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
-		|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-		typename types::long_signal_t position;
-		#endif
-	};
-	template<typename types>struct feedback_t {
-		ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
-	};
-};
+				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				typename types::signal_t speed;
+				#endif
+				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
+				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
+				typename types::long_signal_t position;
+				#endif
+			};
+			template<typename types>struct feedback_t {
+				ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
+			};
+		}
+	}
+}
 
 #define TEMPL_FINISH
 #include "mexo/actuator.templ.prepare.hpp"

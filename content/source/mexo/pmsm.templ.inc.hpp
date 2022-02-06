@@ -8,12 +8,12 @@ namespace PMSM_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t: public PMSM_ACTUATOR_TEMPLATE_SUB_NAME:: dev_t<types,hardwaresys_t> {
 
 	public:
-		typedef action_t<types> action_s;
-		typedef feedback_t<types> feedback_s;
+		typedef ::mexo::front::PMSM_TEMPLATE_NAME::action_t<types> action_s;
+		typedef ::mexo::front::PMSM_TEMPLATE_NAME::feedback_t<types> feedback_s;
+		typedef ::mexo::front::PMSM_TEMPLATE_NAME::mode mode;
 
 		typedef PMSM_ACTUATOR_TEMPLATE_SUB_NAME::dev_t<types, hardwaresys_t> actuator_t;
 
-		enum { mode_sync = 32, mode_sync_voltage = 33, mode_sync_current = 34 };
 	private:
 		friend class synchro_voltage_mode_t;
 
@@ -127,47 +127,67 @@ namespace PMSM_TEMPLATE_NAME {
 
 		typedef ::mexo::machine::slot::member<dev_t> inverter_controller_t;
 		inverter_controller_t	inverter_controller;
-		int old_mode_id_ = ::mexo::dev::idle_id;
+		int old_mode_id_ = mode::idle;
 		void inverter_controller_run(void) {
 			present_s& present = present_cast<present_s>();
 			
 			if (old_mode_id_ != present.actuator.ps.dev.mode) {
-				switch (::mexo::dev::idle_id) {
+				switch (present.actuator.ps.dev.mode) {
+				case mode::idle:
 					switch (old_mode_id_) {
-					case mode_sync_current:
-					case mode_sync_voltage:
+					#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
+					case mode::sync_current:
 					break;
+					#endif
+					#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
+					case mode::sync_voltage:
+					break;
+					#endif
+					#if LAT_CURRENT_MEASSURY_ENABLED == 1
 					default:
 					lat_current_regulator.stop();
 					lat_current_regulator.set_output(nullptr);
 					lat_current_regulator.set_input(nullptr);
+					#endif
 					};
-				case ::mexo::dev::idle_id:
-				case mode_sync_current:
-				case mode_sync_voltage:
 				break;
+				#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
+				case mode::sync_current:
+				break;
+				#endif
+				#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
+				case mode::sync_voltage:
+				break;
+				#endif
 				default:
+				#if LAT_CURRENT_MEASSURY_ENABLED == 1
+				present.lat_current.deseired = 0;
+				lat_current_regulator.set_output(&hardwaresys.power_supply_block.inverter.lat_voltage_ref());
+				lat_current_regulator.set_input(&present.lat_current.deseired);
+				lat_current_regulator.reconfig();
+				lat_current_regulator.start();
+				#endif
 				break;
 				};
 				old_mode_id_ = present.actuator.ps.dev.mode;
 			}
 
 			switch (present.actuator.ps.dev.mode) {
-			case ::mexo::dev::idle_id:
+			case mode::idle:
 			break;
-			case mode_sync_voltage:
+			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
+			case mode::sync_voltage:
 				present.angle_req += present.freq_req;
-				hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
+				hardwaresys.rotator_block.angle_set(types::scale_l(present.angle_req));
 			break;
-			case mode_sync_current:
+			#endif
+			#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
+			case mode::sync_current:
 				present.angle_req += present.freq_req;
-				hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
+				hardwaresys.rotator_block.angle_set(types::scale_l(present.angle_req));
 				break;
+			#endif
 			default:
-				lat_current_regulator.set_output(&hardwaresys.power_supply_block.inverter.lat_voltage_ref());
-				lat_current_regulator.set_input(&present.lat_current.deseired);
-				lat_current_regulator.reconfig();
-				lat_current_regulator.start();
 			break;
 			//
 			}
@@ -197,15 +217,18 @@ namespace PMSM_TEMPLATE_NAME {
 		}*/
 		}
 
+		#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
 		void synchro_voltage_mode_start(void) {
 			present_s& present = present_cast<present_s>();
 			hardwaresys.power_supply_block.set_input(&present.actuator.ps.voltage_deseired);
 			hardwaresys.reconfig();
 			on();
+			hardwaresys.rotator_block.off();
 		}
 
 		virtual void synchro_voltage_mode_stop(void) {
 			off();
+			hardwaresys.rotator_block.on();
 			hardwaresys.power_supply_block.set_input(nullptr);
 		}
 		virtual void synchro_voltage_mode_applay_action(void) {
@@ -236,10 +259,11 @@ namespace PMSM_TEMPLATE_NAME {
 			synchro_voltage_mode_t(int _index, dev_t& _owner) :
 			::mexo::ps::dev::mode(_index, RT("mod_sv"), _owner) {}
 		} synchro_voltage_mode_;
-
+		#endif
 
 		#if LAT_CURRENT_REGULATOR_ENABLED == 1
 	protected:
+		#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
 		void synchro_current_mode_start(void) {
 			present_s& present = present_cast<present_s>();
 
@@ -258,11 +282,13 @@ namespace PMSM_TEMPLATE_NAME {
 			lat_current_regulator.start();
 
 			on();
+			hardwaresys.rotator_block.off();
 
 		}
 
 		void synchro_current_mode_stop(void) {
 			off();
+			hardwaresys.rotator_block.on();
 			current_regulator.stop();
 			hardwaresys.power_supply_block.set_input(nullptr);
 			current_regulator.set_output(nullptr);
@@ -318,10 +344,12 @@ namespace PMSM_TEMPLATE_NAME {
 				::mexo::ps::dev::mode(_index, RT("mod_sc"), _owner) {}
 		} synchro_current_mode_;
 		#endif
+		#endif
 		protected:
 		void do_create_vars(void) {
 			actuator_t::do_create_vars();
 
+			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1 || PMSM_SYNC_CURRENT_MODE_ENABLED ==1
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
 				const action_s& action = action_cast<action_s>();
 				::mexo::var::record::create(types::var::long_signal, action.angle, RT("act.angle"), key(), vars);
@@ -331,20 +359,21 @@ namespace PMSM_TEMPLATE_NAME {
 				::mexo::var::record::create(types::var::long_signal, present.angle_req, RT("angle_req"), key(), vars);
 				::mexo::var::record::create(types::var::long_signal, present.freq_req, RT("freq_req"), key(), vars);
 			}
+			#endif
 		}
 
-		::robo::delegat::srmember< dev_t, void> enco_converter_;
-		void enco_convert(void) {
-			//hardwaresys.power_supply_block.inverter.angle_set(types::scale_l(present.angle_req));
-		}
 	public:
 
 		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
 			: actuator_t(_hardwaresys, _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
 			, inverter_controller(::mexo::machine::slot::kind::backend ,this, &dev_t::inverter_controller_run)
-			, synchro_voltage_mode_(mode_sync_voltage,*this)
+			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
+			, synchro_voltage_mode_(mode::sync_voltage,*this)
+			#endif
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
-			, synchro_current_mode_(mode_sync_current, *this)
+			#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
+			, synchro_current_mode_(mode::sync_current, *this)
+			#endif
 			#endif
 			#if LAT_CURRENT_FILTER_ENABLED==1
 			, lat_current_filter(RT("lc_f"), &hardwaresys.prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, hardwaresys.current_sence_block.lat_current_ref())
@@ -366,7 +395,6 @@ namespace PMSM_TEMPLATE_NAME {
 				, LAT_ACTUAL_SIGNALS
 			) 
 			#endif
-			, enco_converter_(*this, &dev_t::enco_convert)
 		{
 			#if LAT_CURRENT_FILTER_ENABLED==1
 			_config.lat_current.filter =

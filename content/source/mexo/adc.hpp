@@ -36,15 +36,15 @@ namespace mexo {
 		private:
 			unsigned int init_count_ = 0;
 			void reset_(void) {
-				long_discret_t* a = handler::present_cast<present_s>().acc;
+				long_discret_t* a = present_cast<present_s>().acc;
 				for (int i = 0; i < channel_count; ++i, ++a) {
 					*a = 0;
 				}
-				init_count_ = 1 << handler::config_cast<config_s>().init_count_shift;
+				init_count_ = 1 << config_cast<config_s>().init_count_shift;
 			}
 		public:
 			void reset(void) {
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = present_cast<present_s>();
 				present.ready = false;
 				reset_();
 			}
@@ -52,8 +52,8 @@ namespace mexo {
 			virtual void do_handler_adjust(void) {}
 
 			void execute(void) {
-				present_s& present = handler::present_cast<present_s>();
-				const config_s& config = handler::config_cast<config_s>();
+				present_s& present = present_cast<present_s>();
+				const config_s& config = config_cast<config_s>();
 
 				discret_t* n = present.native;
 				const unsigned int* ix = config.index;
@@ -102,7 +102,7 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				handler::do_handler_create_vars(_vars, _master_key);
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = present_cast<present_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					string key;
 					char* vn = varnames;
@@ -159,8 +159,8 @@ namespace mexo {
 			unsigned int init_count_ = 0;
 			bool init_ = false;
 			void reset_(void) {
-				handler::present_cast<present_s>().acc = 0;
-				init_count_ = 1 << handler::config_cast<config_s>().init_count_shift;
+				present_cast<present_s>().acc = 0;
+				init_count_ = 1 << config_cast<config_s>().init_count_shift;
 			}
 		public:
 			void reset(void) {
@@ -169,8 +169,8 @@ namespace mexo {
 			}
 		protected:
 			void execute(void) {
-				present_s& present = handler::present_cast<present_s>();
-				const config_s& config = handler::config_cast<config_s>();
+				present_s& present = present_cast<present_s>();
+				const config_s& config = config_cast<config_s>();
 				present.native = D::raw[config.index];
 				if (init_) {
 					present.value = config.scale * (present.native - present.offset);
@@ -198,7 +198,7 @@ namespace mexo {
 			single_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
 
-			bool ready(void) { return handler::present_cast<present_s>().ready; }
+			bool ready(void) { return present_cast<present_s>().ready; }
 		};
 
 		template < typename q, typename D  > class current_sence : public machine<q, D> {
@@ -215,16 +215,16 @@ namespace mexo {
 				: B(_config, _present.adc) {}
 
 			typename q::signal_t& current_ref(void) {
-				return handler::present_cast<present_s>().current;
+				return present_cast<present_s>().current;
 			};
 			typename q::signal_t& current_delta_ref(void) {
-				return handler::present_cast<present_s>().delta;
+				return present_cast<present_s>().delta;
 			};
 
 		protected:
 			void execute(void) {
 				B::execute();
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = present_cast<present_s>();
 				signal_t tmp = present.current;
 				present.current = present.adc.values[1] - present.adc.values[0];
 				present.delta = present.current - tmp;
@@ -259,26 +259,26 @@ namespace mexo {
 				, cs_(_cs) 
 			{}
 			typename q::signal_t& current_ref(void) { 
-				present_s& present = handler::present_cast<present_s>(); 
+				present_s& present = present_cast<present_s>(); 
 				return present.current.cross; 
 			}
 			typename q::signal_t& current_delta_ref(void) { 
-				present_s& present = handler::present_cast<present_s>(); 
+				present_s& present = present_cast<present_s>(); 
 				return present.delta.cross; 
 			}
 			typename q::signal_t& lat_current_ref(void) { 
-				present_s& present = handler::present_cast<present_s>(); 
+				present_s& present = present_cast<present_s>(); 
 				return present.current.lateral; 
 			}
 			typename q::signal_t& lat_current_delta_ref(void) { 
-				present_s& present = handler::present_cast<present_s>(); 
+				present_s& present = present_cast<present_s>(); 
 				return present.delta.lateral; 
 			}
 
 		protected:
 			void execute(void) {
 				BB::execute();
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = present_cast<present_s>();
 				dq_t tmp = present.current;
 
 				present.abc.A = present.adc.values[0];
@@ -293,6 +293,20 @@ namespace mexo {
 
 			}
 			virtual void do_handler_adjust(void) {}
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+				BB::do_handler_create_vars(_vars, _master_key);
+				present_s& present = present_cast<present_s>();
+				var::record::create(q::var::const_signal, present.abc.A, RT("A"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.abc.B, RT("B"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.abc.C, RT("C"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.ab.alfa, RT("alfa"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.ab.beta, RT("beta"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.current.cross, RT("cross"), _master_key, _vars);
+				var::record::create(q::var::const_signal, present.current.lateral, RT("lat"), _master_key, _vars);
+
+			}
+			#endif
 		};		
 	}
 

@@ -17,7 +17,7 @@
 #define _ACTUATOR_PREFIX(name,prfx)  __ACTUATOR_PREFIX(name,prfx)
 #define __ACTUATOR_PREFIX(name,prfx) prfx##_##name
 
-#define ACTUATOR_PS_PREFIX(name)  _ACTUATOR_PS_PREFIX(name,ACTUATOR_PS_TEMPLATE_SUB_NAME)
+#define ACTUATOR_PS_PREFIX(name)  _ACTUATOR_PS_PREFIX(name,ACTUATOR_PS_TEMPLATE_NAME)
 #define _ACTUATOR_PS_PREFIX(name,prfx)  __ACTUATOR_PS_PREFIX(name,prfx)
 #define __ACTUATOR_PS_PREFIX(name,prfx) prfx##_##name
 
