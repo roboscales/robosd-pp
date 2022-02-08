@@ -342,7 +342,7 @@ public:
 			, _present.positioner
 			, _present.speed_range_desired
 			, _present.motion.cb.satstate.actual
-			, _hardwaresys.enco_block().output()
+			, _hardwaresys.motor_enco_block.position_ref()
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
@@ -469,7 +469,7 @@ public:
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				typename types::long_signal_t position;
+				::mexo::var::record::create(typename types::var::long_signal, action.position, RT("act.po"), key(), vars);
 				#endif
 			}
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
@@ -480,7 +480,7 @@ public:
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::long_signal, present.position_deseired, RT("desrd.sp"), key(), vars);
+				::mexo::var::record::create(typename types::var::long_signal, present.position_deseired, RT("desrd.po"), key(), vars);
 				#endif
 				/*
 

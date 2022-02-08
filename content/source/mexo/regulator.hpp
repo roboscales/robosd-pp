@@ -518,11 +518,12 @@ namespace mexo {
 			const config_s& config = handler::config_cast<config_s>();
 
 			present.error = *A::deseired - actual;
-			const signal_t max_err = std::numeric_limits<signal_t>::max();
+			const long_signal_t max_err = std::numeric_limits<long_signal_t>::max() / 256 ;
 			
 			if (present.error==0){
 				present.control = (long_signal_t)0;
-				*A::output = (signal_t)0;					return;
+				*A::output = (signal_t)0;					
+				return;
 			}else{
 					if(present.error > config.deadZone){
 							if (present.error>max_err){

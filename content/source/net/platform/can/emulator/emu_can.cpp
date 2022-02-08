@@ -272,14 +272,14 @@ namespace robo {
 
 				virtual bool do_begin(void) {
 					ROBO_LBREAKN(edev::agent::do_begin())
-						ROBO_LBREAKN(ini::load(type, RT("BAUDRATE"), baudrate_));
-					ROBO_LBREAKN(ini::load(type, RT("CHANNEL"), channel_));
-					ROBO_LBREAKN(ini::load(type, RT("REPEAT_MAX_COUNT"), master_port_.repeat_max_count));
-					ROBO_LBREAKN(ini::load(type, RT("TEST_CONNECTION_COUNT"), test_ports_count_));
-					ROBO_LBREAKN(ini::load(type, RT("TEST_CONNECTION_SEND_PRESCALE"), test_send_prescale_));
-					ROBO_LBREAKN(ini::load(type, RT("TEST_CONNECTION_SEND_FREQ_100"), test_send_freq_));
-					ROBO_LBREAKN(ini::load(type, RT("TEST_CONNECTION_REPEAT_MAX_COUNT"), test_repeat_max_count_));
-					ROBO_LBREAKN(ini::load(type, RT("TEST_CONNECTION_SHOW_PERIOD_SEC"), showPeriod_));
+					ROBO_LBREAKN(ini::load(name, type, RT("BAUDRATE"), baudrate_));
+					ROBO_LBREAKN(ini::load(name, type, RT("CHANNEL"), channel_));
+					ROBO_LBREAKN(ini::load(name, type, RT("REPEAT_MAX_COUNT"), master_port_.repeat_max_count));
+					ROBO_LBREAKN(ini::load(name, type, RT("TEST_CONNECTION_COUNT"), test_ports_count_));
+					ROBO_LBREAKN(ini::load(name, type, RT("TEST_CONNECTION_SEND_PRESCALE"), test_send_prescale_));
+					ROBO_LBREAKN(ini::load(name, type, RT("TEST_CONNECTION_SEND_FREQ_100"), test_send_freq_));
+					ROBO_LBREAKN(ini::load(name, type, RT("TEST_CONNECTION_REPEAT_MAX_COUNT"), test_repeat_max_count_));
+					ROBO_LBREAKN(ini::load(name, type, RT("TEST_CONNECTION_SHOW_PERIOD_SEC"), showPeriod_));
 
 
 					master_port_.channel = channel_;

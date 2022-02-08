@@ -1034,7 +1034,42 @@ namespace mexo {
 			: BB(_name, _prev, _config, _present, args...) {}
 	};
 
-	
+	template <typename T, int SZ > class ixvar {
+		void (*on_set_)(const T &) ;
+		T (*on_get_)(void);
+		enum { size = SZ };
+		static ixvar * * pool_(void) {
+			static ixvar * pool__[size] = {};
+			return pool__;
+		}
+	public:
+		ixvar(unsigned int _ix, void (*_on_set)(const T & ), T(*_on_get)(void)) : on_set_(_on_set), on_get_(_on_get) {
+			if (_ix >= 0 && _ix < size) {
+				on_set_ = _on_set;
+				on_get_ = _on_get;
+				ixvar** p = pool_() + _ix;
+				(*p) = this;
+			}
+		}
+		static T get(int _ix) {
+			if (_ix >= 0 && _ix < size) {
+				ixvar* p = pool_() + _ix;
+				if (p) {
+					return p->on_get_();
+				}
+			}
+			return (T)0;
+		}
+		static T set(int _ix, const T & _src) {
+			if (_ix >= 0 && _ix < size) {
+				ixvar* p = pool_() + _ix;
+				if (p) {
+					p->on_set_(_src);
+				}
+			}
+		}
+	};
+
 }
 #endif
 

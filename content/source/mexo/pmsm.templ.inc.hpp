@@ -91,12 +91,10 @@ namespace PMSM_TEMPLATE_NAME {
 
 				#if  LAT_CURRENT_REGULATOR_ENABLED == 1
 				typename types::signal_t deseired;
+				::mexo::range_s<typename types::signal_t> voltage_range_desired;
 				#endif		
 
 			} lat_current;
-			#if LAT_CURRENT_REGULATOR_ENABLED == 1 
-			::mexo::range_s<typename types::signal_t> voltage_range_desired;
-			#endif
 		};
 	protected:
 		#if LAT_CURRENT_MEASSURY_ENABLED == 1
@@ -166,6 +164,9 @@ namespace PMSM_TEMPLATE_NAME {
 				lat_current_regulator.set_input(&present.lat_current.deseired);
 				lat_current_regulator.reconfig();
 				lat_current_regulator.start();
+				present.lat_current.voltage_range_desired.hi = types::max;
+				present.lat_current.voltage_range_desired.low = -types::max;
+
 				#endif
 				break;
 				};
@@ -307,8 +308,8 @@ namespace PMSM_TEMPLATE_NAME {
 
 			present.actuator.ps.voltage_range_desired.hi = action.actuator.ps.voltage;
 			present.actuator.ps.voltage_range_desired.low = -action.actuator.ps.voltage;
-			present.voltage_range_desired.hi = action.actuator.ps.voltage;
-			present.voltage_range_desired.low = -action.actuator.ps.voltage;
+			present.lat_current.voltage_range_desired.hi = action.actuator.ps.voltage;
+			present.lat_current.voltage_range_desired.low = -action.actuator.ps.voltage;
 
 			present.lat_current.deseired = action.actuator.ps.current;
 			
@@ -390,7 +391,7 @@ namespace PMSM_TEMPLATE_NAME {
 				, this
 				, _config.lat_current.regulator
 				, _present.lat_current.regulator
-				, _present.voltage_range_desired
+				, _present.lat_current.voltage_range_desired
 				, hardwaresys.power_supply_block.actual_satstate()
 				, LAT_ACTUAL_SIGNALS
 			) 
