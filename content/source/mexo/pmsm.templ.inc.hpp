@@ -367,7 +367,7 @@ namespace PMSM_TEMPLATE_NAME {
 
 		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
 			: actuator_t(_hardwaresys, _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
-			, inverter_controller(::mexo::machine::slot::kind::backend ,this, &dev_t::inverter_controller_run)
+			, inverter_controller(::mexo::machine::slot::kind::backend ,*this, &dev_t::inverter_controller_run)
 			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
 			, synchro_voltage_mode_(mode::sync_voltage,*this)
 			#endif

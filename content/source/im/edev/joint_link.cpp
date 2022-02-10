@@ -10,8 +10,8 @@ namespace robo{
 				return links__;
 			};
 
-			bool link::do_load(void){
-				ref_.set_key(hash(path));
+			bool link::do_load(cstr _specific_sect, cstr _common_sect){
+				ref_.set_key(hash(_specific_sect));
 				ROBO_LRET(ref_.attach_to(links_()));
 			}
 

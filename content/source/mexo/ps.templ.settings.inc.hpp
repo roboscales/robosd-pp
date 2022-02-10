@@ -1,5 +1,5 @@
 {
-77
+	{ 777 }
 
 #if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 , {

@@ -117,23 +117,23 @@ namespace mexo {
 			};
 
 
-			template<typename C> class member : public ::robo::delegat::member<delegat, C, void> {
-				typedef ::robo::delegat::member<delegat, C, void> A;
+			template<typename C> class member : public ::robo::delegat::rmember<delegat, C, void> {
+				typedef ::robo::delegat::rmember<delegat, C, void> A;
 			public:
-				member(C* _instance, void (C::* _member) (void)) : A(_instance, _member) {}
-				member(slot::kind _kind, C* _instance, void(C::* _member)(void), delegat* _prev = nullptr): A(_instance, _member) {
+				member(C & _instance, void (C::* _member) (void)) : A(_instance, _member) {}
+				member(slot::kind _kind, C& _instance, void(C::* _member)(void), delegat* _prev = nullptr): A(_instance, _member) {
 					attach(_kind, _prev);
 				}
-				member(int _index, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+				member(int _index, C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
 					attach(_index, _prev);
 				}
-				member(const int* _index, int _count, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+				member(const int& _index, int _count, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
 					attach(_index, _count, _prev);
 				}
-				template <size_t N>  member(int(&_index)[N], C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+				template <size_t N>  member(int(&_index)[N], C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
 					attach(_index, _prev);
 				}
-				member(std::initializer_list<int> _index, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
+				member(std::initializer_list<int> _index, C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
 					attach(_index, _prev);
 				}
 			};
@@ -255,15 +255,21 @@ namespace mexo {
 		struct present_s {
 			int mode;
 		};
+		struct config_s {
+			int tag;
+		};
 
-		template <typename S> const S& action_cast(void) {
-			return reinterpret_cast <const S&>(action_);
+		template <typename S> S& action_cast(void) {
+			return reinterpret_cast <S&>(action_);
 		}
 
 		template <typename P> P& present_cast(void) {
 			return reinterpret_cast <P&>(present_);
 		}
 
+		template <typename P> P& config_cast(void) {
+			return reinterpret_cast <P&>(config_);
+		}
 
 		class mode : public node {
 			friend class dev;
@@ -281,7 +287,47 @@ namespace mexo {
 		public:
 			mode(int _index, cstr  _name, dev& _dev);
 		};
+		/*
+		template< typename T> class embd_mode :public mode {
+		public:
+			typedef (typename T::* delegat) (void) ;
+		private:
+			T& dev_;
+			delegat do_applay_;
+			delegat do_start_;
+			delegat do_stop_;
+		protected:
+			virtual void applay_action(void) {
+				(dev_.*do_applay_)();
+			}
 
+			virtual void do_start(void) {
+				(dev_.*do_start_)();
+			}
+
+			virtual void do_stop(void) {
+				(dev_.*do_stop_)();
+			}
+
+		public:
+			embd_mode(
+				int _index
+				, cstr _name
+				, T& _owner
+				, delegat _do_applay
+				, delegat _do_start
+				, delegat _do_stop
+			) :
+				mode(
+					_index
+					, _name
+					, _owner
+				)
+				, do_applay_(_do_applay)
+				, do_start_(_do_start)
+				, do_stop_(_do_stop) {}
+		};
+		*/
 		class idle_mode : public mode {
 		protected:
 			virtual void applay_action(void) {};
@@ -295,11 +341,16 @@ namespace mexo {
 		};
 
 		idle_mode idle;
-		dev(cstr  _name, action_s& _action, present_s& _present);
+		dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config);
 		void switch_to(int _mode);
+		void action_enable() { action_enabled_ = true;  }
+		void action_disable() { action_enabled_ = false; }
 	protected:
 		virtual void do_create_vars(void);
 	private:
+		//если false то  при переключении режима самостоятельно интерпретирует cnhernehe action
+		bool action_enabled_ = true;
+
 		friend class mode;
 		mode::map modes_;
 		mode* actual_mode_;
@@ -307,6 +358,7 @@ namespace mexo {
 		::mexo::machine::slot::delegat::ref  backend_ref_;
 		action_s& action_;
 		present_s& present_;
+		config_s& config_;
 		void backend__(void);
 	};
 

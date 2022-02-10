@@ -378,7 +378,7 @@ public:
 		, speed_ov_voltage_cl_mode(17,*this)
 		#endif
 		#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
-		, position_ov_current_mode(4,*this)
+		, position_ov_current_mode(mode::position_ov_current,*this)
 		#endif
 		#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
 		, position_ov_voltage_cl_mode(18,*this)

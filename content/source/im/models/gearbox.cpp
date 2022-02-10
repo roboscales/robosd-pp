@@ -22,15 +22,11 @@ namespace robo{
 						load->driveng_speed = observer.speed;
 						actuator->state = joint::iactuator::istate::run;
 					}
-					void ideal::do_try_load(cstr _section) {
-						ini::try_load(_section, RT("hook_gain"), hook_gain);
-						ini::try_load(_section, RT("load_viscous_gain"), load_viscous_gain);
-						 ini::try_load(_section, RT("gear_ratio"), gear_ratio);
-					}
-					bool ideal::do_load(cstr _section) {
-						ROBO_LBREAKN(ini::load(_section, RT("hook_gain"), hook_gain));
-						ROBO_LBREAKN(ini::load(_section, RT("load_viscous_gain"), load_viscous_gain));
-						ROBO_LBREAKN(ini::load(_section, RT("gear_ratio"), gear_ratio));
+					bool ideal::do_load(cstr _specific_sect, cstr _common_sect) {
+						ROBO_LBREAKN(link::do_load(_specific_sect, _common_sect));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("hook_gain"), hook_gain));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_viscous_gain"), load_viscous_gain));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("gear_ratio"), gear_ratio));
 						return true;
 					}
 					void ideal::do_reconfig(void) {
@@ -96,23 +92,26 @@ namespace robo{
 
 						driver.position = actuator->position / driver.gear_ratio;
 
-						driver.elastic_torque = (driver.tension /*+ driver.tension_diff(model_period_sec * 500*/) * driver.hook_gain;
+						driver.elastic_torque = (driver.tension  + driver.tension_diff * driver.dissipation_gain) * driver.hook_gain;
 
-						actuator->contr_torque = (driver.elastic_torque + supply.torque) / driver.gear_ratio;
+						actuator->contr_torque = (driver.elastic_torque + supply.torque   ) / driver.gear_ratio;
 						load->driveng_position = driver.position;
 						load->driveng_speed = driver.speed;
-						load->driveng_torque = driver.elastic_torque - supply.torque - load->speed * driver.load_viscous_gain;
+						load->driveng_torque = driver.elastic_torque - supply.torque -  load->speed * driver.load_viscous_gain;
 						load->tension = driver.tension;
 						load->tension_diff = driver.tension_diff;
 					}
 
 					bool nonline::do_load(cstr _specific_sect, cstr _common_sect) {
+						ROBO_LBREAKN(link::do_load(_specific_sect, _common_sect));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_tension_max"), driver.config.tension_max));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_torque_max"), driver.config.torque_max));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_dead_zone"), driver.config.dead_zone));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("load_viscous_gain"), driver.load_viscous_gain));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_gear_ratio"), driver.gear_ratio));
 						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_enabled"), supply.enabled));
+						ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("driver_dissipation_gain"), driver.dissipation_gain));
+						
 
 						if (supply.enabled == 1) {
 							ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("supply_min"), supply.config.min));
@@ -125,7 +124,12 @@ namespace robo{
 					}
 					void nonline::do_reconfig(void) {
 						driver.tension_max = driver.config.tension_max * grad2rad<float>;
-						driver.hook_gain = driver.config.torque_max / driver.tension_max;
+						if (driver.tension_max > 1e-6) {
+							driver.hook_gain = driver.config.torque_max / driver.tension_max;
+						}
+						else {
+							driver.hook_gain = 0;
+						}
 						driver.dead_zone = driver.config.dead_zone * grad2rad<float>;
 						if (supply.enabled == 1) {
 							supply.max = supply.config.max * grad2rad<float>;

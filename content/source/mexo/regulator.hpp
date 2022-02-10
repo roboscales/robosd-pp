@@ -593,7 +593,7 @@ namespace mexo {
 				*A::output = (signal_t)0;
 			}
 		}
-	};	
+	};
 }
 
 #endif

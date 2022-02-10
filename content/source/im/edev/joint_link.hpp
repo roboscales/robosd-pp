@@ -32,7 +32,7 @@ namespace robo{
 			private:
 				ref ref_;
 			protected:
-				virtual bool do_load(void);
+				virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 			public:
 				iactuator * actuator;
 				iload * load;

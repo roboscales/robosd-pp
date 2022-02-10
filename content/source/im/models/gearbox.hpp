@@ -10,8 +10,7 @@ namespace robo{
 				namespace elastic {
 					class ROBO_EXPORT ideal : public link {
 					protected:
-						virtual bool do_load(cstr _section);
-						virtual void do_try_load(cstr _section);
+						virtual bool do_load(cstr _specific_sect, cstr _common_sect);
 						virtual void do_reconfig(void);
 						virtual void do_run(void);
 					public:
@@ -45,6 +44,7 @@ namespace robo{
 							float load_viscous_gain = 0.f;
 							float gear_ratio = 1.f;
 							float dead_zone = 0.f;
+							float dissipation_gain = 0.f;
 							struct {
 								float dead_zone = 0.f;
 								float tension_max = 0.f;

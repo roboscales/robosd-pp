@@ -69,7 +69,7 @@ namespace PS_TEMPLATE_NAME {
 
 
 		struct config_s {
-			int tag;
+			::mexo::ps::dev::config_s dev;
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 			typename voltage_regulator_b::config_s voltage_regulator;
 			#endif
@@ -156,6 +156,9 @@ protected:
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				#endif
+
+				#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 				::mexo::var::record::create(typename types::var::signal, present.current_deseired, RT("desrd.c"), key(), vars);
 				#endif
 			}
@@ -193,7 +196,7 @@ protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 
 			virtual void applay_action(void) {
-				const action_s& action = owner().template action_cast<action_s>();
+				action_s& action = owner().template action_cast<action_s>();
 				present_s& present = owner().template present_cast<present_s>();
 
 				if (action.invers) {
@@ -355,7 +358,7 @@ protected:
 		current_limmiter_mode_t current_limmiter_mode;
 		#endif
 		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
-			: ::mexo::ps::dev(_name, _action.dev, _present.dev, _hardwaresys.power_supply_block )
+			: ::mexo::ps::dev(_name, _action.dev, _present.dev, _config.dev, _hardwaresys.power_supply_block )
 			, hardwaresys(_hardwaresys)
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())

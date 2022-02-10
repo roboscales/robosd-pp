@@ -64,12 +64,12 @@ namespace mexo {
 						native_t  tmp_delta = (native_t)(tmp - present.native.ceiled);
 						present.native.ceiled = tmp;
 						//todo проверить на всехли компиляторах shift будет арифметический
-						present.native.delta = (((native_t)(tmp_delta)) >> shift);
+						present.native.delta = (native_t)(tmp_delta >> shift);// (((native_t)(tmp_delta)) >> shift);
 						if (config.inverce) {
-							present.delta = -(doutput_t)(present.native.delta >> value_shift);
+							present.delta = -(doutput_t)q::round_l(present.native.delta , value_shift);
 						}
 						else {
-							present.delta = (doutput_t)(present.native.delta >> value_shift);
+							present.delta = (doutput_t)q::round_l(present.native.delta, value_shift);
 						}
 					}
 					else {
@@ -77,8 +77,9 @@ namespace mexo {
 						present.native.raw += present.native.delta;
 						present.native.ceiled += (present.native.delta << shift);
 					}
-					present.acc += present.delta;
-					present.position = present.acc >> value_shift;
+					present.acc += present.native.delta;
+					//todo round_l не катит
+					present.position = q::round_l(present.acc, value_shift);
 					present.position -= config.position_offset;
 				}
 				else {
@@ -92,7 +93,7 @@ namespace mexo {
 						else {
 							present.acc = (output_t)tmp;
 						}
-						present.position = present.acc >> value_shift;
+						present.position = q::round_l(present.acc, value_shift);
 						present.position -= config.position_offset;
 						start_pause_tick--;
 					}

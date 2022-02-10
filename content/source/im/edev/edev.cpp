@@ -12,6 +12,7 @@ namespace robo {
 
 		bool agent::block::load_(void) {
 			string common;
+			path.format(RT("%s.%s"), owner.name.c_str(), name.c_str());
 			common.format(RT("%s.%s"), owner.type.c_str(), name.c_str() );
 			ROBO_LBREAKN(do_load(path, common.c_str()));
 			return true;

@@ -384,14 +384,15 @@ namespace mexo {
 		}
 	}
 
-	dev::dev(cstr  _name, action_s& _action, present_s& _present)
+	dev::dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config)
 		: node(_name, nullptr)
 		, idle(*this)
 		, actual_mode_(&idle)
 		, backend_(this, &dev::backend__)
 		, backend_ref_(backend_)
 		, action_(_action)
-		, present_(_present) {
+		, present_(_present)
+		, config_(_config) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend, nullptr);
 		present_.mode = front::dev::mode::idle;
 	}
@@ -415,7 +416,9 @@ namespace mexo {
 				}
 				else {
 					m->do_start();
-					m->applay_action();
+					if (action_enabled_) {
+						m->applay_action();
+					}
 					actual_mode_ = m;
 					present_.mode = _mode_id;
 				}
@@ -434,7 +437,9 @@ namespace mexo {
 		if (action_.actual) {
 			guard__;
 			action_.actual = false;
-			actual_mode_->applay_action();
+			if (action_enabled_) {
+				actual_mode_->applay_action();
+			}
 		}
 	}
 

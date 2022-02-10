@@ -28,8 +28,8 @@ namespace mexo {
 		class dev :public ::mexo::dev {
 			control& control_;
 		public:
-			dev(cstr  _name, action_s& _action, present_s& _present, control& _control)
-				: ::mexo::dev(_name, _action, _present)
+			dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config, control& _control)
+				: ::mexo::dev(_name, _action, _present, _config)
 				, control_(_control) {}
 			void enable(void) { control_.enable(); }
 			void on(void) { control_.on(); }
@@ -131,8 +131,8 @@ namespace mexo {
 				const config_s& config =  A::config_cast<config_s>();
 				present_s& present = A::present_cast<present_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
-					::mexo::var::record::create(::mexo::var::const_uint8, command_, RT("cmd"));
-					::mexo::var::record::create(::mexo::var::const_uint8, status_, RT("status"));
+					::mexo::var::record::create(::mexo::var::const_uint8, command_, RT("cmd"), _master_key, _vars);
+					::mexo::var::record::create(::mexo::var::const_uint8, status_, RT("status"), _master_key, _vars);
 
 					var::record::create(types::var::const_discret, config.duty.low, RT("duty.low"), _master_key, _vars);
 					var::record::create(types::var::const_discret, config.duty.hi, RT("duty.hi"), _master_key, _vars);
@@ -208,10 +208,10 @@ namespace mexo {
 			};
 			present_s& present;
 			void run(signal_t _voltage) {
-				q::scaler::run(_voltage, present.duty)
+				q::scaler::run(_voltage, present.duty);
 			}
-			static void create_var(int  _master_key, var::record::list& _list) {
-				var::record::create(types::var::const_discret, _present.duty, RT("duty"), _master_key, _list);
+			void create_var(int  _master_key, var::record::list& _list) {
+				var::record::create(types::var::const_discret, present.duty, RT("duty"), _master_key, _list);
 			}
 			dc_inverter(present_s & _present) : present(_present) {}
 		};
