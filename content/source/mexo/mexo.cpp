@@ -458,6 +458,123 @@ namespace mexo {
 		}
 	}
 
+	bool controller::process::run_(void) {
+		if (command_ == command::start) {
+			switch (state_) {
+			case state::stopped:
+			onBegin();
+			state_ = state::begin;
+			case state::begin:
+			if (doBegin()) {
+				state_ = state::startup;
+				onStartup();
+			}
+			else
+				break;
+			case  state::startup:
+			if (doStartup()) {
+				state_ = state::execute;
+				onExecute();
+			}
+			else
+				break;
+			case state::execute:
+			if (doExecute()) {
+				stop();
+			}
+			else
+				break;
+			case state::shutdown:
+			if (doShutdown()) {
+				state_ = state::reset;
+				onReset();
+			}
+			else
+				break;
+			case state::reset:
+			if (doReset()) {
+				onFinish();
+				state_ = state::stopped;
+			}
+			else
+				break;
+			}
+		}
+		else {
+			switch (state_) {
+			case state::stopped:
+				doIdle();
+			break;
+			case state::begin:
+				state_ = state::reset;
+			onReset();
+			break;
+			case state::startup:
+			case state::execute :
+				state_ = state::shutdown;
+			onShutdown();
+			case state::shutdown :
+			if (doShutdown()) {
+				state_ = state::reset;
+				onReset();
+			}
+			else
+				break;
+			case state::reset:
+			if (doReset()) {
+				onFinish();
+				state_ = state::stopped;
+				return true;
+			}
+			else
+				break;
+			}
+		}
+		return false;
+	}
+
+	void controller::process::terminate(void) {
+		doTerminate();
+		state_ = state::stopped;
+		command_ = command::stop;
+	}
+
+	void controller::switchto(controller::process* _task) {
+		if (selected_ == 0 && runned_ == _task) {
+			runned_->start_();
+		}
+		else {
+			selected_ = _task;
+			if (runned_) runned_->stop();
+		}
+	}
+
+	void controller::run(void) {
+		if (runned_ == 0) {
+			if (selected_ != 0) {
+				runned_ = selected_;
+				selected_ = 0;
+				runned_->start_();
+			}
+			else {
+				return;
+			}
+		}
+		if (runned_->run_()) {
+			runned_ = 0;
+		}
+	}
+	void controller::stop() {
+		selected_ = 0;
+		if (runned_) runned_->stop();
+	}
+	void controller::terminate() {
+		selected_ = 0;
+		if (runned_) runned_->terminate();
+		runned_ = 0;
+		doTerminate();
+	}
+
 }
 
 #include "mexo/mexo.h"

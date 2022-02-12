@@ -1105,23 +1105,100 @@ namespace mexo {
 		}
 		static T get(int _ix) {
 			if (_ix >= 0 && _ix < size) {
-				ixvar* p = pool_() + _ix;
-				if (p) {
-					return p->on_get_();
+				ixvar** p = pool_() + _ix;
+				if (*p) {
+					return (*p)->on_get_();
 				}
 			}
 			return (T)0;
 		}
 		static T set(int _ix, const T & _src) {
 			if (_ix >= 0 && _ix < size) {
-				ixvar* p = pool_() + _ix;
-				if (p) {
-					p->on_set_(_src);
+				ixvar** p = pool_() + _ix;
+				if (*p) {
+					(*p)->on_set_(_src);
+				}
+			}
+		}
+		static T set(int _ix, const T * _src) {
+			if (_ix >= 0 && _ix < size) {
+				ixvar** p = pool_() + _ix;
+				if (*p) {
+					(*p)->on_set_(*_src);
+				}
+			}
+		}
+		static void set(int _ix, const void * _src) {
+			if (_ix >= 0 && _ix < size) {
+				ixvar** p = pool_() + _ix;
+				if (*p) {
+					(*p)->on_set_( *((T*)_src) );
 				}
 			}
 		}
 	};
 
+
+	class controller {
+	public:
+		class process {
+		protected:
+			enum class result {
+				wait = false,
+				success = true
+			};
+		private:
+			friend class controller;
+
+			enum class command {
+				stop = 0,
+				start = 1
+			};
+			command command_ = command::stop;
+			enum class state {
+				stopped = 0,
+				begin = 1,
+				startup = 3,
+				execute = 4,
+				shutdown = 5,
+				reset = 6
+			} ;
+			state state_;
+			void start_(void) { command_ = command::start; };
+			bool run_(void);
+		protected:
+
+			virtual void onBegin(void) {}
+			virtual void onStartup(void) {}
+			virtual void onExecute(void) {}
+			virtual void onFinish(void) {}
+			virtual void onShutdown(void) {}
+			virtual void onReset(void) {}
+
+			virtual bool doBegin(void) { return true; }
+			virtual bool doStartup(void) { return true; }
+			virtual bool doExecute(void) { return true; }
+			virtual bool doShutdown(void) { return true; }
+			virtual bool doReset(void) { return true; }
+			virtual void doIdle(void) {};
+			virtual void doTerminate(void) {};
+		protected:
+			process(void) {};
+			void stop(void) { command_ = command::stop; };
+			void terminate(void);
+			virtual ~process(void) {};
+		};
+	private:
+		process* selected_ = 0;
+		process* runned_ = 0;
+	protected:
+		virtual void doTerminate() {};
+	public:
+		void switchto(process* _task);
+		void stop(void);
+		void run(void);
+		void terminate(void);
+	};	
 }
 #endif
 

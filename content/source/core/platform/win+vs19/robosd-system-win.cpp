@@ -146,10 +146,12 @@ namespace robo {
 	bool system::env::begin(void) {
 		InitializeCriticalSection(&critical_);
 		InitializeCriticalSection(&guard_);
+		init_ = true;
 		return true;
 	}
 
 	void system::env::finish(void) {
+		init_ = false;
 		DeleteCriticalSection(&critical_);
 		DeleteCriticalSection(&guard_);
 	}

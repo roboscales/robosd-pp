@@ -6,7 +6,7 @@ namespace robo {
 			static ican::map cans__;
 			return cans__;
 		}
-		delegat::dummy<void, ican&, uint16_t, uint8_t*, uint8_t   > can_dummy_on_receive;
+		delegat::dummy<void, ican&, uint32_t, uint8_t*, uint8_t   > can_dummy_on_receive;
 		delegat::dummy<void, ican&, ican::event> can_dummy_on_event;
 
 		ican::ican(void) 

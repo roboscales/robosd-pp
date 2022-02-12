@@ -25,9 +25,9 @@ namespace robo {
 				int repeat_max_count = 1;
 				int channel = 0;
 //				int bitrate = 0;
-				virtual bool open(void);
+				virtual bool open(bool _owned_view = false);
 				virtual void close(void);
-				virtual bool send(uint16_t _id, uint8_t* _buf, uint8_t  _len);
+				virtual bool send(uint32_t _id, uint8_t* _buf, uint8_t  _len);
 				virtual bool ready(void);
 				virtual void reset(void);
 				virtual void pool(void);

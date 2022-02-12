@@ -8,14 +8,14 @@ namespace robo {
 			struct packet {
 				union {
 					struct {
-						uint16_t id;
+						uint32_t id;
 						uint8_t size;
 						struct {
 							uint8_t state : 2;
 							uint8_t send_count : 6;
 						};
 					};
-					uint32_t header;
+					uint64_t header;
 				};
 				union {
 					uint32_t data32[2];
@@ -27,7 +27,8 @@ namespace robo {
 				packet out;
 				packet received;
 				uint8_t used;
-				uint8_t unused[2];
+				uint8_t owned_view;
+				uint8_t unused;
 			};
 			struct port::ether {
 				shared shareds[ROBO_CAN_CONNECTION_COUNT];
@@ -46,7 +47,7 @@ namespace robo {
 			int confirm_count = 0;
 			system::shared* shared_memo_ = nullptr;
 			int shared_used_ = 0;
-			bool port::open(void) {
+			bool port::open(bool _ownedview) {
 				string name;
 				ROBO_LBREAKN( name.format( RT(ROBO_CAN_CHANNEL_SHARED_FILE_NAME), channel) );
 				if (shared_memo_ == nullptr) {
@@ -67,6 +68,7 @@ namespace robo {
 							shared_ = sh;
 							sh->used = SHARED_USED;
 							ether_->changed = CHANGED;
+							sh->owned_view = _ownedview ? 1 : 0;
 							return true;
 						}
 					}
@@ -94,7 +96,7 @@ namespace robo {
 				}
 			}
 
-			bool port::send(uint16_t _id, uint8_t* _buf, uint8_t  _len) {
+			bool port::send(uint32_t _id, uint8_t* _buf, uint8_t  _len) {
 				if (shared_) {
 					if (shared_->out.state != PACKET_EMPTY) {
 						return false;
@@ -102,7 +104,7 @@ namespace robo {
 					shared_->out.id = _id;
 					shared_->out.size = _len;
 					shared_->out.send_count = repeat_max_count + 1;
-					std::copy_n(shared_->out.data, _len, _buf);
+					std::copy_n(_buf, _len, shared_->out.data);
 					shared_->out.state = PACKET_TRANSMIT;
 					return true;
 				}
@@ -217,7 +219,8 @@ namespace robo {
 								}
 								pshared = index_;
 								for (int i = 0; i < nodes_count_; ++i, ++pshared) {
-									(*pshared)->received.state = PACKET_COMPLETE;
+									if(*pshared != winner_ || (*pshared)->owned_view)
+										(*pshared)->received.state = PACKET_COMPLETE;
 								}
 								winner_->out.state = PACKET_COMPLETE;
 								winner_ = nullptr;

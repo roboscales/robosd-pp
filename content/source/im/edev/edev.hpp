@@ -50,7 +50,7 @@ namespace robo {
 			virtual bool do_begin(void);
 			virtual void do_reconfig(void) = 0;
 			virtual void do_finish(void) = 0;
-			agent(void) :ref_(*this,-1) {}
+			agent(void) :ref_(*this,-1){}
 		public:
 			double sample_time;
 			static agent* find(int _id);
