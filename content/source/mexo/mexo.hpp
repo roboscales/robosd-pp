@@ -24,9 +24,11 @@
 
 using namespace robo;
 namespace mexo {
+	
 	struct tp_verb {
 		enum { frontend = 1, backend = 2, priority = 3, loop = 4 };
 	};
+	
 	#if ROBO_APP_MEXO_DEBUG_TP1_ENABLED == 1
 	class tp_driver {
 		//реализацию принудительно делегируем в perephery проекта
@@ -122,19 +124,19 @@ namespace mexo {
 			public:
 				member(C & _instance, void (C::* _member) (void)) : A(_instance, _member) {}
 				member(slot::kind _kind, C& _instance, void(C::* _member)(void), delegat* _prev = nullptr): A(_instance, _member) {
-					attach(_kind, _prev);
+					A::attach(_kind, _prev);
 				}
 				member(int _index, C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
-					attach(_index, _prev);
+					A::attach(_index, _prev);
 				}
 				member(const int& _index, int _count, C* _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
-					attach(_index, _count, _prev);
+					A::attach(_index, _count, _prev);
 				}
 				template <size_t N>  member(int(&_index)[N], C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
-					attach(_index, _prev);
+					A::attach(_index, _prev);
 				}
 				member(std::initializer_list<int> _index, C& _instance, void (C::* _member) (void), delegat* _prev = nullptr) : A(_instance, _member) {
-					attach(_index, _prev);
+					A::attach(_index, _prev);
 				}
 			};
 
@@ -220,6 +222,7 @@ namespace mexo {
 		virtual bool do_reconfig(void) { return true; };
 		virtual void do_create_vars(void) {};
 	public:
+		virtual ~node(void){}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		var::record::list vars;
 		#endif
@@ -249,6 +252,8 @@ namespace mexo {
 	protected:
 		virtual void on_idle(void) {};
 	public:
+		virtual  ~dev(void){}
+			
 		typedef front::dev::action_s action_s;
 		typedef front::dev::feetback_s feetback_s;
 
@@ -287,47 +292,7 @@ namespace mexo {
 		public:
 			mode(int _index, cstr  _name, dev& _dev);
 		};
-		/*
-		template< typename T> class embd_mode :public mode {
-		public:
-			typedef (typename T::* delegat) (void) ;
-		private:
-			T& dev_;
-			delegat do_applay_;
-			delegat do_start_;
-			delegat do_stop_;
-		protected:
-			virtual void applay_action(void) {
-				(dev_.*do_applay_)();
-			}
-
-			virtual void do_start(void) {
-				(dev_.*do_start_)();
-			}
-
-			virtual void do_stop(void) {
-				(dev_.*do_stop_)();
-			}
-
-		public:
-			embd_mode(
-				int _index
-				, cstr _name
-				, T& _owner
-				, delegat _do_applay
-				, delegat _do_start
-				, delegat _do_stop
-			) :
-				mode(
-					_index
-					, _name
-					, _owner
-				)
-				, do_applay_(_do_applay)
-				, do_start_(_do_start)
-				, do_stop_(_do_stop) {}
-		};
-		*/
+		
 		class idle_mode : public mode {
 		protected:
 			virtual void applay_action(void) {};
@@ -346,14 +311,18 @@ namespace mexo {
 		void action_enable() { action_enabled_ = true;  }
 		void action_disable() { action_enabled_ = false; }
 	protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_create_vars(void);
+		#endif
 	private:
+		
 		//если false то  при переключении режима самостоятельно интерпретирует cnhernehe action
 		bool action_enabled_ = true;
 
 		friend class mode;
 		mode::map modes_;
 		mode* actual_mode_;
+		
 		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
 		::mexo::machine::slot::delegat::ref  backend_ref_;
 		action_s& action_;
@@ -532,7 +501,7 @@ namespace mexo {
 	};
 	//делегируем лямбду в подсистему
 	template < typename C > class lambda_block_t : public subsystem_handler {
-		const ::robo::lambda< void(void) > lambda_;
+		::robo::lambda< void(void) > lambda_;
 	public:
 		lambda_block_t(
 			cstr  _name
@@ -656,8 +625,8 @@ namespace mexo {
 		handler_t(cstr  _name, P* _prev, const config_s& _config, present_s& _present, Args ... args)
 			: T(_name,  _prev)
 			, R(_config, _present, args...) {}
-		present_s& present_ref(void) { return   present_cast<present_s>(); };
-		config_s& config_ref(void) { return  config_cast(config_s); };
+				present_s& present_ref(void) { return   T::template present_cast<present_s>(); };
+		config_s& config_ref(void) { return  T::template  config_cast<config_s>(); };
 
 	};
 
@@ -680,8 +649,8 @@ namespace mexo {
 		virtual void do_handler_create_vars(var::record::list&/* _vars*/, int /*_master_key*/) {};
 		#endif
 	public:
-		template <typename S>const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
-		template <typename P>  P& present_cast() { return reinterpret_cast <P&>(present_); }
+		template <typename S>  const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
+		template <typename P>   P& present_cast() { return reinterpret_cast <P&>(present_); }
 		handler(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
 	};
 
@@ -907,7 +876,7 @@ namespace mexo {
 	*/
 	template < typename I, typename O> class function_handler : public handler {
 	protected:
-		const I& input;
+		I& input;
 	public:
 		typedef I input_t;
 		typedef O output_t;
@@ -921,15 +890,15 @@ namespace mexo {
 		function_handler(
 			const config_s& _config
 			, present_s& _present
-			, const input_t& _input
+			, input_t& _input
 		)
 			: handler(_config, _present.ref)
 			, input(_input) {}
 	};
 
 	template < typename R, typename S, typename ... Args> class function_block_t
-		: public handler_t<subsystem_handler, R, S, subsystem_handler, const typename R::input_t&, Args...> {
-		typedef  handler_t<subsystem_handler, R, S, subsystem_handler, const typename R::input_t&, Args...> BB;
+		: public handler_t<subsystem_handler, R, S, subsystem_handler, typename R::input_t&, Args...> {
+		typedef  handler_t<subsystem_handler, R, S, subsystem_handler, typename R::input_t&, Args...> BB;
 	public:
 		typedef typename BB::config_s config_s;
 		typedef typename BB::present_s present_s;
@@ -938,7 +907,7 @@ namespace mexo {
 			, S* _owner
 			, const config_s& _config
 			, present_s& _present
-			, const typename R::input_t& _input
+			, typename R::input_t& _input
 			, Args ... args
 		)
 			: BB(_name, _owner, _config, _present, _input, args...) {}
@@ -947,7 +916,7 @@ namespace mexo {
 			, subsystem_handler* _prev
 			, const config_s& _config
 			, present_s& _present
-			, const typename R::input_t& _input
+			, typename R::input_t& _input
 			, Args ... args
 		)
 			: BB(_name, _prev, _config, _present, _input, args...) {}
@@ -1199,6 +1168,48 @@ namespace mexo {
 		void run(void);
 		void terminate(void);
 	};	
+
 }
 #endif
 
+/*
+		template< typename T> class embd_mode :public mode {
+		public:
+			typedef (typename T::* delegat) (void) ;
+		private:
+			T& dev_;
+			delegat do_applay_;
+			delegat do_start_;
+			delegat do_stop_;
+		protected:
+			virtual void applay_action(void) {
+				(dev_.*do_applay_)();
+			}
+
+			virtual void do_start(void) {
+				(dev_.*do_start_)();
+			}
+
+			virtual void do_stop(void) {
+				(dev_.*do_stop_)();
+			}
+
+		public:
+			embd_mode(
+				int _index
+				, cstr _name
+				, T& _owner
+				, delegat _do_applay
+				, delegat _do_start
+				, delegat _do_stop
+			) :
+				mode(
+					_index
+					, _name
+					, _owner
+				)
+				, do_applay_(_do_applay)
+				, do_start_(_do_start)
+				, do_stop_(_do_stop) {}
+		};
+		*/

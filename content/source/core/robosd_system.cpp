@@ -343,12 +343,15 @@ namespace robo {
 		memstat_.used.count--;
 	}
 	#endif
-
+	
+	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 	void system::printf(cstr _format, va_list _args) {
 		#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 		string tmp;
 		tmp.format(_format, _args);
-		env::print(tmp.c_str());
+		env::print(tmp.c_str());		
+		#endif
 		#endif
 	}
 
@@ -369,6 +372,7 @@ namespace robo {
 		va_end(args);
 		return ret;
 	}
+	#endif
 
 }
 

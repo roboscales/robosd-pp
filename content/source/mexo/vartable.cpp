@@ -1,8 +1,15 @@
 #include "mexo/vartable.hpp"
+#include "mexo/mexo.hpp"
 #if ROBO_APP_MEXO_VAR_ENABLED
 #include <algorithm>
 namespace mexo {
 	namespace var {
+		int record::root_key(void){
+			return ::mexo::node::root().key();
+		}
+		record::list& record::root_vars(void){
+			return ::mexo::node::root().vars;
+		}
 		#ifdef ROBO_APP_MEXO_SIDE
 		void record::setup_(
 			types _type

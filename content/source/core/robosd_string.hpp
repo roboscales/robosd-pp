@@ -27,9 +27,10 @@ namespace robo {
 		string(cstr _template, cstr* _map, size_t _size);
 		string& operator =(const string& _src);
 		string& operator =(cstr _src);
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		bool format(cstr _format, va_list _args);
 		bool format(cstr _format, ...);
-
+		#endif
 		bool load(cstr _section, cstr _key);
 		bool tryload(cstr _section, cstr _key);
 
@@ -43,9 +44,12 @@ namespace robo {
 				const char_t * memo;
 				size_t size;
 			};
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static bool printf_backend_(stream_s & _s, cstr _format, va_list _args);
 			static bool printf_frontend_(stream_s & _s, cstr _format, va_list _args);
+			#endif
 		public:
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			template< typename B> static bool format_stream(B & _b,  cstr _format, va_list _args) {
 				stream_s stream;
 				if (system::env::is_backend()) {
@@ -56,7 +60,7 @@ namespace robo {
 					return ( printf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
 				}
 			};
-
+			#endif
 		template <typename T> bool to_number(cstr begc, char_t*& endc, T& _value) {
 
 			setlocale(LC_NUMERIC, "C");

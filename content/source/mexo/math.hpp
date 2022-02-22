@@ -18,7 +18,6 @@ namespace mexo {
 		constexpr static long_signal_t long_min = -long_max;
 		constexpr static int bits = 15;
 		constexpr static int long_bits = 31;
-		constexpr static ::mexo::var::types discret = ::mexo::var::types::int16;
 
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		struct var{
@@ -329,7 +328,7 @@ namespace mexo {
 		}
 		static long_signal_t  l_add(long_signal_t _x0, long_signal_t _x2, signal_t _y2) {
 			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
-			return s_rshift<long_signal_t>(tmp)
+			return s_rshift<long_signal_t>(tmp);
 		}
 	};
 
@@ -344,8 +343,8 @@ namespace mexo {
 		typedef typename  q::parameter_t parameter_t;
 
 		constexpr static signal_t pi = robo::pi<signal_t>;
-		constexpr static signal_t one_div_sqrt3 = robo::one_div_sqrt3<signal_t>;
-		constexpr static signal_t sqrt3_div_2 = robo::sqrt3_div_2<signal_t>;
+//		constexpr static signal_t one_div_sqrt3 = robo::one_div_sqrt3<typename signal_t>;
+//		constexpr static signal_t sqrt3_div_2 = robo::sqrt3_div_2<signal_t>;
 		constexpr static signal_t ones = (signal_t)1;
 		constexpr static signal_t max = q::max;
 		constexpr static signal_t min = q::min;
@@ -455,7 +454,7 @@ namespace mexo {
 		typedef typename q::long_signal_t long_signal_t;
 		typedef typename q::parameter_t parameter_t;
 		typedef typename q::discret_t discret_t;
-		typedef typename q types;
+		typedef q types;
 		struct config_s {
 			typename A::config_s cb;
 			parameter_t scale;
@@ -464,8 +463,8 @@ namespace mexo {
 		typedef typename A::present_s present_s;
 	protected:
 		virtual void execute(void) {
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
 			long_signal_t tmp = (long_signal_t)config.scale * *A::deseired;
 			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
@@ -520,8 +519,8 @@ namespace mexo {
 		#endif
 		virtual void execute(void) {
 			satstate_t remote = A::master_satstate;
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			const config_s& config =handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
 			if (remote == satstate_t::both) {
 				present.satstate.actual = satstate_t::both;
 				return;
@@ -585,7 +584,7 @@ namespace mexo {
 
 		virtual void do_handler_adjust(void) {
 			//const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			present_s& present = handler::present_cast<present_s>();
 			*A::output = 0;
 			present.satstate.actual = satstate_t::both;
 		}
@@ -620,36 +619,41 @@ namespace mexo {
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
 			const config_s& config = config_cast<config_s>();
+			present_s& present = present_cast<present_s>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
 				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
+				var::record::create(q::var::parameter, gain, RT("g"), _master_key, _vars);
+			}
+			if (var::machine::actual_mode() >= var::machine::mode::full) {
+				var::record::create(q::var::signal, present.fb.output, RT("o"), _master_key, _vars);
 			}
 		};
 		#endif
 
 
 		void execute(void) {
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
 			long_signal_t tmp = (long_signal_t)present.fb.output * gain + A::input;
 			present.fb.output = (signal_t)(((int)tmp) >> config.shift);
 		}
 		bool do_handler_reconfig(void) {
-			const config_s& config = config_cast<config_s>();
+			const config_s& config = handler::config_cast<config_s>();
 			gain = (1 << config.shift) - 1;
 			return true;
 		}
-		virtual void do_handler_adjust(void) { present_cast<present_s>().fb.output = 0; }
+		virtual void do_handler_adjust(void) { handler::present_cast<present_s>().fb.output = 0; }
 
 	public:
 		fast_filter(const config_s& _config
 					, present_s& _present
-					, const signal_t& _input
+					, signal_t& _input
 		)
 			: A(_config.fb, _present.fb, _input) {}
 	};
 
 
-	template<typename q>  class  filter
+	template<typename q, bool autoreset = false>  class  filter
 		: public function_handler<typename  q::signal_t, typename  q::signal_t> {
 		typedef function_handler<typename  q::signal_t, typename  q::signal_t> B;
 	public:
@@ -676,6 +680,7 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			B::do_handler_create_vars(_vars, _master_key);
+			present_s& present = present_cast<present_s>();
 			const config_s& config = config_cast<config_s>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
 				var::record::create(q::var::parameter, config.gain, RT("g"), _master_key, _vars);
@@ -683,19 +688,25 @@ namespace mexo {
 				var::record::create(var::uint8, config.shift.gain, RT("sh.presc"), _master_key, _vars);
 				var::record::create(var::uint8, config.shift.gain, RT("sh.val"), _master_key, _vars);
 			}
+			if (var::machine::actual_mode() >= var::machine::mode::full) {
+				var::record::create(q::var::signal, present.fb.output, RT("o"), _master_key, _vars);
+			}
 		}
 		#endif
 
 		void execute(void) {
-			present_s& present = present_cast<present_s>();
-			const config_s& config = config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config_cast<config_s>();
 			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
 			present.filtered = q::round_l(tmp, config.shift.gain);
 			present.fb.output = (signal_t)q::round_l(present.filtered, config.shift.value+ config.shift.gain);
+			if (autoreset) {
+				B::input = (signal_t)0;
+			}
 		}
 
 		bool do_handler_reconfig(void) {
-			const config_s& config = config_cast<config_s>();
+			const config_s& config = handler::config_cast<config_s>();
 			parameter_t ones = (parameter_t)(1 << config.shift.gain);
 			if (config.gain > ones) {
 				gain1 = ones;
@@ -708,15 +719,15 @@ namespace mexo {
 		};
 		
 		virtual void do_handler_adjust(void) {
-			//const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			//const config_s& config = template config_cast<config_s>();
+			present_s& present = handler::present_cast<present_s>();
 			present.fb.output = 0;
 			present.filtered = 0;
 		}
 	public:
 		filter(const config_s& _config
 			   , present_s& _present
-			   , const signal_t& _input
+			   , signal_t& _input
 		)
 			: B(_config.fb, _present.fb, _input) {}
 	};
@@ -795,7 +806,7 @@ namespace mexo {
 			constexpr static signal_t one_div_2 = q::round(0.5 * q::max);
 			constexpr static signal_t sqrt3_div_2 = q::round(robo::csqrt<double>(3.0) / 2 * q::max);
 			A = _ab.alfa;
-			B = q::dot(_ab.alfa, -one_div_2,_ab.beta, sqrt3_div_2)
+			B = q::dot(_ab.alfa, -one_div_2,_ab.beta, sqrt3_div_2);
 			C = -A - B;
 		}
 

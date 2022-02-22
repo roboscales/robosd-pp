@@ -119,8 +119,9 @@ namespace mexo{
 				::robo::termo::itf::connect(&termo_abonent);
 				::robo::termo::itf::set_prompt(">");
 				#endif
-
+				#ifndef ROBO_APP_MEXO_VAR_ENABLED
 				var::record::create(::mexo::var::types::const_uint32, time_us, RT("tm_us"));
+				#endif
 
 			});
 

@@ -14,6 +14,7 @@ namespace robo {
         unsigned int mask_ = 0;
 
         void print(verb _verb, unsigned int _mask, cstr _format, ...) {
+						#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
             if ( (_verb < verb::info) ||  ((verb_ >= _verb) && ((mask_ & _mask) == _mask)) )
             {
                 va_list args;
@@ -21,6 +22,7 @@ namespace robo {
                 system::env::print(_verb, _format, args);
                 va_end(args);
             }
+						#endif
         }
 
         bool begin(verb _verb, unsigned int _mask) {

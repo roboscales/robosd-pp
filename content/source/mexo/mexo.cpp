@@ -241,10 +241,26 @@ namespace mexo {
 	}
 
 	node* node::first_on_path(char_t*& _path, size_t& _len) {
+		if(_path==nullptr || _len==0) return nullptr;
 		if (this != &node::root()) {
-			path_offset_ = ::robo::system::sprintf(_path, _len, RT("%s."), name_);
-			_path += path_offset_;
-			_len -= path_offset_;
+//			path_offset_ = ::robo::system::sprintf(_path, _len, RT("%s."), name_);
+			path_offset_=0;
+			const char * s = name_;
+			while ( *s && _len--){				
+				*_path++ = *s++;
+				path_offset_++;
+			}
+			if(_len<=2){
+				_path -= path_offset_;
+				_len += path_offset_;
+				return nullptr;
+			}
+			*_path++ = '.';
+			*_path = 0;
+			_len -= 1;
+			path_offset_ += 1;
+			//_path += path_offset_;
+			//_len -= path_offset_;
 		}
 		else {
 			path_offset_ = 0;
@@ -442,12 +458,13 @@ namespace mexo {
 			}
 		}
 	}
-
 	dev::mode::mode(int _index, cstr  _name, dev& _dev)
 		: node(_name, &_dev)
 		, ref_(*this, _index) {
 		ref_.attach_to(_dev.modes_);
 	};
+
+	#if ROBO_APP_MEXO_VAR_ENABLED == 1
 	void dev::do_create_vars(void) {
 		if (var::machine::actual_mode() >= var::machine::mode::full) {
 			var::record::create( var::const_uint8, present_.mode, RT("dev.mode"), key() , vars );
@@ -457,7 +474,7 @@ namespace mexo {
 			var::record::create(var::uint8, action_.actual, RT("act.dev.actual"), key(), vars);
 		}
 	}
-
+	#endif
 	bool controller::process::run_(void) {
 		if (command_ == command::start) {
 			switch (state_) {
@@ -541,7 +558,8 @@ namespace mexo {
 
 	void controller::switchto(controller::process* _task) {
 		if (selected_ == 0 && runned_ == _task) {
-			runned_->start_();
+			if (runned_)
+				runned_->start_();
 		}
 		else {
 			selected_ = _task;

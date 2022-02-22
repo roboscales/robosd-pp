@@ -377,10 +377,9 @@ namespace mexo {
 				
 			long_signal_t tmp = present.error + present.model - actual;
 
-			present.control = tmp * config.propGain;
+			present.control = tmp * config.propGain + (present.force<< config.controlShift);
 
 			present.cb.satstate.local = q::round_s(present.control, A::range, config.controlShift, *A::output);
-
 			if (A::master_satstate == satstate_t::none) {
 				present.cb.satstate.actual = present.cb.satstate.local;
 			}

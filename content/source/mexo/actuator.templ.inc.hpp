@@ -31,7 +31,7 @@ public:
 		
 	#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED==1
 	typedef ::mexo::function_block_t <
-		::mexo::filter<types>
+		::mexo::filter<types, true>
 		, ::mexo::periodic_subsystem
 	>  speed_filter_b;
 	speed_filter_b speed_filter;
@@ -369,7 +369,7 @@ public:
 		)
 		#endif 		
 		#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED ==1
-		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem, _config.speed_filter, _present.speed_filter, _hardwaresys.motor_enco_block.delta_ref())
+		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem, _config.speed_filter, _present.speed_filter, _hardwaresys.motor_enco_block.delta_acc_ref())
 		#endif
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		, speed_ov_current_mode(mode::speed_ov_current, *this)

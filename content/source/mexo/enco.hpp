@@ -44,6 +44,7 @@ namespace mexo {
 				doutput_t delta;
 				output_t acc;
 				output_t position;
+				doutput_t delta_acc;
 			};
 		protected:
 			virtual void do_handler_adjust(void) {
@@ -71,11 +72,13 @@ namespace mexo {
 						else {
 							present.delta = (doutput_t)q::round_l(present.native.delta, value_shift);
 						}
+						present.delta_acc += present.delta;
 					}
 					else {
 						present.counter.fault++;
 						present.native.raw += present.native.delta;
 						present.native.ceiled += (present.native.delta << shift);
+						present.delta_acc += present.delta;
 					}
 					present.acc += present.native.delta;
 					//todo round_l не катит
@@ -111,6 +114,7 @@ namespace mexo {
 					var::record::create(::mexo::var::uint32, present.counter.fault, RT("cnt.fault"), _master_key, _vars);
 					var::record::create(::mexo::var::uint32, present.counter.total, RT("cnt.tot"), _master_key, _vars);
 					var::record::create(q::var::signal, present.delta, RT("delta"), _master_key, _vars);
+					var::record::create(q::var::signal, present.delta_acc, RT("delta_acc"), _master_key, _vars);
 					var::record::create(q::var::long_signal, present.position, RT("po"), _master_key, _vars);
 				}
 			}
@@ -129,6 +133,7 @@ namespace mexo {
 			increment_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
 			const doutput_t& delta_ref(void) { return  present_cast<present_s>().delta; }
+			doutput_t& delta_acc_ref(void) { return  present_cast<present_s>().delta_acc; }
 			const output_t& position_ref(void) { return  present_cast<present_s>().position; }
 		};
 
@@ -305,7 +310,7 @@ namespace mexo {
 		public:
 			rotator_t(const config_s& _config
 					  , present_s& _present
-					  , const unative_t& _input
+					  , unative_t& _input
 			)
 				: A(_config.fb, _present.fb, _input) {
 			}

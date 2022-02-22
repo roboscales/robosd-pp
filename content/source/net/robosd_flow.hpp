@@ -259,7 +259,7 @@ C##_##P##_performer_ C##_##P##_performer__; \
 
 #define FLOW_SERIAL_PERFORMER_RECORD( C,P, NI,NO ) FLOW_SERIAL_PERFORMER_RECORD_( C,P, NI,NO )
 #define FLOW_SERIAL_PERFORMER_RECORD_(C,P, NI,NO) \
-::robo::net::flow::serial_proto_t<NI, NO, void>  C##_##P##_proto_(C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND);\
+::robo::net::flow::serial_proto_t<NI, NO, void>  C##_##P##_proto_(C##_PATH,C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND);\
 ::robo::net::flow::rout_record C##_##P##_rout_record_( \
 	P##_PATH \
 	, C##_PATH \

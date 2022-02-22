@@ -30,7 +30,9 @@ namespace robo {
 		ROBO_ALARMN(format(_format, args))
 		va_end(args);
 	}
-	
+
+	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+
 	bool string::printf_backend_(stream_s & _s, cstr _format, va_list _args){
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_backend;
@@ -76,7 +78,7 @@ namespace robo {
 		va_end(args);
 		return ret;
 	}
-
+	#endif
 	bool string::load(cstr _section, cstr _key) {
 		ROBO_LRET_F(tryload(_section, _key), "error load string %s/%s", _section, _key);
 	}

@@ -281,16 +281,24 @@ namespace robo {
 			static void wakeup(void);
 			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
+			#endif
+
+			#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 			static void print(cstr  _s);
 			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			static void print(robo::log::verb _verb, cstr _format, va_list  _args);
 			#endif
+			#endif
 		};
 		#endif
+
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
-		static void printf(cstr _format, ...);
+		static void printf(cstr _format, ...);		
 		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...);
+		#endif
 
 		#if ROBO_APP_INI_ENABLED ==1
 		struct ROBO_EXPORT ini {

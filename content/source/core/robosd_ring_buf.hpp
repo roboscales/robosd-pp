@@ -1,5 +1,5 @@
-#ifndef __robosd_ring_buf_h
-#define __robosd_ring_buf_h
+#ifndef __robosd_ring_buf_hpp
+#define __robosd_ring_buf_hpp
 #include  "core/robosd_common.hpp"
 namespace robo{
 	// Шаблон кольцевого буфера
@@ -93,6 +93,77 @@ namespace robo{
 			return _count;
 		}
 
+	};
+	template< uint8_t BITS, typename STRUCT_T> class ROBO_EXPORT struct_ring_t
+	{
+	public:
+		// определяем псевдоним для индексов
+		static const size_t SIZE = (1 << BITS);
+	private:
+		// память под буфер
+		STRUCT_T _data[SIZE];
+		// количество чтений
+		volatile size_t _readCount;
+		// количество записей
+		volatile size_t _writeCount;
+		// маска для индексов
+		static const size_t _mask = SIZE - 1;
+		static const size_t _masksz = (1 << (BITS + 1)) - 1;
+	public:
+		// запись в буфер
+		inline STRUCT_T & empty(void)
+		{
+			return _data[_writeCount & _mask];
+		}
+		inline STRUCT_T & first(void)
+		{
+			return _data[_readCount & _mask];
+		}
+		inline void put()
+		{
+			_writeCount++;
+		}
+		// чтение из буфера, возвращает текущий символ
+		inline void get()
+		{
+			_readCount++;
+		}
+
+		// пуст ли буфер
+		inline bool available()const
+		{
+			return ((_writeCount - _readCount) & _masksz)  != 0;
+		}
+		// полон ли буфер
+		inline bool full()const
+		{
+			return ((size_t)(_writeCount - _readCount) & (size_t)~(_mask)) != 0;
+		}
+		// количество элементов в буфере
+		size_t count()const
+		{
+			return (_writeCount - _readCount) & _masksz;
+		}
+		size_t space()const
+		{
+			return SIZE - count();
+		}
+		size_t size()const
+		{
+			return SIZE;
+		}
+		// очистить буфер
+		inline void clear()
+		{
+			_readCount = 0;
+			_writeCount = 0;
+		}
+		struct_ring_t(){
+			clear();
+		}
+		virtual ~struct_ring_t(){
+			clear();
+		}
 	};
 }
 #endif

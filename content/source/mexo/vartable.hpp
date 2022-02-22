@@ -104,13 +104,15 @@ namespace mexo {
 				_list.push(*r);
 				return r;
 			}
-
+			static int root_key(void);
+			static list& root_vars(void);
+			
 			template<typename T>	static ref* create(
 				types _type
 				, const T& _addr
 				, robo::cstr _name
 			) {				
-				return create<T>(_type,_addr, _name, ::mexo::node::root().key(), ::mexo::node::root().vars );
+				return create<T>(_type,_addr, _name, root_key(), root_vars() );
 			}
 
 		};
