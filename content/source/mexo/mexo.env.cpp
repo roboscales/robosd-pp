@@ -119,7 +119,7 @@ namespace mexo{
 				::robo::termo::itf::connect(&termo_abonent);
 				::robo::termo::itf::set_prompt(">");
 				#endif
-				#ifndef ROBO_APP_MEXO_VAR_ENABLED
+				#if ROBO_APP_MEXO_VAR_ENABLED
 				var::record::create(::mexo::var::types::const_uint32, time_us, RT("tm_us"));
 				#endif
 
@@ -137,11 +137,11 @@ namespace mexo{
 					#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
 					robo::termo::itf::poll();
 					#endif
-					g_time_us_t = robo::system::env::realtime_us();
 					#if ENV_SWITCH_PORT0_ENABLED  == 1 || ENV_SWITCH_PORT1_ENABLED  == 1
+					g_time_us_t = robo::system::env::realtime_us();
 					robo::net::proto::switcher::core::poll(g_time_us_t - tick_prev_us);
-					#endif
 					time_us =  tick_prev_us = g_time_us_t;
+					#endif
 
 				}
 			);

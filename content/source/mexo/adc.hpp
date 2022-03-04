@@ -127,7 +127,7 @@ namespace mexo {
 		public:
 			machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
-			bool ready(void) { return init_; }
+			bool ready(void) { return present_cast<present_s>().ready; }
 		};
 
 
@@ -215,17 +215,17 @@ namespace mexo {
 				: B(_config, _present.adc) {}
 
 			typename q::signal_t& current_ref(void) {
-				return present_cast<present_s>().current;
+				return handler::present_cast<present_s>().current;
 			};
 			typename q::signal_t& current_delta_ref(void) {
-				return present_cast<present_s>().delta;
+				return handler::present_cast<present_s>().delta;
 			};
 
 		protected:
 			void execute(void) {
 				B::execute();
-				present_s& present = present_cast<present_s>();
-				signal_t tmp = present.current;
+				present_s& present = handler::present_cast<present_s>();
+				typename q::signal_t tmp = present.current;
 				present.current = present.adc.values[1] - present.adc.values[0];
 				present.delta = present.current - tmp;
 			}
@@ -259,26 +259,26 @@ namespace mexo {
 				, cs_(_cs) 
 			{}
 			typename q::signal_t& current_ref(void) { 
-				present_s& present = present_cast<present_s>(); 
+				present_s& present = handler::present_cast<present_s>(); 
 				return present.current.cross; 
 			}
 			typename q::signal_t& current_delta_ref(void) { 
-				present_s& present = present_cast<present_s>(); 
+				present_s& present = handler::present_cast<present_s>(); 
 				return present.delta.cross; 
 			}
 			typename q::signal_t& lat_current_ref(void) { 
-				present_s& present = present_cast<present_s>(); 
+				present_s& present = handler::present_cast<present_s>(); 
 				return present.current.lateral; 
 			}
 			typename q::signal_t& lat_current_delta_ref(void) { 
-				present_s& present = present_cast<present_s>(); 
+				present_s& present = handler::present_cast<present_s>(); 
 				return present.delta.lateral; 
 			}
 
 		protected:
 			void execute(void) {
 				BB::execute();
-				present_s& present = present_cast<present_s>();
+				present_s& present = handler::present_cast<present_s>();
 				dq_t tmp = present.current;
 
 				present.abc.A = present.adc.values[0];

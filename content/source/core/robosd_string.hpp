@@ -22,8 +22,10 @@ namespace robo {
 		virtual ~string(void);
 		string(void);
 		string(const string& _src);
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		string(cstr _format, va_list _args);
 		string(cstr _format, ...);
+		#endif
 		string(cstr _template, cstr* _map, size_t _size);
 		string& operator =(const string& _src);
 		string& operator =(cstr _src);

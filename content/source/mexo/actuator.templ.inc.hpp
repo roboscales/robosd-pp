@@ -315,7 +315,7 @@ public:
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
-			, _hardwaresys.enco_block().delta()
+			, _hardwaresys.motor_enco_block.delta_acc_ref()
 			#endif
 		)
 		#endif 
@@ -330,7 +330,7 @@ public:
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
-			, _hardwaresys.enco_block().delta()
+			, _hardwaresys.motor_enco_block.delta_acc_ref()
 			#endif
 		)
 		#endif 
@@ -346,7 +346,7 @@ public:
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
-			, _hardwaresys.enco_block().delta()
+			, _hardwaresys.motor_enco_block.delta_acc_ref()
 			#endif
 			, _present.speed_force
 		)
@@ -359,11 +359,11 @@ public:
 			, _present.positioner
 			, _present.speed_range_desired
 			, _present.motion.cb.satstate.actual
-			, _hardwaresys.enco_block().output()
+			, _hardwaresys.motor_enco_block.output()
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
-			, _hardwaresys.enco_block().delta()
+			, _hardwaresys.motor_enco_block.delta_acc_ref()
 			#endif
 			, _present.speed_force
 		)
@@ -458,6 +458,7 @@ public:
 		#endif
 	}
 	protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void do_create_vars(void) {
 			ps_t::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
@@ -494,6 +495,7 @@ public:
 			}
 
 		}
+		#endif
 };
 }
 

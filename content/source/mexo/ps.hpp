@@ -66,10 +66,10 @@ namespace mexo {
 				typename A::present_s cb;
 				typename inverter_t::present_s inverter;
 			};
-			typename inverter_t inverter;
+			inverter_t inverter;
 		protected:
 			void execute(void) {
-				present_s& present = present_cast<present_s>();
+				present_s& present = handler::present_cast<present_s>();
 
 				switch (status_) {
 				case status::off:
@@ -118,7 +118,7 @@ namespace mexo {
 			}
 			virtual bool do_handler_reconfig(void) {
 				ROBO_LBREAKN(A::do_handler_reconfig());
-				const config_s& config = A::config_cast<config_s>();
+				const config_s& config = handler::config_cast<config_s>();
 				inverter.reconfig(config.voltage.low, config.voltage.hi, config.duty.low, config.duty.hi);
 				if (status_ == status::configure) {
 					status_ = status::off;
@@ -148,7 +148,7 @@ namespace mexo {
 			pwm(const config_s& _config, present_s& _present, Args ... args)
 				: A(_config.cb, _present.cb), inverter(_present.inverter, args...) {}
 
-			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return config_cast<config_s>().voltage; }
+			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().voltage; }
 			//void set_voltage_req(const C::inverter::signal_t* _voltage_req) { set_input(_voltage_req); }
 		};
 
@@ -210,9 +210,11 @@ namespace mexo {
 			void run(signal_t _voltage) {
 				q::scaler::run(_voltage, present.duty);
 			}
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			void create_var(int  _master_key, var::record::list& _list) {
 				var::record::create(types::var::const_discret, present.duty, RT("duty"), _master_key, _list);
 			}
+			#endif
 			dc_inverter(present_s & _present) : present(_present) {}
 		};
 
@@ -243,7 +245,7 @@ namespace mexo {
 			present_s& present;
 			long_signal_t sum_x_ya(signal_t x, signal_t y, signal_t a) {
 				long_signal_t tmp = ((long_signal_t)y) * a;
-				tmp = q::s_rshift<long_signal_t>(tmp, 15);
+				tmp =  q::template s_rshift<long_signal_t>(tmp, 15);
 				tmp += x;
 				return tmp;
 			}
@@ -260,7 +262,7 @@ namespace mexo {
 				long_signal_t pwmC;
 				present.swm = 1;
 				signal_t x, y, z;
-				signal_t v2 = q::s_rshift<signal_t>(present.ab.beta, 1);
+				signal_t v2 = q::template s_rshift<signal_t>(present.ab.beta, 1);
 				x = present.ab.beta;
 				y = sum_x_ya(v2, present.ab.alfa, sqrt3_div_2);
 				z = sum_x_ya(v2, present.ab.alfa, -sqrt3_div_2);
@@ -321,7 +323,7 @@ namespace mexo {
 				q::scaler::run(present.pwm.B, present.duty.B);
 				q::scaler::run(present.pwm.C, present.duty.C);
 			}
-
+#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			void create_var(int  _master_key	, var::record::list& _vars) {
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					var::record::create(types::var::const_discret, present.duty.A, RT("duty.A"), _master_key, _vars);
@@ -337,7 +339,7 @@ namespace mexo {
 					var::record::create(::mexo::var::uint8, present.swm, RT("swm"), _master_key, _vars);
 				}
 			}
-
+#endif
 			abc_inverter(present_s & _present, const cs_t& _cs) : present(_present), cs(_cs) {}
 
 			void lat_voltage_set(signal_t _voltage) {

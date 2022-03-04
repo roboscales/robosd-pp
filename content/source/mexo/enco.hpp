@@ -15,7 +15,7 @@ namespace mexo {
 			, typename doutput_t
 			, typename output_t
 		> class increment_machine
-			: public handler, protected D {
+			: public handler, public D {
 		public:
 			static  inline const  int shift = (round_resolution - raw_resolution);
 			static  inline const int value_shift = (raw_resolution - actual_resolution);
@@ -106,6 +106,7 @@ namespace mexo {
 
 				}
 			}
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				handler::do_handler_create_vars(_vars, _master_key);
 				present_s& present = present_cast<present_s>();
@@ -118,6 +119,7 @@ namespace mexo {
 					var::record::create(q::var::long_signal, present.position, RT("po"), _master_key, _vars);
 				}
 			}
+			#endif
 
 			virtual bool do_handler_reconfig(void) {
 				present_s& present = present_cast<present_s>();
@@ -210,8 +212,8 @@ namespace mexo {
 			, actual_resolution
 			, int32_t
 			, uint32_t
-			, typename int32_t
-			, typename int64_t
+			, int32_t
+			, int64_t
 			>
 		{
 			typedef increment_machine <
@@ -222,14 +224,14 @@ namespace mexo {
 				, actual_resolution
 				, int32_t
 				, uint32_t
-				, typename int32_t
-				, typename int64_t
+				, int32_t
+				, int64_t
 			> A;
 		protected:
 
 		public:
 			increment64_t(const typename A::config_s& _config, typename A::present_s& _present)
-				: increment_machine(_config, _present) {}
+				: A(_config, _present) {}
 		};
 
 		template<typename q, typename enco> class rotator_t
@@ -278,8 +280,8 @@ namespace mexo {
 
 
 			void execute(void) {
-				present_s& present = present_cast<present_s>();
-				const config_s& config = config_cast<config_s>();
+				present_s& present = handler::present_cast<present_s>();
+				const config_s& config = handler::config_cast<config_s>();
 				if (present.active) {
 					unative_t tmp;
 					if (config.inverce) {
@@ -291,7 +293,7 @@ namespace mexo {
 					tmp *= config.pole_count;
 					tmp -= config.offset;
 					if (sizeof(unative_t) == sizeof(signal_t)) {
-						present.fb.output.rotate((q::signal_t)tmp);
+						present.fb.output.rotate( (signal_t)tmp);
 					}
 					else {
 						present.fb.output.rotate(q::scale_l((long_signal_t)tmp));
@@ -299,12 +301,12 @@ namespace mexo {
 				}
 			}
 			bool do_handler_reconfig(void) {
-				present_cast<present_s>().fb.output.rotate((signal_t)0);
+				handler::present_cast<present_s>().fb.output.rotate((signal_t)0);
 				on();
 				return true;
 			}
 			virtual void do_handler_adjust(void) {
-				present_cast<present_s>().fb.output.rotate(q::scale_l(A::input));
+				handler::present_cast<present_s>().fb.output.rotate(q::scale_l(A::input));
 			}
 
 		public:
@@ -314,10 +316,10 @@ namespace mexo {
 			)
 				: A(_config.fb, _present.fb, _input) {
 			}
-			void on() { present_cast<present_s>().active = true; };
-			void off() { present_cast<present_s>().active = false; };
+			void on() { handler::present_cast<present_s>().active = true; };
+			void off() { handler::present_cast<present_s>().active = false; };
 			void angle_set(signal_t _angle) {
-				present_s& present = present_cast<present_s>();
+				present_s& present = handler::present_cast<present_s>();
 				if (present.active == false) {
 					present.fb.output.rotate(_angle);
 				}

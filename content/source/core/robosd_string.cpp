@@ -20,6 +20,8 @@ namespace robo {
 
 	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
 
+	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+
 	string::string(cstr _format, va_list _args) : value_(new base_string_) {
 		ROBO_ALARMN(format(_format, _args))
 	}
@@ -30,7 +32,8 @@ namespace robo {
 		ROBO_ALARMN(format(_format, args))
 		va_end(args);
 	}
-
+	#endif
+		
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 
 	bool string::printf_backend_(stream_s & _s, cstr _format, va_list _args){

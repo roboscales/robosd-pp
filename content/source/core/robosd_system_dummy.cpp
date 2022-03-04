@@ -2,8 +2,6 @@
 #include "core/robosd_log.hpp"
 #include <stdlib.h>
 #include <stdio.h>
-#include <windows.h>
-
 
 namespace robo {
 	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_DUMMY

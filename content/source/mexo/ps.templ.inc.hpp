@@ -137,6 +137,7 @@ namespace PS_TEMPLATE_NAME {
 			typename types::signal_t dummy;
 		};
 protected:
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void do_create_vars(void) {
 			::mexo::ps::dev::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
@@ -164,7 +165,7 @@ protected:
 			}
 
 		}
-
+		#endif
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 	protected:
 		void voltage_mode_start(void) {

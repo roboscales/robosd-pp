@@ -82,8 +82,9 @@ namespace mexo {
 			robo::cstr name;
 			descriptor desc;
 			int key;
-
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			size_t sprintf(::robo::char_t* buf, size_t _max_sz);
+			#endif
 
 			typedef ::robo::list::unidir_t<record>::item  ref;
 			typedef ::robo::list::unidir_t<record> list;

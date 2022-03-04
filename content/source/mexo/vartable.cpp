@@ -202,6 +202,7 @@ namespace mexo {
 			return 0;
 		}
 
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		size_t record::sprintf(::robo::char_t* buf, size_t _max_sz) {
 			switch (desc.memo) {
 			case uint8:
@@ -237,6 +238,7 @@ namespace mexo {
 			}
 			return 0;
 		}
+		#endif
 
 		#endif
 	}
