@@ -28,6 +28,11 @@ namespace robo {
 	void freemaster::connect(net::iserial* _serial) {
 		instance_.connect_(_serial);
 	}
+	
+	void freemaster::connect(cstr _name){
+		instance_.connect_(net::link::query<net::iserial>(_name));
+	}
+	
 	robo::net::iserial* freemaster::serial(void) {
 		return instance_.serial_;
 	}

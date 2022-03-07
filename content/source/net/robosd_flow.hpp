@@ -188,18 +188,18 @@ namespace robo {
 				net::iserial& local_;
 			public:
 				serial_proto(
-					cstr _command_path
+					cstr _local_path
 					, kind_t _kind
 					, iserial& _remote
 					, iserial& _local
 				)
 					: performer(
-						_command_path
+						_local_path
 						, _kind
 					)
 					, remote_(_remote)
 					, local_(_local) {
-					ROBO_APP_ASSERT(_local.begin(_command_path));
+					ROBO_APP_ASSERT(_local.begin(_local_path));
 				}
 				net::iserial& local(void){return local_;}
 			protected:
@@ -210,10 +210,10 @@ namespace robo {
 				, public serial_proto {
 			public:
 				hardware_serial_proto_t(
-					cstr _path
+					cstr _local_path
 					, kind_t _kind
 				) : hardware_bridge_t<D,SA, SB, G>(), serial_proto(
-					_path
+					_local_path
 					, _kind
 					, hardware_bridge_t<D,SA, SB, G>::A
 					, hardware_bridge_t<D,SA, SB, G>::B
@@ -226,17 +226,18 @@ namespace robo {
 				, public serial_proto {
 			public:
 				serial_proto_t(
-					cstr _path
-					, cstr  _serial_path
+					cstr _local_path
+					, cstr  _remote_path
 					, kind_t _kind
 				) : bridge_t<SA, SB, G>(), serial_proto(
-					_path
+					_local_path
 					, _kind
 					, bridge_t<SA, SB, G>::A
 					, bridge_t<SA, SB, G>::B
 				) {
-					bridge_t<SA, SB, G>::B.begin(_serial_path);
+					bridge_t<SA, SB, G>::B.begin(_remote_path);
 				}
+				
 			};
 		}
 	}

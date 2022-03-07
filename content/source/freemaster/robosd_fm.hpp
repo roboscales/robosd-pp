@@ -29,6 +29,7 @@ namespace robo {
 	public:
 		static robo::net::iserial* serial(void);
 		static void connect(robo::net::iserial* _serial);
+		static void connect(cstr _name);
 		static void recorder(void);
 		static void poll(void);
 		#if ROBO_APP_PROTO_SWITCH_ENABLED == 1

@@ -115,6 +115,9 @@ namespace mexo{
 				#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_ABONENT
 				::robo::freemaster::connect( /*::robo::net::iserial::query(serial0_PATH)*/ &freemaster_abonent);
 				#endif
+				#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_DIRRECT
+				::robo::freemaster::connect( ENV_FREEMASTER_SERIAL );
+				#endif
 				#if ENV_TERMO_CONNECT_TYPE == ENV_TERMO_CONNECT_TYPE_ABONENT
 				::robo::termo::itf::connect(&termo_abonent);
 				::robo::termo::itf::set_prompt(">");
@@ -599,12 +602,16 @@ namespace mexo{
 	#define ENV_NET_FLOW_SERIAL0_OUTPUT_BITS 4
 	#endif
 
+	#ifndef ENV_NET_FLOW_SERIAL0_PATH
+	#define ENV_NET_FLOW_SERIAL0_PATH RT("s0")
+	#endif
+
 	#ifndef ENV_NET_FLOW_SERIAL0_PERFORMER_PATH
-	#define ENV_NET_FLOW_SERIAL0_PERFORMER_PATH RT("serial0")
+	#define ENV_NET_FLOW_SERIAL0_PERFORMER_PATH RT("s0p")
 	#endif
 
 	::robo::net::flow::serial_proto_t<ENV_NET_FLOW_SERIAL0_INPUT_BITS, ENV_NET_FLOW_SERIAL0_OUTPUT_BITS, void>  
-		flow_serial0_performer_(ENV_NET_FLOW_SERIAL0_PERFORMER_PATH, ENV_NET_FLOW_SERIAL0_PATH, ::robo::net::flow::performer::kind_t::frontend);
+		flow_serial0_performer_(ENV_NET_FLOW_SERIAL0_PERFORMER_PATH,ENV_NET_FLOW_SERIAL0_PATH, ::robo::net::flow::performer::kind_t::frontend);
 
 	::robo::net::flow::rout_record flow_serial0_rout_record_(
 		 ENV_NET_FLOW_PORT_PATH
@@ -613,7 +620,6 @@ namespace mexo{
 		, ENV_NET_FLOW_SERIAL0_SUBA_ANSW
 	);
 	
-
 	#endif
 
 	#ifndef ENV_NET_FLOW_VAR_ENABLED
