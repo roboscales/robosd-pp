@@ -50,17 +50,18 @@ namespace mexo {
 			virtual void do_handler_adjust(void) {
 			}
 
-			void execute(void) {
+			void execute(void) {				
 				present_s& present = present_cast<present_s>();
 				const config_s& config = config_cast<config_s>();
 				if (config.native_offset != native_offset_prev || config.position_offset != position_offset_prev) {
 					do_handler_reconfig();
+					return;
 				}
 				present.counter.total++;
+				present.native.raw = D::encode();
+				D::query();
 				if (start_pause_tick == 0) {
-					if (!D::error()) {
-						present.native.raw = D::encode();
-						D::query();
+					if ( !D::error() ) {
 						unative_t tmp = present.native.raw << shift;
 						native_t  tmp_delta = (native_t)(tmp - present.native.ceiled);
 						present.native.ceiled = tmp;
@@ -76,9 +77,11 @@ namespace mexo {
 					}
 					else {
 						present.counter.fault++;
-						present.native.raw += present.native.delta;
+						//to do так делать нельзя, та как накапливается ошибка!
+						present.native.delta = present.delta_acc = 0;
+						/*present.native.raw += present.native.delta;
 						present.native.ceiled += (present.native.delta << shift);
-						present.delta_acc += present.delta;
+						present.delta_acc += present.delta;*/
 					}
 					present.acc += present.native.delta;
 					//todo round_l не катит
@@ -86,8 +89,7 @@ namespace mexo {
 					present.position -= config.position_offset;
 				}
 				else {
-					if (!D::error()) {
-						present.native.raw = D::encode();
+					if ( !D::error() )  {
 						present.native.ceiled = present.native.raw << shift;
 						unative_t tmp = present.native.ceiled - config.native_offset;
 						if (config.inverce) {
@@ -101,7 +103,8 @@ namespace mexo {
 						start_pause_tick--;
 					}
 					else {
-						present.counter.fault++;
+						if(D::error())
+							present.counter.fault++;
 					}
 
 				}
@@ -129,6 +132,7 @@ namespace mexo {
 				start_pause_tick = 1 << config.init_count_shift;
 				position_offset_prev = config.position_offset;
 				native_offset_prev = config.native_offset;
+				D::query();
 				return true;
 			}
 		public:
@@ -250,6 +254,7 @@ namespace mexo {
 			struct present_s {
 				typename A::present_s fb;
 				bool active;
+				signal_t rotor_angle;
 			};
 		protected:
 
@@ -282,23 +287,25 @@ namespace mexo {
 			void execute(void) {
 				present_s& present = handler::present_cast<present_s>();
 				const config_s& config = handler::config_cast<config_s>();
-				if (present.active) {
-					unative_t tmp;
-					if (config.inverce) {
-						tmp = std::numeric_limits<unative_t>::max() - A::input;
-					}
-					else {
-						tmp = A::input;
-					}
-					tmp *= config.pole_count;
-					tmp -= config.offset;
-					if (sizeof(unative_t) == sizeof(signal_t)) {
-						present.fb.output.rotate( (signal_t)tmp);
-					}
-					else {
-						present.fb.output.rotate(q::scale_l((long_signal_t)tmp));
-					}
+				unative_t tmp;
+				if (config.inverce) {
+					tmp = std::numeric_limits<unative_t>::max() - A::input;
 				}
+				else {
+					tmp = A::input;
+				}
+				tmp *= config.pole_count;
+				tmp -= config.offset;
+				if (sizeof(unative_t) == sizeof(signal_t)) {
+						present.rotor_angle = (signal_t)tmp;
+				}
+				else {
+					present.rotor_angle = q::scale_l((long_signal_t)tmp);
+				}
+				if (present.active) {
+					present.fb.output.rotate( present.rotor_angle);
+				}
+				
 			}
 			bool do_handler_reconfig(void) {
 				handler::present_cast<present_s>().fb.output.rotate((signal_t)0);
