@@ -239,7 +239,7 @@ namespace PMSM_TEMPLATE_NAME {
 			present.actuator.ps.voltage_deseired = action.actuator.ps.voltage;
 			present.freq_req = action.freq;
 			present.angle_req = action.angle;
-			actuator_t::hardwaresys.power_supply_block.inverter.lat_voltage_set(action.voltage_lateral);
+			actuator_t::hardwaresys.power_supply_block.inverter.lat_voltage_set(action.lateral.voltage);
 		}
 
 		class synchro_voltage_mode_t :public ::mexo::ps::dev::mode {
@@ -309,10 +309,11 @@ namespace PMSM_TEMPLATE_NAME {
 
 			present.actuator.ps.voltage_range_desired.hi = action.actuator.ps.voltage;
 			present.actuator.ps.voltage_range_desired.low = -action.actuator.ps.voltage;
-			present.lat_current.voltage_range_desired.hi = action.actuator.ps.voltage;
-			present.lat_current.voltage_range_desired.low = -action.actuator.ps.voltage;
+			present.lat_current.voltage_range_desired.hi = action.lateral.voltage;
+			present.lat_current.voltage_range_desired.low = -action.lateral.voltage;
 
-			present.lat_current.deseired = action.actuator.ps.current;
+			present.lat_current.deseired = action.lateral.current;
+			present.actuator.ps.current_deseired = action.actuator.ps.current;
 			
 			if (action.actuator.ps.invers) {
 				present.freq_req = -action.freq;

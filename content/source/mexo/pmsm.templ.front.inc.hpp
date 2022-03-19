@@ -23,7 +23,10 @@ namespace mexo {
 				#if PMSM_SYNC_VOLTAGE_MODE_ENABLED == 1 || PMSM_SYNC_CURRENT_MODE_ENABLED == 1
 				typename types::long_signal_t freq;
 				typename types::long_signal_t angle;
-				typename types::signal_t voltage_lateral;
+				struct{
+					typename types::signal_t voltage;
+					typename types::signal_t current;
+				} lateral;
 				#endif
 			};
 			template<typename types>struct feedback_t {

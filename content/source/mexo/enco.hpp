@@ -98,7 +98,8 @@ namespace mexo {
 						else {
 							present.acc = (output_t)tmp;
 						}
-						present.position = q::round_l(present.acc, value_shift);
+						present.acc = q::round_l(present.acc, shift );
+						present.position = q::round_l(present.acc, value_shift );
 						present.position -= config.position_offset;
 						start_pause_tick--;
 					}

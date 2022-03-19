@@ -359,7 +359,7 @@ public:
 			, _present.positioner
 			, _present.speed_range_desired
 			, _present.motion.cb.satstate.actual
-			, _hardwaresys.motor_enco_block.output()
+			, _hardwaresys.motor_enco_block.position_ref()
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 			, _present.speed_filter.fb.output
 			#else
