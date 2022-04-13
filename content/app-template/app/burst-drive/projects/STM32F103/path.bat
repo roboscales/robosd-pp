@@ -1,0 +1,1 @@
+MKLINK /J ".\Core"  ".\..\..\source\platform\STM32F103"

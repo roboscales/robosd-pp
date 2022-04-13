@@ -166,6 +166,7 @@ namespace mexo {
 				return satstate_t::none;
 			}
 		}
+	
 		static long_signal_t round_l(const long_signal_t& _src, unsigned int _shift) {
 			if (_src == 0) {
 				return (long_signal_t)0;
@@ -202,7 +203,21 @@ namespace mexo {
 			}
 		}
 		
-
+		template <typename T> static T round_t(const long_signal_t& _src, unsigned int _shift) {
+			if (_src == 0) {
+				return (T)0;
+			}
+			else {
+				long_signal_t tmp = round_l(_src,_shift);
+				if (tmp  > std::numeric_limits<T>::max()) {
+					return std::numeric_limits<T>::max();
+				} else if (tmp  < -std::numeric_limits<T>::max()) {
+					return -std::numeric_limits<T>::max();
+				} else {
+					return (T)tmp;
+				}
+			}
+		}
 
 		struct scaler {
 			range_s <signal_t> _range;
@@ -330,6 +345,49 @@ namespace mexo {
 			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
 			return s_rshift<long_signal_t>(tmp);
 		}
+		struct qa{
+			parameter_t gain;
+			parameter_t qgain;
+			uint8_t shift;
+			uint8_t qshift;
+			long_signal_t offset;
+			long_signal_t min;
+			long_signal_t max;
+			signal_t approxx(signal_t value){
+				long_signal_t tmp = value;
+				long_signal_t qa = value;
+				tmp *= gain;
+				tmp -= offset;
+				qa = qa*value;
+				qa = qa*qgain;
+				qa = round_l(qa,qshift);
+				tmp+=qa;
+				tmp = round_l(tmp,shift);
+				tmp = saturate<long_signal_t>(tmp,long_min,long_max);				
+				return (signal_t)tmp;
+			}
+			qa(
+				parameter_t _gain
+				,parameter_t _qgain
+				, uint8_t _shift
+				, uint8_t _qshift
+				, long_signal_t _offset
+				, long_signal_t _min
+				,long_signal_t _max
+			)
+			: gain(_gain)
+			, qgain(_qgain)
+			, shift(_shift)
+			, qshift(_qshift)
+			, offset(_offset)
+			, min(_min)
+			, max(_max)
+			{
+			}
+
+		};
+		
+	
 	};
 
 
@@ -699,7 +757,7 @@ namespace mexo {
 			const config_s& config = handler::config_cast<config_s>();
 			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
 			present.filtered = q::round_l(tmp, config.shift.gain);
-			present.fb.output = (signal_t)q::round_l(present.filtered, config.shift.value+ config.shift.gain);
+			present.fb.output = q:: template round_t<signal_t>(present.filtered, config.shift.value+ config.shift.gain);
 			if (autoreset) {
 				B::input = (signal_t)0;
 			}

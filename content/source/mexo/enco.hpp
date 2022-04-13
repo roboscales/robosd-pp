@@ -67,13 +67,28 @@ namespace mexo {
 						present.native.ceiled = tmp;
 						//todo проверить на всехли компиляторах shift будет арифметический
 						present.native.delta = (native_t)(tmp_delta >> shift);// (((native_t)(tmp_delta)) >> shift);
+						output_t dtmp;
 						if (config.inverce) {
-							present.delta = -(doutput_t)q::round_l(present.native.delta , value_shift);
+							 dtmp = -q::round_l(present.native.delta , value_shift);
 						}
 						else {
-							present.delta = (doutput_t)q::round_l(present.native.delta, value_shift);
+							dtmp = q::round_l(present.native.delta, value_shift);
 						}
-						present.delta_acc += present.delta;
+						if(dtmp > std::numeric_limits<doutput_t>::max()){
+							present.delta = present.delta_acc = std::numeric_limits<doutput_t>::max();
+						} else if(dtmp < -std::numeric_limits<doutput_t>::max()) {
+							present.delta = present.delta_acc = -std::numeric_limits<doutput_t>::max();
+						} else {
+							present.delta = dtmp;
+							output_t adtmp =  (output_t)present.delta_acc + present.delta;
+							if(dtmp > std::numeric_limits<doutput_t>::max()){
+								present.delta_acc = std::numeric_limits<doutput_t>::max();								
+							} else if(dtmp < -std::numeric_limits<doutput_t>::max()) {
+								present.delta_acc = -std::numeric_limits<doutput_t>::max();
+							}	else {						
+								present.delta_acc += present.delta;						
+							}
+						}
 					}
 					else {
 						present.counter.fault++;

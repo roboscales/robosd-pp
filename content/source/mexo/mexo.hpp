@@ -1081,7 +1081,7 @@ namespace mexo {
 			}
 			return (T)0;
 		}
-		static T set(int _ix, const T & _src) {
+		static void set(int _ix, const T & _src) {
 			if (_ix >= 0 && _ix < size) {
 				ixvar** p = pool_() + _ix;
 				if (*p) {
@@ -1089,7 +1089,7 @@ namespace mexo {
 				}
 			}
 		}
-		static T set(int _ix, const T * _src) {
+		static void set(int _ix, const T * _src) {
 			if (_ix >= 0 && _ix < size) {
 				ixvar** p = pool_() + _ix;
 				if (*p) {
