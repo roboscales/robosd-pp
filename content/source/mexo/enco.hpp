@@ -254,13 +254,13 @@ namespace mexo {
 				: A(_config, _present) {}
 		};
 
-		template<typename q, typename enco> class rotator_t
-			: public function_handler< typename enco::unative_t, cs_t<q> > {
-			typedef function_handler< typename enco::unative_t, cs_t<q> > A;
+		template<typename q, typename U> class rotator_t
+			: public function_handler< U, cs_t<q> > {
+			typedef function_handler< U, cs_t<q> > A;
 		public:
 			typedef typename q::signal_t signal_t;
 			typedef typename q::long_signal_t long_signal_t;
-			typedef  typename enco::unative_t unative_t;
+			typedef  typename U unative_t;
 			struct config_s {
 				typename A::config_s fb;
 				unative_t offset;
@@ -331,7 +331,6 @@ namespace mexo {
 			virtual void do_handler_adjust(void) {
 				handler::present_cast<present_s>().fb.output.rotate(q::scale_l(A::input));
 			}
-
 		public:
 			rotator_t(const config_s& _config
 					  , present_s& _present

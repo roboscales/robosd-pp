@@ -202,17 +202,17 @@ namespace mexo {
 		};
 
 		template < typename q, typename D  > class current_sence : public machine<q, D> {
-			typedef machine<q, D> B;
+			typedef machine<q, D> BB;
 		public:
-			typedef typename B::config_s config_s;
+			typedef typename BB::config_s config_s;
 			struct present_s {
-				typename B::present_s	adc;
+				typename BB::present_s	adc;
 				typename q::signal_t current;
 				typename q::signal_t delta;
 			};
 
 			current_sence(const config_s& _config, present_s& _present)
-				: B(_config, _present.adc) {}
+				: BB(_config, _present.adc) {}
 
 			typename q::signal_t& current_ref(void) {
 				return handler::present_cast<present_s>().current;
@@ -223,7 +223,7 @@ namespace mexo {
 
 		protected:
 			void execute(void) {
-				B::execute();
+				BB::execute();
 				present_s& present = handler::present_cast<present_s>();
 				typename q::signal_t tmp = present.current;
 				present.current = present.adc.values[1] - present.adc.values[0];

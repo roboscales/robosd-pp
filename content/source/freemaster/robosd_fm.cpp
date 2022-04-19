@@ -47,7 +47,7 @@ namespace robo {
 	#if ROBO_APP_PROTO_SWITCH_ENABLED == 1
 
 	void freemaster::abonent::stop(void) {
-		connect(0);
+		connect((net::iserial*)nullptr);
 	}
 	void freemaster::abonent::start(void) {
 		connect(this);

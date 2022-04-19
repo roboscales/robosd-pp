@@ -199,8 +199,8 @@ protected:
 			::mexo::var::record::create(types::var::signal, config.voltage.normal, RT("v.normal"), key(), vars);
 			#endif
 			#if BRAKE_CURRENT_MODE_ENABLED == 1  
-			::mexo::var::record::create(type::var::signal, config.current.force, RT("c.force"), key(), vars);
-			::mexo::var::record::create(type::var::signal, config.current.normal, RT("c.normal"), key(), vars);
+			::mexo::var::record::create(types::var::signal, config.current.force, RT("c.force"), key(), vars);
+			::mexo::var::record::create(types::var::signal, config.current.normal, RT("c.normal"), key(), vars);
 			#endif
 			::mexo::var::record::create(::mexo::var::uint8, config.power_mode, RT("pm"), key(), vars);
 		}
