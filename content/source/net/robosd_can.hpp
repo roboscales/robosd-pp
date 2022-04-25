@@ -16,7 +16,7 @@ namespace robo {
 				, disconnect
 				, fault
 			};
-			typedef delegat::base<void, ican&, uint32_t, uint8_t*, uint8_t   > on_receive_f;
+			typedef delegat::base<void, ican&, uint32_t, const uint8_t*, uint8_t   > on_receive_f;
 			typedef delegat::base<void, ican&, event> on_event_f;
 		private:
 			ref ref_;
@@ -30,7 +30,7 @@ namespace robo {
 
 			virtual bool open(bool _owned_view = false) = 0;
 			virtual void close(void) = 0;
-			virtual bool send(uint32_t _id, uint8_t* _buf, uint8_t  _len) = 0;
+			virtual bool send(uint32_t _id, const  uint8_t* _buf, uint8_t  _len) = 0;
 			virtual bool ready(void) = 0;
 			virtual void reset(void) = 0;
 			virtual void pool(void) = 0;
@@ -51,7 +51,7 @@ namespace robo {
 		public:
 			virtual bool open(bool _owned_view = false) { return false; }
 			virtual void close(void) {}
-			virtual bool send(uint32_t /*_id*/, uint8_t* /*_buf*/, uint8_t  /*_len*/) { return false; }
+			virtual bool send(uint32_t /*_id*/, const uint8_t* /*_buf*/, uint8_t  /*_len*/) { return false; }
 			virtual bool ready(void) { return false; }
 			virtual void reset(void) {}
 			virtual void pool(void) {}

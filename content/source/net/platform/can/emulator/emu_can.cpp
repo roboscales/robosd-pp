@@ -96,7 +96,7 @@ namespace robo {
 				}
 			}
 
-			bool port::send(uint32_t _id, uint8_t* _buf, uint8_t  _len) {
+			bool port::send(uint32_t _id, const uint8_t* _buf, uint8_t  _len) {
 				if (shared_) {
 					if (shared_->out.state != PACKET_EMPTY) {
 						return false;
@@ -168,10 +168,10 @@ namespace robo {
 						refuse_count++;
 					}
 				}
-				void test_on_receive__(ican& /*_can*/, uint16_t /*_id*/, uint8_t*/*_msg*/, uint8_t/*_size*/) {
+				void test_on_receive__(ican& /*_can*/, uint16_t /*_id*/, const uint8_t*/*_msg*/, uint8_t/*_size*/) {
 					receive_count++;
 				}
-				delegat::smember<agent, void, ican&, uint16_t, uint8_t*, uint8_t >on_receive_;
+				delegat::smember<agent, void, ican&, uint16_t, const uint8_t*, uint8_t >on_receive_;
 				delegat::smember<agent, void, ican&, ican::event > on_event_;
 			protected:
 				virtual void do_background_run(double _time) {
@@ -195,7 +195,7 @@ namespace robo {
 						}
 						else {
 							port::shared** pshared = index_;
-							int min_id = 0x7fffffff;
+							uint32_t min_id = 0x7fffffff;
 							for (int i = 0; i < nodes_count_; ++i, ++pshared) {
 								port::shared* shared_ = *pshared;
 								if (shared_->out.state == PACKET_TRANSMIT) {

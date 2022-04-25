@@ -152,7 +152,7 @@ namespace robo {
 					}
 				}
 
-				void on_receive(unsigned _id, uint8_t* _data, size_t _size) {
+				void on_receive(uint32_t _id, const uint8_t* _data, size_t _size) {
 					typename  D::id_t id;
 					id.value = _id;
 					if (id.slave == 0) {
@@ -169,7 +169,7 @@ namespace robo {
 								id.slave = 1;
 								::robo::net::flow::msg* out_msg = get(id.suba);
 								if (out_msg) {
-									size_t query_len = _data[0];
+									uint8_t query_len = _data[0];
 									if (out_msg->size() == query_len) {
 										D::send(id.value, out_msg->data(), query_len);
 										put(id.suba, nullptr);

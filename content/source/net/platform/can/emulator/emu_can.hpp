@@ -27,7 +27,7 @@ namespace robo {
 //				int bitrate = 0;
 				virtual bool open(bool _owned_view = false);
 				virtual void close(void);
-				virtual bool send(uint32_t _id, uint8_t* _buf, uint8_t  _len);
+				virtual bool send(uint32_t _id, const uint8_t* _buf, uint8_t  _len);
 				virtual bool ready(void);
 				virtual void reset(void);
 				virtual void pool(void);

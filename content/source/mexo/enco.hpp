@@ -130,7 +130,12 @@ namespace mexo {
 				handler::do_handler_create_vars(_vars, _master_key);
 				present_s& present = present_cast<present_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
-					var::record::create(::mexo::var::uint32, present.native.raw, RT("native"), _master_key, _vars);
+					if (round_resolution == 32) {
+						var::record::create(::mexo::var::uint32, present.native.raw, RT("native"), _master_key, _vars);
+					}
+					else if (round_resolution == 16){
+						var::record::create(::mexo::var::uint16, present.native.raw, RT("native"), _master_key, _vars);
+					}
 					var::record::create(::mexo::var::uint32, present.counter.fault, RT("cnt.fault"), _master_key, _vars);
 					var::record::create(::mexo::var::uint32, present.counter.total, RT("cnt.tot"), _master_key, _vars);
 					var::record::create(q::var::signal, present.delta, RT("delta"), _master_key, _vars);
@@ -260,7 +265,7 @@ namespace mexo {
 		public:
 			typedef typename q::signal_t signal_t;
 			typedef typename q::long_signal_t long_signal_t;
-			typedef  typename U unative_t;
+			typedef  U unative_t;
 			struct config_s {
 				typename A::config_s fb;
 				unative_t offset;
@@ -284,7 +289,7 @@ namespace mexo {
 					var::record::create(q::var::const_signal, present.fb.output.si, RT("ab.sin"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.fb.output.co, RT("ab.cos"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.fb.output.angle, RT("dq.angle"), _master_key, _vars);
-
+					var::record::create(q::var::const_signal, present.rotor_angle, RT("rotor_angle"), _master_key, _vars);
 				}
 				if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 					var::record::create(::mexo::var::uint16, config.pole_count, RT("pole_count"), _master_key, _vars);
