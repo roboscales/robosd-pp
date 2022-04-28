@@ -233,6 +233,9 @@ namespace robo {
 			static void mem_free(void* _memo);
 
 			#endif
+			#if ROBO_APP_MODULE_ENABLED == 1
+			static void frontend_loop(void);
+			#endif
 		public:
 
 			/*!
@@ -271,7 +274,6 @@ namespace robo {
 			static void stop(void);
 			static result startup(void);
 			static result shutdown(void);
-			static void frontend_loop(void);
 			static void backend_loop(void);
 			#endif
 			static time_us_t time_us(void);
@@ -284,7 +286,6 @@ namespace robo {
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
 			#endif
-
 			#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 			static void print(cstr  _s);
 			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
@@ -294,6 +295,7 @@ namespace robo {
 		};
 		#endif
 
+		static void frontend_loop(void);
 		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
 		static void printf(cstr _format, ...);		

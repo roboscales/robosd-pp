@@ -117,6 +117,7 @@ namespace robo {
 namespace robo {
 	size_t system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
 		#if ROBO_UNICODE_ENABLED == 1
+		//todo кос€чна€ функци€  - если вс€ информаци€ не помещаетс€ в буфер, то она не выведетьс€ вовсе
 		int sz = vswprintf(_dst, _max_sz, _format, _args);
 		#else
 		int sz = vsnprintf(_dst, _max_sz, _format, _args);

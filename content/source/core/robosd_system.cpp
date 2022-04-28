@@ -1,6 +1,7 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_string.hpp"
+#include "core/robosd_ring_buf.hpp"
 #include <algorithm>
 
 namespace robo {
@@ -345,12 +346,50 @@ namespace robo {
 	#endif
 	
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+	ring_t<16, char_t > print_buffer_;
+	#endif
+
+	void system::frontend_loop(void) {
+		#if ROBO_APP_MODULE_ENABLED == 1
+		env::frontend_loop();
+		#endif
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+		char_t tmp[255];
+		size_t sz;
+		{
+			system::guard g__;
+			sz = print_buffer_.get(tmp, 254);
+			tmp[sz] = 0;
+		}
+		if(sz>0)
+			env::print(tmp);
+		#endif
+	}
+
+	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 	void system::printf(cstr _format, va_list _args) {
 		#if ROBO_APP_ENV_ENABLED == 1
 		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
-		string tmp;
-		tmp.format(_format, _args);
-		env::print(tmp.c_str());		
+		{
+			string tmp;
+			tmp.format(_format, _args);
+			if (env::is_frontend()) {
+				system::critical с__;
+				env::print(tmp.c_str());
+			}
+			else {
+				system::guard g__;
+				cstr s = tmp.c_str();
+				if (s) {
+					while (*s) {
+						if (print_buffer_.space() > 1)
+							print_buffer_.put(*s++);
+						else
+							break;
+					}
+				}
+			}
+		}
 		#endif
 		#endif
 	}

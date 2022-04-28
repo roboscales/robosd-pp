@@ -305,7 +305,6 @@ namespace robo {
 
 					busyPeriod = 100 / baudrate_;
 
-					robo_infolog("can emulator channel '%s' was started", name.c_str());
 					return  true;
 				}
 				virtual void do_reconfig(void) {};
@@ -319,7 +318,6 @@ namespace robo {
 						delete[] test_ports_;
 					}
 					test_ports_ = nullptr;
-					robo_infolog("can emulator channel  '%s' was finished", name.c_str());
 				}
 			public:
 				agent(void)

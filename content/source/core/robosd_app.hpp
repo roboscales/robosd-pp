@@ -37,16 +37,21 @@ namespace robo {
 			int id(void) { return index_ref_.key(); }
 			virtual bool do_load(void);
 			virtual void do_clean(void);
-			virtual result do_node_startup(void) { return result::complete; }
-			virtual result do_node_shutdown(void) { return result::complete; }
-			virtual bool do_node_start(void) { return true; }
-			virtual void do_node_stop(void) {}
+			virtual result do_startup(void) { return result::complete; }
+			virtual result do_shutdown(void) { return result::complete; }
+			virtual bool do_start(void) { return true; }
+			virtual void do_stop(void) {}
 			virtual void do_panic(void) {}
 			void panic(void);
-			result node_startup(void);
-			result node_shutdown(void);
-			bool node_start(void);
-			void node_stop(void);
+			result startup(void);
+			result shutdown(void);
+			bool start(void);
+			void stop(void);
+			void backend_loop(void);
+			void frontend_loop(void);
+			virtual void do_backend_loop(void) {};
+			virtual void do_frontend_loop(void) {};
+
 			bool init(cstr _name, node* _owner);
 			node(cstr _name, node* _owner);
 		public:
@@ -70,8 +75,8 @@ namespace robo {
 		protected:
 			friend class wrapper;
 			friend class machine;
-			virtual void frontend_loop(void) = 0;
-			virtual void backend_loop(void) = 0;
+			//virtual void frontend_loop(void) = 0;
+			//virtual void backend_loop(void) = 0;
 			module(cstr _name) : node(_name, nullptr) {}
 		};
 

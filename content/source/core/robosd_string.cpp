@@ -36,7 +36,7 @@ namespace robo {
 		
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 
-	bool string::printf_backend_(stream_s & _s, cstr _format, va_list _args){
+	bool string::sprintf_backend_(stream_s & _s, cstr _format, va_list _args){
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_backend;
 		_s.size = system::env::sprintf(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _format, _args);
@@ -45,7 +45,8 @@ namespace robo {
 		return 0;
 		#endif
 	}
-	bool string::printf_frontend_(stream_s & _s, cstr _format, va_list _args){
+	bool string::sprintf_frontend_(stream_s & _s, cstr _format, va_list _args){
+		system::critical c__;
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_frontend;
 		_s.size = system::env::sprintf(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _format, _args);
@@ -58,14 +59,14 @@ namespace robo {
 	bool string::format(cstr _format, va_list _args) {
 		stream_s stream;
 		if (system::env::is_backend()) {			
-			if(printf_backend_(stream, _format, _args)){
+			if(sprintf_backend_(stream, _format, _args)){
 				*((stds*)value_) = stream.memo;
 				return true;
 			}
 		}
 		else {
 			system::critical c__;
-			if(printf_frontend_(stream, _format, _args)){
+			if(sprintf_frontend_(stream, _format, _args)){
 				*((stds*)value_) = stream.memo;
 				return true;
 			}

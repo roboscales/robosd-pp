@@ -39,7 +39,7 @@ namespace robo {
 			}
 
 			ROBO_LBREAKN(do_begin());
-
+			robo_infolog("emulator agent '%s' was started", name.c_str());
 
 
 			for (block::ref* p = blocks_.first(); p; p = p->next()) {
@@ -137,6 +137,7 @@ namespace robo {
 			agent::ref* p;
 			for (p = agents_().first(); p; p = p->next()) {
 				p->owner().do_finish();
+				robo_infolog("emulator agent '%s' was finished", p->owner().name.c_str());
 			}
 			agent* ag;
 			while ( (ag = agents_().pop()) != nullptr ) {
@@ -144,6 +145,7 @@ namespace robo {
 				ag = nullptr;//paranoia
 				system::lib::free(instance);
 			}
+
 		}
 
 		void agent::reconfig_(void) {

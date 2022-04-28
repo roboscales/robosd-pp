@@ -669,8 +669,8 @@ namespace robo {
 			return true;
 		}
 
-		bool idevagent::do_node_start(void) {
-			ROBO_LBREAKN(app::node::do_node_start());
+		bool idevagent::do_start(void) {
+			ROBO_LBREAKN(app::node::do_start());
 			string tmp_name;
 			ROBO_LBREAKN(tmp_name.load(name(), RT("BUS_NAME")));
 			bus* b = dynamic_cast<bus*>(find(tmp_name));

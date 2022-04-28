@@ -98,7 +98,7 @@ namespace robo {
 			return true;
 		}
 
-		bool node::node_start(void) {
+		bool node::start(void) {
 			ROBO_LBREAKN(disabled_.count() == 0);
 			ROBO_LBREAKN(startupped_.count() == 0);
 			ROBO_LBREAKN(active_.count() == 0);
@@ -109,11 +109,11 @@ namespace robo {
 			while (r) {
 				node& c = r->owner();
 				r = r->next();
-				ROBO_LBREAKN(c.node_start());
+				ROBO_LBREAKN(c.start());
 			}
 			ROBO_LBREAKN(stopped_.count() == 0)
 
-				ROBO_LBREAKN(do_node_start());
+			ROBO_LBREAKN(do_start());
 
 			if (owner_)
 				ref_.attach_to(owner_->startupped_);
@@ -130,20 +130,20 @@ namespace robo {
 			do_panic();
 		}
 
-		result node::node_startup(void) {
+		result node::startup(void) {
 			ref* r = startupped_.first();
 
 			while (r) {
 				node& c = r->owner();
 				r = r->next();
-				if (c.node_startup() == result::panic) {
+				if (c.startup() == result::panic) {
 					panic();
 					return result::panic;
 				}
 			}
 
 			if (startupped_.count() == 0) {
-				switch (do_node_startup()) {
+				switch (do_startup()) {
 				case result::complete:
 				if (owner_)
 					ref_.attach_to(owner_->active_);
@@ -160,35 +160,54 @@ namespace robo {
 			return result::resume;
 		}
 
-		void node::node_stop(void) {
+		void node::stop(void) {
 			ref* r = active_.first();
 			while (r) {
 				node& c = r->owner();
 				r = r->next();
-				c.node_stop();
+				c.stop();
 			}
-			do_node_stop();
+			do_stop();
 			if (owner_)
 				ref_.attach_to(owner_->shutdowned_);
 			actual_state_ = state::shutdown;
 			robo_applog("node '%s' is begin shutdown", alias());
 		}
 
+		void node::backend_loop(void) {
+			ref* r = active_.first();
+			while (r) {
+				node& c = r->owner();
+				r = r->next();
+				c.backend_loop();
+			}
+			do_backend_loop();
+		}
 
-		result node::node_shutdown(void) {
+		void node::frontend_loop(void) {
+			ref* r = active_.first();
+			while (r) {
+				node& c = r->owner();
+				r = r->next();
+				c.frontend_loop();
+			}
+			do_frontend_loop();
+		}
+
+		result node::shutdown(void) {
 
 			ref* r = shutdowned_.first();
 			while (r) {
 				node& c = r->owner();
 				r = r->next();
-				if (c.node_shutdown() == result::panic) {
+				if (c.shutdown() == result::panic) {
 					panic();
 					return result::panic;
 				}
 			}
 
 			if (shutdowned_.count() == 0) {
-				switch (do_node_shutdown()) {
+				switch (do_shutdown()) {
 				case result::complete:
 				if (owner_)
 					ref_.attach_to(owner_->stopped_);
@@ -343,12 +362,12 @@ namespace robo {
 
 		void machine::frontend_loop_(void) {
 			machine_();
-			system::env::frontend_loop();
-			if (actual_state() > state::stopped) {
+			system::frontend_loop();
+			/*/if (actual_state() > state::stopped) {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->frontend_loop();
 				}
-			}
+			}*/
 		}
 
 		void machine::backend_loop_(void) {
@@ -388,10 +407,10 @@ namespace robo {
 				break;
 				case state::startup:
 				case state::execute:
-				node::node_stop();
+				node::stop();
 				break;
 				case state::shutdown:
-				node::node_shutdown();
+				node::shutdown();
 				break;
 				default:
 				panic();
@@ -400,15 +419,16 @@ namespace robo {
 			else {
 				switch (actual_state()) {
 				case state::stopped:
-				node::node_start();
+				node::start();
 				break;
 				case  state::startup:
-				node::node_startup();
+				node::startup();
 				break;
 				case state::execute:
+				node::backend_loop();
 				break;
 				case state::shutdown:
-				node::node_shutdown();
+				node::shutdown();
 				break;
 				default:
 				panic();

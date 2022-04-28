@@ -47,19 +47,19 @@ namespace robo {
 				size_t size;
 			};
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
-			static bool printf_backend_(stream_s & _s, cstr _format, va_list _args);
-			static bool printf_frontend_(stream_s & _s, cstr _format, va_list _args);
+			static bool sprintf_backend_(stream_s & _s, cstr _format, va_list _args);
+			static bool sprintf_frontend_(stream_s & _s, cstr _format, va_list _args);
 			#endif
 		public:
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			template< typename B> static bool format_stream(B & _b,  cstr _format, va_list _args) {
 				stream_s stream;
 				if (system::env::is_backend()) {
-					return ( printf_backend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
+					return ( sprintf_backend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
 				}
 				else {
 					system::critical c__;
-					return ( printf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
+					return ( sprintf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
 				}
 			};
 			#endif

@@ -61,13 +61,13 @@ namespace robo {
 		set_win_consol_color_(LightMagenta, Black);
 		break;
 		case robo::log::verb::detail_3:
-		set_win_consol_color_(LightGreen, Blue);
+		set_win_consol_color_(LightGreen, Black);
 		break;
 		case robo::log::verb::detail_4:
-		set_win_consol_color_(LightMagenta, Blue);
+		set_win_consol_color_(White, Blue);
 		break;
 		case robo::log::verb::detail_5:
-		set_win_consol_color_(LightCyan, Blue);
+		set_win_consol_color_(White, Blue);
 		break;
 		case robo::log::verb::detail_6:
 		set_win_consol_color_(White, Blue);
@@ -92,8 +92,8 @@ namespace robo {
 #ifndef ROBO_LOG_WIN_BUF_SIZE
 #define ROBO_LOG_WIN_BUF_SIZE 4096
 #endif
-
 namespace robo {
+
 	void system::env::print(cstr _s) {
 		#if ROBO_UNICODE_ENABLED == 1
 		_setmode(_fileno(stdout), _O_U8TEXT);
@@ -127,7 +127,7 @@ namespace robo {
 	DWORD step_show_tick_ = 0;
 	bool init_ = false;
 	bool timer_setup_(void) {
-		ROBO_LBREAKN(::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), period_us_));
+		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), period_us_));
 		QueryPerformanceFrequency(&ticksPerSecond_);
 		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * period_us_ * ticksPerSecond_.QuadPart);
 		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
@@ -159,7 +159,7 @@ namespace robo {
 	bool system::env::start(void) {
 		ROBO_LBREAKN(timer_setup_());
 		time_ms_t ms;
-		ROBO_LBREAKN(::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms));
+		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms));
 		step_show_period_ = 1000 * ms / period_us_;
 		last_time_us_ = realtime_us();
 
@@ -174,8 +174,8 @@ namespace robo {
 	result system::env::shutdown(void) {
 		return result::complete;
 	}
-	void system::env::frontend_loop(void) {}
 
+	void system::env::frontend_loop(void) {}
 	void system::env::backend_loop(void) {
 		uint32_t tm = realtime_us();
 		us_acc_ += period_us_;
@@ -336,10 +336,9 @@ namespace robo {
 #endif
 
 namespace robo {
-	#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
-	bool system::lib::exists(cstr _lib_name) {
+	bool file_exists_(cstr _file_name) {
 		HANDLE hFile = CreateFile(
-			_lib_name, // file (or device) name
+			_file_name, // file (or device) name
 			0, // query access only
 			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, // share mode
 			NULL, // security attributes
@@ -352,6 +351,10 @@ namespace robo {
 			return true;
 		}
 		return false;
+	}
+	#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
+	bool system::lib::exists(cstr _lib_name) {
+		return file_exists_(_lib_name);
 	}
 	void* system::lib::proc_get(void* _handle, cstr _proc_name) {
 		#if ROBO_UNICODE_ENABLED
@@ -387,6 +390,9 @@ namespace robo {
 	#if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_WIN
 	cstr g_robo_ini_fn = nullptr;
 	bool system::ini::begin(cstr _ini) {
+		g_robo_ini_fn = nullptr;
+		string tmp(RT("%s"),_ini);
+		ROBO_LBREAKN_F(file_exists_(_ini), "ini file '%s' is't found", tmp.c_str());
 		g_robo_ini_fn = _ini;
 		return true;
 	}

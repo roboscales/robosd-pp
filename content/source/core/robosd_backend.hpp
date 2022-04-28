@@ -223,7 +223,7 @@ namespace robo {
 			}
 			virtual bool do_load(void);
 			virtual void do_clean(void);
-			virtual bool do_node_start(void);
+			virtual bool do_start(void);
 
 		public:
 			itrafic trafic;
