@@ -110,9 +110,12 @@ namespace robo {
 
 
 	template<typename T, unsigned C> struct array {
-		T values[C];
+		T values[C] = {};
 	};
-
+	//todo put get
+	template<typename T, typename S, S C> struct stack_t: public array<T, C> {
+		S len = 0;
+	};
 
 }
 

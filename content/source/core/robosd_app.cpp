@@ -174,25 +174,6 @@ namespace robo {
 			robo_applog("node '%s' is begin shutdown", alias());
 		}
 
-		void node::backend_loop(void) {
-			ref* r = active_.first();
-			while (r) {
-				node& c = r->owner();
-				r = r->next();
-				c.backend_loop();
-			}
-			do_backend_loop();
-		}
-
-		void node::frontend_loop(void) {
-			ref* r = active_.first();
-			while (r) {
-				node& c = r->owner();
-				r = r->next();
-				c.frontend_loop();
-			}
-			do_frontend_loop();
-		}
 
 		result node::shutdown(void) {
 
@@ -361,13 +342,12 @@ namespace robo {
 		}
 
 		void machine::frontend_loop_(void) {
-			machine_();
-			system::frontend_loop();
-			/*/if (actual_state() > state::stopped) {
+			frontend_machine_();
+			if (actual_state() > state::stopped) {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->frontend_loop();
 				}
-			}*/
+			}
 		}
 
 		void machine::backend_loop_(void) {
@@ -400,7 +380,7 @@ namespace robo {
 			#endif
 		}
 
-		void machine::machine_(void) {
+		void machine::frontend_machine_(void) {
 			if (req_state_ == req_state::stop) {
 				switch (actual_state()) {
 				case state::stopped:
@@ -425,7 +405,6 @@ namespace robo {
 				node::startup();
 				break;
 				case state::execute:
-				node::backend_loop();
 				break;
 				case state::shutdown:
 				node::shutdown();

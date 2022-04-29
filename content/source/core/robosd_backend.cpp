@@ -307,7 +307,7 @@ namespace robo {
 								continue;
 							}
 							else {
-								_msg->tran_->header.dev_id = dev_id_.dev;
+								_msg->tran.header.dev_id = dev_id_.dev;
 								if (!_msg->prepare()) {
 									ROBO_ALARM();
 									return stream::query_result::none;
@@ -322,33 +322,27 @@ namespace robo {
 			return stream::query_result::none;
 		}
 
-		bool bus::request_(msg* _msg) {
-			system::guard g__;
-			if (current_msg_ == 0) {
-				bool proto_res;
-				switch (_msg->tran.request) {
+		bool bus::request_(void) {
+			{
+				system::guard g__;
+				bool proto_res = false;
+				switch (message_.tran.request) {
 				case ROBO_TRAN_REQUEST_GET:
 				case ROBO_TRAN_EXCANGE:
 				case ROBO_TRAN_REBOOT_ME:
-				request_begin_us_ = system::env::time_us();
-				timeout_us_ = default_timeout_us_;
-				proto_res = post(_msg);
-				break;
 				case ROBO_TRAN_REQUEST_PUT:
-				//todo ������ ��������??
-				request_begin_us_ = system::env::time_us();
-				timeout_us_ = default_timeout_us_;
-				proto_res = post(_msg);
-				break;
+					request_begin_us_ = system::env::time_us();
+					timeout_us_ = default_timeout_us_;
+					proto_res = post();
+					break;
 				}
 				if (proto_res) {
-					current_msg_ = _msg;
-					current_msg_->tran.status = ROBO_TRAN_EXECUTE_START;
+					message_.tran.status = ROBO_TRAN_EXECUTE_START;
 					return true;
 				}
 			}
-			_msg->tran.status = ROBO_TRAN_REFUSE;
-			_msg->confirm();
+			message_.tran.status = ROBO_TRAN_REFUSE;
+			message_.confirm();
 			return false;
 		}
 
@@ -368,9 +362,9 @@ namespace robo {
 
 		void bus::confirm(robo_tran_status_t _result) {
 			robo::system::guard __g;
-			if (current_msg_ != 0) {
-				current_msg_->tran.status = _result;
-				robo_detaillog(7,0,"tran result - %d", ((int)current_msg_->tran.status) );
+			if (message_.tran.status != ROBO_TRAN_NONE) {
+				message_.tran.status = _result;
+				robo_detaillog(7,0,"tran result - %d", ((int)message_.tran.status) );
 				system::env::wakeup();
 			}
 			else {
@@ -409,11 +403,7 @@ namespace robo {
 			idevagent& owner = stream_->own_agent();
 			const dev_id_t& id_ = owner.dev_id();
 			address = id_.address;
-			//�� �������- ����� ����� �������� ����� �� ���������� �����
-			//			router::record * rec = owner->resolve(, );
-
-			//��������� suba
-			router::record* rec = owner.resolve(ownbus->id(), &(tran_->header));
+			router::record* rec = owner.resolve(ownbus->id(), &(tran.header));
 			if (rec != nullptr) {
 				if (tran.request == ROBO_TRAN_REQUEST_GET) {
 					suba = rec->answer_suba;
@@ -423,7 +413,7 @@ namespace robo {
 				}
 			}
 			else {
-				suba = tran_->header.command;
+				suba = tran.header.command;
 			}
 
 			return true;
@@ -456,83 +446,57 @@ namespace robo {
 			}
 		}
 
-		bool bus::ready_() {
-			system::guard g__;
-			return current_msg_ == 0 && ready();
-		}
-		bus::msg* bus::pop_incom_msg_() {
-			msg* ret = 0;
-			idevagent* broken_obj = nullptr;
+		void bus::perform_(void) {
 			time_us_t now = system::env::time_us();
-			{
-				system::guard g__;
-				if (current_msg_) {
-					if (now - request_begin_us_ >= timeout_us_) {
-						ret = current_msg_;
-						ret->tran.status = ROBO_TRAN_REFUSE;
-						broken_obj = &current_msg_->own_agent();
-						current_msg_ = 0;
+			switch (message_.tran.status) {
+			case	ROBO_TRAN_EXECUTE:
+			case	ROBO_TRAN_EXECUTE_START:
+			case	ROBO_TRAN_EXECUTE_PHY:
+				if (now - request_begin_us_ >= timeout_us_) {
+					idevagent* broken_obj = message_.own_agent();
+					if (broken_obj) {
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
 					}
 					else {
-						if ((current_msg_->tran.status & ROBO_TRAN_EXECUTE) != ROBO_TRAN_EXECUTE) {
-							ret = current_msg_;
-							current_msg_ = 0;
-						}
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", alias(), now - request_begin_us_, now, request_begin_us_);
 					}
+					cancel();
 				}
-			}
-			if (broken_obj) {
-				cancel();
-				ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
-			}
-			return ret;
-		}
-
-
-		void bus::perform_() {
-			msg* m = pop_incom_msg_();
-			if (m) {
-				if (m->tran.status == ROBO_TRAN_COMPLETE) {
-					if (m->tran.request == ROBO_TRAN_REQUEST_GET) {
-						trafic.incom.success.inc(m->tran.size_actual);
-						m->own_agent().trafic.incom.success.inc(m->tran.size_actual);
-					}
-					else {
-						trafic.outcom.success.inc(m->tran.size_actual);
-						m->own_agent().trafic.outcom.success.inc(m->tran.size_actual);
-					}
+			break;
+			case	ROBO_TRAN_REFUSE:
+				if (message_.tran.request == ROBO_TRAN_REQUEST_GET) {
+					trafic.incom.refuse.inc(message_.tran.size_actual);
 				}
 				else {
-					if (m->tran.request == ROBO_TRAN_REQUEST_GET) {
-						trafic.incom.refuse.inc(m->tran.size_actual);
-						m->own_agent().trafic.incom.refuse.inc(m->tran.size_actual);
-					}
-					else {
-						trafic.outcom.refuse.inc(m->tran.size_actual);
-						m->own_agent().trafic.outcom.refuse.inc(m->tran.size_actual);
-					}
+					trafic.outcom.refuse.inc(message_.tran.size_actual);
 				}
-
-				m->confirm();
-
-				release_msg(m);
+				message_.confirm();
+			break;
+			case	ROBO_TRAN_COMPLETE:
+				if (message_.tran.request == ROBO_TRAN_REQUEST_GET) {
+					trafic.incom.success.inc(message_.tran.size_actual);
+				}
+				else {
+					trafic.outcom.success.inc(message_.tran.size_actual);
+				}
+				message_.confirm();
+			break;
 			}
-			bool rd = ready_();
-			if (rd && agents_.count()) {
-				if (current_agent_ref_ == 0) {
-					current_agent_ref_ = agents_.first();
-				}
-				idevagent::bus_ref* first_agent_ref_ = current_agent_ref_;
+			if ( message_.tran.status == ROBO_TRAN_NONE ) {
+				if (ready() && agents_.count()) {
+					if (current_agent_ref_ == nullptr) {
+						current_agent_ref_ = agents_.first();
+					}
+					idevagent::bus_ref* first_agent_ref_ = current_agent_ref_;
 
-				if (current_agent_ref_) {
-					msg* _msg = get_msg();
-					if (_msg) {
-						_msg->ownbus = this;
+					if (current_agent_ref_) {
+						message_.ownbus = this;
+						reset();
 						do {
-							idevagent::stream::query_result res = current_agent_ref_->owner().query(_msg);
+							idevagent::stream::query_result res = current_agent_ref_->owner().query(&message_);
 							switch (res) {
 							case idevagent::stream::query_result::success:
-							if (request_(_msg)) {
+							if (request_()) {
 								current_agent_ref_ = current_agent_ref_->next();
 								if (current_agent_ref_ == 0) {
 									current_agent_ref_ = agents_.first();
@@ -541,7 +505,7 @@ namespace robo {
 							}
 							break;
 							case idevagent::stream::query_result::repeat:
-							if (request_(_msg)) {
+							if (request_()) {
 								return;
 							}
 							break;
@@ -553,7 +517,6 @@ namespace robo {
 								current_agent_ref_ = agents_.first();
 							}
 						} while (current_agent_ref_ != first_agent_ref_);
-						release_msg(_msg);
 					}
 				}
 			}
@@ -608,19 +571,36 @@ namespace robo {
 		}
 		router::router(cstr _name, app::module& _owner) : app::node(_name, &_owner) {}
 
-		idevagent::stream::msg::msg(robo_tran_p _tran)
+		idevagent::stream::msg::msg(void)
 			: stream_(0)
-			, ref_(*this)
-			, tran_(_tran) {}
+			, ref(*this)
+			{}
 
 		void idevagent::stream::msg::confirm() {
 			if (stream_) {
-				stream_->confirm(tran_);
+				stream_->confirm(tran);
+				if (tran.status == ROBO_TRAN_REFUSE) {
+					if (tran.request == ROBO_TRAN_REQUEST_GET) {
+						stream_->own_agent().trafic.incom.refuse.inc(tran.size_actual);
+					}
+					else {
+						stream_->own_agent().trafic.outcom.refuse.inc(tran.size_actual);
+					}
+				}
+				else {
+					if (tran.request == ROBO_TRAN_REQUEST_GET) {
+						stream_->own_agent().trafic.incom.success.inc(tran.size_actual);
+					}
+					else {
+						stream_->own_agent().trafic.outcom.success.inc(tran.size_actual);
+					}
+				}
 			}
+			tran.status = ROBO_TRAN_NONE;
 		}
 
 		bool idevagent::stream::msg::prepare() {
-			tran_->status = ROBO_TRAN_NONE;
+			tran.status = ROBO_TRAN_NONE;
 			return true;
 		}
 
@@ -632,7 +612,7 @@ namespace robo {
 		idevagent::stream::~stream() {}
 
 		idevagent::stream::query_result idevagent::stream::query(idevagent::stream::msg* _msg) {
-			stream::query_result ret = query(_msg->tran_);
+			stream::query_result ret = query(_msg->tran);
 			if (ret != query_result::none) {
 				_msg->stream_ = this;
 			}
@@ -713,7 +693,7 @@ namespace robo {
 		}
 
 
-		contrltable::query_result contrltable::query(robo_tran_p _tran) {
+		contrltable::query_result contrltable::query(robo_tran_t & _tran) {
 			if (current_ != nullptr) {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 				current_->refuse();
@@ -730,11 +710,11 @@ namespace robo {
 			}
 
 			if (current_->actual_status() == ivar::status::put) {
-				if (_tran->size_max > current_->length()) {
-					_tran->header.command = (robo_tran_command_id_t)current_->addr();
-					_tran->size_actual = current_->length();
-					if (current_->encode(_tran->data)) {
-						_tran->request = ROBO_TRAN_REQUEST_PUT;
+				if (_tran.size_max > current_->length()) {
+					_tran.header.command = (robo_tran_command_id_t)current_->addr();
+					_tran.size_actual = current_->length();
+					if (current_->encode(_tran.data)) {
+						_tran.request = ROBO_TRAN_REQUEST_PUT;
 						return query_result::success;
 					}
 				}
@@ -745,9 +725,9 @@ namespace robo {
 			}
 			else {
 				if (current_->actual_status() == ivar::status::get) {
-					_tran->header.command = (robo_tran_command_id_t)current_->addr();
-					_tran->size_actual = current_->length();
-					_tran->request = ROBO_TRAN_REQUEST_GET;
+					_tran.header.command = (robo_tran_command_id_t)current_->addr();
+					_tran.size_actual = current_->length();
+					_tran.request = ROBO_TRAN_REQUEST_GET;
 					return query_result::success;
 				}
 				else {
@@ -763,17 +743,17 @@ namespace robo {
 			return query_result::none;
 		}
 
-		void contrltable::confirm(robo_tran_p _tran) {
+		void contrltable::confirm(const robo_tran_t & _tran) {
 			if (current_ == nullptr) {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 			}
 			else {
-				if (_tran->status == ROBO_TRAN_COMPLETE) {
-					if (_tran->size_actual > current_->length()) {
+				if (_tran.status == ROBO_TRAN_COMPLETE) {
+					if (_tran.size_actual > current_->length()) {
 						current_->refuse();
 					}
 					else {
-						if (current_->decode(_tran->data)) {
+						if (current_->decode(_tran.data)) {
 							current_->confirm();
 						}
 						else {

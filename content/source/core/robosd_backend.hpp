@@ -171,13 +171,12 @@ namespace robo {
 					friend class stream;
 				public:
 					typedef  ::robo::list::unsorted<msg> list;
-					typedef  list::ref ref;
-					ref ref_;
-					robo_tran_p tran_;
+					list::ref ref;
+					robo_tran_t tran = {};
 					void confirm();
-					msg(robo_tran_p _tran);
+					msg(void);
 					virtual bool prepare();
-					inline idevagent& own_agent() { return stream_->own_agent(); }
+					inline idevagent * own_agent() { return stream_ == nullptr ? nullptr : &stream_->own_agent(); }
 				};
 
 				typedef signal::performer::priority priority;
@@ -191,8 +190,8 @@ namespace robo {
 				stream(idevagent& _agent, priority _priority);
 				virtual ~stream();
 				virtual bool exchange_need() = 0;
-				virtual query_result query(robo_tran_p _tran) = 0;
-				virtual void confirm(robo_tran_p _tran) = 0;
+				virtual query_result query(robo_tran_t& _tran) = 0;
+				virtual void confirm(const robo_tran_t& _tran) = 0;
 				query_result query(msg* _msg);
 			};
 			typedef common::idevagent::istate state;
@@ -281,46 +280,38 @@ namespace robo {
 		public:
 			class ROBO_EXPORT msg : public idevagent::stream::msg {
 			public:
-				robo_tran_t tran;
 				router::record::address_t address;
 				router::record::suba_t suba;
 				bus* ownbus;
-				msg(void) : idevagent::stream::msg(&tran), ownbus(0) {}
+				msg(void) : idevagent::stream::msg(), ownbus(0) {}
 				virtual ~msg() {}
 				virtual bool  prepare(void);
 				virtual void release(void) {}
-			};
+			} message_;
 
 		private:
 			friend class idevagent;
 			idevagent::bus_ref* current_agent_ref_ = nullptr;
 			idevagent::bus_index agents_;
-			msg* current_msg_ = nullptr;
-			void refuse__(msg* _msg);
+			void refuse__(void);
 			friend class api;
-			bool request_(msg* _msg);
+			bool request_(void);
 			void perform_(void);
-			bool ready_(void);
-			msg* pop_incom_msg_(void);
 			time_us_t  request_begin_us_;
 			time_us_t  timeout_us_;
 			time_us_t  default_timeout_us_;
 			void tick1sec_(void);
 			bool setup_(int _id);
 		protected:
-			virtual bool post(msg* _msg) = 0;
+			virtual bool post(void) = 0;
 			virtual void cancel(void) = 0;
+			virtual void reset(void) = 0;
 			virtual bool ready(void) = 0;
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			//�������� id
 			int id(void) { return index_ref_.key(); }
-			//todo �������� ��� busmarshal
-			msg* current_msg(void) { return current_msg_; };
 			itrafic trafic;
-			virtual msg* get_msg(void) = 0;
-			virtual void  release_msg(msg*) = 0;
 			bus(cstr _name, app::module* _owner);
 			virtual ~bus(void);
 			void confirm(robo_tran_status_t _result);
@@ -774,8 +765,8 @@ namespace robo {
 					: fvar_t<T>(_contrltable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
 			};
 
-			virtual query_result query(robo_tran_p _tran);
-			virtual void confirm(robo_tran_p _tran);
+			virtual query_result query(robo_tran_t& _tran);
+			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
 			contrltable(idevagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
 			bool query(void);

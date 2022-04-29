@@ -47,10 +47,6 @@ namespace robo {
 			result shutdown(void);
 			bool start(void);
 			void stop(void);
-			void backend_loop(void);
-			void frontend_loop(void);
-			virtual void do_backend_loop(void) {};
-			virtual void do_frontend_loop(void) {};
 
 			bool init(cstr _name, node* _owner);
 			node(cstr _name, node* _owner);
@@ -75,8 +71,8 @@ namespace robo {
 		protected:
 			friend class wrapper;
 			friend class machine;
-			//virtual void frontend_loop(void) = 0;
-			//virtual void backend_loop(void) = 0;
+			virtual void frontend_loop(void) = 0;
+			virtual void backend_loop(void) = 0;
 			module(cstr _name) : node(_name, nullptr) {}
 		};
 
@@ -114,7 +110,7 @@ namespace robo {
 			void stop_(void);
 			bool start_(void);
 
-			void machine_(void);
+			void frontend_machine_(void);
 			void frontend_loop_(void);
 			void backend_loop_(void);
 			bool terminated__(void);

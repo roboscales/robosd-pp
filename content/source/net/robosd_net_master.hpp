@@ -6,13 +6,15 @@
 
 namespace robo{
     namespace net{        
-		class master{
-			public:
-				virtual void exchange(const uint8_t * _outcom_buf,  unsigned char _outcom_size, uint8_t * _incom_buf,  unsigned char _incom_size, ::robo::delegat::base<void, bool> * _confirm ) = 0;
-				virtual void cancel(void) = 0;
-				virtual bool ready(void) = 0;
+		template< typename P > class imaster_t {
+		public:
+			typedef  ::robo::delegat::base<void, bool> confirm_delegat;
+			virtual void exchange(const P& _outcom_packet, P *  _incom_packet, confirm_delegat* _confirm) = 0;
+			virtual void cancel(void) = 0;
+			virtual bool ready(void) = 0;
 		};
-		template< typename phys > class master_t: private phys, public master {
+
+		template< typename phys, typename P > class master_t: public phys, public imaster_t<P> {
 		public:
 			enum class result { refuse, success, panic };
 			private:
@@ -21,7 +23,7 @@ namespace robo{
 			unsigned int wd_delay_ms_ = 0;
 			
 			enum class state { idle, send, receive, stopped, disable, panic};
-			typedef typename phys::guard guard;
+			typedef typename system::guard guard;
 			enum {incom_size_bits=5};
 			
 			state state_ = state::disable;
@@ -35,15 +37,11 @@ namespace robo{
 				reset_();
 			}
 			
-			const uint8_t * outcom_buf_ = nullptr;
-			unsigned int outcom_size_ = 0;
-			uint8_t * incom_buf_ = nullptr;
-			unsigned int  incom_size_ = 0;
+			const P * outcom_packet_ = nullptr;
+			P * incom_packet_ = nullptr;
 			void reset_(void){
-				outcom_buf_ = nullptr;
-				outcom_size_ = 0;
-				incom_buf_ = nullptr;
-				incom_size_ = 0;
+				outcom_packet_ = nullptr;
+				incom_packet_ = nullptr;
 				wd_enabled = false;
 			}
 		
@@ -88,22 +86,19 @@ namespace robo{
 				reset_();
 				state_ = state::idle;
 			}
-			::robo::delegat::base<void, bool> * confirm_ = nullptr;
+			typename imaster_t<P>::confirm_delegat * confirm_ = nullptr;
 				
-			virtual void exchange(const uint8_t * _outcom_buf,  unsigned char _outcom_size, uint8_t * _incom_buf,  unsigned char _incom_size, ::robo::delegat::base<void, bool> * _confirm = nullptr){
+			virtual void exchange(const P& _outcom_packet, P* _incom_packet, typename  imaster_t<P>::confirm_delegat * _confirm){
 				confirm_ = _confirm;
 				guard g__;
-				outcom_buf_ = _outcom_buf;
-				outcom_size_ = _outcom_size;
-				incom_buf_ = _incom_buf;
-				incom_size_ = _incom_size;
+				outcom_packet_ = &_outcom_packet;
+				incom_packet_ = _incom_packet;
 				if (state_ == state::idle){
 					state_ = state::send;
-					wd_begin_ms_ = phys::time_ms();
+					wd_begin_ms_ = system::env::time_ms();
 					wd_enabled = true;
-					//todo
-					wd_delay_ms_ = incom_size_*10;
-					phys::send(outcom_buf_, outcom_size_);						
+					wd_delay_ms_ = phys::wd_us(outcom_packet_);
+					phys::send(outcom_packet_);						
 				} else {
 					panic_();
 				}
@@ -117,11 +112,11 @@ namespace robo{
 					guard g__;
 					switch (state_){
 					case state::send:
-						if(incom_size_>0){
-							wd_begin_ms_ = phys::time_ms();
+						if(incom_packet_ !=nullptr){
+							wd_begin_ms_ = system::env::time_ms();
 							state_ = state::receive;
-							wd_delay_ms_ = incom_size_*10;
-							phys::receive(incom_buf_, incom_size_);
+							wd_delay_ms_ = phys::wd_us(incom_packet_);
+							phys::receive(incom_packet_);
 							break;
 						}
 					case state::receive:
@@ -145,13 +140,13 @@ namespace robo{
 				reset_();
 				switch (state_){
 				case state::idle:
-				break;
+					break;
 				case state::send:
 					phys::send_cancel();
-				break;
+					break;
 				case state::receive:
 					phys::receive_cancel();
-				break;						
+					break;						
 				default:
 					panic_();			
 				}
