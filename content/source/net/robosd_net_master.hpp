@@ -105,7 +105,7 @@ namespace robo{
 			}
 			
 			
-			void confirm(void){
+			virtual void confirm(void){
 				bool cf = false;;
 				bool result = false;
 				{
@@ -155,7 +155,7 @@ namespace robo{
 			
 			void poll(void){
 				if(wd_enabled){
-					if( phys::time_ms() - wd_begin_ms_ > wd_delay_ms_ ){
+					if( system::env::time_ms() - wd_begin_ms_ > wd_delay_ms_ ){
 						refuse();
 					}
 				}

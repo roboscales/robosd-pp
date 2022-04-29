@@ -21,6 +21,8 @@ namespace robo {
 				struct ether;
 				shared* shared_ = nullptr;
 				ether* ether_ = nullptr;
+				system::shared* shared_memo_ = nullptr;
+				int shared_used_ = 0;
 			public:
 				int repeat_max_count = 1;
 				int channel = 0;
@@ -30,7 +32,7 @@ namespace robo {
 				virtual bool send(uint32_t _id, const uint8_t* _buf, uint8_t  _len);
 				virtual bool ready(void);
 				virtual void reset(void);
-				virtual void pool(void);
+				virtual void poll(void);
 			};
 		}
 	}

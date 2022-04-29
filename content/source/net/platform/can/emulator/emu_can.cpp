@@ -45,8 +45,6 @@ namespace robo {
 			int tick_count = 0;
 			int send_count = 0;
 			int confirm_count = 0;
-			system::shared* shared_memo_ = nullptr;
-			int shared_used_ = 0;
 			bool port::open(bool _ownedview) {
 				string name;
 				ROBO_LBREAKN( name.format( RT(ROBO_CAN_CHANNEL_SHARED_FILE_NAME), channel) );
@@ -119,7 +117,7 @@ namespace robo {
 				close();
 				open();
 			}
-			void port::pool(void) {
+			void port::poll(void) {
 				switch (shared_->out.state) {
 				case PACKET_REFUSE:
 					shared_->out.state = PACKET_EMPTY;
@@ -219,7 +217,7 @@ namespace robo {
 								}
 								pshared = index_;
 								for (int i = 0; i < nodes_count_; ++i, ++pshared) {
-									if(*pshared != winner_ || (*pshared)->owned_view)
+									if( *pshared != winner_ || (*pshared)->owned_view)
 										(*pshared)->received.state = PACKET_COMPLETE;
 								}
 								winner_->out.state = PACKET_COMPLETE;
@@ -231,7 +229,7 @@ namespace robo {
 				}
 				virtual void do_priotitet_run(double _time) {
 					for (int i = 0; i < test_ports_count_; i++) {
-						test_ports_[i]->pool();
+						test_ports_[i]->poll();
 					}
 					tick_count++;
 

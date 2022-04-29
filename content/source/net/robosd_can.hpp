@@ -33,7 +33,7 @@ namespace robo {
 			virtual bool send(uint32_t _id, const  uint8_t* _buf, uint8_t  _len) = 0;
 			virtual bool ready(void) = 0;
 			virtual void reset(void) = 0;
-			virtual void pool(void) = 0;
+			virtual void poll(void) = 0;
 
 			ican(void);
 			bool reg(cstr _caption);
@@ -54,7 +54,7 @@ namespace robo {
 			virtual bool send(uint32_t /*_id*/, const uint8_t* /*_buf*/, uint8_t  /*_len*/) { return false; }
 			virtual bool ready(void) { return false; }
 			virtual void reset(void) {}
-			virtual void pool(void) {}
+			virtual void poll(void) {}
 			static can_dummy& instance(void);
 		};
 	}
