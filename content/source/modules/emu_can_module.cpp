@@ -60,7 +60,7 @@ namespace MODULE_NAME{
 		robo::time_us_t wd_us(const robo::net::can_flow_bus::packet* _packet) {
 			return _packet->len * 100;
 		}
-		bool begin(robo::cstr _sect) {
+		bool do_load(robo::cstr _sect) {
 			ROBO_LBREAKN(robo::ini::load(_sect, RT("CHANNEL"), can_.channel));
 			ROBO_LBREAKN(robo::ini::load(_sect, RT("REPEAT_MAX_COUNT"), can_.repeat_max_count));
 			ROBO_LBREAKN(can_.open());
@@ -123,7 +123,8 @@ namespace MODULE_NAME{
 			}*/
 		}
 		virtual bool do_load(void) { 
-			ROBO_LBREAKN(robo::ini::load(alias(), RT("BUS_COUNT"), bus_count_));
+			ROBO_LBREAKN(robo::app::module::do_load());
+			ROBO_LBREAKN(robo::ini::load(current_path(), RT("BUS_COUNT"), bus_count_));
 			if (bus_count_ > 0) {
 				buses_ = new robo::net::can_flow_bus * [bus_count_];
 				drivers_ = new driver * [bus_count_];
@@ -137,14 +138,12 @@ namespace MODULE_NAME{
 				b = buses_;
 				d = drivers_;
 				for (int i = 0; i < bus_count_; ++i, ++b, ++d) {
-					(*d) = new driver;
+					robo::string name(RT("channel-%d"), i + 1);
+					(*d) = new driver(name, this);
 					ROBO_LBREAKN((*d)!=nullptr)
-					robo::string name(RT("%s_%d"),alias(),i+1);
+					name.format(RT("bus-%d"), i+1);
 					(*b) = new robo::net::can_flow_bus(name,this,**d);
-					ROBO_LBREAKN((*b) != nullptr);
-					ROBO_LBREAKN((*b)->load());
-					ROBO_LBREAKN((*d)->phys::begin(name));
-					(*d)->begin();
+					ROBO_LBREAKN((*b) != nullptr);					
 				}
 			}
 			return true; 

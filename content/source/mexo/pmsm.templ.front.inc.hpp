@@ -21,19 +21,27 @@ namespace mexo {
 			template<typename types> struct action_t {
 				PMSM_ACTUATOR_TEMPLATE_SUB_NAME::action_t<types> actuator;
 				#if PMSM_SYNC_VOLTAGE_MODE_ENABLED == 1 || PMSM_SYNC_CURRENT_MODE_ENABLED == 1
-				typename types::long_signal_t freq;
-				typename types::long_signal_t angle;
+				mexo_proto_long_signal_t freq;
+				mexo_proto_long_signal_t angle;
 				struct{
-					typename types::signal_t voltage;
-					typename types::signal_t current;
+					mexo_proto_signal_t voltage;
+					#if LAT_CURRENT_REGULATOR_ENABLED == 1
+					mexo_proto_signal_t current;
+					#endif
 				} lateral;
 				#endif
 			};
 			template<typename types>struct feedback_t {
-				PMSM_ACTUATOR_TEMPLATE_SUB_NAME::action_t<types> actuator;
+				PMSM_ACTUATOR_TEMPLATE_SUB_NAME::feedback_t<types> actuator;
+				struct {
+					mexo_proto_signal_t voltage;
+					#if LAT_CURRENT_MEASSURY_ENABLED == 1
+					mexo_proto_signal_t current;
+					#endif
+				} lateral;			
 			};
 		};
-	}
+	}	
 }
 
 #define TEMPL_FINISH

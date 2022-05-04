@@ -255,10 +255,11 @@ namespace mexo {
 		virtual  ~dev(void){}
 			
 		typedef front::dev::action_s action_s;
-		typedef front::dev::feetback_s feetback_s;
+		typedef front::dev::feedback_s feetback_s;
 
 		struct present_s {
 			int mode;
+			bool action_actual;
 		};
 		struct config_s {
 			int tag;
@@ -308,8 +309,10 @@ namespace mexo {
 		idle_mode idle;
 		dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config);
 		void switch_to(int _mode);
-		void action_enable() { action_enabled_ = true;  }
-		void action_disable() { action_enabled_ = false; }
+		void action_enable(void) { action_enabled_ = true;  }
+		void action_disable(void) { action_enabled_ = false; }
+		void action_update(void) { present_.action_actual = true; }
+
 	protected:
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_create_vars(void);

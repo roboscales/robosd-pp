@@ -450,9 +450,9 @@ namespace mexo {
 			guard__;
 			switch_to(action_.mode);
 		}
-		if (action_.actual) {
+		if (present_.action_actual) {
 			guard__;
-			action_.actual = false;
+			present_.action_actual = false;
 			if (action_enabled_) {
 				actual_mode_->applay_action();
 			}
@@ -471,7 +471,7 @@ namespace mexo {
 		}
 		if (var::machine::actual_mode() >= var::machine::mode::config) {
 			var::record::create(var::uint8, action_.mode, RT("act.dev.mode"), key(), vars);
-			var::record::create(var::uint8, action_.actual, RT("act.dev.actual"), key(), vars);
+			var::record::create(var::uint8, present_.action_actual, RT("act.dev.actual"), key(), vars);
 		}
 	}
 	#endif

@@ -3,6 +3,7 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_ring_buf.hpp"
 #include <algorithm>
+#include <iostream>
 
 namespace robo {
 	int32_t hash(cstr _src, int32_t _begin) {
@@ -63,10 +64,19 @@ namespace robo {
 #endif
 
 namespace robo {
+	
 	system& system::instance_(void) {
 		static system instance__;
 		return instance__;
 	}
+
+	#if ROBO_APP_ENV_ENABLED == 1
+	#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+	int system::lock_count_ = 0;
+	int system::guest_count_ = 0;
+	#endif
+	#endif
+
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	class allocator {
 		friend class system;
@@ -185,77 +195,74 @@ namespace robo {
 	allocator allocator::instance_;
 	#endif
 
-	void* system::enter_() {
-		#if ROBO_APP_ENV_ENABLED == 1
-		if (state_ == state::enabled) {
-			if (env::is_frontend()) {
-				void* context_ = env::enter();
-				guest_count_++;
-				return context_;
-			}
-			else {
-				if (lock_count_ == 0) {
-					env::lock();
-				}
-				lock_count_++;
-			}
-		}
-		#endif
-		return nullptr;
-	}
-
-	void system::leave_(void* context_) {
-		#if ROBO_APP_ENV_ENABLED == 1
-		if (state_ == state::enabled) {
-			if (env::is_frontend()) {
-				guest_count_--;
-				env::leave(context_);
-			}
-			else {
-				if (lock_count_ > 0) {
-					lock_count_--;
-					if (lock_count_ == 0) {
-						env::unlock();
-					}
-				}
-			}
-		}
-		#endif
-	}
-
 	system::guard::guard(void) {
-		context_ = system::instance_().enter_();
+		#if ROBO_APP_ENV_ENABLED == 1
+		if (env::is_frontend()) {
+			critical_op_ = env::critical_enter();
+			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+			guest_count_++;			
+			context_ = context::frontend;
+			#endif
+			op_ = env::enter();
+		}
+		else {
+			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+			lock_count_++;
+			context_ = context::backend;
+			#endif
+			op_ = env::lock();
+		}
+		#else
+		op_ = guard::op::skip;
+		#endif
 	}
 
 	system::guard::~guard(void) {
-		system::instance_().leave_(context_);
+		#if ROBO_APP_ENV_ENABLED == 1
+		if (env::is_frontend()) {
+			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+			guest_count_--;
+			ROBO_APP_ASSERT(context_ == context::frontend);
+			ROBO_APP_ASSERT(guest_count_ >= 0);
+			#endif
+
+			if (op_ == system::guard::op::enter)
+				env::leave();
+			if (critical_op_ == system::guard::op::enter) 
+				env::critical_leave();
+		}
+		else {
+			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+			lock_count_--;
+			ROBO_APP_ASSERT(lock_count_ >= 0);
+			ROBO_APP_ASSERT(context_ == context::backend);
+			#endif
+			if (op_ == system::guard::op::enter)
+				env::unlock();
+		}
+		#endif
 	}
 
-	void* system::critical_enter_(void) {
+
+
+	system::critical::critical(void) {
 		#if ROBO_APP_ENV_ENABLED == 1
 		//быстрым процессам сдесь делать нечего - это разборки между потоками "фронткнд"
 		ROBO_APP_ASSERT(env::is_frontend());
-		return system::env::critical_enter();
-		#else
-		return nullptr;
+		op_ = system::env::critical_enter();
+		#else 
+		op_ = guard::op::skip;
 		#endif
-	}
-
-	void system::critical_leave_(void* _context) {
-		#if ROBO_APP_ENV_ENABLED == 1
-		ROBO_APP_ASSERT(env::is_frontend());
-		system::env::critical_leave(_context);
-		#else
-		ROBO_UNUSED(_context);
-		#endif
-	}
-
-	system::critical::critical(void) {
-		context_ = system::instance_().critical_enter_();
 	}
 
 	system::critical::~critical(void) {
-		system::instance_().critical_leave_(context_);
+		#if ROBO_APP_ENV_ENABLED == 1
+		ROBO_APP_ASSERT(env::is_frontend());
+		if (op_ == guard::op::enter)
+			system::env::critical_leave();
+		#else
+		ROBO_UNUSED(_context);
+		#endif
 	}
 
 	system::system(void) {
@@ -345,20 +352,26 @@ namespace robo {
 	}
 	#endif
 	
-	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
-	ring_t<16, char_t > print_buffer_;
+	#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+	#ifndef ROBO_APP_BACKEND_PRINT_BUFFER_BITS
+	#define ROBO_APP_BACKEND_PRINT_BUFFER_BITS 10
+	#endif
+	#ifndef ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE
+	#define ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE 20
+	#endif
+	ring_t<ROBO_APP_BACKEND_PRINT_BUFFER_BITS, char_t > print_buffer_;
 	#endif
 
 	void system::frontend_loop(void) {
 		#if ROBO_APP_MODULE_ENABLED == 1
 		env::frontend_loop();
 		#endif
-		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
-		char_t tmp[255];
+		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+		char_t tmp[ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE+1];
 		size_t sz;
 		{
 			system::guard g__;
-			sz = print_buffer_.get(tmp, 254);
+			sz = print_buffer_.get(tmp, ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE);
 			tmp[sz] = 0;
 		}
 		if(sz>0)

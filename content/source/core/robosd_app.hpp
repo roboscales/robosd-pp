@@ -50,11 +50,39 @@ namespace robo {
 
 			bool init(cstr _name, node* _owner);
 			node(cstr _name, node* _owner);
+		private:
+			#ifndef ROBO_APP_NODE_PATH_SIZE
+			#define ROBO_APP_NODE_PATH_SIZE 1024
+			#endif 
+			struct path_root {
+				enum { size = ROBO_APP_NODE_PATH_SIZE };
+				char_t* buf_ = nullptr;
+				char_t* top_ = nullptr;
+				size_t space_ = 0;
+				static path_root& ref(void) {
+					static path_root path_root_;
+					return path_root_;
+				}
+			};
+			char_t* store_top_ = nullptr;
+			void path_push_(void);
+			void path_pop_(void);
+		protected:
+			friend class path;
+			struct path {
+				node& node_;
+			public:
+				path(node& _node);
+				~path(void);
+				cstr value(void);
+			};
+			cstr current_path(void);
 		public:
 			bool load(void);
 			void clean(void);
 			cstr name(void) { return name_; }
-			void path(string& _path);
+			//void push_path(string& _path);
+			robo::cstr tree_path(void);
 			state actual_state(void) { return actual_state_; }
 			const cstr alias(void) { return alias_.length() == 0 ? name_ : alias_.c_str(); };
 
@@ -62,6 +90,7 @@ namespace robo {
 			virtual ~node(void);
 
 			static node* find(cstr _path) { return index_().find(hash(_path)); }
+			static node* find(int _hash) { return index_().find(_hash); }
 		};
 
 		class wrapper;

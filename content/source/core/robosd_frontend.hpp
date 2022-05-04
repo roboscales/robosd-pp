@@ -324,25 +324,24 @@ namespace robo {
 		};
 
 
-		template<class D> class devagent : public D {
+		template<class D> class devagent_t : public D {
 		public:
 
-			typedef typename D::iaction A;
-			typedef typename D::ifeedback F;
+			typedef typename D::action_s A;
+			typedef typename D::feedback_s F;
 
-			struct ifront {
+			struct front_s {
 
 				A& action;
 				F& feedback;
-				ifront(
+				front_s(
 					A& _action
 					, F& _feedback
 				) : action(_action), feedback(_feedback) {}
 			} front;
-			devagent(
-				A& _action
-				, F& _feedback
-			) : front(_action, _feedback) {}
+			devagent_t(
+				D * _content
+			) : front(_content->action, _content->feedback) {}
 		};
 
 

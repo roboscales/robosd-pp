@@ -29,15 +29,19 @@ namespace mexo {
 
 				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				typename types::signal_t speed;
+				mexo_proto_signal_t speed;
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				typename types::long_signal_t position;
+				mexo_proto_long_signal_t position;
 				#endif
 			};
 			template<typename types>struct feedback_t {
 				ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
+				#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
+				mexo_proto_signal_t speed;
+				mexo_proto_long_signal_t position;
+				#endif
 			};
 		}
 	}

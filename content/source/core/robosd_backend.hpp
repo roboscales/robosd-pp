@@ -153,9 +153,9 @@ namespace robo {
 		};
 
 
-		class idevagent : public app::node {
+		class devagent : public app::node {
 		public:
-			typedef  ::robo::list::sorted<idevagent, int> bus_index;
+			typedef  ::robo::list::sorted<devagent, int> bus_index;
 			typedef  bus_index::ref bus_ref;
 			class ROBO_EXPORT  stream {
 			public:
@@ -176,7 +176,7 @@ namespace robo {
 					void confirm();
 					msg(void);
 					virtual bool prepare();
-					inline idevagent * own_agent() { return stream_ == nullptr ? nullptr : &stream_->own_agent(); }
+					inline devagent * own_agent() { return stream_ == nullptr ? nullptr : &stream_->own_agent(); }
 				};
 
 				typedef signal::performer::priority priority;
@@ -184,40 +184,42 @@ namespace robo {
 				typedef  list::ref ref;
 			private:
 				ref ref_;
-				idevagent& agent_;
+				devagent& agent_;
 			public:
-				inline idevagent& own_agent() { return agent_; }
-				stream(idevagent& _agent, priority _priority);
+				inline devagent& own_agent() { return agent_; }
+				stream(devagent& _agent, priority _priority);
 				virtual ~stream();
 				virtual bool exchange_need() = 0;
 				virtual query_result query(robo_tran_t& _tran) = 0;
 				virtual void confirm(const robo_tran_t& _tran) = 0;
 				query_result query(msg* _msg);
 			};
-			typedef common::idevagent::istate state;
-			typedef common::idevagent::icommand command;
-			typedef common::idevagent::istatus status;
+			typedef common::devagent::state_s state_s;
+			typedef common::devagent::commands commands;
+			typedef common::devagent::statuses statuses;
 
 		private:
 			boardagent& boardagent_;
 			dev_id_t dev_id_;
 			bus_ref bus_ref_;
 			int bus_order_ = 0;
+			string bus_name_ = 0;
+			string router_name_ = 0;
 			router* router_ = nullptr;
-			state actual_state_;
+			state_s actual_state_;
 			stream::list streams_;
-			command actual_command_ = command::stop;
+			commands actual_command_ = commands::stop;
 		protected:
-			void perform_command(command _command) {
+			void perform_command(commands _command) {
 
 			}
 			virtual void apply_action(void) {};
 			virtual void uppdate_feedback(void) {};
 
-			bool exchabge_enabled(void) { return actual_state_.local > state::ilocal::disabled; }
+			bool exchabge_enabled(void) { return actual_state_.local > state_s::locals::disabled; }
 			bool configure_complete(void) {
-				ROBO_LBREAKN(actual_state_.local == state::ilocal::configure);
-				actual_state_.local = state::ilocal::ready;
+				ROBO_LBREAKN(actual_state_.local == state_s::locals::configure);
+				actual_state_.local = state_s::locals::ready;
 				return true;
 			}
 			virtual bool do_load(void);
@@ -225,50 +227,27 @@ namespace robo {
 			virtual bool do_start(void);
 
 		public:
+			//статистика  трафика
 			itrafic trafic;
-
+			
+			//идентификатор устройства
 			const dev_id_t& dev_id(void) { return dev_id_; };
-			void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 
+			//функци€ дл€ диспетчера, который опрашивает агент что и когда посылать
 			stream::query_result query(stream::msg* _msg);
 
-			idevagent(cstr _name, boardagent& _boardagent);
-
+			//функци€ дл€ диспетчера, определ€юща€ запись в таблице маршрутизации
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 
-			status actual_status(void) {
-				static const status tb[] =
-				{
-					//icommand
-					//stop = 0,			sw2service = 1,		raise_fault = 2,	sw2independed = 3,	sw2dirrect = 4,	reset_fault = 5
-					//unknown
-					status::unknown,	status::unknown,	status::unknown,	status::unknown,	status::unknown,	status::unknown,
-					//stopped
-					status::stopped,	status::stopped,	status::stopped,	status::stopped,	status::stopped,	status::stopped,
-					//fault
-					status::fault,		status::fault,		status::fault,		status::fault,		status::fault,		status::busy,
-					//run
-					status::busy,		status::service,	status::busy,		status::independed,status::dirrect,	status::busy,
-					//broke
-					status::broke,		status::broke,		status::broke,		status::broke,		status::broke,		status::broke
-				};
-				switch (actual_state_.local) {
-				case state::ilocal::unknown:
-				return status::unknown;
-				case state::ilocal::disabled:
-				return status::disabled;
-				case state::ilocal::configure:
-				return status::busy;
-				case state::ilocal::ready:
-				return tb[((int)actual_state_.remote * 5) + (int)actual_command_];
-				default:
-				return status::unknown;
-				}
-			}
+			devagent(cstr _name, boardagent& _boardagent);
 
-			command actual_command(void) { return actual_command_; };
-			state::ilocal local_state(void) { return  actual_state_.local; };
-			state::iremote remote_state(void) { return  actual_state_.remote; };
+			//тенкущий (вычисл€емый) статус
+			statuses actual_status(void);
+			//тенкуща€ команда
+			commands actual_command(void) { return actual_command_; };
+			const state_s & actual_state(void) { return  actual_state_; };
+			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
+
 		};
 
 		class ROBO_EXPORT bus : public app::node {
@@ -278,21 +257,21 @@ namespace robo {
 		private:
 			index_ref index_ref_;
 		public:
-			class ROBO_EXPORT msg : public idevagent::stream::msg {
+			class ROBO_EXPORT msg : public devagent::stream::msg {
 			public:
 				router::record::address_t address;
 				router::record::suba_t suba;
 				bus* ownbus;
-				msg(void) : idevagent::stream::msg(), ownbus(0) {}
+				msg(void) : devagent::stream::msg(), ownbus(0) {}
 				virtual ~msg() {}
 				virtual bool  prepare(void);
 				virtual void release(void) {}
 			} message_;
 
 		private:
-			friend class idevagent;
-			idevagent::bus_ref* current_agent_ref_ = nullptr;
-			idevagent::bus_index agents_;
+			friend class devagent;
+			devagent::bus_ref* current_agent_ref_ = nullptr;
+			devagent::bus_index agents_;
 			void refuse__(void);
 			friend class api;
 			bool request_(void);
@@ -310,8 +289,8 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			int id(void) { return index_ref_.key(); }
 			itrafic trafic;
+			int id(void) { return index_ref_.key(); }
 			bus(cstr _name, app::module* _owner);
 			virtual ~bus(void);
 			void confirm(robo_tran_status_t _result);
@@ -319,12 +298,12 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D> class devagent : public ::robo::frontend::devagent<D>, public ::robo::backend::idevagent, public ::robo::frontend::shared {
+		template<class D> class devagent_t : public ::robo::frontend::devagent_t<D>, public ::robo::backend::devagent, public ::robo::frontend::shared {
 		public:
-			typedef typename D::iaction A;
-			typedef typename D::ifeedback F;
+			typedef typename D::action_s A;
+			typedef typename D::feedback_s F;
 			A goal;
-			typename F::ipresent  present;
+			typename D::present_s  present;
 		private:
 			const void* action_addr_begin_;
 			const void* action_addr_end_;
@@ -339,31 +318,31 @@ namespace robo {
 			};
 
 			virtual void apply_action(void) {
-				perform_command(::robo::frontend::devagent<D>::front.action.command);
-				present.status = actual_status();
-				if (present.status == status::dirrect) {
-					goal = ::robo::frontend::devagent<D>::front.action;
+				perform_command(::robo::frontend::devagent_t<D>::front.action.agent.command);
+				present.agent.status = actual_status();
+				if (present.agent.status == statuses::dirrect) {
+					goal = ::robo::frontend::devagent_t<D>::front.action;
 				}
 				//action.deseired = ::robo::frontend::devagent<D>::front.action.deseired;
 			}
 
 			virtual void uppdate_feedback(void) {
-				present.status = actual_status();
-				::robo::frontend::devagent<D>::front.feedback.present = present;
-				::robo::frontend::devagent<D>::front.feedback.goal = goal;
+				present.agent.status = actual_status();
+				::robo::frontend::devagent_t<D>::front.feedback.present = present;
+				::robo::frontend::devagent_t<D>::front.feedback.goal = goal;
 			}
 		public:
-			devagent(cstr _name, boardagent& _boardagent, A& _action, F& _feedback) :
-				::robo::frontend::devagent<D>(_action, _feedback)
-				, ::robo::backend::idevagent(_name, _boardagent)
-				, action_addr_begin_((void*)&::robo::frontend::devagent<D>::front.action)
+			devagent_t(cstr _name, boardagent& _boardagent, D * _content) :
+				::robo::frontend::devagent_t<D>(_content)
+				, ::robo::backend::devagent(_name, _boardagent)
+				, action_addr_begin_((void*)&::robo::frontend::devagent_t<D>::front.action)
 				, action_addr_end_((void*)((uint8_t*)action_addr_begin_ + sizeof(A) / sizeof(uint8_t)))
-				, feedback_addr_begin_((void*)&::robo::frontend::devagent<D>::front.feedback)
+				, feedback_addr_begin_((void*)&::robo::frontend::devagent_t<D>::front.feedback)
 				, feedback_addr_end_((void*)((uint8_t*)feedback_addr_begin_ + sizeof(F) / sizeof(uint8_t))) {}
 		};
 
 		class boardagent : public app::node {
-			friend class idevagent;
+			friend class devagent;
 			time_us_t request_pause_us_ = 0;
 			time_us_t last_request_us_ = 0;
 		protected:
@@ -373,7 +352,7 @@ namespace robo {
 			boardagent(cstr _name, app::module& _owner) :app::node(_name, &_owner) {};
 		};
 
-		class contrltable : public idevagent::stream, frontend::contrltable {
+		class contrltable : public devagent::stream, frontend::contrltable {
 		private:
 			int command_;
 		public:
@@ -768,7 +747,7 @@ namespace robo {
 			virtual query_result query(robo_tran_t& _tran);
 			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
-			contrltable(idevagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
+			contrltable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
 			bool query(void);
 			bool query(frontend::contrltable::ivar::delegat& _delegat);
 			bool ready(void);
@@ -783,7 +762,7 @@ namespace robo {
 				base* selected_ = nullptr;
 				base* runned_ = nullptr;
 				time_us_t period_us_;
-				idevagent** owned_ = nullptr;
+				devagent** owned_ = nullptr;
 				size_t owned_count_ = 0;
 				bool attached_ = false;
 				void begin_process_(base* _runned);
@@ -793,8 +772,8 @@ namespace robo {
 			public:
 				void switchto(base* _process);
 				controller(void);
-				controller(idevagent** _owned, size_t _owned_count);
-				void  setup(idevagent** _owned, size_t _owned_count);
+				controller(devagent** _owned, size_t _owned_count);
+				void  setup(devagent** _owned, size_t _owned_count);
 				virtual ~controller(void);
 				void agents_set_stop_mode(void);
 				void agents_raise_fault(void);

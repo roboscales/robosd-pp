@@ -49,6 +49,10 @@
 #define ROBO_APP_SHARED_ENABLED (ROBO_APP_SHARED_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_ALLOC_ENABLED (ROBO_APP_ALLOC_TYPE != ROBO_APP_TYPE_NONE)
 
+#ifndef ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED
+#define ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED 0
+#endif
+
 #if ROBO_APP_SYSTEM_ENABLED  == 1
 namespace robo {
 	/*!
@@ -85,18 +89,36 @@ namespace robo {
 	private:
 		mem::stat memstat_;
 	#endif
+	public:
+		enum class context { backend, frontend };
+
+		/*!
+		*  если выполняется в контексте backend - все конкурирующие потоки frontend ( в контекесте ОС )
+		*  если выполняется в контексте frontend  - останавливает поток backend  и все конкурирующие потоки frontend ( в контекесте ОС )
+		*/
+		class ROBO_EXPORT guard {
+		public:
+			enum class op { enter, skip };
+		private:
+			op op_;
+			op critical_op_;
+			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+			context context_;
+			#endif
+		public:
+			guard(void);
+			~guard(void);
+		};
+
 	private:
 		static system & instance_(void);
 		enum  class state { enabled = 178, unknown = -178 };
 		state state_ = state::unknown;
 		#if ROBO_APP_ENV_ENABLED == 1
-		int lock_count_ = 0;
-		int guest_count_ = 0;
+		#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+		static int lock_count_;
+		static int guest_count_;
 		#endif
-		void* enter_(void);
-		void leave_(void* context_);
-		void* critical_enter_(void);
-		void critical_leave_(void* _context);
 
 		#if ROBO_APP_ALLOC_ENABLED == 1
 		void* mem_alloc_(size_t _sz);
@@ -107,21 +129,11 @@ namespace robo {
 		~system(void);
 	public:
 		/*!
-		*  если выполняется в контексте backend - все конкурирующие потоки frontend ( в контекесте ОС )
-		*  если выполняется в контексте frontend  - останавливает поток backend  и все конкурирующие потоки frontend ( в контекесте ОС )
-		*/
-		class ROBO_EXPORT guard {
-			void* context_;
-		public:
-			guard(void);
-			~guard(void);
-		};
-		/*!
 		 *  если выполняется в контексте frontend  - останавливает все конкурирующие потоки frontend ( в контекесте ОС )
 		 *  в backend ни вкоем случае запукать нельзя!
 		 */
 		class ROBO_EXPORT critical {
-			void* context_;
+			guard::op op_;
 		public:
 			critical(void);
 			~critical(void);
@@ -148,7 +160,6 @@ namespace robo {
 			time_us_t	 idle_us(void);
 		};
 
-		enum class context { backend, frontend };
 		/*!
 		 *  Данный поток обозначает себя, как backend
 		 */
@@ -172,33 +183,33 @@ namespace robo {
 			 *
 			 *      @return возвращает контекст - указатель на специфическую структуру (опционно). ее надо вернуть в critical_leave
 			 */
-			static void* critical_enter(void);
+			static guard::op critical_enter(void);
 
 			/*!
 			 *  Покидаем критическую секцию.
 			 *
 			 *      @param in _context - эту структуру выдает critical_enter
 			 */
-			static void critical_leave(void* _context);
+			static void critical_leave(void);
 
 			/*!
 			 *  Блокируем backend
 			 *
 			 *      @return возвращает контекст - указатель на специфическую структуру (опционно). ее надо вернуть в leave
 			 */
-			static void* enter(void);
+			static guard::op enter(void);
 
 			/*!
 			 *  Освобождаем backend
 			 *
 			 *      @param in _context  _context - эту структуру выдает critical_enter
 			 */
-			static void leave(void* _context);
+			static void leave(void);
 
 			/*!
 			 *  Защищаем  backend - ни кто его не остановит!
 			 */
-			static void lock(void);
+			static guard::op lock(void);
 
 			/*!
 			 *  Теперь  backend можно приостановить
@@ -233,9 +244,11 @@ namespace robo {
 			static void mem_free(void* _memo);
 
 			#endif
+
 			#if ROBO_APP_MODULE_ENABLED == 1
 			static void frontend_loop(void);
 			#endif
+
 		public:
 
 			/*!
@@ -389,4 +402,5 @@ namespace robo {
 #define is_frontend__ true
 #define is_backend__ true
 #define critical__
+#endif
 #endif

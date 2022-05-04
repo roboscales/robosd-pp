@@ -13,8 +13,11 @@ namespace robo{
 			virtual void cancel(void) = 0;
 			virtual bool ready(void) = 0;
 		};
-
-		template< typename phys, typename P > class master_t: public phys, public imaster_t<P> {
+		#if ROBO_APP_MODULE_ENABLED ==1
+		template< typename phys, typename P > class master_t: public phys, public imaster_t<P>, public app::node {
+		#else
+		template< typename phys, typename P > class master_t : public phys, public imaster_t<P> {
+		#endif
 		public:
 			enum class result { refuse, success, panic };
 			private:
@@ -165,6 +168,15 @@ namespace robo{
 				guard g__;
 				return state_ == state::idle;
 			}		
+			#if ROBO_APP_MODULE_ENABLED ==1
+			master_t(cstr _name, app::node* _owner) : app::node(_name, _owner) {}
+			virtual bool do_load(void) {
+				ROBO_LBREAKN(app::node::do_load());
+				ROBO_LBREAKN(phys::do_load(current_path()));
+				return true;
+			}
+
+			#endif
 		};
 			
     }

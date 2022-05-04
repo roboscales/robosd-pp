@@ -88,6 +88,7 @@ namespace PS_TEMPLATE_NAME {
 			#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 			typename current_limmiter_b::config_s current_limmiter;
 			#endif
+			bool invers;
 		};
 
 		struct present_s {
@@ -142,7 +143,8 @@ protected:
 			::mexo::ps::dev::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
 				const action_s& action = action_cast<action_s>();
-				::mexo::var::record::create(::mexo::var::uint8, action.invers, RT("act.invers"), key(), vars);
+				const config_s& config = config_cast<config_s>();
+				::mexo::var::record::create(::mexo::var::uint8, config.invers, RT("act.invers"), key(), vars);
 				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.v"), key(), vars);
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
 				::mexo::var::record::create(typename types::var::signal, action.current, RT("act.c"), key(), vars);
@@ -197,10 +199,11 @@ protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 
 			virtual void applay_action(void) {
-				action_s& action = owner().template action_cast<action_s>();
+				const action_s& action = owner().template action_cast<action_s>();
+				const config_s& config = owner().template config_cast<config_s>();
 				present_s& present = owner().template present_cast<present_s>();
 
-				if (action.invers) {
+				if (config.invers) {
 					present.voltage_deseired = -action.voltage;
 				}
 				else {
@@ -273,9 +276,9 @@ protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 			virtual void applay_action(void) {
 				const action_s& action = owner().template action_cast<action_s>();
+				const config_s& config = owner().template config_cast<config_s>();
 				present_s& present = owner().template present_cast<present_s>();
-
-				if (action.invers) {
+				if (config.invers) {
 					present.current_deseired = -action.current;
 				}
 				else {
@@ -325,9 +328,10 @@ protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 			virtual void applay_action(void) {
 				const action_s& action = owner().template action_cast<action_s>();
+				const config_s& config = owner().template config_cast<config_s>();
 				present_s& present = owner().template present_cast<present_s>();
 
-				if (action.invers) {
+				if (config.invers) {
 					present.voltage_deseired = -action.voltage;
 				}
 				else {

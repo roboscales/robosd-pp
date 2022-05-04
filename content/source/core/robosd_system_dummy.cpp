@@ -36,11 +36,13 @@ namespace robo {
 		//::abort();
 	}
 
-	void* system::env::critical_enter(void) {
-		return nullptr;
+	system::guard::op system::env::critical_enter(void) {
+		return system::guard::op::skip;
 	}
 
-	void system::env::critical_leave(void*) {}
+	void system::env::critical_leave(void) {
+		ROBO_UNUSED(_op);
+	}
 
 
 	bool system::env::is_frontend(void) {
@@ -51,17 +53,21 @@ namespace robo {
 		return bakend_flag_ == true;
 	}
 
-	void* system::env::enter(void) {
-		return nullptr;
+	system::guard::op system::env::enter(void) {
+		return system::guard::op::skip;
 	}
 
-	void system::env::leave(void* _context) {
-		ROBO_UNUSED(_context);
+	void system::env::leave(void ) {
+		ROBO_UNUSED(_op);
 	}
 
-	void system::env::lock(void) {}
+	system::guard::op system::env::lock(void) {
+		return system::guard::op::skip;
+	}
 
-	void system::env::unlock(void) {}
+	void system::env::unlock(void) {
+		ROBO_UNUSED(_op);
+	}
 
 	void system::env::fall(void) {
 		bakend_flag_ = true;

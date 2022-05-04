@@ -12,41 +12,58 @@
 #define robosd_devagent_common_hpp
 namespace robo {
 	namespace common {
-		struct idevagent {
-			enum  icommand {
-				stop = 0,
-				sw2service = 1,
-				raise_fault = 2,
-				sw2independed = 3,
-				sw2dirrect = 4,
-				reset_fault = 5
+		namespace devagent {
+			//команды агенту исполнительного устройства
+			enum  commands {
+				stop = 0, // стоять , выключить питание, встать на тормоз и уйти из под чтего-дибо управления
+				sw2service = 1, // переключиться в сервисный режим. С этого момента команды на устройство не транслируются. Оно полностью под управлением  стороннего ПО
+				raise_fault = 2, // принудительно встаем на ощибку. Исполнительное устройство тоже становится на ошибку
+				sw2independed = 3, // устрйоство захватывается ядром сервера робота. Теперь только оно может управлять устройством
+				sw2dirrect = 4, //устройство отдается под прямое управлдение системе управления верхнего уровня
+				reset_fault = 5 //сбросить ошибку
 			};
-			struct istate {
-				enum class ilocal {
-					unknown = 0,
-					disabled = 1,
-					configure = 2,
-					ready = 3
-				} local = ilocal::unknown;
+			//состояние исполнительного устройства
+			struct state_s {
+				//состояние агента
+				enum class locals {
+					unknown = 0, //неясное
+					disabled = 1, // анент исключен из обмена
+					configure = 2, //конфигурация агента
+					ready = 3 //агент готов к работе и участвует в обмене
+				} local = locals::unknown;
 
-				enum class iremote {
-					unknown = 0,
-					stopped = 1,
-					fault = 2,
-					run = 3,
-					broke = 4
-				} remote = iremote::unknown;
+				struct remote_s {
+					enum class statuses {
+						unknown = 0, //неясное
+						fault = 2, //устрйоство находится в аварии
+						ready = 3, //устройство работает в штатном режиме
+					} status = statuses::unknown;
+					enum class powers {
+						unknown = 0, //неясное
+						off = 1, //силовое питание выключено, устройство разблокировано 
+						on = 2, //силовое питание включено, устройство разблокировано 
+						locked = 3, //силовое питание включено, но устройство заблокировано
+						unlocked = 4, //силовое питание выключено, но устройство  предоставлено само себе
+					} power = powers::unknown;
+				} remote;
 			};
-			enum class istatus {
-				unknown = 0,
-				disabled = 1,
-				busy = 2,
-				stopped = 3,
-				fault = 4,
-				dirrect = 5,
-				independed = 6,
-				service = 7,
-				broke = 8
+			//интегральный статус исполнительного устройства
+			enum class statuses {
+				unknown = 0,//неясное
+				disabled = 1, // анент исключен из обмена
+				busy = 2, // происходит смена состояния
+				idle = 3, //устройство не находится ни под чьим управлением и прнудительно выключено
+				fault = 3,//устрйоство находится в аварии
+				dirrect = 4, //устройство работает под прямым управлдением системы управления верхнего уровня
+				independed = 5, //устройство работает под автономным  управлдением
+				service = 6, //устройство работает под управлдением стороннего ПО
+			};
+			struct action_s {
+				commands command;
+			};
+			struct feedback_s {
+				state_s state;
+				statuses status;
 			};
 		};
 	}

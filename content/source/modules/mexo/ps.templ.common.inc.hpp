@@ -14,16 +14,17 @@ namespace mexo {
 			}; };
 			template<typename types> struct action_t {
 				dev::action_s dev;
-				mexo_proto_signal_t voltage;
+				bool invers;
+				typename types::signal_t voltage;
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-				mexo_proto_signal_t current;
+				typename types::signal_t current;
 				#endif
 			};
 			template<typename types>struct feedback_t {
-				dev::feedback_s dev;
-				mexo_proto_signal_t voltage;
+				dev::feetback_s dev;
+				typename types::signal_t voltage;
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-				mexo_proto_signal_t current;
+				typename types::signal_t current;
 				#endif
 			};
 		}

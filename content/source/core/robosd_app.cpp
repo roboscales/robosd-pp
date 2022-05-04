@@ -29,7 +29,7 @@ namespace robo {
 
 
 		bool node::do_load(void) {
-			alias_.tryload(name_, RT("ALIAS"));
+			alias_.tryload(current_path(), RT("ALIAS"));
 			return true;
 		};
 
@@ -50,51 +50,126 @@ namespace robo {
 			}
 
 			owner_ = _owner;
-
 			if (owner_ != nullptr) {
-				ROBO_LBREAKN(name_ != nullptr)
-					ROBO_LBREAKN(own_ref_.set_key(hash(name_)))
-					ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
 				ref_.attach_to(owner_->disabled_);
 			}
+
 			actual_state_ = state::clean;
 
-			if (name_ && name_[0]) {
-				string ph;
-				path(ph);
+			/*if (name_ && name_[0]) {
 				index_ref_.set_key(hash(ph));
 				index_ref_.attach_to(index_());
 			}
+			*/
 			return true;
 		}
 
-		void node::path(string& _path) {
+		void node::path_push_(void) {
+			path_root& root_ = path_root::ref();
+			if (owner_ == nullptr) {
+				if (root_.buf_ == nullptr) {
+					root_.buf_ = new char_t[path_root::size];
+				}
+				root_.buf_[0] = 0;
+				root_.top_ = root_.buf_;
+				store_top_ = root_.top_ = root_.buf_;
+				root_.space_ = path_root::size-1;
+			}
+			else {
+				size_t n;
+				if (root_.space_ > 1) {
+					if (root_.buf_[0] == 0) {
+						size_t sz = store_name_.length();
+						n = sz <= root_.space_ ? sz : root_.space_;
+						std::copy_n(name_, n, root_.top_);
+					}
+					else {
+						size_t sz = store_name_.length() + 1;
+						n = sz <= root_.space_ ? sz : root_.space_;
+						*(root_.top_) = '.';
+						std::copy_n(name_, n - 1, root_.top_ + 1);
+					}
+				}
+				else {
+					n = 0;
+				}
+				store_top_ = root_.top_;
+				root_.top_ += n;
+				root_.space_ -= n;
+				*root_.top_ = 0;
+			}
+		}
+		void node::path_pop_(void) {
+			path_root& root_ = path_root::ref();
+			if (owner_ == nullptr) {
+				if (root_.buf_ == nullptr) {
+					delete[] root_.buf_;
+					root_.buf_ = nullptr;
+				}
+				root_.top_ = 0;
+				root_.space_ = 0;
+				store_top_ = nullptr;
+			}
+			else {
+				root_.space_ += (root_.top_- store_top_);
+				root_.top_ = store_top_;
+				*root_.top_ = 0;
+				store_top_ = nullptr;
+			}
+		}
+
+		/*void node::path(string& _path) {
 			if (_path.length() > 0)
-				_path.format(RT("%s/%s"), name_, _path.c_str());
+				_path.format(RT("%s.%s"), name_, _path.c_str());
 			else
 				_path = name_;
 			if (owner_ && owner_ != &machine::root()) owner_->path(_path);
+		}*/
+
+		node::path::path(node& _node) 
+			: node_(_node) { 
+			node_.path_push_(); 
 		}
-
+		node::path::~path(void) { 
+			node_.path_pop_(); 
+		}
+		cstr node::path::value(void) {
+			return path_root::ref().buf_;
+		}
+		cstr node::current_path(void) {
+			cstr s = path_root::ref().buf_;
+			return ( (s == nullptr) || (*s==0 ))? name_:s;
+		}
 		bool node::load(void) {
+			ROBO_LBREAKN(name_ != nullptr);
+			{
+				path pt_(*this);
+				index_ref_.set_key(hash(pt_.value()));
+				index_ref_.attach_to(index_());
 
-			ROBO_LBREAKN(do_load());
-			if (owner_)
-				ref_.attach_to(owner_->stopped_);
+				if (owner_ != nullptr) {
+					ROBO_LBREAKN(own_ref_.set_key(index_ref_.key()));
+					ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
+				}
 
-			ref* r = disabled_.first();
-			while (r) {
-				node& c = r->owner();
-				r = r->next();
-				ROBO_LBREAKN(c.load());
+				ROBO_LBREAKN(do_load());
+				if (owner_)
+					ref_.attach_to(owner_->stopped_);
+
+				ref* r = disabled_.first();
+				while (r) {
+					node& c = r->owner();
+					r = r->next();
+					ROBO_LBREAKN(c.load());
+				}
+				ROBO_LBREAKN(disabled_.count() == 0)
+
+					robo_applog("node '%s' is loaded", alias());
+
+				robo_detaillog(7, ::robo::log::mask::disabled, "aaa", 1, 33);
+
+				actual_state_ = state::stopped;
 			}
-			ROBO_LBREAKN(disabled_.count() == 0)
-
-			robo_applog("node '%s' is loaded", alias());
-
-			robo_detaillog(7, ::robo::log::mask::disabled, "aaa", 1, 33);
-
-			actual_state_ = state::stopped;
 			return true;
 		}
 
@@ -435,6 +510,7 @@ namespace robo {
 		}
 
 		bool machine::do_load(void) {
+			ROBO_LBREAKN(node::do_load());
 			req_state_ = req_state::stop;
 			int modules_count = 0;
 			ROBO_LBREAKN(ini::load(RT("MODULES"), RT("COUNT"), modules_count));

@@ -303,6 +303,7 @@ namespace PMSM_TEMPLATE_NAME {
 
 		virtual void synchro_current_mode_action(void) {
 			const action_s& action = actuator_t::template action_cast<action_s>();
+			const config_s& config = actuator_t::template config_cast<config_s>();
 			present_s& present =  actuator_t::template present_cast<present_s>();
 			present.actuator.ps.current_deseired = 0;
 
@@ -315,7 +316,7 @@ namespace PMSM_TEMPLATE_NAME {
 			present.lat_current.deseired = action.lateral.current;
 			present.actuator.ps.current_deseired = action.actuator.ps.current;
 			
-			if (action.actuator.ps.invers) {
+			if (config.actuator.ps.invers) {
 				present.freq_req = -action.freq;
 				present.angle_req = -action.angle;
 			}

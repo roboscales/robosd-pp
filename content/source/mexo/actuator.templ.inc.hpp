@@ -104,9 +104,10 @@ protected:
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
 	void speed_mode_applay_action(void) {
 		const action_s& action = ::mexo::dev::action_cast<action_s>();
+		const config_s& config = ::mexo::dev::config_cast<config_s>();
 		present_s& present = ::mexo::dev::present_cast<present_s>();
 
-		if (action.ps.invers) {
+		if (config.ps.invers) {
 			present.speed_deseired = -action.speed;
 		}
 		else {
@@ -202,9 +203,10 @@ public:
 		ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
 	void position_mode_applay_action(void) {
 		const action_s& action = ::mexo::dev::action_cast<action_s>();
+		const config_s& config = ::mexo::dev::config_cast<config_s>();
 		present_s& present = ::mexo::dev::present_cast<present_s>();
 
-		if (action.ps.invers) {
+		if (config.ps.invers) {
 			present.position_deseired = -action.position;
 		}
 		else {

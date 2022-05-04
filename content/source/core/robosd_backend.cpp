@@ -277,12 +277,12 @@ namespace robo {
 		timer::~timer() {}
 		#if ROBO_APP_MODULE_ENABLED  == 1
 
-		idevagent::idevagent(cstr _name, boardagent& _boardagent)
+		devagent::devagent(cstr _name, boardagent& _boardagent)
 			: app::node(_name, &_boardagent)
 			, boardagent_(_boardagent)
 			, bus_ref_(*this, 0) {}
 
-		router::record* idevagent::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
+		router::record* devagent::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
 			if (router_->actual_mode() == router::mode::dummy) {
 				return nullptr;
 			}
@@ -295,7 +295,34 @@ namespace robo {
 			}
 		}
 
-		idevagent::stream::query_result idevagent::query(idevagent::stream::msg* _msg) {
+		devagent::statuses devagent::actual_status(void) {
+			static const statuses tb[] =
+			{
+				//icommand
+				//stop = 0,			sw2service = 1,		raise_fault = 2,	sw2independed = 3,	sw2dirrect = 4,		reset_fault = 5
+				//unknown
+				statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,
+				//fault
+				statuses::fault,	statuses::fault,	statuses::fault,	statuses::fault,	statuses::fault,	statuses::busy,
+				//ready
+				statuses::idle,		statuses::service,	statuses::busy,		statuses::independed,statuses::dirrect,	statuses::busy
+			};
+			switch (actual_state_.local) {
+			case state_s::locals::unknown:
+			return statuses::unknown;
+			case state_s::locals::disabled:
+			return statuses::disabled;
+			case state_s::locals::configure:
+			return statuses::busy;
+			case state_s::locals::ready:
+			return tb[((int)actual_state_.remote.status * 5) + (int)actual_command_];
+			default:
+			return statuses::unknown;
+			}
+		}
+
+
+		devagent::stream::query_result devagent::query(devagent::stream::msg* _msg) {
 			if (exchabge_enabled()) {
 				time_us_t tm = system::env::time_us();
 				if (boardagent_.request_pause_us_ < tm - boardagent_.last_request_us_) {
@@ -349,9 +376,9 @@ namespace robo {
 		bool bus::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
 			int bus_id;
-			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), bus_id));
+			ROBO_LBREAKN(ini::load(current_path(), RT("BUS_ID"), bus_id));
 			ROBO_LBREAKN(setup_(bus_id));
-			ROBO_LBREAKN(ini::load(name(), RT("DEFAULT_TIMEOUT_US"), default_timeout_us_))
+			ROBO_LBREAKN(ini::load(current_path(), RT("DEFAULT_TIMEOUT_US"), default_timeout_us_))
 				return true;
 		}
 
@@ -399,8 +426,8 @@ namespace robo {
 			}
 		}
 		bool bus::msg::prepare() {
-			idevagent::stream::msg::prepare();
-			idevagent& owner = stream_->own_agent();
+			devagent::stream::msg::prepare();
+			devagent& owner = stream_->own_agent();
 			const dev_id_t& id_ = owner.dev_id();
 			address = id_.address;
 			router::record* rec = owner.resolve(ownbus->id(), &(tran.header));
@@ -435,7 +462,7 @@ namespace robo {
 
 		void bus::tick1sec_(void) {
 			trafic.tick1sec();
-			for (idevagent::bus_ref* _ref = agents_.first(); _ref; _ref = _ref->next()) {
+			for (devagent::bus_ref* _ref = agents_.first(); _ref; _ref = _ref->next()) {
 				_ref->owner().trafic.tick1sec();
 			}
 		}
@@ -453,7 +480,7 @@ namespace robo {
 			case	ROBO_TRAN_EXECUTE_START:
 			case	ROBO_TRAN_EXECUTE_PHY:
 				if (now - request_begin_us_ >= timeout_us_) {
-					idevagent* broken_obj = message_.own_agent();
+					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
 						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
 					}
@@ -487,15 +514,15 @@ namespace robo {
 					if (current_agent_ref_ == nullptr) {
 						current_agent_ref_ = agents_.first();
 					}
-					idevagent::bus_ref* first_agent_ref_ = current_agent_ref_;
+					devagent::bus_ref* first_agent_ref_ = current_agent_ref_;
 
 					if (current_agent_ref_) {
 						message_.ownbus = this;
 						reset();
 						do {
-							idevagent::stream::query_result res = current_agent_ref_->owner().query(&message_);
+							devagent::stream::query_result res = current_agent_ref_->owner().query(&message_);
 							switch (res) {
-							case idevagent::stream::query_result::success:
+							case devagent::stream::query_result::success:
 							if (request_()) {
 								current_agent_ref_ = current_agent_ref_->next();
 								if (current_agent_ref_ == 0) {
@@ -504,12 +531,12 @@ namespace robo {
 								return;
 							}
 							break;
-							case idevagent::stream::query_result::repeat:
+							case devagent::stream::query_result::repeat:
 							if (request_()) {
 								return;
 							}
 							break;
-							case idevagent::stream::query_result::none:
+							case devagent::stream::query_result::none:
 							break;
 							}
 							current_agent_ref_ = current_agent_ref_->next();
@@ -571,12 +598,12 @@ namespace robo {
 		}
 		router::router(cstr _name, app::module& _owner) : app::node(_name, &_owner) {}
 
-		idevagent::stream::msg::msg(void)
+		devagent::stream::msg::msg(void)
 			: stream_(0)
 			, ref(*this)
 			{}
 
-		void idevagent::stream::msg::confirm() {
+		void devagent::stream::msg::confirm() {
 			if (stream_) {
 				stream_->confirm(tran);
 				if (tran.status == ROBO_TRAN_REFUSE) {
@@ -599,19 +626,19 @@ namespace robo {
 			tran.status = ROBO_TRAN_NONE;
 		}
 
-		bool idevagent::stream::msg::prepare() {
+		bool devagent::stream::msg::prepare() {
 			tran.status = ROBO_TRAN_NONE;
 			return true;
 		}
 
-		idevagent::stream::stream(idevagent& _agent, idevagent::stream::priority _priority) :
+		devagent::stream::stream(devagent& _agent, devagent::stream::priority _priority) :
 			ref_(*this, _priority)
 			, agent_(_agent) {
 			ref_.attach_to(agent_.streams_);
 		}
-		idevagent::stream::~stream() {}
+		devagent::stream::~stream() {}
 
-		idevagent::stream::query_result idevagent::stream::query(idevagent::stream::msg* _msg) {
+		devagent::stream::query_result devagent::stream::query(devagent::stream::msg* _msg) {
 			stream::query_result ret = query(_msg->tran);
 			if (ret != query_result::none) {
 				_msg->stream_ = this;
@@ -621,63 +648,64 @@ namespace robo {
 
 		bool boardagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
-			ROBO_LBREAKN(ini::load(name(), RT("REQUEST_PAUSE_US"), request_pause_us_));
+			ROBO_LBREAKN(ini::load( current_path(), RT("REQUEST_PAUSE_US"), request_pause_us_));
 			return true;
 		}
 		void boardagent::do_clean(void) {
 			app::node::do_clean();
 		}
 
-		bool idevagent::do_load(void) {
+		bool devagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
 			uint8_t tmp;
 			//			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), tmp));
 			//			dev_id_.bus = tmp;
-			ROBO_LBREAKN(ini::load(name(), RT("BOARD_DEV_ID"), tmp));
+			ROBO_LBREAKN(ini::load( current_path(), RT("BOARD_DEV_ID"), tmp));
 			dev_id_.dev = tmp;
-			ROBO_LBREAKN(ini::load(name(), RT("BOARD_ADDRESS"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), RT("BOARD_ADDRESS"), tmp));
 			dev_id_.address = tmp;
 
-			ROBO_LBREAKN(ini::load(name(), RT("ENABLED"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), RT("ENABLED"), tmp));
 
 			if (tmp) {
-				actual_state_.local = state::ilocal::configure;
+				actual_state_.local = state_s::locals::configure;
+				ROBO_LBREAKN(bus_name_.load(current_path(), RT("BUS_NAME")));
+				ROBO_LBREAKN(router_name_.load(current_path(), RT("ROUTER_NAME")));
 			}
 			else {
-				actual_state_.local = state::ilocal::disabled;
+				actual_state_.local = state_s::locals::disabled;
 			}
 			return true;
 		}
 
-		bool idevagent::do_start(void) {
+		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			string tmp_name;
-			ROBO_LBREAKN(tmp_name.load(name(), RT("BUS_NAME")));
-			bus* b = dynamic_cast<bus*>(find(tmp_name));
-			bus_ref_.set_key(dev_id_.value);
-			robo::system::printf(RT("%s - bus: %s - %p "), alias(), tmp_name.c_str(), (void *)b);
-			if (b) {
-				ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
-				dev_id_.bus = b->id();
-			}
-			else {
-				ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", tmp_name.c_str(), alias(), dev_id_.value)
-			}
+			if (actual_state_.local == state_s::locals::disabled) {
+				bus* b = dynamic_cast<bus*>(find(bus_name_));
+				bus_ref_.set_key(dev_id_.value);
+				robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_name_.c_str(), (void*)b);
+				if (b) {
+					ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
+					dev_id_.bus = b->id();
+				}
+				else {
+					ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_name_.c_str(), alias(), dev_id_.value)
+				}
 
-			ROBO_LBREAKN(tmp_name.load(name(), RT("ROUTER_NAME")));
-			router_ = dynamic_cast<router*>(find(tmp_name));
-			ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", tmp_name.c_str(), alias(), dev_id_.value);
-			robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+				router_ = dynamic_cast<router*>(find(router_name_));
+				ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_name_.c_str(), alias(), dev_id_.value);
+				robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+			}
 			return true;
 		}
 
-		void idevagent::do_clean(void) {
+		void devagent::do_clean(void) {
 			dev_id_.value = (uint32_t)-1;
 			bus_ref_.dettach();
 			app::node::do_clean();
 		}
 
-		contrltable::contrltable(idevagent& _agent, priority _priority, int command_, const record* const _records, size_t _count) :
+		contrltable::contrltable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count) :
 			frontend::contrltable(_agent, _records, _count), stream(_agent, _priority) {
 
 		}
