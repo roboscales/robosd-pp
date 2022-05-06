@@ -91,6 +91,8 @@ namespace robo {
 
 			static node* find(cstr _path) { return index_().find(hash(_path)); }
 			static node* find(int _hash) { return index_().find(_hash); }
+			template <class T> static T* find(cstr _path) { return dynamic_cast<T*>(find(_path)); }
+			template <class T> static T* find(int _hash) { return dynamic_cast<T*>(find(_hash)); }
 		};
 
 		class wrapper;

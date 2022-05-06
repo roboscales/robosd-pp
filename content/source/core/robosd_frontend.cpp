@@ -452,7 +452,7 @@ namespace robo {
 		void shared::core::apply_action_(void* _begin, void* _end, signal::performer* _on_apply_action) {
 			tuple* t = tuple::get(_on_apply_action);
 			for (ref* r = shared::core_().list_.first(); r; r = r->next()) {
-				if (r->owner().is_my_action(_begin, _end)) {
+				if (r->owner().is_my_action_(_begin, _end)) {
 					r->owner().apply_action_.attach(t);
 				}
 			}
@@ -465,7 +465,7 @@ namespace robo {
 		void shared::core::exchange_(void* _begin, void* _end, signal::performer* _on_exchange) {
 			tuple* t = tuple::get(_on_exchange);
 			for (ref* r = shared::core_().list_.first(); r; r = r->next()) {
-				if (r->owner().is_my_action(_begin, _end)) {
+				if (r->owner().is_my_action_(_begin, _end)) {
 					r->owner().exchange_.attach(t);
 				}
 			}
@@ -479,7 +479,7 @@ namespace robo {
 		void shared::core::update_feedback_(void* _begin, void* _end, signal::performer* _on_update_feedback_) {
 			tuple* t = tuple::get(_on_update_feedback_);
 			for (ref* r = list_.first(); r; r = r->next()) {
-				if (r->owner().is_my_feedback(_begin, _end)) {
+				if (r->owner().is_my_feedback_(_begin, _end)) {
 					r->owner().update_feedback_.attach(t);
 				}
 			}

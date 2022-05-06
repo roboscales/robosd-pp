@@ -404,10 +404,10 @@ namespace robo {
 	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
 		ROBO_LBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
 
-			#if ROBO_UNICODE_ENABLED == 1
-			return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
+		#if ROBO_UNICODE_ENABLED == 1
+		return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
 		#else
-			return GetPrivateProfileStringA(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
+		return GetPrivateProfileStringA(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
 		#endif
 	}
 	#endif

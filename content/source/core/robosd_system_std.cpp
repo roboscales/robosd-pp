@@ -133,6 +133,20 @@ namespace robo {
 		}
 		else return 0;
 	}
+	#if ROBO_UNICODE_ENABLED == 1
+	size_t system::env::sprintf(char* _dst, size_t _max_sz, const char* _format, va_list _args) {
+		int sz = vsnprintf(_dst, _max_sz, _format, _args);
+		if (sz > 0) {
+			if (sz < (int)_max_sz - 1) {
+				_dst[sz] = 0;
+			}
+			else {
+				_dst[_max_sz - 1] = 0;
+			}
+		}
+		return (size_t)sz;
+	}
+	#endif
 }
 #endif
 

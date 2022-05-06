@@ -56,6 +56,28 @@ namespace robo {
 		#endif
 	}
 
+	#if ROBO_UNICODE_ENABLED == 1
+	bool string::sprintf_backend_(stream_s& _s, const char *  _format, va_list _args) {
+		#if ROBO_APP_ENV_ENABLED == 1
+		_s.memo = string_buffer_backend;
+		_s.size = system::env::sprintf((char *)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)/sizeof(char), _format, _args);
+		return _s.size > 0;
+		#else
+		return false;
+		#endif
+	}
+	bool string::sprintf_frontend_(stream_s& _s, const char* _format, va_list _args) {
+		system::critical c__;
+		#if ROBO_APP_ENV_ENABLED == 1
+		_s.memo = string_buffer_frontend;
+		_s.size = system::env::sprintf((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t) / sizeof(char), _format, _args);
+		return _s.size > 0;
+		#else
+		return false;
+		#endif
+	}
+	#endif
+
 	bool string::format(cstr _format, va_list _args) {
 		stream_s stream;
 		if (system::env::is_backend()) {			

@@ -144,12 +144,13 @@ namespace robo{
 			static void exec(const char * _cmd); //Эмуляция пользовательского ввода
 			static void new_line(void); //Перевод строки в терминале
 			static void printf(const char * _format, ...);
-			static void printf(cstr _format, va_list _args);
+			static void printf(const char * _format, va_list _args);
 			static void prints(const char * _s);
 			static void put(char  _ch);
 			static command * root();
 			static void connect(::robo::net::iserial * _serial);
 			static bool busy(void);
+
 		};
 #if ROBO_APP_PROTO_SWITCH_ENABLED ==1
 		class ROBO_EXPORT abonent : public robo::net::proto::switcher::abonent {

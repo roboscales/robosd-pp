@@ -56,7 +56,7 @@ namespace robo {
 			static agent* find(int _id);
 			static agent* find(cstr __name);
 			static void run(double _time);
-			static bool begin(void);
+			static bool begin(cstr _ini);
 			static void finish(void);
 			virtual void set_local_ini(cstr _ini) =0;
 		};

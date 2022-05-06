@@ -50,6 +50,10 @@ namespace robo {
 			static bool sprintf_backend_(stream_s & _s, cstr _format, va_list _args);
 			static bool sprintf_frontend_(stream_s & _s, cstr _format, va_list _args);
 			#endif
+			#if ROBO_UNICODE_ENABLED == 1
+			static bool sprintf_backend_(stream_s& _s, const char * _format, va_list _args);
+			static bool sprintf_frontend_(stream_s& _s, const char* _format, va_list _args);
+			#endif
 		public:
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			template< typename B> static bool format_stream(B & _b,  cstr _format, va_list _args) {
@@ -62,8 +66,20 @@ namespace robo {
 					return ( sprintf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
 				}
 			};
+			#if ROBO_UNICODE_ENABLED == 1
+			template< typename B> static bool format_stream(B& _b, const char *_format, va_list _args) {
+				stream_s stream;
+				if (system::env::is_backend()) {
+					return (sprintf_backend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char_t)));
+				}
+				else {
+					system::critical c__;
+					return (sprintf_frontend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char_t)));
+				}
+			};
 			#endif
-		template <typename T> bool to_number(cstr begc, char_t*& endc, T& _value) {
+			#endif
+		template <typename T> static bool to_number(cstr begc, char_t*& endc, T& _value) {
 
 			setlocale(LC_NUMERIC, "C");
 
@@ -86,10 +102,9 @@ namespace robo {
 			char_t* endc;
 			ROBO_LRET(to_number(c_str(), endc, _value));
 		}
-		template <typename T> bool scan_numbers(size_t _max_count, T* _values, size_t& _count) {
 
+		template <typename T> static bool scan_numbers(cstr begc, size_t _max_count, T* _values, size_t& _count) {
 			char_t* endc;
-			const char_t* begc = c_str();
 			_count = 0;
 			while ((begc && begc[0]) && _count < _max_count) {
 				T value;
@@ -100,14 +115,25 @@ namespace robo {
 			}
 			return true;
 		}
+		template <typename T> bool scan_numbers(size_t _max_count, T* _values, size_t& _count) {
+			ROBO_LRET(scan_numbers<T>(c_str(), _max_count, _values, _count));
+		}
 
-		template <typename T> bool to_number_array(T* _values, size_t _count) {
+		template <typename T> static bool to_number_array(cstr _str, T* _values, size_t _count) {
 			size_t sz;
-			ROBO_LBREAKN(scan_numbers(_count, _values, sz))
-				ROBO_LRET_F(sz == _count, "error convert string '%s' to %d numbers (%d)", c_str(), (int)_count, (int)sz);
+			ROBO_LBREAKN(scan_numbers<T>(_str, _count, _values, sz));
+			ROBO_LRET_F(sz == _count, "error convert string '%s' to %d numbers (%d)", _str, (int)_count, (int)sz);
+		}
+		template <typename T> bool to_number_array(T* _values, size_t _count) {
+			ROBO_LRET(to_number_array<T>(c_str(), _values, _count));
+		}
+
+
+		template <typename T> static bool to_number_list(cstr _str, size_t _max_count, T* _values, size_t& _count) {
+			ROBO_LRET_F(scan_numbers<T>(_str, _max_count, _values, _count), "error convert string '%s' to numbers", _str);
 		}
 		template <typename T> bool to_number_list(size_t _max_count, T* _values, size_t& _count) {
-			ROBO_LRET_F(scan_numbers(_max_count, _values, _count), "error convert string '%s' to numbers", c_str());
+			ROBO_LRET_F(scan_numbers<T>(_max_count, _values, _count), "error convert string '%s' to numbers", c_str());
 		}
 	};
 }

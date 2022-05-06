@@ -1,4 +1,5 @@
 #include "mexo/mexo.env.common.hpp"
+
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 
@@ -102,6 +103,7 @@ namespace mexo{
 		::robo::net::proto::switcher::port switch_port1_(ENV_SWITCH_PORT1_TYPE);
 		#endif
 		#endif
+
 		::robo::time_us_t  time_us = 0;
 		::mexo::machine::slot::simple start(
 			::mexo::machine::slot::kind::start
@@ -129,405 +131,406 @@ namespace mexo{
 			});
 
 
-			::mexo::machine::slot::simple frontend_pool_ (
-				::mexo::machine::slot::kind::frontend
-				,	[]{
-					static volatile robo::time_us_t g_time_us_t = 0;
-					static time_us_t tick_prev_us = 0;
-					#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
-					robo::freemaster::poll();
-					#endif
-					#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
-					robo::termo::itf::poll();
-					#endif
-					#if ENV_SWITCH_PORT0_ENABLED  == 1 || ENV_SWITCH_PORT1_ENABLED  == 1
-					g_time_us_t = robo::system::env::realtime_us();
-					robo::net::proto::switcher::core::poll(g_time_us_t - tick_prev_us);
-					time_us =  tick_prev_us = g_time_us_t;
-					#endif
+		::mexo::machine::slot::simple frontend_pool_ (
+			::mexo::machine::slot::kind::frontend
+			,	[]{
+				static volatile robo::time_us_t g_time_us_t = 0;
+				static time_us_t tick_prev_us = 0;
+				#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
+				robo::freemaster::poll();
+				#endif
+				#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
+				robo::termo::itf::poll();
+				#endif
+				#if ENV_SWITCH_PORT0_ENABLED  == 1 || ENV_SWITCH_PORT1_ENABLED  == 1
+				g_time_us_t = robo::system::env::realtime_us();
+				robo::net::proto::switcher::core::poll(g_time_us_t - tick_prev_us);
+				time_us =  tick_prev_us = g_time_us_t;
+				#endif
 
+			}
+		);
+
+		#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
+		::mexo::machine::slot::simple backend_(
+			::mexo::machine::slot::kind::backend
+			,	&robo::freemaster::recorder	
+		);	
+		#endif
+
+		#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
+		
+		class imexo_cmd : public ::robo::termo::node {
+		public:
+			typedef enum  {
+				UNKNOWN
+				#if ENV_NET_FLOW_COMMAND_ENABLED == 1
+				, ADDR_GET
+				#endif
+				#if ENV_SETTINGS_STORE_ENABLE == 1
+				, SETTINGS_SAVE
+				, SETTINGS_LOAD
+				, SETTINGS_RESET
+				#endif
+				, RESET
+				, MEMO
+			} kind;
+		private:
+			kind kind_;
+		protected:
+			bool begin(){
+				switch (kind_){
+				#if ENV_NET_FLOW_COMMAND_ENABLED == 1
+				case	ADDR_GET:
+				{
+									//uint8_t addr = mexo_net_flow_get_addr();
+									//itf::printf("flow address : 0x%x%x ", (addr >> 4), addr & 0xF);
 				}
-			);
-
-			#if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
-			::mexo::machine::slot::simple backend_(
-				::mexo::machine::slot::kind::backend
-				,	&robo::freemaster::recorder	
-			);	
-			#endif
-			#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
-			class imexo_cmd : public ::robo::termo::node {
-			public:
-				typedef enum  {
-					UNKNOWN
-	#if ENV_NET_FLOW_COMMAND_ENABLED == 1
-					, ADDR_GET
-	#endif
-	#if ENV_SETTINGS_STORE_ENABLE == 1
-					, SETTINGS_SAVE
-					, SETTINGS_LOAD
-					, SETTINGS_RESET
-	#endif
-					, RESET
-					, MEMO
-				} kind;
-			private:
-				kind kind_;
-			protected:
-				bool begin(){
-					switch (kind_){
-	#if ENV_NET_FLOW_COMMAND_ENABLED == 1
-					case	ADDR_GET:
-					{
-										//uint8_t addr = mexo_net_flow_get_addr();
-										//itf::printf("flow address : 0x%x%x ", (addr >> 4), addr & 0xF);
-					}
-					return false;
-	#endif
+				return false;
+				#endif
 												
-	#if ENV_SETTINGS_STORE_ENABLE == 1
-					case	TERMO_MEXO_CMD_SETTINGS_SAVE:
-						if (mexo_settings_save() == ROBO_SUCCESS){
-							termo_abonent_printf("success");
-						}
-						else{
-							termo_abonent_printf("error");
-						}
-						return ROBO_SUCCESS;
-					case	TERMO_MEXO_CMD_SETTINGS_LOAD:
-						if (mexo_settings_load() == ROBO_SUCCESS){
-							termo_abonent_printf("success");
-						}
-						else{
-							termo_abonent_printf("error");
-						}
-						return ROBO_SUCCESS;
-					case	TERMO_MEXO_CMD_SETTINGS_RESET:
-						if (mexo_settings_reset() == ROBO_SUCCESS){
-							termo_abonent_printf("success");
-						}
-						else{
-							termo_abonent_printf("error");
-						}
-						#endif
-					case	RESET:
-						break;
-					case	MEMO:
-						{
-							#if ROBO_APP_ALLOC_ENABLED ==1							
-							const ::system::mem::stat & ms = ::system::get_mem_statistic();
-							::robo::termo::itf::printf(RT("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
-							::robo::termo::itf::printf(RT("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);							
-							#endif
-							#if ENV_TERMO_PRINT_TYPE == ENV_TERMO_PRINT_TYPE_KEIL
-							__heapstats(&statprint_,nullptr);
-							#endif
-						}
-						break;
-					case	UNKNOWN:
-						::robo::termo::itf::prints("unknown command\n\r");
-						break;
-					
+				#if ENV_SETTINGS_STORE_ENABLE == 1
+				case	TERMO_MEXO_CMD_SETTINGS_SAVE:
+					if (mexo_settings_save() == ROBO_SUCCESS){
+						termo_abonent_printf("success");
 					}
-					return false;
+					else{
+						termo_abonent_printf("error");
+					}
+					return ROBO_SUCCESS;
+				case	TERMO_MEXO_CMD_SETTINGS_LOAD:
+					if (mexo_settings_load() == ROBO_SUCCESS){
+						termo_abonent_printf("success");
+					}
+					else{
+						termo_abonent_printf("error");
+					}
+					return ROBO_SUCCESS;
+				case	TERMO_MEXO_CMD_SETTINGS_RESET:
+					if (mexo_settings_reset() == ROBO_SUCCESS){
+						termo_abonent_printf("success");
+					}
+					else{
+						termo_abonent_printf("error");
+					}
+				#endif
+				case	RESET:
+					break;
+				case	MEMO:
+					{
+						#if ROBO_APP_ALLOC_ENABLED ==1							
+						const ::system::mem::stat & ms = ::system::get_mem_statistic();
+							
+						::robo::termo::itf::printf(RT8("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
+						::robo::termo::itf::printf(RT8("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);
+							
+						#if ENV_TERMO_PRINT_TYPE == ENV_TERMO_PRINT_TYPE_KEIL
+						__heapstats(&statprint_,nullptr);
+						#endif
+						#endif
+					}
+					break;
+				case	UNKNOWN:
+					::robo::termo::itf::prints("unknown command\n\r");
+					break;
+					
 				}
-			public:
-				imexo_cmd(kind _kind, const char * _name, const char * _note, const char * _usage, command * _parent) \
-					: node(_name, _note, _usage, _parent), kind_(_kind){
-				}
-			};
-      static ::robo::termo::node root(
-				"ENV"
-				, "ENV commands"
-				, "addr <CR>"
+				return false;
+			}
+		public:
+			imexo_cmd(kind _kind, const char * _name, const char * _note, const char * _usage, command * _parent) \
+				: node(_name, _note, _usage, _parent), kind_(_kind){
+			}
+		};
+		static ::robo::termo::node root(
+				RT8("ENV")
+				, RT8("ENV commands")
+				, RT8("addr <CR>")
 				, robo::termo::itf::root()
 			);
-      static imexo_cmd reset(
+		static imexo_cmd reset(
 				imexo_cmd::kind::RESET
-				, "reset"
-				, "ENV CPU reset"
-				, "<CR>"
+				, RT8("reset")
+				, RT8("ENV CPU reset")
+				, RT8("<CR>")
 				, &root
 			);
-      static imexo_cmd memo(
+		static imexo_cmd memo(
 				imexo_cmd::kind::MEMO
-				, "memo"
-				, "ENV memory usage"
-				, "<CR>"
+				, RT8("memo")
+				, RT8("ENV memory usage")
+				, RT8("<CR>")
 				, &root
 			);
 
-			#if ENV_NET_FLOW_COMMAND_ENABLED == 1
-      static ::robo::termo::node flow(
+		#if ENV_NET_FLOW_COMMAND_ENABLED == 1
+		static ::robo::termo::node flow(
 				"flow"
 				, "flow settings commands"//const char * note; 
 				, "flow <CR>" //const char * usage;                 
 				, &root
 			);
-      static ::robo::termo::node flow_addr(
+		static ::robo::termo::node flow_addr(
 				"addr"
 				, "flow address commands"//const char * note; 
 				, "addr <CR>" //const char * usage;                 
 				, &flow
 			);
 
-			class iflow_addr_set : public node {
-				uint8_t addr_;
-			protected:
-				virtual bool setup(void){
-					if (ENV::mexo_net_flow_set_addr(addr_)){
-						itf::printf("success");
-					} else {
-						itf::printf("error");
-					}
+		class iflow_addr_set : public node {
+			uint8_t addr_;
+		protected:
+			virtual bool setup(void){
+				if (ENV::mexo_net_flow_set_addr(addr_)){
+					itf::printf("success");
+				} else {
+					itf::printf("error");
+				}
+				return false;
+			}
+			virtual bool parse_long_arg(const char * _arg, const char * _val){
+				if (ROBO_STD_STR_EQ(_arg, "address") == ROBO_TRUE){
+					addr_ = atoi(_val);
+					return true;
+				}
+				else{
 					return false;
 				}
-				virtual bool parse_long_arg(const char * _arg, const char * _val){
-					if (ROBO_STD_STR_EQ(_arg, "address") == ROBO_TRUE){
-						addr_ = atoi(_val);
-						return true;
-					}
-					else{
-						return false;
-					}
+			}
+			virtual bool parse_arg(char _arg, const char * _val){
+				if (_arg == 'a'){
+					addr_ = atoi(_val);
+					return true;
 				}
-				virtual bool parse_arg(char _arg, const char * _val){
-					if (_arg == 'a'){
-						addr_ = atoi(_val);
-						return true;
-					}
-					else{
-						return false;
-					}
+				else{
+					return false;
 				}
-			public:
-				iflow_addr_set() :node(
-					"set"
-					, " set flow address command "//const char * note; 
-					, "set [-a | --address] address <CR>" //const char * usage;  
-					, &flow_addr
-					){}
-			} flow_addr_set;
-
-			imexo_cmd flow_addr_get(
-				imexo_cmd::kind::ADDR_GET
-				, "get"
-				, "get current flow address command "//const char * note; 
-				, "<CR>" //const char * usage;                 
+			}
+		public:
+			iflow_addr_set() :node(
+				"set"
+				, " set flow address command "//const char * note; 
+				, "set [-a | --address] address <CR>" //const char * usage;  
 				, &flow_addr
-			);
-			#endif
+				){}
+		} flow_addr_set;
 
-			#if MEXO_SETTINGS_STORE_ENABLE == 1
+		imexo_cmd flow_addr_get(
+			imexo_cmd::kind::ADDR_GET
+			, "get"
+			, "get current flow address command "//const char * note; 
+			, "<CR>" //const char * usage;                 
+			, &flow_addr
+		);
+		#endif
 
-				static termo_command_t settings =
+		#if MEXO_SETTINGS_STORE_ENABLE == 1
+
+			static termo_command_t settings =
+			{
+				{ 0 }
+				, "settings"
+					, "ENV settings commands"
+					, "<CR>"
+					, &mexo_cmd_class
+			};
+
+			static termo_mexo_command_t settings_reset =
+			{
 				{
 					{ 0 }
-					, "settings"
-						, "ENV settings commands"
+					, "reset"
+						, "ENV settings reset"
 						, "<CR>"
 						, &mexo_cmd_class
-				};
+				}
+				, TERMO_MEXO_CMD_SETTINGS_RESET
+			};
 
-				static termo_mexo_command_t settings_reset =
+			static termo_mexo_command_t settings_load =
+			{
 				{
-					{
-						{ 0 }
-						, "reset"
-							, "ENV settings reset"
-							, "<CR>"
-							, &mexo_cmd_class
-					}
-					, TERMO_MEXO_CMD_SETTINGS_RESET
-				};
+					{ 1 }
+					, "load"
+						, "ENV settings load"
+						, "<CR>"
+						, &mexo_cmd_class
+				}
+				, TERMO_MEXO_CMD_SETTINGS_LOAD
+			};
 
-				static termo_mexo_command_t settings_load =
+			static termo_mexo_command_t settings_save =
+			{
 				{
-					{
-						{ 1 }
-						, "load"
-							, "ENV settings load"
-							, "<CR>"
-							, &mexo_cmd_class
-					}
-					, TERMO_MEXO_CMD_SETTINGS_LOAD
-				};
+					{ 2 }
+					, "save"
+						, "ENV settings save"
+						, "<CR>"
+						, &mexo_cmd_class
+				}
+				, TERMO_MEXO_CMD_SETTINGS_SAVE
+			};
+		#endif
+			
+		#ifndef ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 
+		#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
+		#endif
 
-				static termo_mexo_command_t settings_save =
-				{
-					{
-						{ 2 }
-						, "save"
-							, "ENV settings save"
-							, "<CR>"
-							, &mexo_cmd_class
-					}
-					, TERMO_MEXO_CMD_SETTINGS_SAVE
-				};
-	#endif
-	
-			
-			
-			
-			
-			#ifndef ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 
-			#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
-			#endif
+		namespace vartable{
+			::robo::termo::node root(
+				RT8("vt")
+				, RT8("vartable commands set")
+				, RT8("vt <CR>")
+				, ::robo::termo::itf::root()
+			);
 
-			namespace vartable{
-				::robo::termo::node root(
-					RT("vt")
-					, RT("vartable commands set")
-					, RT("vt <CR>")
-					, ::robo::termo::itf::root()
-				);
-
-				class show :public ::robo::termo::command{
-					::mexo::node * current_node_ = nullptr;
-					char_t * path_ptr_ = nullptr;
-					size_t path_sz_ = 0;					
-				protected:
-					static inline char_t path[ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE];
-					::mexo::var::record::ref *  current_var = nullptr;
-					virtual void printf(void) = 0;
-						/*{						
-						::robo::termo::itf::printf(RT("%s%s\t%p\t%d\t%d-%d\n\r")
-							,path_,current_var_->name
-						,current_var_->addr
-						, (int)current_var_->desc.len
-						, current_var_->key
-						);
-					}*/
-					virtual bool begin(void){
-						path_ptr_ = path;
-						path_sz_ = ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE;
-						current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
-						if(current_node_){
-							current_var = current_node_->vars.first();
-							::robo::termo::itf::printf(RT("vartable\n\r"));
-							if(current_var){
-								printf();
-								current_var=current_var->next();
-							}
-							return true;
-						}	else {
-							return false;
-						}							
-					}
-					virtual bool loop(void){
-						if(::robo::termo::itf::busy()) {
-							return true;
+			class show :public ::robo::termo::command{
+				::mexo::node * current_node_ = nullptr;
+				char_t * path_ptr_ = nullptr;
+				size_t path_sz_ = 0;					
+			protected:
+				static inline char_t path[ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE];
+				::mexo::var::record::ref *  current_var = nullptr;
+				virtual void printf(void) = 0;
+					/*{						
+					::robo::termo::itf::printf(RT("%s%s\t%p\t%d\t%d-%d\n\r")
+						,path_,current_var_->name
+					,current_var_->addr
+					, (int)current_var_->desc.len
+					, current_var_->key
+					);
+				}*/
+				virtual bool begin(void){
+					path_ptr_ = path;
+					path_sz_ = ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE;
+					current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
+					if(current_node_){
+						current_var = current_node_->vars.first();
+						::robo::termo::itf::printf(RT8("vartable\n\r"));
+						if(current_var){
+							printf();
+							current_var=current_var->next();
 						}
-						if(current_node_){
-							if(current_var){
-								printf();
-								current_var=current_var->next();
+						return true;
+					}	else {
+						return false;
+					}							
+				}
+				virtual bool loop(void){
+					if(::robo::termo::itf::busy()) {
+						return true;
+					}
+					if(current_node_){
+						if(current_var){
+							printf();
+							current_var=current_var->next();
+							return true;
+						}else {
+							current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
+							if (current_node_) {
+								current_var = current_node_->vars.first();
 								return true;
-							}else {
-								current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
-								if (current_node_) {
-									current_var = current_node_->vars.first();
-									return true;
-								}
-								else {
-									return false;
-								}
 							}
-						}			
+							else {
+								return false;
+							}
+						}
+					}			
 												
-						return false;
-					}
-					bool parse_long_arg(const char * _arg, const char * _val){
-						::robo::termo::itf::printf(RT("argument ""%s"" is not support"), _arg);
-						return false;
-					}
-					bool parse_arg(char _arg, const char * _val){
-						::robo::termo::itf::printf(RT("argument ""%c"" is not support"), _arg);
-						return false;
-					}
-					bool parse_opt(char _opt){
-						::robo::termo::itf::printf(RT("option ""%c"" is not support"), _opt);
-						return false;
+					return false;
+				}
+				bool parse_long_arg(const char * _arg, const char * _val){
+					::robo::termo::itf::printf(RT8("argument ""%s"" is not support"), _arg);
+					return false;
+				}
+				bool parse_arg(char _arg, const char * _val){
+					::robo::termo::itf::printf(RT8("argument ""%c"" is not support"), _arg);
+					return false;
+				}
+				bool parse_opt(char _opt){
+					::robo::termo::itf::printf(RT8("option ""%c"" is not support"), _opt);
+					return false;
 
-					}
-					bool parse_long_opt(const char * _opt){
-						::robo::termo::itf::printf(RT("option ""%s"" is not support"), _opt);
-						return false;
-					}
-				protected:
-					show(
-						const char * _name
-						, const char * _note
-						, const char * _usage
-					) : command(_name,_note,_usage,&root){
-					}					
-				};
-				class show_fml:public show{
-				protected:
-					virtual void printf(void){						
-						::robo::termo::itf::printf(RT("%s%s\t%d\t%x\n\r")
-							,path,current_var->name
-						, (int)current_var->desc.len
-						,uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr)- FMSTR_ADDRESS_OFFSET)
-						);
-					}
-				public:
-					show_fml(void) :show(
-						RT("fml")
-						, RT("vartable freemaster list show")
-						, RT("fml  <CR>")
-						)
-					{
+				}
+				bool parse_long_opt(const char * _opt){
+					::robo::termo::itf::printf(RT8("option ""%s"" is not support"), _opt);
+					return false;
+				}
+			protected:
+				show(
+					const char * _name
+					, const char * _note
+					, const char * _usage
+				) : command(_name,_note,_usage,&root){
+				}					
+			};
+			class show_fml:public show{
+			protected:
+				virtual void printf(void){						
+					::robo::termo::itf::printf(RT8("%s%s\t%d\t%x\n\r")
+						,path,current_var->name
+					, (int)current_var->desc.len
+					,uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr)- FMSTR_ADDRESS_OFFSET)
+					);
+				}
+			public:
+				show_fml(void) :show(
+					RT8("fml")
+					, RT8("vartable freemaster list show")
+					, RT8("fml  <CR>")
+					)
+				{
 
-					}
-				}show_fm_;
-				class show_val:public show{
-				protected:
-					virtual void printf(void){				
-						char_t tmp[20];
-						current_var->sprintf(tmp,20);
-						::robo::termo::itf::printf(RT("%30s%-10s%s\n\r")
-							,path,current_var->name
-							,tmp
-						);
-					}
-				public:
-					show_val(void) :show(
-						RT("vl")
-						, RT("vartable values show")
-						, RT("vl  <CR>")
-						)
-					{
+				}
+			}show_fm_;
+			class show_val:public show{
+			protected:
+				virtual void printf(void){				
+					char_t tmp[20];
+					current_var->sprintf(tmp,20);
+					::robo::termo::itf::printf(RT8("%30s%-10s%s\n\r")
+						,path,current_var->name
+						,tmp
+					);
+				}
+			public:
+				show_val(void) :show(
+					RT8("vl")
+					, RT8("vartable values show")
+					, RT8("vl  <CR>")
+					)
+				{
 
-					}
-				}show_val_;
+				}
+			}show_val_;
 				
-				class show_records:public show{
-				protected:
-					virtual void printf(void){						
-						::robo::termo::itf::printf(RT("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
-							,path,current_var->name
-							,current_var->addr
-							, (unsigned int)current_var->key
-							, (int)current_var->desc.len
-							, (int)current_var->desc.bsign
-							, (int)current_var->desc.bconst
-							, (int)current_var->desc.real
-						);
-					}
-				public:
-					show_records(void) :show(
-						RT("rl")
-						, RT("vartable record list show")
-						, RT("rl  <CR>")
-						)
-					{
+			class show_records:public show{
+			protected:
+				virtual void printf(void){						
+					::robo::termo::itf::printf(RT8("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
+						,path,current_var->name
+						,current_var->addr
+						, (unsigned int)current_var->key
+						, (int)current_var->desc.len
+						, (int)current_var->desc.bsign
+						, (int)current_var->desc.bconst
+						, (int)current_var->desc.real
+					);
+				}
+			public:
+				show_records(void) :show(
+					RT8("rl")
+					, RT8("vartable record list show")
+					, RT8("rl  <CR>")
+					)
+				{
 
-					}
-				}show_records_;
-			}
-#endif	
+				}
+			}show_records_;
+		}
 
+		
+		#endif
 	}	
 
 
@@ -657,7 +660,5 @@ namespace mexo{
 		, ENV_NET_FLOW_VAR_SUBA_ANSW
 	);
 	#endif
-#endif
-
-
+	#endif
 }

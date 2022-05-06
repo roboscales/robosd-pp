@@ -10,7 +10,7 @@
 #define robosd_frontend_hpp
 
 #include "core/robosd_common.hpp"
-#include "core/robosd_devagent_common.hpp"
+#include "core/robosd_proto.hpp"
 
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
@@ -240,6 +240,10 @@ namespace robo {
 			friend class tuple;
 		private:
 			ref ref_;
+			const void* action_addr_begin_;
+			const void* action_addr_end_;
+			const void* feedback_addr_begin_;
+			const void* feedback_addr_end_;
 
 			struct tuple {
 				typedef ::robo::list::unsorted<tuple> pool;
@@ -289,6 +293,13 @@ namespace robo {
 			};
 
 			static core& core_(void);
+			bool is_my_action_(void* _begin, void* _end) {
+				return _begin <= action_addr_begin_ && action_addr_end_ <= _end;
+			}
+		
+			bool is_my_feedback_(void* _begin, void* _end) {
+				return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
+			}
 
 		protected:
 			virtual void apply_action(void) = 0;
@@ -297,11 +308,18 @@ namespace robo {
 				apply_action();
 				uppdate_feedback();
 			}
-			virtual bool is_my_action(void* _begin, void* _end) = 0;
-			virtual bool is_my_feedback(void* _begin, void* _end) = 0;
 		protected:
-			shared(void)
+			shared(
+				const void* _action_addr_begin
+				, const void* _action_addr_end
+				, const void* _feedback_addr_begin
+				, const void* _feedback_addr_end
+			)
 				: ref_(*this)
+				, action_addr_begin_(_action_addr_begin)
+				, action_addr_end_(_action_addr_end)
+				, feedback_addr_begin_(_feedback_addr_begin)
+				, feedback_addr_end_(_feedback_addr_end)
 				, apply_action_(this, &shared::apply_action)
 				, update_feedback_(this, &shared::uppdate_feedback)
 				, exchange_(this, &shared::exchange) {
@@ -324,25 +342,30 @@ namespace robo {
 		};
 
 
-		template<class D> class devagent_t : public D {
+		/*template<class D> class devagent_t : public D {
 		public:
 
-			typedef typename D::action_s A;
+			typedef typename D::action_s A;			
 			typedef typename D::feedback_s F;
 
-			struct front_s {
+			A & action;
+			const A & goal;
+			const F & feedback;
 
-				A& action;
-				F& feedback;
-				front_s(
-					A& _action
-					, F& _feedback
-				) : action(_action), feedback(_feedback) {}
-			} front;
 			devagent_t(
 				D * _content
-			) : front(_content->action, _content->feedback) {}
-		};
+			) : action(_content->action), goal(_content->goal), feedback(_content->feedback) {}
+
+			devagent_t(
+				D & _content
+			) : action(_content.action), goal(_content.goal), feedback(_content.feedback) {}
+			
+			devagent_t(
+				A& _action
+				, const A& _goal
+				, const F& _feedback
+			) : action(_action), goal(_goal), feedback(_feedback) {}
+		};*/
 
 
 		const struct {
@@ -512,6 +535,12 @@ namespace robo {
 			ivar* find_var(cstr _name);
 		};
 		#endif
+
+		class servo : public robo::app::node {
+		public:
+			servo(robo::cstr _name, robo::app::module& _module)
+				: robo::app::node(_name, &_module) {}
+		};
 
 	}
 }

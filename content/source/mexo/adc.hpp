@@ -31,7 +31,7 @@ namespace mexo {
 			};
 			//todo govnocod
 			enum { vns = 7 };
-			char varnames[vns * channel_count * 2];
+			char_t varnames[vns * channel_count * 2];
 
 		private:
 			unsigned int init_count_ = 0;
@@ -105,7 +105,7 @@ namespace mexo {
 				present_s& present = present_cast<present_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					string key;
-					char* vn = varnames;
+					char_t* vn = varnames;
 					for (int i = 0; i < channel_count; ++i) {
 						size_t n = ::robo::system::sprintf(vn, vns, RT("nat%d"), i);
 						//todo static string class!

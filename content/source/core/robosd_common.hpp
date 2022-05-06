@@ -29,12 +29,29 @@
 #if ROBO_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t
 #define ROBO_CONST_STRING wchar_t const *
+
+#ifndef RT
 #define RT(s) RT_(s)
 #define RT_(s) L##s
+#endif
+
+#ifndef RT8
+#define RT8(s) s
+#endif
+
 #else
+
 #define ROBO_CHAR char
 #define ROBO_CONST_STRING char const *
+
+#ifndef RT
 #define RT(s) s
+#endif
+
+#ifndef RT8
+#define RT8(s) s
+#endif
+
 #endif
 
 #ifdef ROBO_STD_ARGS
@@ -64,6 +81,7 @@ namespace robo {
 	void ROBO_EXPORT finish(void);*/
 
 	int32_t ROBO_EXPORT hash(cstr _src, int32_t _begin = 0);
+	int32_t ROBO_EXPORT hash(cstr _beg, cstr _end, int32_t _begin = 0);
 	//unsigned short ROBO_EXPORT fast_hash(cstr _src, unsigned short _begin = 0);
 	void ROBO_EXPORT crash(char const* _file, char const* _function, int _line);
 	enum class result { complete, resume, panic };

@@ -78,7 +78,7 @@ namespace robo{
 			virtual void service(void){};
 		public:
 			void stop(void);
-			void connect(const char * _comm, unsigned _reconnect_pause_ms = 1000);
+			void connect(cstr _comm, unsigned _reconnect_pause_ms = 1000);
 			virtual size_t available(void);
 			virtual size_t space(void);
 			virtual size_t space_max(void);

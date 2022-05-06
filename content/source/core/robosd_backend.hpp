@@ -152,6 +152,8 @@ namespace robo {
 			router(cstr _name, app::module& _owner);
 		};
 
+		/**/
+
 
 		class devagent : public app::node {
 		public:
@@ -197,31 +199,46 @@ namespace robo {
 			typedef common::devagent::state_s state_s;
 			typedef common::devagent::commands commands;
 			typedef common::devagent::statuses statuses;
+			typedef common::devagent::action_s action_s;
+			typedef common::devagent::feedback_s feedback_s;
+			template <typename F> F& feedback_cast(void) {
+				return reinterpret_cast <F&>(feedback);
+			}
+			template <typename A> A& goal_cast(void) {
+				return reinterpret_cast <A&>(goal);
+			}
 
 		private:
 			boardagent& boardagent_;
 			dev_id_t dev_id_;
 			bus_ref bus_ref_;
 			int bus_order_ = 0;
-			string bus_name_ = 0;
-			string router_name_ = 0;
+			string bus_alias_;
+			string router_alias_;
 			router* router_ = nullptr;
-			state_s actual_state_;
+			//state_s actual_state_;
 			stream::list streams_;
-			commands actual_command_ = commands::stop;
+			//commands actual_command_ = commands::stop;
 		protected:
-			void perform_command(commands _command) {
-
+			action_s& goal;
+			feedback_s& feedback;
+			virtual bool agent_apply_action(commands _command) {
+				if (_command == commands::sw2dirrect) {
+					return true;
+				}
+				else {
+					goal.command = _command;
+					return false;
+				}
 			}
-			virtual void apply_action(void) {};
-			virtual void uppdate_feedback(void) {};
 
-			bool exchabge_enabled(void) { return actual_state_.local > state_s::locals::disabled; }
-			bool configure_complete(void) {
-				ROBO_LBREAKN(actual_state_.local == state_s::locals::configure);
-				actual_state_.local = state_s::locals::ready;
-				return true;
+			virtual void agent_uppdate_feedback(void) {
+				feedback.status = actual_status(goal.command);
 			}
+
+			bool exchabge_enabled(void);
+			bool configure_complete(void);
+
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual bool do_start(void);
@@ -239,13 +256,13 @@ namespace robo {
 			//функци€ дл€ диспетчера, определ€юща€ запись в таблице маршрутизации
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 
-			devagent(cstr _name, boardagent& _boardagent);
+			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
 			//тенкущий (вычисл€емый) статус
-			statuses actual_status(void);
+			statuses actual_status(commands _command);
 			//тенкуща€ команда
-			commands actual_command(void) { return actual_command_; };
-			const state_s & actual_state(void) { return  actual_state_; };
+			commands actual_command(void) { return goal.command; };
+			const state_s & actual_state(void) { return  feedback.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 
 		};
@@ -280,7 +297,6 @@ namespace robo {
 			time_us_t  timeout_us_;
 			time_us_t  default_timeout_us_;
 			void tick1sec_(void);
-			bool setup_(int _id);
 		protected:
 			virtual bool post(void) = 0;
 			virtual void cancel(void) = 0;
@@ -298,47 +314,66 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D> class devagent_t : public ::robo::frontend::devagent_t<D>, public ::robo::backend::devagent, public ::robo::frontend::shared {
+		template<class D > class devagent_b : public D, public ::robo::frontend::shared {
 		public:
-			typedef typename D::action_s A;
-			typedef typename D::feedback_s F;
-			A goal;
-			typename D::present_s  present;
+			typedef typename D::action_s action_s;
+			typedef typename D::feedback_s feedback_s;
+			template <typename A> const A & action_cast(void) {
+				return reinterpret_cast <const A&>(front_.action);
+			}
 		private:
-			const void* action_addr_begin_;
-			const void* action_addr_end_;
-			const void* feedback_addr_begin_;
-			const void* feedback_addr_end_;
+			struct front_s {
+				const action_s& action;
+				action_s& goal;
+				feedback_s& feedback;
+				front_s(
+					const action_s& _action
+					, action_s& _goal
+					, feedback_s& _feedback
+				) : action(_action), goal(_goal), feedback(_feedback) {}
+			} front_;
+			action_s goal_;
+			feedback_s feedback_;
 		protected:
-			virtual bool is_my_action(void* _begin, void* _end) {
-				return _begin <= action_addr_begin_ && action_addr_end_ <= _end;
-			};
-			virtual bool is_my_feedback(void* _begin, void* _end) {
-				return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
-			};
-
 			virtual void apply_action(void) {
-				perform_command(::robo::frontend::devagent_t<D>::front.action.agent.command);
-				present.agent.status = actual_status();
-				if (present.agent.status == statuses::dirrect) {
-					goal = ::robo::frontend::devagent_t<D>::front.action;
+				if (D::agent_apply_action( action_cast<devagent::action_s>().command) ) {
+					goal_ = front_.action;
 				}
-				//action.deseired = ::robo::frontend::devagent<D>::front.action.deseired;
 			}
 
 			virtual void uppdate_feedback(void) {
-				present.agent.status = actual_status();
-				::robo::frontend::devagent_t<D>::front.feedback.present = present;
-				::robo::frontend::devagent_t<D>::front.feedback.goal = goal;
+				D::agent_uppdate_feedback();
+				front_.feedback = feedback_;
+				front_.goal = goal_;
 			}
 		public:
-			devagent_t(cstr _name, boardagent& _boardagent, D * _content) :
-				::robo::frontend::devagent_t<D>(_content)
-				, ::robo::backend::devagent(_name, _boardagent)
-				, action_addr_begin_((void*)&::robo::frontend::devagent_t<D>::front.action)
-				, action_addr_end_((void*)((uint8_t*)action_addr_begin_ + sizeof(A) / sizeof(uint8_t)))
-				, feedback_addr_begin_((void*)&::robo::frontend::devagent_t<D>::front.feedback)
-				, feedback_addr_end_((void*)((uint8_t*)feedback_addr_begin_ + sizeof(F) / sizeof(uint8_t))) {}
+			devagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback)				
+				: D(_name, _boardagent, goal_, feedback_)
+				, front_(_action, _goal, _feedback)
+				, ::robo::frontend::shared(
+					(void*)(&_action)
+					, (void*)((uint8_t*)(&_action) + sizeof(action_s) / sizeof(uint8_t))
+					, (void*)(&_feedback)
+					, (void*)((uint8_t*)((&_feedback)) + sizeof(feedback_s) / sizeof(uint8_t))
+				) {}
+		};
+		template<class D > class devagent_t: public devagent_b<D>{
+		public:
+			typedef typename D::action_s action_s;
+			typedef typename D::feedback_s feedback_s;
+			typedef typename D::content_s content_s;
+			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content) :
+				devagent_b<D>(_name, _boardagent, _content->action, _content->goal, _content->feedback)	{}
+			devagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
+				 devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback){}
+			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback ) :
+				devagent_b<D>(_name, _boardagent, _action, _goal, _feedback){}
+		};
+
+		class servo : public  robo::app::node {
+		public:
+			servo(robo::cstr _name, robo::app::module& _module)
+				: robo::app::node(_name, &_module) {}
 		};
 
 		class boardagent : public app::node {
@@ -349,7 +384,7 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			boardagent(cstr _name, app::module& _owner) :app::node(_name, &_owner) {};
+			boardagent(cstr _name, servo& _servo) :app::node(_name, &_servo) {};
 		};
 
 		class contrltable : public devagent::stream, frontend::contrltable {
@@ -825,9 +860,8 @@ namespace robo {
 				static void clean(void);
 
 			};
-
-
 		}
+
 		#endif
 	}
 }

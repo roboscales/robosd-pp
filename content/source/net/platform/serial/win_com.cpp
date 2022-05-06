@@ -206,7 +206,7 @@ namespace robo{
 		}
 
 		bool win_com::connect(void){
-			hCommPort = ::CreateFileA(
+			hCommPort = ::CreateFile(
 				comm,
 				GENERIC_READ | GENERIC_WRITE,
 				FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -224,7 +224,7 @@ namespace robo{
 			}
 		}
 
-		void win_com::connect(const char *  _comm, unsigned _reconnect_pause_ms){
+		void win_com::connect(cstr  _comm, unsigned _reconnect_pause_ms){
 			reconnect_pause_ms_ = _reconnect_pause_ms;
 			comm = _comm;
 			stop();

@@ -245,7 +245,7 @@ namespace mexo {
 		if (this != &node::root()) {
 //			path_offset_ = ::robo::system::sprintf(_path, _len, RT("%s."), name_);
 			path_offset_=0;
-			const char * s = name_;
+			cstr s = name_;
 			while ( *s && _len--){				
 				*_path++ = *s++;
 				path_offset_++;

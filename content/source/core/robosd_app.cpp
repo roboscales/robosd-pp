@@ -144,7 +144,14 @@ namespace robo {
 			ROBO_LBREAKN(name_ != nullptr);
 			{
 				path pt_(*this);
-				index_ref_.set_key(hash(pt_.value()));
+
+				ROBO_LBREAKN(do_load());
+				if (alias_.length() == 0) {
+					index_ref_.set_key(hash(pt_.value()));
+				}
+				else {
+					index_ref_.set_key(hash(alias_));
+				}
 				index_ref_.attach_to(index_());
 
 				if (owner_ != nullptr) {
@@ -152,7 +159,6 @@ namespace robo {
 					ROBO_LBREAKN(own_ref_.attach_to(owner_->owned));
 				}
 
-				ROBO_LBREAKN(do_load());
 				if (owner_)
 					ref_.attach_to(owner_->stopped_);
 
@@ -164,9 +170,8 @@ namespace robo {
 				}
 				ROBO_LBREAKN(disabled_.count() == 0)
 
-					robo_applog("node '%s' is loaded", alias());
+				robo_applog("node '%s' is loaded", alias());
 
-				robo_detaillog(7, ::robo::log::mask::disabled, "aaa", 1, 33);
 
 				actual_state_ = state::stopped;
 			}

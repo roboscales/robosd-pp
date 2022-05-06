@@ -18,7 +18,20 @@ namespace robo {
 		}
 		return hash_value;
 	}
-
+	int32_t hash(cstr _beg, cstr _end, int32_t _begin) {
+		const int32_t p = 31;
+		const int32_t m = 1000000009;
+		int32_t hash_value = _begin;
+		int32_t p_pow = 1;
+		const char_t* c;
+		if (_end >= _beg) {
+			for (c = _beg; c<=_end; c++) {
+				hash_value = (hash_value + (*c - 'a' + 1) * p_pow) % m;
+				p_pow = (p_pow * p) % m;
+			}
+		}
+		return hash_value;
+	}
 	unsigned short fast_hash(cstr _src, unsigned short _begin) {
 		unsigned short x = _begin;
 		const char_t* c;

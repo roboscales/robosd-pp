@@ -24,9 +24,8 @@ int main(int _argc, robo::cstr _argv[])
 	auto t0 = Time::now();
 
 	ROBO_JAMPN( robo::system::consol::begin([&](robo::system::consol::event /**/) {terminated = true; }), crash);
-	ROBO_JAMPN(robo::system::ini::begin(emu_ini), crash);
-	ROBO_JAMPN(robo::edev::agent::begin(), crash);
-	robo::system::env::begin();
+	ROBO_JAMPN(robo::edev::agent::begin(emu_ini), crash);
+	//robo::system::env::begin();
 
 	
 	while (!terminated) {

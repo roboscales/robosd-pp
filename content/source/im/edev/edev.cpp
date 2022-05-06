@@ -99,7 +99,10 @@ namespace robo {
 			ag->set_local_ini(robo::system::ini::source());
 			return true;
 		}
-		bool agent::begin(void) {
+		bool agent::begin(cstr _ini) {
+			ROBO_LBREAKN(robo::system::ini::begin(_ini));
+			robo::system::env::begin();
+
 			int tmp = 0;
 			string sec;
 			string lib;
