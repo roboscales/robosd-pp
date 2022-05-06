@@ -422,6 +422,7 @@ namespace robo {
 		}
 
 		void machine::frontend_loop_(void) {
+			system::frontend_loop();
 			frontend_machine_();
 			if (actual_state() > state::stopped) {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {

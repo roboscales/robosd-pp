@@ -281,8 +281,7 @@ namespace robo {
 				bus* ownbus;
 				msg(void) : devagent::stream::msg(), ownbus(0) {}
 				virtual ~msg() {}
-				virtual bool  prepare(void);
-				virtual void release(void) {}
+				bool  prepare(void);
 			} message_;
 
 		private:
@@ -298,7 +297,7 @@ namespace robo {
 			time_us_t  default_timeout_us_;
 			void tick1sec_(void);
 		protected:
-			virtual bool post(void) = 0;
+			virtual void post(void) = 0;
 			virtual void cancel(void) = 0;
 			virtual void reset(void) = 0;
 			virtual bool ready(void) = 0;

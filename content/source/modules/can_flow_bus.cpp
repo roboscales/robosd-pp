@@ -20,7 +20,7 @@ namespace robo {
 						}
 						break;
 					case ROBO_TRAN_REQUEST_PUT:
-						bus::confirm(ROBO_TRAN_REFUSE);
+						bus::confirm(ROBO_TRAN_COMPLETE);
 						break;
 					case ROBO_TRAN_REQUEST_GET:
 						if ( (wait_id_ == in_packet_.id.value) && (message_.tran.size_actual == in_packet_.len) ) {
@@ -45,10 +45,10 @@ namespace robo {
 			message_.tran.data = out_packet_.values;
 		}
 
-		bool can_flow_bus::post(void) {
+		void can_flow_bus::post(void) {
 			uint16_t id = ((message_.address & 0xF) << 4) + ((message_.suba) & 0xF);
 			wait_id_ = 0x400 + id;
-
+			message_.tran.status = ROBO_TRAN_EXECUTE_PHY;
 			switch (message_.tran.request) {
 			case ROBO_TRAN_EXCANGE:
 				out_packet_.id.value = 0x200 + id;
@@ -66,8 +66,10 @@ namespace robo {
 				out_packet_.len = 1;
 				out_packet_.values[0] = (uint8_t)message_.tran.size_actual;
 				driver_.exchange(out_packet_, &in_packet_, &confirm_delegat_);
+			case ROBO_TRAN_REBOOT_ME:
+			default:
+				panic();
 			}
-			return true;
 		}
 
 		void can_flow_bus::cancel(void) {

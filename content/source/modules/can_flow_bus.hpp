@@ -17,7 +17,6 @@ namespace robo {
 			packet in_packet_;
 			packet out_packet_;
 			driver& driver_;
-			msg message_;
 			uint16_t wait_id_ = idle_id;
 			::robo::delegat::smember<can_flow_bus, void, bool > confirm_delegat_;
 		protected:
@@ -28,7 +27,7 @@ namespace robo {
 
 			virtual void reset(void);
 
-			virtual bool post(void);
+			virtual void post(void);
 
 			virtual void cancel(void);
 

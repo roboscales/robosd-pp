@@ -41,18 +41,17 @@ namespace MODULE_NAME{
 			else {
 				refuse();
 			}
-
 		}
 		void receive(robo::net::can_flow_bus::packet* _incomm) {
 			incomm_ = _incomm;
 		}
 		void send_cancel(void) {
 			//outcomm_ = nullptr;
-			can_.reset();
+			//can_.reset();
 		}
 		void receive_cancel(void) {
 			incomm_ = nullptr;
-			can_.reset();
+			//can_.reset();
 		}
 		bool panic(void) {  
 			return false; 
@@ -90,13 +89,14 @@ namespace MODULE_NAME{
 		robo::net::can_flow_bus::packet pk;
 		robo::net::can_flow_bus::packet res;
 		*/
-		virtual void backend_loop(void) {}
-		virtual void frontend_loop(void) {
+		virtual void backend_loop(void) {
 			driver** d = drivers_;
 			for (int i = 0; i < bus_count_; ++i, ++d) {
 				(*d)->phys::poll();
 				(*d)->poll();
 			}
+		}
+		virtual void frontend_loop(void) {
 			/*
 			static robo::time_us_t last_us = 0;
 			robo::time_us_t now_us = robo::system::env::time_us();

@@ -355,21 +355,10 @@ namespace robo {
 		bool bus::request_(void) {
 			{
 				system::guard g__;
-				bool proto_res = false;
-				switch (message_.tran.request) {
-				case ROBO_TRAN_REQUEST_GET:
-				case ROBO_TRAN_EXCANGE:
-				case ROBO_TRAN_REBOOT_ME:
-				case ROBO_TRAN_REQUEST_PUT:
-					request_begin_us_ = system::env::time_us();
-					timeout_us_ = default_timeout_us_;
-					proto_res = post();
-					break;
-				}
-				if (proto_res) {
-					message_.tran.status = ROBO_TRAN_EXECUTE_START;
-					return true;
-				}
+				request_begin_us_ = robo::system::env::time_us();
+				timeout_us_ = default_timeout_us_;
+				post();
+				return true;
 			}
 			message_.tran.status = ROBO_TRAN_REFUSE;
 			message_.confirm();
@@ -384,7 +373,7 @@ namespace robo {
 		bool bus::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
 			index_ref_.set_key(hash(alias()));
-			ROBO_LRET(index_ref_.attach_to(bus_index()));
+			ROBO_LBREAKN(index_ref_.attach_to(bus_index()));
 			ROBO_LBREAKN(ini::load(current_path(), RT("DEFAULT_TIMEOUT_US"), default_timeout_us_));
 			return true;
 		}
@@ -516,9 +505,9 @@ namespace robo {
 					devagent::bus_ref* first_agent_ref_ = current_agent_ref_;
 
 					if (current_agent_ref_) {
+						do {
 						message_.ownbus = this;
 						reset();
-						do {
 							devagent::stream::query_result res = current_agent_ref_->owner().query(&message_);
 							switch (res) {
 							case devagent::stream::query_result::success:

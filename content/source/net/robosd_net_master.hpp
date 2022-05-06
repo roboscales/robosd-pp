@@ -120,7 +120,7 @@ namespace robo{
 							state_ = state::receive;
 							wd_delay_ms_ = phys::wd_us(incom_packet_);
 							phys::receive(incom_packet_);
-							break;
+							return;
 						}
 					case state::receive:
 						reset_();
