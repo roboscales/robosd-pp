@@ -59,6 +59,7 @@ namespace robo {
 				char_t* buf_ = nullptr;
 				char_t* top_ = nullptr;
 				size_t space_ = 0;
+				string common_;
 				static path_root& ref(void) {
 					static path_root path_root_;
 					return path_root_;
@@ -75,8 +76,10 @@ namespace robo {
 				path(node& _node);
 				~path(void);
 				cstr value(void);
+				cstr common(void);
 			};
 			cstr current_path(void);
+			cstr common_path(void);
 		public:
 			bool load(void);
 			void clean(void);

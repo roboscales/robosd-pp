@@ -159,7 +159,7 @@ namespace robo {
 		public:
 			typedef  ::robo::list::sorted<devagent, int> bus_index;
 			typedef  bus_index::ref bus_ref;
-			class ROBO_EXPORT  stream {
+			class ROBO_EXPORT  stream : public app::node {
 			public:
 				enum class query_result {
 					none = 0
@@ -175,10 +175,10 @@ namespace robo {
 					typedef  ::robo::list::unsorted<msg> list;
 					list::ref ref;
 					robo_tran_t tran = {};
-					void confirm();
+					void confirm(void);
 					msg(void);
-					virtual bool prepare();
-					inline devagent * own_agent() { return stream_ == nullptr ? nullptr : &stream_->own_agent(); }
+					virtual bool prepare(void);
+					inline devagent * own_agent(void) { return stream_ == nullptr ? nullptr : &stream_->own_agent(); }
 				};
 
 				typedef signal::performer::priority priority;
@@ -188,10 +188,10 @@ namespace robo {
 				ref ref_;
 				devagent& agent_;
 			public:
-				inline devagent& own_agent() { return agent_; }
-				stream(devagent& _agent, priority _priority);
-				virtual ~stream();
-				virtual bool exchange_need() = 0;
+				inline devagent& own_agent(void) { return agent_; }
+				stream(cstr _name, devagent& _agent, priority _priority);
+				virtual ~stream(void);
+				virtual bool exchange_need(void) = 0;
 				virtual query_result query(robo_tran_t& _tran) = 0;
 				virtual void confirm(const robo_tran_t& _tran) = 0;
 				query_result query(msg* _msg);
@@ -386,29 +386,29 @@ namespace robo {
 			boardagent(cstr _name, servo& _servo) :app::node(_name, &_servo) {};
 		};
 
-		class contrltable : public devagent::stream, frontend::contrltable {
+		class vartable : public devagent::stream, public frontend::vartable {
 		private:
 			int command_;
 		public:
-			class ivar : public frontend::contrltable::ivar {
-				friend class contrltable;
+			class ivar : public frontend::vartable::ivar {
+				friend class vartable;
 				typedef ::robo::list::unsorted<ivar> queue;
 				typedef queue::ref ref;
 				ref ref_;
 			protected:
-				ivar(frontend::contrltable& _contrltable, const record& _instance);
+				ivar(frontend::vartable& _vartable, const record& _instance);
 				virtual bool rerquest(void);
 				virtual bool encode(uint8_t* _dst) = 0;
 				virtual bool decode(uint8_t* _dst) = 0;
 			public:
-				contrltable& owner(void) { return (contrltable&)frontend::contrltable::ivar::owner(); }
+				vartable& owner(void) { return (vartable&)frontend::vartable::ivar::owner(); }
 			};
 
 
-			template<  typename T> class var_t : public frontend::contrltable::var_t< ivar, T> {
+			template<  typename T> class var_t : public frontend::vartable::var_t< ivar, T> {
 			public:
-				typedef frontend::contrltable::var_t< ivar, T> B;
-				typedef frontend::contrltable::ivar::delegat delegat;
+				typedef frontend::vartable::var_t< ivar, T> B;
+				typedef frontend::vartable::ivar::delegat delegat;
 			protected:
 				struct iactual {
 					T& local;
@@ -464,8 +464,8 @@ namespace robo {
 
 				static var_t& create_var(cstr _path, cstr _name) {
 					var_t* v = dynamic_cast<var_t*>(ivar::create_var(_path, _name));
-					ROBO_APP_ASSERT(v != nullptr)
-						return *v;
+					ROBO_APP_ASSERT(v != nullptr);
+					return *v;
 				}
 
 				const T& value(void) {
@@ -481,10 +481,10 @@ namespace robo {
 					return actual.remote;
 				}
 
-				var_t(contrltable& _contrltable, cstr _name, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
-					: frontend::contrltable::var_t< ivar, T>(
-						_contrltable
-						, _contrltable.find_record_ref(_name)
+				var_t(vartable& _vartable, cstr _name, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
+					: frontend::vartable::var_t< ivar, T>(
+						_vartable
+						, _vartable.find_record_ref(_name)
 						, _front_local
 						, _front_remote
 						)
@@ -531,8 +531,8 @@ namespace robo {
 					T remote;
 				} actual_;
 			public:
-				var(contrltable& _contrltable, cstr _name)
-					: var_t<T>(_contrltable, _name, front_.local, front_.remote, actual_.local, actual_.remote) {};
+				var(vartable& _vartable, cstr _name)
+					: var_t<T>(_vartable, _name, front_.local, front_.remote, actual_.local, actual_.remote) {};
 			};
 
 
@@ -551,7 +551,7 @@ namespace robo {
 				}
 
 				fvar_t(
-					contrltable& _contrltable
+					vartable& _vartable
 					, cstr _name
 					, cstr _converter
 					, T& _front_local
@@ -559,7 +559,7 @@ namespace robo {
 					, T& _actual_local
 					, T& _actual_remote
 				) : var_t< T>(
-					_contrltable
+					_vartable
 					, _name
 					, _front_local
 					, _front_remote
@@ -582,7 +582,7 @@ namespace robo {
 					}
 				}
 
-				typedef frontend::contrltable::ivar::delegat delegat;
+				typedef frontend::vartable::ivar::delegat delegat;
 				result try_load(cstr _section, cstr _key, delegat& _delegat) {
 					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);
 					if (B::actual.local != B::actual.remote) {
@@ -770,20 +770,20 @@ namespace robo {
 				} actual_;
 			public:
 				/*
-				fvar(contrltable& _contrltable, const record& _instance)
-					: fvar_t<T>(_contrltable, _instance, front_.local, front_.remote, actual_.local, actual_.remote) {
+				fvar(vartable& _vartable, const record& _instance)
+					: fvar_t<T>(_vartable, _instance, front_.local, front_.remote, actual_.local, actual_.remote) {
 				}
 				*/
-				fvar(contrltable& _contrltable, cstr _name, cstr _converter = nullptr)
-					: fvar_t<T>(_contrltable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
+				fvar(vartable& _vartable, cstr _name, cstr _converter = nullptr)
+					: fvar_t<T>(_vartable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
 			};
 
 			virtual query_result query(robo_tran_t& _tran);
 			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
-			contrltable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
+			vartable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
 			bool query(void);
-			bool query(frontend::contrltable::ivar::delegat& _delegat);
+			bool query(frontend::vartable::ivar::delegat& _delegat);
 			bool ready(void);
 		private:
 			ivar::queue queue_;

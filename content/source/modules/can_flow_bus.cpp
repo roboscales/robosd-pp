@@ -29,6 +29,7 @@ namespace robo {
 						}
 						else {
 							bus::confirm(ROBO_TRAN_REFUSE);
+							robo_errlog("bus %s refuse msg 0x%h", alias(), in_packet_.id.value);
 						}
 						break;
 					}
@@ -66,6 +67,7 @@ namespace robo {
 				out_packet_.len = 1;
 				out_packet_.values[0] = (uint8_t)message_.tran.size_actual;
 				driver_.exchange(out_packet_, &in_packet_, &confirm_delegat_);
+				break;
 			case ROBO_TRAN_REBOOT_ME:
 			default:
 				panic();

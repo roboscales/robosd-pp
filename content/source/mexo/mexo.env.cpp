@@ -13,7 +13,7 @@
 #endif
 
 
-#include "mexo/vartable.hpp"
+#include "mexo/vartree.hpp"
 
 
 #if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
@@ -376,10 +376,10 @@ namespace mexo{
 		#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
 		#endif
 
-		namespace vartable{
+		namespace vartree{
 			::robo::termo::node root(
 				RT8("vt")
-				, RT8("vartable commands set")
+				, RT8("vartree commands set")
 				, RT8("vt <CR>")
 				, ::robo::termo::itf::root()
 			);
@@ -406,7 +406,7 @@ namespace mexo{
 					current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
 					if(current_node_){
 						current_var = current_node_->vars.first();
-						::robo::termo::itf::printf(RT8("vartable\n\r"));
+						::robo::termo::itf::printf(RT8("vartree\n\r"));
 						if(current_var){
 							printf();
 							current_var=current_var->next();
@@ -476,7 +476,7 @@ namespace mexo{
 			public:
 				show_fml(void) :show(
 					RT8("fml")
-					, RT8("vartable freemaster list show")
+					, RT8("vartree freemaster list show")
 					, RT8("fml  <CR>")
 					)
 				{
@@ -496,7 +496,7 @@ namespace mexo{
 			public:
 				show_val(void) :show(
 					RT8("vl")
-					, RT8("vartable values show")
+					, RT8("vartree values show")
 					, RT8("vl  <CR>")
 					)
 				{
@@ -520,7 +520,7 @@ namespace mexo{
 			public:
 				show_records(void) :show(
 					RT8("rl")
-					, RT8("vartable record list show")
+					, RT8("vartree record list show")
 					, RT8("rl  <CR>")
 					)
 				{

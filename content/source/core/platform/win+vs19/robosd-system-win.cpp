@@ -77,7 +77,7 @@ namespace robo {
 		break;
 		default:
 		set_win_consol_color_((consol_color_t)((int)_verb & 0xF),
-							  (consol_color_t)(((int)_verb & 0xF0) >> 4));
+								(consol_color_t)(((int)_verb & 0xF0) >> 4));
 		}
 
 		system::printf(_format, _args);
@@ -146,7 +146,9 @@ namespace robo {
 	bool system::env::begin(void) {
 		InitializeCriticalSection(&critical_);
 		InitializeCriticalSection(&guard_);
+		ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())
 		init_ = true;
+		
 		return true;
 	}
 
@@ -215,6 +217,7 @@ namespace robo {
 
 	system::guard::op system::env::enter(void) {
 		if (init_) {
+			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 			EnterCriticalSection(&guard_);
 			return system::guard::op::enter;
 		}
@@ -225,6 +228,7 @@ namespace robo {
 
 	void system::env::leave(void) {
 		LeaveCriticalSection(&guard_);
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
 
 	system::guard::op  system::env::lock(void) {

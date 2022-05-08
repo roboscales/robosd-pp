@@ -34,6 +34,7 @@ namespace robo {
 		bool format(cstr _format, ...);
 		#endif
 		bool load(cstr _section, cstr _key);
+		bool load(cstr _first_section, cstr _second_section, cstr _key);
 		bool tryload(cstr _section, cstr _key);
 
 		bool load(delegat::base<bool, uint8_t*, size_t >& _converter);

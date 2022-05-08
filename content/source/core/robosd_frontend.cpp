@@ -176,41 +176,41 @@ namespace robo {
 		}
 
 		#if		ROBO_APP_MODULE_ENABLED == 1
-		bool contrltable::ivar::query_(void) {
+		bool vartable::ivar::query_(void) {
 			ROBO_LBREAKN(begin_hook());
 			status_ = status::get;
 			ROBO_LRET(rerquest());
 		}
 
-		bool contrltable::ivar::post_(void) {
+		bool vartable::ivar::post_(void) {
 			ROBO_LBREAKN(begin_hook());
 			status_ = status::put;
 			ROBO_LRET(rerquest());
 		}
 
-		bool contrltable::ivar::query(void) {
+		bool vartable::ivar::query(void) {
 			reset_delegat();
 			ROBO_LRET(query_());
 		}
 
-		bool contrltable::ivar::post(void) {
+		bool vartable::ivar::post(void) {
 			reset_delegat();
 			ROBO_LRET(post_());
 		}
 
-		bool contrltable::ivar::query(delegat& _delegat) {
+		bool vartable::ivar::query(delegat& _delegat) {
 			reset_delegat();
 			static_delegat_ = &_delegat;
 			dynamic_delegat_ = nullptr;
 			ROBO_LRET(query_());
 		}
-		bool contrltable::ivar::post(delegat& _delegat) {
+		bool vartable::ivar::post(delegat& _delegat) {
 			reset_delegat();
 			static_delegat_ = &_delegat;
 			dynamic_delegat_ = nullptr;
 			ROBO_LRET(post_());
 		}
-		void contrltable::ivar::reset_delegat(void) {
+		void vartable::ivar::reset_delegat(void) {
 			if (dynamic_delegat_) {
 				delete dynamic_delegat_;
 				dynamic_delegat_ = nullptr;
@@ -218,13 +218,13 @@ namespace robo {
 			static_delegat_ = nullptr;
 			set_repeat_count(repeat_current_max_);
 		}
-		bool contrltable::ivar::query(robo::lambda<void(ivar&, bool)>& _lambda) {
+		bool vartable::ivar::query(robo::lambda<void(ivar&, bool)>& _lambda) {
 			reset_delegat();
 			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda);
 			static_delegat_ = dynamic_delegat_;
 			ROBO_LRET(query_());
 		}
-		bool contrltable::ivar::post(robo::lambda<void(ivar&, bool)>& _lambda) {
+		bool vartable::ivar::post(robo::lambda<void(ivar&, bool)>& _lambda) {
 			reset_delegat();
 			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda);
 			static_delegat_ = dynamic_delegat_;
@@ -232,15 +232,15 @@ namespace robo {
 		}
 
 
-		contrltable::ivar::ivar(contrltable& _contrltable, const record& _instance)
-			: contrltable_(_contrltable)
+		vartable::ivar::ivar(vartable& _vartable, const record& _instance)
+			: vartable_(_vartable)
 			, map_ref_(*this, 0)
 			, instance_(_instance) {
 			map_ref_.set_key(hash(instance_.name, 0));
-			ROBO_ALARMN_F(map_ref_.attach_to(contrltable_.vars), "eroor attach var '%s' to map ", instance_.name);
+			ROBO_ALARMN_F(map_ref_.attach_to(vartable_.vars), "eroor attach var '%s' to map ", instance_.name);
 		}
 
-		void contrltable::ivar::confirm(void) {
+		void vartable::ivar::confirm(void) {
 			switch (status_) {
 			case status::put:
 			status_ = status::ready;
@@ -257,7 +257,7 @@ namespace robo {
 			}
 		}
 
-		void contrltable::ivar::refuse(void) {
+		void vartable::ivar::refuse(void) {
 			status tmp = status_;
 			status_ = status::panic;
 			if (static_delegat_) (*static_delegat_) (*this, false);
@@ -282,7 +282,7 @@ namespace robo {
 			}
 		}
 
-		bool contrltable::ivar::begin_hook(void) {
+		bool vartable::ivar::begin_hook(void) {
 			ROBO_LBREAKN_F(hook_ == hook::free, "error hook state for var '%s'", name());
 			if (system::env::is_frontend()) {
 				hook_ = hook::frontend;
@@ -293,7 +293,7 @@ namespace robo {
 			return true;
 		}
 
-		void contrltable::ivar::finish_hook(void) {
+		void vartable::ivar::finish_hook(void) {
 			if (system::env::is_frontend()) {
 				if (hook_ != hook::frontend) {
 					robo_errlog("error hook state for var '%s'", name());
@@ -307,21 +307,21 @@ namespace robo {
 			hook_ = hook::free;
 		}
 
-		contrltable::contrltable(node& _owner, const record* _records, size_t _count)
+		vartable::vartable(node& _owner, const record* _records, size_t _count)
 			: node(RT("ct"), &_owner)
 			, records_(_records)
 			, count_(_count) {}
 
-		contrltable::ivar* contrltable::ivar::create_var(cstr _path, cstr _name) {
+		vartable::ivar* vartable::ivar::create_var(cstr _path, cstr _name) {
 			app::node* _node = app::node::find(_path);
 			ROBO_BREAKN_F(_node, nullptr, "invalid path: '%s' ", _path);
-			contrltable* ct = dynamic_cast<contrltable*>(_node);
+			vartable* ct = dynamic_cast<vartable*>(_node);
 			ROBO_BREAKN_F(ct, nullptr, "invalid object '%s' ", _path);
 			return ct->create_var(_name);
 		}
 
 
-		const contrltable::record* contrltable::find_record(cstr _name) {
+		const vartable::record* vartable::find_record(cstr _name) {
 			const record* r = records_;
 			for (size_t i = 0; i < count_; ++i, ++r) {
 				#if ROBO_UNICODE_ENABLED ==1
@@ -337,13 +337,13 @@ namespace robo {
 			return nullptr;
 		}
 
-		const contrltable::record& contrltable::find_record_ref(cstr _name) {
+		const vartable::record& vartable::find_record_ref(cstr _name) {
 			const record* r = find_record(_name);
 			ROBO_APP_ASSERT(r != nullptr);
 			return *r;
 		}
 
-		contrltable::ivar* contrltable::create_var(cstr _name) {
+		vartable::ivar* vartable::create_var(cstr _name) {
 			ivar* v = find_var(_name);
 			if (v) {
 				return v;
@@ -366,21 +366,21 @@ namespace robo {
 			}
 		}
 
-		contrltable::fabric::map& contrltable::fabric::fabrics(void) {
+		vartable::fabric::map& vartable::fabric::fabrics(void) {
 			static map fabrics_;
 			return fabrics_;;
 		}
 
-		contrltable::fabric::fabric(cstr _type) : ref_(*this, 0) {
+		vartable::fabric::fabric(cstr _type) : ref_(*this, 0) {
 			ref_.set_key(hash(_type));
 			ref_.attach_to(fabrics());
 		}
 
-		contrltable::fabric* contrltable::fabric::find(cstr _type) {
+		vartable::fabric* vartable::fabric::find(cstr _type) {
 			return fabrics().find(hash(_type));
 		}
 
-		contrltable::ivar* contrltable::find_var(cstr _name) {
+		vartable::ivar* vartable::find_var(cstr _name) {
 			return vars.find(hash(_name));
 		}
 		#endif

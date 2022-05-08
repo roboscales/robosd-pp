@@ -6,7 +6,7 @@
 #include "core/robosd_system.hpp"
 #include "mexo/led.hpp"
 #include "mexo/dev.front.hpp"
-#include "mexo/vartable.hpp"
+#include "mexo/vartree.hpp"
 #include <initializer_list> 
 
 #ifndef ROBO_APP_MEXO_SLOT_COUNT

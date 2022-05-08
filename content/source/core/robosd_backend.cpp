@@ -413,7 +413,7 @@ namespace robo {
 				return _bus;
 			}
 		}
-		bool bus::msg::prepare() {
+		bool bus::msg::prepare(void) {
 			devagent::stream::msg::prepare();
 			devagent& owner = stream_->own_agent();
 			const dev_id_t& id_ = owner.dev_id();
@@ -484,6 +484,15 @@ namespace robo {
 				}
 				else {
 					trafic.outcom.refuse.inc(message_.tran.size_actual);
+				}
+				{
+					devagent* broken_obj = message_.own_agent();
+					if (broken_obj) {
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
+					}
+					else {
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", alias(), now - request_begin_us_, now, request_begin_us_);
+					}
 				}
 				message_.confirm();
 			break;
@@ -622,7 +631,7 @@ namespace robo {
 			, ref(*this)
 			{}
 
-		void devagent::stream::msg::confirm() {
+		void devagent::stream::msg::confirm(void) {
 			if (stream_) {
 				stream_->confirm(tran);
 				if (tran.status == ROBO_TRAN_REFUSE) {
@@ -645,17 +654,18 @@ namespace robo {
 			tran.status = ROBO_TRAN_NONE;
 		}
 
-		bool devagent::stream::msg::prepare() {
+		bool devagent::stream::msg::prepare(void) {
 			tran.status = ROBO_TRAN_NONE;
 			return true;
 		}
 
-		devagent::stream::stream(devagent& _agent, devagent::stream::priority _priority) :
-			ref_(*this, _priority)
+		devagent::stream::stream(cstr _name, devagent& _agent, devagent::stream::priority _priority) :
+			app::node(_name, &_agent)
+			, ref_(*this, _priority)
 			, agent_(_agent) {
 			ref_.attach_to(agent_.streams_);
 		}
-		devagent::stream::~stream() {}
+		devagent::stream::~stream(void) {}
 
 		devagent::stream::query_result devagent::stream::query(devagent::stream::msg* _msg) {
 			stream::query_result ret = query(_msg->tran);
@@ -667,7 +677,7 @@ namespace robo {
 
 		bool boardagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
-			ROBO_LBREAKN(ini::load( current_path(), RT("REQUEST_PAUSE_US"), request_pause_us_));
+			ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("REQUEST_PAUSE_US"), request_pause_us_));
 			return true;
 		}
 		void boardagent::do_clean(void) {
@@ -689,17 +699,17 @@ namespace robo {
 			uint8_t tmp;
 			//			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), tmp));
 			//			dev_id_.bus = tmp;
-			ROBO_LBREAKN(ini::load( current_path(), RT("BOARD_DEV_ID"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), common_path(),  RT("BOARD_DEV_ID"), tmp));
 			dev_id_.dev = tmp;
 			ROBO_LBREAKN(ini::load(current_path(), RT("BOARD_ADDRESS"), tmp));
 			dev_id_.address = tmp;
 
-			ROBO_LBREAKN(ini::load(current_path(), RT("ENABLED"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), common_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
 				feedback.state.local = state_s::locals::configure;
-				ROBO_LBREAKN(bus_alias_.load(current_path(), RT("BUS_ALIAS")));
-				ROBO_LBREAKN(router_alias_.load(current_path(), RT("ROUTER_ALIAS")));
+				ROBO_LBREAKN(bus_alias_.load(current_path(), common_path(),  RT("BUS_ALIAS")));
+				ROBO_LBREAKN(router_alias_.load(current_path(), common_path(), RT("ROUTER_ALIAS")));
 			}
 			else {
 				feedback.state.local = state_s::locals::disabled;
@@ -709,20 +719,22 @@ namespace robo {
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			bus* b = find<bus>(bus_alias_);
-			bus_ref_.set_key(dev_id_.value);
-//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);
-			if (b) {
-				ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
-				dev_id_.bus = b->id();
-			}
-			else {
-				ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), alias(), dev_id_.value)
-			}
+			if (feedback.state.local == state_s::locals::configure) {
+				bus* b = find<bus>(bus_alias_);
+				bus_ref_.set_key(dev_id_.value);
+				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);
+				if (b) {
+					ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
+					dev_id_.bus = b->id();
+				}
+				else {
+					ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), alias(), dev_id_.value)
+				}
 
-			router_ = find<router>(router_alias_);
-			ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), alias(), dev_id_.value);
-			robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+				router_ = find<router>(router_alias_);
+				ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), alias(), dev_id_.value);
+				robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+			}
 			return true;
 		}
 
@@ -732,15 +744,15 @@ namespace robo {
 			app::node::do_clean();
 		}
 
-		contrltable::contrltable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count) :
-			frontend::contrltable(_agent, _records, _count), stream(_agent, _priority) {
+		vartable::vartable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count) :
+			frontend::vartable(_agent, _records, _count), stream(RT("ct"), _agent, _priority) {
 
 		}
 
-		contrltable::ivar::ivar(frontend::contrltable& _contrltable, const record& _instance)
-			: frontend::contrltable::ivar(_contrltable, _instance), ref_(*this) {};
+		vartable::ivar::ivar(frontend::vartable& _vartable, const record& _instance)
+			: frontend::vartable::ivar(_vartable, _instance), ref_(*this) {};
 
-		bool contrltable::ivar::rerquest(void) {
+		bool vartable::ivar::rerquest(void) {
 			system::guard g__;
 			ROBO_LBREAKN_F(!ref_.attached(), "var '%s' is busy and rwef is used ", name());
 			ref_.attach_to(owner().queue_);
@@ -748,7 +760,7 @@ namespace robo {
 		}
 
 
-		contrltable::query_result contrltable::query(robo_tran_t & _tran) {
+		vartable::query_result vartable::query(robo_tran_t & _tran) {
 			if (current_ != nullptr) {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 				current_->refuse();
@@ -798,7 +810,7 @@ namespace robo {
 			return query_result::none;
 		}
 
-		void contrltable::confirm(const robo_tran_t & _tran) {
+		void vartable::confirm(const robo_tran_t & _tran) {
 			if (current_ == nullptr) {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 			}
@@ -824,22 +836,22 @@ namespace robo {
 			current_ = nullptr;
 		}
 
-		bool contrltable::query(void) {
-			for (frontend::contrltable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
+		bool vartable::query(void) {
+			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
 				ROBO_LBREAKN(r->owner().query());
 			}
 			return true;
 		}
 
-		bool contrltable::query(frontend::contrltable::ivar::delegat& _delegat) {
-			for (frontend::contrltable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
+		bool vartable::query(frontend::vartable::ivar::delegat& _delegat) {
+			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
 				ROBO_LBREAKN(r->owner().query(_delegat));
 			}
 			return true;
 		}
 
-		bool contrltable::ready(void) {
-			for (frontend::contrltable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
+		bool vartable::ready(void) {
+			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
 				if (!r->owner().is_ready()) {
 					return false;
 				}

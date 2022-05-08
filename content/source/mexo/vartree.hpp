@@ -1,5 +1,5 @@
-#ifndef mexo_vartable_hpp
-#define mexo_vartable_hpp
+#ifndef mexo_vartree_hpp
+#define mexo_vartree_hpp
 #include "core/robosd_common.hpp"
 
 #ifndef ROBO_APP_MEXO_VAR_ENABLED

@@ -376,7 +376,7 @@ namespace robo {
 
 
 		#if ROBO_APP_MODULE_ENABLED  == 1
-		class contrltable :public app::node {
+		class vartable :public app::node {
 		public:
 
 			struct record {
@@ -388,7 +388,7 @@ namespace robo {
 
 			class ivar {
 				const record& instance_;
-				contrltable& contrltable_;
+				vartable& vartable_;
 			public:
 				typedef delegat::base<void, ivar&, bool>  delegat;
 				enum class status { disable, clean, ready, put, get, panic };
@@ -421,10 +421,10 @@ namespace robo {
 				status actual_status(void) { return status_; }
 			protected:
 				void reset_delegat(void);
-				contrltable& owner(void) { return contrltable_; }
+				vartable& owner(void) { return vartable_; }
 				void confirm(void);
 				void refuse(void);
-				ivar(contrltable& _contrltable, const record& _instance);
+				ivar(vartable& _vartable, const record& _instance);
 				virtual ~ivar(void) {}
 				virtual bool rerquest(void) = 0;
 				bool post(void);
@@ -504,7 +504,7 @@ namespace robo {
 				}
 
 			protected:
-				var_t(contrltable& _contrltable, const record& _instance, T& _local, T& _remote) : B(_contrltable, _instance), front(_local, _remote) {};
+				var_t(vartable& _vartable, const record& _instance, T& _local, T& _remote) : B(_vartable, _instance), front(_local, _remote) {};
 			};
 
 
@@ -518,10 +518,10 @@ namespace robo {
 			public:
 				fabric(cstr _type);
 				static fabric* find(cstr _type);
-				virtual ivar* create(contrltable& _contrltable, const  record& _record) = 0;
+				virtual ivar* create(vartable& _vartable, const  record& _record) = 0;
 			};
 
-			contrltable(node& _owner, const record* const _records, size_t _count);
+			vartable(node& _owner, const record* const _records, size_t _count);
 
 			const record& find_record_ref(cstr _name);
 
@@ -534,6 +534,8 @@ namespace robo {
 			ivar* create_var(cstr _name);
 			ivar* find_var(cstr _name);
 		};
+
+
 		#endif
 
 		class servo : public robo::app::node {

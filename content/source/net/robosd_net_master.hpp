@@ -154,6 +154,7 @@ namespace robo{
 					panic_();			
 				}
 				state_ = state::idle;
+				//if (confirm_) (*confirm_)(false);
 			}				
 			
 			void poll(void){
@@ -172,7 +173,7 @@ namespace robo{
 			master_t(cstr _name, app::node* _owner) : app::node(_name, _owner) {}
 			virtual bool do_load(void) {
 				ROBO_LBREAKN(app::node::do_load());
-				ROBO_LBREAKN(phys::do_load(current_path()));
+				ROBO_LBREAKN(phys::do_load(current_path(), common_path()));
 				return true;
 			}
 

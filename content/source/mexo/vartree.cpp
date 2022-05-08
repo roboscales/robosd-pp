@@ -1,4 +1,4 @@
-#include "mexo/vartable.hpp"
+#include "mexo/vartree.hpp"
 #include "mexo/mexo.hpp"
 #if ROBO_APP_MEXO_VAR_ENABLED
 #include <algorithm>

@@ -97,6 +97,9 @@ namespace robo {
 				root_.top_ += n;
 				root_.space_ -= n;
 				*root_.top_ = 0;
+				if (!root_.common_.tryload(root_.buf_, RT("COMMON"))) {
+					root_.common_ = RT(".common");
+				}
 			}
 		}
 		void node::path_pop_(void) {
@@ -136,10 +139,18 @@ namespace robo {
 		cstr node::path::value(void) {
 			return path_root::ref().buf_;
 		}
+		cstr node::path::common(void) {
+			return path_root::ref().common_;
+		}
 		cstr node::current_path(void) {
 			cstr s = path_root::ref().buf_;
 			return ( (s == nullptr) || (*s==0 ))? name_:s;
 		}
+		cstr node::common_path(void) {
+			cstr s = path_root::ref().common_.c_str();
+			return ((s == nullptr) || (*s == 0)) ? name_ : s;
+		}
+		
 		bool node::load(void) {
 			ROBO_LBREAKN(name_ != nullptr);
 			{

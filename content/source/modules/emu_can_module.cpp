@@ -17,7 +17,7 @@ namespace MODULE_NAME{
 				incomm_->id.value = _id;
 				incomm_->len = _len;
 				std::copy_n(_data, _len, incomm_->values);
-				robo_detaillog(4, ::robo::log::mask::disabled, ">>0x%2x [%d]", (int)incomm_->id.value, (int)incomm_->values[0]);
+				//robo_detaillog(4, ::robo::log::mask::disabled, ">>0x%2x [%d]", (int)incomm_->id.value, (int)incomm_->values[0]);
 				incomm_ = nullptr;
 				confirm();
 			}			
@@ -34,9 +34,13 @@ namespace MODULE_NAME{
 		void send(const robo::net::can_flow_bus::packet* _outcomm) {
 			if (can_.ready()) {
 				//outcomm_ = _outcomm;
-				can_.send(_outcomm->id.value, _outcomm->values, _outcomm->len);
-				robo_detaillog(3, ::robo::log::mask::disabled, "<<0x%2x [%d]", (int)_outcomm->id.value, (int)_outcomm->values[0]);
-				confirm();
+				if (can_.send(_outcomm->id.value, _outcomm->values, _outcomm->len)) {
+					confirm();
+				}
+				else {
+					refuse();
+				}
+				//robo_detaillog(3, ::robo::log::mask::disabled, "<<0x%2x [%d]", (int)_outcomm->id.value, (int)_outcomm->values[0]);
 			}
 			else {
 				refuse();
@@ -47,21 +51,21 @@ namespace MODULE_NAME{
 		}
 		void send_cancel(void) {
 			//outcomm_ = nullptr;
-			//can_.reset();
+			can_.reset();
 		}
 		void receive_cancel(void) {
 			incomm_ = nullptr;
-			//can_.reset();
+			can_.reset();
 		}
 		bool panic(void) {  
 			return false; 
 		}
 		robo::time_us_t wd_us(const robo::net::can_flow_bus::packet* _packet) {
-			return _packet->len * 100;
+			return _packet->len * 100+200;
 		}
-		bool do_load(robo::cstr _sect) {
-			ROBO_LBREAKN(robo::ini::load(_sect, RT("CHANNEL"), can_.channel));
-			ROBO_LBREAKN(robo::ini::load(_sect, RT("REPEAT_MAX_COUNT"), can_.repeat_max_count));
+		bool do_load( robo::cstr _common, robo::cstr _current) {
+			ROBO_LBREAKN(robo::ini::load(_common, _current, RT("CHANNEL"), can_.channel));
+			ROBO_LBREAKN(robo::ini::load(_common, _current, RT("REPEAT_MAX_COUNT"), can_.repeat_max_count));
 			ROBO_LBREAKN(can_.open());
 			return true;
 		}
