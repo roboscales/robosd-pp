@@ -236,6 +236,17 @@ if ( !( x ) ){\
 #define ROBO_JAMPN_F(x,lbl,f,...) if( !(x)) goto lbl;
 #endif
 
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_ASSERT_F
+#define ROBO_ASSERT_F(x,f,...)  \
+if ( !( x ) ){\
+	robo_errlog(f,__VA_ARGS__); \
+	ROBO_APP_CRASH();\
+}
+#endif
+#else
+#define ROBO_BREAKN_F(x,fault,f,...) if( !(x)) ROBO_APP_CRASH();
+#endif
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 namespace robo{

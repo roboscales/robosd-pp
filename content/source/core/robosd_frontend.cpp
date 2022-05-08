@@ -308,7 +308,7 @@ namespace robo {
 		}
 
 		vartable::vartable(node& _owner, const record* _records, size_t _count)
-			: node(RT("ct"), &_owner)
+			: node(RT("vt"), &_owner)
 			, records_(_records)
 			, count_(_count) {}
 
@@ -350,18 +350,20 @@ namespace robo {
 			}
 			else {
 				const record* _record = find_record(_name);
+				if (_record == nullptr) {
 
-				ROBO_BREAKN_F(_record, nullptr, "invalid record: '%s' ", _record->name);
+					ROBO_BREAKN_F(_record, nullptr, "invalid record: '%s' ", _record->name);
 
-				fabric* f = fabric::find(_record->type);
+					fabric* f = fabric::find(_record->type);
 
-				ROBO_BREAKN_F(_record, nullptr, "invalid fabric: '%s' ", _record->type);
+					ROBO_BREAKN_F(f, nullptr, "invalid fabric: '%s' ", _record->type);
 
-				v = f->create(*this, *_record);
+					v = f->create(*this, *_record);
 
-				ROBO_BREAKN_F(v, nullptr, "error create var '%s' with type '%s' ", _record->name, _record->type);
+					ROBO_BREAKN_F(v, nullptr, "error create var '%s' with type '%s' ", _record->name, _record->type);
 
-				return v;
+					return v;
+				}
 
 			}
 		}

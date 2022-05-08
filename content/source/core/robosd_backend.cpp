@@ -744,8 +744,8 @@ namespace robo {
 			app::node::do_clean();
 		}
 
-		vartable::vartable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count) :
-			frontend::vartable(_agent, _records, _count), stream(RT("ct"), _agent, _priority) {
+		vartable::vartable(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count) :
+			frontend::vartable(_agent, _records, _count), stream(RT("vts"), _agent, _priority) , proto_(_proto){
 
 		}
 
@@ -775,15 +775,28 @@ namespace robo {
 			if (current_ == nullptr) {
 				return query_result::none;
 			}
-
+			switch (proto_.request(_tran, current_)) {
+			case proto::result::success:
+				return query_result::success;
+				break;
+			case proto::result::repeat:
+				return query_result::repeat;
+				break;
+			default :
+				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				current_->refuse();
+				current_ = nullptr;
+				return query_result::none;
+			}
+			/*
 			if (current_->actual_status() == ivar::status::put) {
 				if (_tran.size_max > current_->length()) {
 					_tran.header.command = (robo_tran_command_id_t)current_->addr();
 					_tran.size_actual = current_->length();
-					if (current_->encode(_tran.data)) {
-						_tran.request = ROBO_TRAN_REQUEST_PUT;
-						return query_result::success;
-					}
+				}
+				if (current_->encode(proto.encode.put(_tran.data, current_->addr(), current_->length()))) {
+					_tran.request = ROBO_TRAN_REQUEST_PUT;
+					return query_result::success;
 				}
 				ROBO_ALARM_F("var oversize or format error for %s/%s", own_agent().alias(), current_->name());
 				current_->refuse();
@@ -803,11 +816,11 @@ namespace robo {
 					current_ = nullptr;
 					return query_result::none;
 				}
-			}
-			ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
-			current_->refuse();
-			current_ = nullptr;
-			return query_result::none;
+			}*/
+		}
+		bool vartable::exchange_need() { 
+			system::guard g__;  
+			return (queue_.count() > 0) || do_exchange_need(); 
 		}
 
 		void vartable::confirm(const robo_tran_t & _tran) {
@@ -815,7 +828,19 @@ namespace robo {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 			}
 			else {
-				if (_tran.status == ROBO_TRAN_COMPLETE) {
+				switch (proto_.confirm(_tran, current_)) {
+				case proto::result::success:
+					current_->confirm();
+					current_ = nullptr;
+				break;
+				case proto::result::repeat:
+				break;
+					case proto::result::fail:
+					ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
+					current_->refuse();
+					current_ = nullptr;		
+				}
+				/*if (_tran.status == ROBO_TRAN_COMPLETE) {
 					if (_tran.size_actual > current_->length()) {
 						current_->refuse();
 					}
@@ -831,9 +856,9 @@ namespace robo {
 				}
 				else {
 					current_->refuse();
-				}
+				}*/
+
 			}
-			current_ = nullptr;
 		}
 
 		bool vartable::query(void) {

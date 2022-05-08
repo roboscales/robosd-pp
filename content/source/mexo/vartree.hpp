@@ -13,18 +13,19 @@ namespace mexo {
 	namespace var {
 		union descriptor {
 			struct {
-				uint16_t len : 8;
+				uint16_t len : 15;
 				uint16_t bsign : 1;
 				uint16_t bconst : 1;
 				uint16_t real : 1;
-				uint16_t fault : 5;
+				//uint16_t fault : 5;
 			};
 			uint16_t memo;
 			uint8_t bytes[2];
 		};
 		constexpr inline int descriptor_enco(uint8_t _len, bool _bsign, bool _bconst, bool _real) {
-			return (int)((_len & 0xFF) + (_bsign ? 0x100 : 0) + (_bconst ? 0x200 : 0) + (_real ? 0x400 : 0));
+			return (int)((_len & 0x1FFF) + (_bsign ? 0x2000 : 0) + (_bconst ? 0x4000 : 0) + (_real ? 0x8000 : 0));
 		}
+
 
 		typedef enum {
 			uint8 = descriptor_enco(1, false, false, false)
@@ -48,12 +49,39 @@ namespace mexo {
 			, const_real = descriptor_enco(4, true, true, true)
 			, const_ext = descriptor_enco(8, true, true, true)
 		} types;
+
+		static inline robo::cstr type_name(const descriptor & d) {
+			int ix = descriptor_enco(d.len, d.bsign, d.bconst, d.real);
+			switch (ix) {
+			case uint8: return RT("u8");
+			case int8: return RT("i8");
+			case uint16: return RT("u16");
+			case int16: return RT("i16");
+			case uint32: return RT("u32");
+			case int32: return RT("i32");
+			case uint64: return RT("u54");
+			case int64: return RT("i64");
+			case real: return RT("real");
+			case ext: return RT("ext");
+			case const_uint8: return RT("const u8");
+			case const_int8: return RT("const i8");
+			case const_uint16: return RT("const u16");
+			case const_int16: return RT("const i16");
+			case const_uint32: return RT("const u32");
+			case const_int32: return RT("const i32");
+			case const_uint64: return RT("const u54");
+			case const_int64: return RT("const i64");
+			case const_real: return RT("const real");
+			case const_ext: return RT("const ext");
+			}
+		}
+
 		typedef enum {
 			index = 0
 			, get = 1
 			, put = 2
-			, page_get = 3
-			, page_put = 4
+			//, page_get = 3
+			//, page_put = 4
 		} request;
 		enum {
 			error_mask = 0xf0

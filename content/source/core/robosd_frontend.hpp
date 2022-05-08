@@ -386,6 +386,7 @@ namespace robo {
 				uint16_t length;
 			};
 
+
 			class ivar {
 				const record& instance_;
 				vartable& vartable_;
@@ -402,10 +403,10 @@ namespace robo {
 				int repeat_current_max_ = 30000000;
 			public:
 				enum { invalid_value = -1 };
-				uint16_t addr(void) { return  instance_.address; };
-				uint16_t length(void) { return  instance_.length; };
-				cstr name(void) { return  instance_.name; };
-				cstr type(void) { return  instance_.type; };
+				uint16_t addr(void) const { return  instance_.address; };
+				uint16_t length(void) const { return  instance_.length; };
+				cstr name(void) const { return  instance_.name; };
+				cstr type(void) const { return  instance_.type; };
 
 				bool query(void);
 				bool query(delegat& _delegat);
@@ -418,7 +419,7 @@ namespace robo {
 
 				typedef ::robo::list::unique<ivar, int> map;
 				typedef map::ref map_ref;
-				status actual_status(void) { return status_; }
+				status actual_status(void) const  { return status_; }
 			protected:
 				void reset_delegat(void);
 				vartable& owner(void) { return vartable_; }

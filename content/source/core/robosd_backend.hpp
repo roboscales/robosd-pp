@@ -387,8 +387,6 @@ namespace robo {
 		};
 
 		class vartable : public devagent::stream, public frontend::vartable {
-		private:
-			int command_;
 		public:
 			class ivar : public frontend::vartable::ivar {
 				friend class vartable;
@@ -398,6 +396,7 @@ namespace robo {
 			protected:
 				ivar(frontend::vartable& _vartable, const record& _instance);
 				virtual bool rerquest(void);
+			public:
 				virtual bool encode(uint8_t* _dst) = 0;
 				virtual bool decode(uint8_t* _dst) = 0;
 			public:
@@ -493,7 +492,7 @@ namespace robo {
 					B::begin();
 				};
 
-			protected:
+			public:
 
 				virtual bool encode(uint8_t* _dst) {
 					{
@@ -778,14 +777,25 @@ namespace robo {
 					: fvar_t<T>(_vartable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
 			};
 
+			class proto {
+			public:
+				enum class result { success, repeat, fail};
+				virtual result request(robo_tran_t& _tran, ivar * _var) = 0;
+				virtual result confirm( const robo_tran_t& _tran, ivar* _var) = 0;
+			};
 			virtual query_result query(robo_tran_t& _tran);
 			virtual void confirm(const robo_tran_t& _tran);
-			virtual bool exchange_need() { system::guard g__;  return queue_.count() > 0; }
-			vartable(devagent& _agent, priority _priority, int command_, const record* const _records, size_t _count);
+			virtual bool exchange_need(void);
+			vartable(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
 			bool query(void);
 			bool query(frontend::vartable::ivar::delegat& _delegat);
 			bool ready(void);
+			template<class T> T& proto_cast(void) { return reinterpret_cast<T&>(proto_); }
+		protected:
+			virtual bool do_ready(void) { return true;  }
+			virtual bool do_exchange_need(void) { return false; }
 		private:
+			proto& proto_;
 			ivar::queue queue_;
 			ivar* current_ = nullptr;
 		};

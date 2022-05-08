@@ -74,8 +74,7 @@ namespace mexo {
 		int  machine::proto_(const  uint8_t* _buf_in, uint8_t* _buf_out) {
 			request   query = (request)_buf_in[0];
 			int   ix;
-			uint8_t offset;
-			uint8_t len;
+			
 
 			switch (query) {
 			case request::index:
@@ -89,7 +88,6 @@ namespace mexo {
 					_buf_out[1] = (uint8_t)ix;
 					_buf_out[2] = r->desc.bytes[0];
 					_buf_out[3] = r->desc.bytes[1];
-
 				}
 				else {
 					_buf_out[0] = query | invalid_key; //query
@@ -102,38 +100,39 @@ namespace mexo {
 			case request::get:
 			{
 				ix = _buf_in[1];
-				len = _buf_in[2];
+				//len = _buf_in[2];
 				_buf_out[1] = ix;
 				if (ix < count_) {
 					const record* r = index_[ix];
-					if (len <= max_len && len == r->desc.len) {
+					if ( r->desc.len<=max_len) {
 						_buf_out[0] = query;
 						{
 							::robo::system::guard g__;
-							std::copy_n((uint8_t*)r->addr, len, _buf_out + 2);
+							std::copy_n((uint8_t*)r->addr, r->desc.len, _buf_out + 2);
 						}
 					}
 					else {
 						_buf_out[0] = query | invalid_length; ;
 					}
+					return 2 + r->desc.len;
 				}
 				else {
 					_buf_out[0] = query | invalid_index; ;
-					std::fill_n(_buf_out + 2, len, 0xFF);
+					//todo мы не знаем, что за переменная - сервер получит сообщение неверной длины, но  такое возможно при неверном desc
+					return 1;
 				}
-				return 2 + len;
 			}
 			case request::put:
 			{
 				ix = _buf_in[1];
-				len = _buf_in[2];
+				//len = _buf_in[2];
 				_buf_out[1] = ix;
 				if (ix < count_) {
 					const record* r = index_[ix];
-					if (len <= max_len && len == r->desc.len) {
+					if (r->desc.len <= max_len) {
 						{
 							::robo::system::guard g__;
-							std::copy_n(_buf_in + 3, len, (uint8_t*)r->addr);
+							std::copy_n(_buf_in + 2, r->desc.len, (uint8_t*)r->addr);
 						}
 						_buf_out[0] = query;
 					}
@@ -146,7 +145,7 @@ namespace mexo {
 				}
 				return 2;
 			}
-			case request::page_get:
+			/*case request::page_get:
 			{
 				ix = _buf_in[1];
 				len = _buf_in[2];
@@ -175,10 +174,9 @@ namespace mexo {
 			case request::page_put:
 			{
 				ix = _buf_in[1];
-				len = _buf_in[2];
-				offset = _buf_in[3];
-				_buf_out[1] = ix;
-				_buf_out[2] = offset;
+				offset = ((uint16_t)_buf_in[3])*256 +  _buf_in[2];
+				_buf_out[2] = _buf_in[2];
+				_buf_out[3] = _buf_in[3];
 				if (ix < count_) {
 					const record* r = index_[ix];
 					if (len <= max_len - 1 && len + offset <= r->desc.len) {
@@ -196,7 +194,7 @@ namespace mexo {
 					_buf_out[0] = query | invalid_index; ;
 				}
 				return 3;
-			}
+			}*/
 			}
 
 			return 0;
