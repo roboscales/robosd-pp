@@ -582,23 +582,24 @@ namespace robo {
 									ROBO_LBREAK_F("error load key from array  for  router '%s'", alias())
 								}
 								case wait::end:
-								if (*c == '"') {
-									int bus_id = robo::hash(vs+1, c - 1, 0);
-									ROBO_LBREAKN_F(find<bus>(bus_id) != nullptr, "bus is't found by string '%s' for  router '%s'", vs, alias());
-									int tmp[4];
-									ROBO_LBREAKN(string::to_number_array(c+1, tmp, 4));
-									rec->bus_id = bus_id;
-									rec->tran_header.dev_id = (robo_tran_dev_id_t)tmp[0];
-									rec->tran_header.command = (robo_tran_command_id_t)tmp[1];
-									rec->request_suba = (record::suba_t)tmp[2];
-									rec->answer_suba = (record::suba_t)tmp[3];
-									mode_ = mode::table;
-									return true;
-								}
+									if (*c == '"') {
+										int bus_id = robo::hash(vs+1, c - 1, 0);
+										ROBO_LBREAKN_F(find<bus>(bus_id) != nullptr, "bus is't found by string '%s' for  router '%s'", vs, alias());
+										int tmp[4];
+										ROBO_LBREAKN(string::to_number_array(c+1, tmp, 4));
+										rec->bus_id = bus_id;
+										rec->tran_header.dev_id = (robo_tran_dev_id_t)tmp[0];
+										rec->tran_header.command = (robo_tran_command_id_t)tmp[1];
+										rec->request_suba = (record::suba_t)tmp[2];
+										rec->answer_suba = (record::suba_t)tmp[3];
+										mode_ = mode::table;
+										goto next;
+									}
 								}
 								c++;
 							}
 						}
+					next:;
 					}
 				}
 			}
@@ -820,7 +821,7 @@ namespace robo {
 		}
 		bool vartable::exchange_need() { 
 			system::guard g__;  
-			return (queue_.count() > 0) || do_exchange_need(); 
+			return (queue_.count() > 0) || current_ !=nullptr || do_exchange_need();
 		}
 
 		void vartable::confirm(const robo_tran_t & _tran) {
@@ -877,11 +878,11 @@ namespace robo {
 
 		bool vartable::ready(void) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
-				if (!r->owner().is_ready()) {
+				if (!r->owner().is_ready() ) {
 					return false;
 				}
 			}
-			return true;
+			return do_ready();
 		}
 		#endif
 	}

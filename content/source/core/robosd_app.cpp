@@ -449,10 +449,10 @@ namespace robo {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->backend_loop();
 				}
+				backend::bus::perform();
 			}
 			backend::queue::poll();
 			backend::task::machine::execute();
-			backend::bus::perform();
 		}
 
 		machine& machine::root() {

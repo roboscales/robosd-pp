@@ -71,11 +71,11 @@ namespace robo {
 			template< typename B> static bool format_stream(B& _b, const char *_format, va_list _args) {
 				stream_s stream;
 				if (system::env::is_backend()) {
-					return (sprintf_backend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char_t)));
+					return (sprintf_backend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char)));
 				}
 				else {
 					system::critical c__;
-					return (sprintf_frontend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char_t)));
+					return (sprintf_frontend_(stream, _format, _args) && _b.put((uint8_t*)stream.memo, stream.size * sizeof(char)));
 				}
 			};
 			#endif

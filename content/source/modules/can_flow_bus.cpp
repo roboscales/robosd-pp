@@ -70,7 +70,8 @@ namespace robo {
 				break;
 			case ROBO_TRAN_REBOOT_ME:
 			default:
-				panic();
+			robo_errlog("bus %s refuse request 0x%x", alias(), message_.tran.request);
+			bus::confirm(ROBO_TRAN_REFUSE);
 			}
 		}
 

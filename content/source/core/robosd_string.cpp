@@ -61,6 +61,9 @@ namespace robo {
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_backend;
 		_s.size = system::env::sprintf((char *)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)/sizeof(char), _format, _args);
+		if (_s.size >= 0) {
+			*(((char*)string_buffer_backend) + _s.size) = 0;
+		}
 		return _s.size > 0;
 		#else
 		return false;
@@ -71,6 +74,9 @@ namespace robo {
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_frontend;
 		_s.size = system::env::sprintf((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t) / sizeof(char), _format, _args);
+		if (_s.size >= 0) {
+			*(((char*)string_buffer_frontend) + _s.size) = 0;
+		}
 		return _s.size > 0;
 		#else
 		return false;

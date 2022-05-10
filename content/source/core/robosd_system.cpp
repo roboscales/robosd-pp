@@ -6,7 +6,7 @@
 #include <iostream>
 
 namespace robo {
-	int32_t hash(cstr _src, int32_t _begin) {
+	/*int32_t hash(cstr _src, int32_t _begin) {
 		const int32_t p = 31;
 		const int32_t m = 1000000009;
 		int32_t hash_value = _begin;
@@ -37,6 +37,28 @@ namespace robo {
 		const char_t* c;
 		for (c = _src; *c; c++) {
 			x += 44111 * (*c);
+		}
+		return x;
+	}
+	*/
+	int32_t hash(cstr _src, int32_t _begin) {
+		int32_t x = _begin;
+		const char_t* c;
+		for (c = _src; *c; c++) {
+			x += 0x990C9AB5 * (*c);
+			x = x ^  (x >> 16);
+		}
+		return x;
+	}
+	int32_t hash(cstr _beg, cstr _end, int32_t _begin) {
+		int32_t x = _begin;
+		const char_t* c;
+		if (_end >= _beg) {
+			for (c = _beg; c <= _end; c++) {
+				x += 0x990C9AB5 * (*c);
+				x = x ^ (x >> 16);
+			}
+			return x;
 		}
 		return x;
 	}

@@ -20,6 +20,10 @@
 #include "net/robosd_flow.hpp"
 #endif
 
+#if ROBO_UNICODE_ENABLED == 1
+#include <codecvt>
+#endif
+
 namespace mexo{
 	namespace env {
 		#if ENV_FREEMASTER_CONNECT_TYPE == ENV_FREEMASTER_CONNECT_TYPE_ABONENT
@@ -466,12 +470,25 @@ namespace mexo{
 			};
 			class show_fml:public show{
 			protected:
-				virtual void printf(void){						
-					::robo::termo::itf::printf(RT8("%s%s\t%d\t%x\n\r")
-						,path,current_var->name
-					, (int)current_var->desc.len
-					,uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr)- FMSTR_ADDRESS_OFFSET)
+				virtual void printf(void){
+					#if ROBO_UNICODE_ENABLED == 1
+					robo::string nm;
+					nm.format(RT("%s%s\t%d\t%x\n\r")
+							  , path, current_var->name
+							  , (int)current_var->desc.len
+							  , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr) - FMSTR_ADDRESS_OFFSET));
+					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+					std::string utf8_string = convert.to_bytes(nm.c_str());
+					::robo::termo::itf::printf(
+						utf8_string.c_str()						
 					);
+					#else
+					::robo::termo::itf::printf(RT8("%s%s\t%d\t%x\n\r")
+											   , path, current_var->name
+											   , (int)current_var->desc.len
+											   , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr) - FMSTR_ADDRESS_OFFSET)
+					);
+					#endif
 				}
 			public:
 				show_fml(void) :show(
@@ -486,12 +503,27 @@ namespace mexo{
 			class show_val:public show{
 			protected:
 				virtual void printf(void){				
+					#if ROBO_UNICODE_ENABLED == 1
 					char_t tmp[20];
 					current_var->sprintf(tmp,20);
-					::robo::termo::itf::printf(RT8("%30s%-10s%s\n\r")
+					robo::string nm;
+					nm.format(RT("%30s%-10s%s\n\r")
 						,path,current_var->name
 						,tmp
 					);
+					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+					std::string utf8_string = convert.to_bytes(nm.c_str());
+					::robo::termo::itf::printf(
+						utf8_string.c_str()
+					);
+					#else
+					char_t tmp[20];
+					current_var->sprintf(tmp, 20);
+					::robo::termo::itf::printf(RT8("%30s%-10s%s\n\r")
+											   , path, current_var->name
+											   , tmp
+					);
+					#endif
 				}
 			public:
 				show_val(void) :show(
@@ -507,7 +539,9 @@ namespace mexo{
 			class show_records:public show{
 			protected:
 				virtual void printf(void){						
-					::robo::termo::itf::printf(RT8("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
+					#if ROBO_UNICODE_ENABLED == 1
+					robo::string nm;
+					nm.format(RT("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
 						,path,current_var->name
 						,current_var->addr
 						, (unsigned int)current_var->key
@@ -516,6 +550,22 @@ namespace mexo{
 						, (int)current_var->desc.bconst
 						, (int)current_var->desc.real
 					);
+					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+					std::string utf8_string = convert.to_bytes(nm.c_str());
+					::robo::termo::itf::printf(
+						utf8_string.c_str()
+					);
+					#else
+					::robo::termo::itf::printf(RT8("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
+											   , path, current_var->name
+											   , current_var->addr
+											   , (unsigned int)current_var->key
+											   , (int)current_var->desc.len
+											   , (int)current_var->desc.bsign
+											   , (int)current_var->desc.bconst
+											   , (int)current_var->desc.real
+					);
+					#endif
 				}
 			public:
 				show_records(void) :show(

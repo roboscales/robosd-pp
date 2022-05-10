@@ -13,7 +13,7 @@ namespace mexo {
 	namespace var {
 		union descriptor {
 			struct {
-				uint16_t len : 15;
+				uint16_t len : 13;
 				uint16_t bsign : 1;
 				uint16_t bconst : 1;
 				uint16_t real : 1;
