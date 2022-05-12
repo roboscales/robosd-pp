@@ -245,7 +245,7 @@ if ( !( x ) ){\
 }
 #endif
 #else
-#define ROBO_BREAKN_F(x,fault,f,...) if( !(x)) ROBO_APP_CRASH();
+#define ROBO_ASSERT_F(x,f,...) if( !(x)) ROBO_APP_CRASH();
 #endif
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
