@@ -1,7 +1,7 @@
 #ifndef dev_front_hpp
 #define dev_front_hpp
 #ifdef MEXO_SERVO_SIDE
-#include "core/robosd_proto.hpp"
+#include "servo/robosd_proto.hpp"
 #define mexo_proto_signal_t float
 #define mexo_proto_long_signal_t double
 #endif
@@ -27,6 +27,14 @@ namespace mexo {
 				#endif
 				uint8_t mode;
 			};
+			typedef enum {
+				echo = 1
+				, var = 2
+				, serial_1 = 3
+				, serial_2 = 4
+				, serial_m = 5
+				, snapshot = 6
+			} flow_command_ix;
 		}
 	}
 }

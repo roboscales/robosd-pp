@@ -176,6 +176,10 @@ namespace robo{
 				ROBO_LBREAKN(phys::do_load(current_path(), common_path()));
 				return true;
 			}
+			virtual void do_clean(void) {
+				app::node::do_load();
+				phys::do_clean();
+			}
 
 			#endif
 		};

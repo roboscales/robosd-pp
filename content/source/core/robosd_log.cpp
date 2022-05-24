@@ -19,7 +19,7 @@ namespace robo {
             {
                 va_list args;
                 va_start(args, _format);
-                system::env::print(_verb, _format, args);
+                 system::env::print(_verb, _format, args);
                 va_end(args);
             }
 						#endif

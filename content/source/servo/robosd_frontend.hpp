@@ -10,7 +10,7 @@
 #define robosd_frontend_hpp
 
 #include "core/robosd_common.hpp"
-#include "core/robosd_proto.hpp"
+#include "servo/robosd_proto.hpp"
 
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"

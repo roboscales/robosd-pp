@@ -61,6 +61,18 @@
 #error ROBO_APP_FREEMASTER_SERIAL_ENABLED will be defined automatically in mexo.env.common.hpp
 #endif
 
+#ifdef ROBO_APP_TERMINAL_ENABLED 
+#error ROBO_APP_TERMINAL_ENABLED will be defined automatically in mexo.env.common.hpp
+#endif
+
+#ifdef ROBO_APP_PROTO_SWITCH_ENABLED
+#error ROBO_APP_PROTO_SWITCH_ENABLED will be defined automatically in mexo.env.common.hpp
+#endif
+
+#ifdef ROBO_APP_NET_FLOW_ENABLED
+#error ROBO_APP_NET_FLOW_ENABLED will be defined automatically in mexo.env.common.hpp
+#endif
+
 #if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 #define ROBO_APP_FREEMASTER_SERIAL_ENABLED 1
 #else

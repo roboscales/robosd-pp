@@ -172,9 +172,6 @@ namespace robo {
 #define ROBO_APP_SYSTEM_ENABLED 0
 #endif
 
-#ifndef ROBO_APP_NET_FLOW_ENABLED
-#define ROBO_APP_NET_FLOW_ENABLED 0
-#endif
 
 #ifndef ROBO_MEMORY_HEAP_ENABLED
 #define ROBO_MEMORY_HEAP_ENABLED 0

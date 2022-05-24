@@ -8,8 +8,8 @@
  * @copyright Copyright (c) 2021
  *
  */
-#ifndef robosd_devagent_common_hpp
-#define robosd_devagent_common_hpp
+#ifndef robosd_proto_hpp
+#define robosd_proto_hpp
 namespace robo {
 	namespace common {
 		namespace devagent {

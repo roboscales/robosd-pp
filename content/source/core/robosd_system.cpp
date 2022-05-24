@@ -3,7 +3,7 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_ring_buf.hpp"
 #include <algorithm>
-#include <iostream>
+//#include <iostream>
 
 namespace robo {
 	/*int32_t hash(cstr _src, int32_t _begin) {

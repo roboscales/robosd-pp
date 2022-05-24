@@ -1,4 +1,4 @@
-#include "core/robosd_backend.hpp"
+#include "servo/robosd_backend.hpp"
 #include "core/robosd_system.hpp"
 #include "core/robosd_ini.hpp"
 namespace robo {
@@ -666,7 +666,37 @@ namespace robo {
 			, agent_(_agent) {
 			ref_.attach_to(agent_.streams_);
 		}
-		devagent::stream::~stream(void) {}
+		devagent::stream::~stream(void) {
+		}
+
+		bool devagent::stream::do_load(void) {
+			ROBO_LRET(app::node::do_load());
+//			ROBO_LBREAKN(ini::load(RT("defrout"),RT(""))
+		}
+		void devagent::stream::do_clean(void) {
+			app::node::do_clean();
+		}
+
+		devagent::tunnel::tunnel(cstr _name, devagent& _agent, priority _priority) 
+			: stream(_name, _agent, _priority) {
+		}
+		devagent::tunnel::~tunnel(void) {
+		}
+
+		bool devagent::tunnel::do_load(void) {
+			ROBO_LBREAKN(app::node::do_load());
+			string pn;
+			if ( pn.tryload(current_path(), RT("port")) ) {
+				port_ = robo::net::iserial::query<robo::net::iserial>(pn);
+				ROBO_LBREAKN(port_ == nullptr);
+			}
+			return true;
+		}
+		void devagent::tunnel::do_clean(void) {
+			if (port_ != nullptr) {
+				port_->release();
+			}
+		}
 
 		devagent::stream::query_result devagent::stream::query(devagent::stream::msg* _msg) {
 			stream::query_result ret = query(_msg->tran);

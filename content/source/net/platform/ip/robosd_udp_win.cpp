@@ -83,9 +83,9 @@ namespace win {
                 receive_state_ = receive_state::ready ;
                 break;
             case WSA_WAIT_TIMEOUT:
-                if(try_counter_>100){
+                if (_receive_tm != 0 && try_counter_ > 100) {
                     try_counter_ = 0;
-                    receive_state_ = receive_state::ready ;
+                    receive_state_ = receive_state::ready;
                 }
                 return false;
             default:
@@ -95,6 +95,7 @@ namespace win {
 
             rc = WSAGetOverlappedResult(socket_, &overlapped_, &bytes_recv_,
                                     FALSE, &flags_);
+            receive_state_ = receive_state::ready;
             if(rc == TRUE){
                 if(bytes_recv_>0){
                     receive(receive_buf_,bytes_recv_);
@@ -103,7 +104,6 @@ namespace win {
                     return false;
                 }
             }else{
-                close_();
                 return false;
             }
         }
@@ -114,20 +114,16 @@ namespace win {
 	
     bool udp::do_post( const uint8_t * _data, size_t _size){
         outcom_addr__.sin_port = htons(outcom_port());
-
+        ROBO_LBREAKN_F( socket_ != INVALID_SOCKET, "socket %s send error - it was closed", alias().c_str() );
+        
         int r = sendto(socket_,
             (char *)_data,
             _size,
             0,
             (const struct sockaddr *) &outcom_addr__,
             sizeof(outcom_addr__));
-        if (r == SOCKET_ERROR) {
-            robo_errlog("socket %s send error", alias().c_str() );
-            return false;
-        } else {
-            return true;
-        }
 
+        ROBO_LRET_F(r != SOCKET_ERROR, "socket %s send error", alias().c_str());
     }
 
 
@@ -148,9 +144,9 @@ namespace win {
         incom_.sin_family = AF_INET;
 		
 		struct hostent        *he;
-        if ((he = gethostbyname(network().c_str())) == NULL) {
-            ROBO_LBREAK_F("could not resolve  outcom host:  %s", network().c_str());
-		}
+        network().ascii([&he](const char* _s) { he = gethostbyname(_s); });
+
+        ROBO_LBREAKN_F(he!=NULL, "could not resolve  outcom host:  %s", network().c_str());
 
 		memset(&outcom_addr__, 0, sizeof(outcom_addr__)); 
       

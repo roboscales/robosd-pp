@@ -2,7 +2,7 @@
 #define MODULE_NAME_STR RT("emu_can")
 #include "core/robosd_app.hpp"
 #include "core/robosd_log.hpp"
-#include "modules/can_flow_bus.hpp"
+#include "net/robosd_can_flow_bus.hpp"
 #include "net/platform/can/emulator/emu_can.hpp"
 namespace MODULE_NAME{
 	class phys {
@@ -72,6 +72,9 @@ namespace MODULE_NAME{
 		}
 		void poll(void) {
 			can_.poll();
+		}
+		void do_clean(void) {
+			can_.close();
 		}
 		phys(void) 
 			: on_can_receive_(*this, &phys::on_can_receive__) 

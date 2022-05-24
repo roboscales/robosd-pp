@@ -35,21 +35,32 @@ namespace robo{
            template<typename T> static T* query(cstr _caption) {
                T * s = dynamic_cast<T*>( map_().find(hash(_caption, 0)) );
                if (s) {
-                   ((link *)s)->ref_.dettach();
-                   return s;
+                   if (s->ref_.attached()) {
+                       s->ref_.dettach();
+                       return s;
+                   }
+                   else {
+                       return nullptr;
+                   }
                }
                else {
-                   return 0;
+                   return nullptr;
                }
            }
            template<typename T> static T& query_ref(cstr _caption) {
                T* s = dynamic_cast<T*>( map_().find(hash(_caption, 0)) );
+               static typename T::dummy dummy_;
                if (s) {
-                   s->ref_.dettach();
-                   return *s;
+                   if (s->ref_.attached()) {
+                       s->ref_.dettach();
+                       return *s;
+                   }
+                   else {
+                       robo_errlog("serial '%s' is allready used!", _caption);
+                       return  dummy_;
+                   }
                }
                else {
-                   static typename T::dummy dummy_;
                    robo_errlog("serial '%s' is't found !", _caption);
                    return  dummy_;
                }

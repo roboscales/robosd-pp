@@ -394,8 +394,7 @@ namespace robo {
 	cstr g_robo_ini_fn = nullptr;
 	bool system::ini::begin(cstr _ini) {
 		g_robo_ini_fn = nullptr;
-		string tmp(RT("%s"),_ini);
-		ROBO_LBREAKN_F(file_exists_(_ini), "ini file '%s' is't found", tmp.c_str());
+		ROBO_LBREAKN_F(file_exists_(_ini), "ini file '%s' is't found ", _ini);// tmp.c_str());
 		g_robo_ini_fn = _ini;
 		return true;
 	}

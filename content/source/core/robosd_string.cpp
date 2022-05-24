@@ -1,6 +1,9 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_log.hpp"
 
+#if ROBO_UNICODE_ENABLED == 1
+#include <codecvt>
+#endif
 
 namespace robo {
 	typedef std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > stds;
@@ -83,6 +86,49 @@ namespace robo {
 		#endif
 	}
 	#endif
+	void string::ascii(char * _buf, size_t _len) const {
+		#if ROBO_UNICODE_ENABLED == 1
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+		std::string utf8_string = convert.to_bytes(c_str());
+		const char* p = utf8_string.c_str();
+		while (*p && _len>1) {
+			*_buf++ = *p++;
+			_len--;
+		}
+		*_buf = 0;
+		#else
+		const char* p = c_str();
+		while (*p && _len > 1) {
+			*_buf++ = *p++;
+			_len--;
+		}
+		*_buf = 0;
+		#endif
+	}
+	void string::ascii( ::robo::lambda< void (const char*)> _d) const {
+		#if ROBO_UNICODE_ENABLED == 1
+		size_t sz =length() + 1;
+		char* buf = new char[sz];
+		ROBO_APP_ASSERT(buf != nullptr);
+		ascii(buf, sz);
+		_d(buf);
+		delete[] buf;
+		#else
+		_d(c_str());
+		#endif
+	}
+	void string::asciib(::robo::lambda< void(const uint8_t*, size_t )> _d) const {
+		#if ROBO_UNICODE_ENABLED == 1
+		size_t sz = length() + 1;
+		char* buf = new char[sz];
+		ROBO_APP_ASSERT(buf != nullptr);
+		ascii(buf, sz);
+		_d((const uint8_t*)buf,sz);
+		delete[] buf;
+		#else
+		_d(c_str(), length());
+		#endif
+	}
 
 	bool string::format(cstr _format, va_list _args) {
 		stream_s stream;
@@ -163,7 +209,7 @@ namespace robo {
 	cstr  string::c_str() const { return   value_->c_str(); };
 
 	string::operator  cstr () const { return  value_->c_str(); };
-	size_t string::length(void) {
+	size_t string::length(void)  const {
 		return value_->length();
 	}
 	void string::clear(void) {

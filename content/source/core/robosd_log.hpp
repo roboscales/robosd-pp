@@ -224,6 +224,8 @@ return fault; \
 #define ROBO_JAMPN(x,lbl) if( !(x) ) goto lbl;
 #endif
 
+
+
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 #ifndef ROBO_JAMPN_F
 #define ROBO_JAMPN_F(x,lbl,f,...)  \
@@ -234,6 +236,15 @@ if ( !( x ) ){\
 #endif
 #else
 #define ROBO_JAMPN_F(x,lbl,f,...) if( !(x)) goto lbl;
+#endif
+
+
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#ifndef ROBO_JAMP_F
+#define ROBO_JAMP_F(lbl,f,...)  { robo_errlog(f,__VA_ARGS__); goto lbl; }
+#endif
+#else
+#define ROBO_JAMP_F(x,lbl,f,...) goto lbl;
 #endif
 
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1

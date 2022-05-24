@@ -73,6 +73,7 @@ namespace mexo {
 			case const_int64: return RT("const i64");
 			case const_real: return RT("const real");
 			case const_ext: return RT("const ext");
+			default: return RT("unknown");
 			}
 		}
 

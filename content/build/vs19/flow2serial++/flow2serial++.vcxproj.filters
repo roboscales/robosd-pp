@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="source">
+      <UniqueIdentifier>{5a0cd702-2f34-45b9-851b-f664d558224d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\core">
+      <UniqueIdentifier>{cbe939e6-a959-4e0c-aee8-c44f3f7b6757}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\net">
+      <UniqueIdentifier>{cf5c7968-f1fc-4608-8c24-b11448c3ed98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="source\servo">
+      <UniqueIdentifier>{f463b95f-edc6-448a-8f50-a6b27c85bcff}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\robosd-ref\tools\flow2serial++.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp">
+      <Filter>source\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\robosd_net_trafic.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\robosd_can.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can_module.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\tools\flow2serial_module.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\servo\mexo_backend.cpp">
+      <Filter>source\servo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\servo\mexo_frontend.cpp">
+      <Filter>source\servo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\servo\robosd_backend.cpp">
+      <Filter>source\servo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\servo\robosd_frontend.cpp">
+      <Filter>source\servo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_convert.cpp">
+      <Filter>source\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\robosd_net_link.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\robosd_serial.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">
+      <Filter>source\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_common.hpp">
+      <Filter>source\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_delegat.hpp">
+      <Filter>source\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\robosd_can.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\mexo_backend.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\mexo_frontend.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\mexo_proto.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\robosd_backend.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\robosd_frontend.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\servo\robosd_proto.hpp">
+      <Filter>source\servo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\tools\robosd_app_tuning.hpp">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_convert.hpp">
+      <Filter>source\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\robosd_net_link.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\robosd_serial.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -20,9 +20,6 @@
 #include "net/robosd_flow.hpp"
 #endif
 
-#if ROBO_UNICODE_ENABLED == 1
-#include <codecvt>
-#endif
 
 namespace mexo{
 	namespace env {
@@ -477,11 +474,7 @@ namespace mexo{
 							  , path, current_var->name
 							  , (int)current_var->desc.len
 							  , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr) - FMSTR_ADDRESS_OFFSET));
-					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-					std::string utf8_string = convert.to_bytes(nm.c_str());
-					::robo::termo::itf::printf(
-						utf8_string.c_str()						
-					);
+					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
 					::robo::termo::itf::printf(RT8("%s%s\t%d\t%x\n\r")
 											   , path, current_var->name
@@ -511,11 +504,7 @@ namespace mexo{
 						,path,current_var->name
 						,tmp
 					);
-					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-					std::string utf8_string = convert.to_bytes(nm.c_str());
-					::robo::termo::itf::printf(
-						utf8_string.c_str()
-					);
+					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
 					char_t tmp[20];
 					current_var->sprintf(tmp, 20);
@@ -550,11 +539,7 @@ namespace mexo{
 						, (int)current_var->desc.bconst
 						, (int)current_var->desc.real
 					);
-					std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-					std::string utf8_string = convert.to_bytes(nm.c_str());
-					::robo::termo::itf::printf(
-						utf8_string.c_str()
-					);
+					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
 					::robo::termo::itf::printf(RT8("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
 											   , path, current_var->name

@@ -1,4 +1,4 @@
-#include "modules/can_flow_bus.hpp"
+#include "net/robosd_can_flow_bus.hpp"
 namespace robo {
 	namespace net {
 		bool can_flow_bus::do_load(void) {

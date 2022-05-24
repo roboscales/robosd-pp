@@ -28,7 +28,7 @@ namespace robo {
 			void set_on_receive(on_receive_f* _on_receive);
 			void set_on_event(on_event_f* _on_event);
 
-			virtual bool open(bool _owned_view = false) = 0;
+			//virtual bool open(bool _owned_view = false) = 0;
 			virtual void close(void) = 0;
 			virtual bool send(uint32_t _id, const  uint8_t* _buf, uint8_t  _len) = 0;
 			virtual bool ready(void) = 0;

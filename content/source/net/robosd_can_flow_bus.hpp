@@ -1,6 +1,6 @@
-#ifndef can_flow_bus_hpp
-#define can_flow_bus_hpp
-#include "core/robosd_backend.hpp"
+#ifndef robosd_can_flow_bus_hpp
+#define robosd_can_flow_bus_hpp
+#include "servo/robosd_backend.hpp"
 #include "core/robosd_ring_buf.hpp"
 #include "net/robosd_net_master.hpp"
 #include "net/robosd_flow_id.h"

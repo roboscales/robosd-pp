@@ -38,7 +38,7 @@ namespace robo {
 		bool tryload(cstr _section, cstr _key);
 
 		bool load(delegat::base<bool, uint8_t*, size_t >& _converter);
-		size_t length(void);
+		size_t length(void) const;
 		cstr c_str() const;
 		operator cstr () const; //todo осмыслить
 		void clear(void);
@@ -136,6 +136,10 @@ namespace robo {
 		template <typename T> bool to_number_list(size_t _max_count, T* _values, size_t& _count) {
 			ROBO_LRET_F(scan_numbers<T>(_max_count, _values, _count), "error convert string '%s' to numbers", c_str());
 		}
+
+		void ascii(char* _buf, size_t _len) const;
+		void ascii( ::robo::lambda<  void (const char *)> ) const;
+		void asciib(::robo::lambda<  void(const uint8_t* , size_t)>) const;
 	};
 }
 
