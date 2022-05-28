@@ -144,7 +144,7 @@ namespace robo{
 			static void exec(const char * _cmd); //Эмуляция пользовательского ввода
 			static void new_line(void); //Перевод строки в терминале
 			static void printf(const char * _format, ...);
-			static void printf(const char * _format, va_list _args);
+			static void printfa(const char * _format, va_list _args);
 			static void prints(const char * _s);
 			static void put(char  _ch);
 			static command * root();

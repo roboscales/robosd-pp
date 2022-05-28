@@ -206,9 +206,11 @@ namespace robo {
 			class tunnel : public stream {
 			protected:
 				robo::net::iserial* port_ = nullptr;
+				robo::string port_name_;
 			protected:
 				virtual bool do_load(void);
-				virtual void do_clean(void);
+				virtual bool do_start(void);
+				virtual void do_stop(void);
 			public:
 				tunnel(cstr _name, devagent& _agent, priority _priority);
 				virtual ~tunnel(void);

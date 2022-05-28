@@ -1,30 +1,38 @@
-#define MODULE_NAME  vscom_can
-#define MODULE_NAME_STR RT("vscom_can")
+#define MODULE_NAME  sysworxx_can
+#define MODULE_NAME_STR RT("sysworxx_can")
 #include "core/robosd_app.hpp"
 #include "core/robosd_log.hpp"
 #include "net/robosd_can_flow_bus.hpp"
-#include "net/platform/can/vscom/robosd_vscom_can.hpp"
+#include "net/platform/can/sysworxx/robosd_sysworxx_can.hpp"
 namespace MODULE_NAME{
 	class phys {
 		robo::net::can_flow_bus::packet* incomm_= nullptr;
+		const robo::net::can_flow_bus::packet* outcomm_ = nullptr;
 		robo::delegat::srmember<phys, void, ::robo::net::ican&, uint32_t, const uint8_t*, uint8_t   > on_can_receive_;
 		virtual void confirm(void) = 0;
 		virtual void refuse(void) = 0;
-		void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {			
-			if (incomm_ != nullptr) {
-				incomm_->id.value = _id;
-				incomm_->len = _len;
-				std::copy_n(_data, _len, incomm_->values);
-				incomm_ = nullptr;
+		void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {	
+			if (outcomm_ && (outcomm_->id.value == _id) ) {
+				outcomm_ == nullptr;
 				confirm();
-			}			
+			}
+			else {
+				if (incomm_ != nullptr) {
+					incomm_->id.value = _id;
+					incomm_->len = _len;
+					std::copy_n(_data, _len, incomm_->values);
+					incomm_ = nullptr;
+					confirm();
+				}
+			}
 		}
-		robo::net::can::vscom::port can_;
+		robo::net::can::sysworxx::port can_;
 	public:
 		void send(const robo::net::can_flow_bus::packet* _outcomm) {
 			if (can_.ready()) {
 				if (can_.send(_outcomm->id.value, _outcomm->values, _outcomm->len)) {
-					confirm();
+					outcomm_ = _outcomm;
+					//confirm();
 				}
 				else {
 					refuse();
@@ -38,6 +46,7 @@ namespace MODULE_NAME{
 			incomm_ = _incomm;
 		}
 		void send_cancel(void) {
+			outcomm_ = nullptr;
 			can_.reset();
 		}
 		void receive_cancel(void) {
@@ -90,30 +99,6 @@ namespace MODULE_NAME{
 			}
 		}
 		virtual void frontend_loop(void) {
-			/*
-			static robo::time_us_t last_us = 0;
-			robo::time_us_t now_us = robo::system::env::time_us();
-			static bool odd = false;
-			static uint8_t counter = 0;
-			if (now_us - last_us > 1000000) {
-				last_us = now_us;
-				if (odd) {
-					pk.id.value = 0x0A1;
-					pk.len = 1;
-					pk.values[0] = 1;
-					drivers_[0]->exchange(pk, &res, nullptr);
-					//drivers_[1]->exchange(pk, &res, nullptr);
-				}
-				else {
-					pk.id.value = 0x2A1;
-					pk.len = 1;
-					pk.values[0] = counter++;
-					drivers_[0]->exchange(pk, nullptr, nullptr);
-					//pk.values[0]++;
-					//drivers_[1]->exchange(pk, nullptr, nullptr);
-				}
-				odd = !odd;
-			}*/
 		}
 		virtual bool do_load(void) { 
 			ROBO_LBREAKN(robo::app::module::do_load());

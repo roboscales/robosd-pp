@@ -12,6 +12,13 @@ namespace robo {
 			return value.tryload(_sect, _key) && value.to_number(_value);
 		}
 
+		template <typename T>	bool try_load(cstr _sect_first, cstr _sect_second, cstr _key, T& _value) {
+			return
+				try_load(_sect_first, _key, _value)
+				||
+				try_load(_sect_second, _key, _value);
+		}
+
 		template <typename T>	bool load(cstr _sect, cstr _key, T& _value) {
 			ROBO_LRET_F( try_load(_sect, _key, _value), "error load number param %s/%s", _sect, _key);
 		}
@@ -21,7 +28,7 @@ namespace robo {
 				return true;
 			}
 			else {
-				ROBO_LRET_F(try_load(_sect_second, _key, _value), "error load number param %s/%s", _sect_second, _key);
+				ROBO_LRET_F(try_load(_sect_second, _key, _value), "error load number param %s(or%s)/%s", _sect_first,_sect_second, _key);
 			}
 		}
 

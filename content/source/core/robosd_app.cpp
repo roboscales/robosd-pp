@@ -99,7 +99,9 @@ namespace robo {
 				root_.space_ -= n;
 				*root_.top_ = 0;
 				if (!root_.common_.tryload(root_.buf_, RT("COMMON"))) {
-					root_.common_ = RT(".common");
+					if (owner_ == nullptr) {
+						root_.common_ = RT(".common");
+					}
 				}
 			}
 		}

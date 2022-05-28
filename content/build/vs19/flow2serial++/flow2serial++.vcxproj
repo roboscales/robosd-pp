@@ -22,8 +22,12 @@
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_convert.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can_module.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can_module.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com_module.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_can.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_net_link.cpp" />
@@ -35,6 +39,7 @@
     <ClCompile Include="..\..\..\robosd-ref\servo\robosd_frontend.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\tools\flow2serial++.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\tools\flow2serial_module.cpp" />
+    <ClCompile Include="..\..\..\sysworxx-ref\CanItf.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp" />
@@ -42,7 +47,9 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_convert.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_delegat.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\net\platform\serial\win_com.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_net_link.hpp" />
@@ -54,6 +61,8 @@
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_frontend.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_proto.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\tools\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\sysworxx-ref\CanItf.h" />
+    <ClInclude Include="..\..\..\sysworxx-ref\Usbcan32.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F7579AF7-F09C-46E2-8A29-621EA057410E}</ProjectGuid>
@@ -109,33 +118,33 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform)</LibraryPath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -143,12 +152,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>MEXO_SERVO_SIDE;WIN32;_DEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;MEXO_SERVO_SIDE;WIN32;_DEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -161,12 +170,12 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>MEXO_SERVO_SIDE;WIN32;_DEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;MEXO_SERVO_SIDE;WIN32;_DEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN64.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -181,14 +190,14 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>MEXO_SERVO_SIDE;WIN32;NDEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;MEXO_SERVO_SIDE;WIN32;NDEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -203,14 +212,14 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>MEXO_SERVO_SIDE;WIN32;NDEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;MEXO_SERVO_SIDE;WIN32;NDEBUG;_WINDOWS;_USRDLL;sys_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN64.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>

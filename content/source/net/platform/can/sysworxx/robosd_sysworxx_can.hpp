@@ -3,16 +3,20 @@
 #include "net/robosd_can.hpp"
 #include "core/robosd_system.hpp"
 #include "core/robosd_string.hpp"
-#include "vs_can_api.h"
+#include "CanItf.h"
 namespace robo {
 	namespace net {
 		namespace can {
-			namespace vscom {
+			namespace sysworxx {
 				class ROBO_EXPORT port : public ican {
-					VSCAN_HANDLE handle_ = -1;
-					void* bitrate_ = (void*)0xFFFFFFFF;
+					int bitrate_;
+					int channel_;
 					string name_;
 					bool open_(void);
+					bool open__(void);
+					enum { chan_count = 4 };
+					static port* ports_[chan_count];
+					static void on_read_(BYTE bChannel_p, tCanMsgStruct* pCanMsg_p);
 				public:
 					port(void);
 					bool open(cstr _name);

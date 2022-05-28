@@ -6,8 +6,8 @@ namespace mexo {
 
 		bool devagent::echo::do_load(void) {
 			ROBO_LBREAKN(stream::do_load());
-			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("period_us"), period_));
-			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("show_enable"), show_enable_));
+			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("echo_period_us"), period_));
+			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("echo_show_enable"), show_enable_));
 			return true;
 		}
 
@@ -32,16 +32,15 @@ namespace mexo {
 					return query_result::none;
 				}
 			}
-			_tran.header.command = 0x1;
+			_tran.header.command = mexo::front::dev::flow_command_ix::echo;
 			_tran.request = ROBO_TRAN_REQUEST_PUT;
-			_tran.size_actual = sizeof(last_);
+			_tran.size_actual =  sizeof(last_);
 			*((robo::time_us_t*)_tran.data) = last_;
 			return query_result::success;
 			case state::request:
-			_tran.header.command = 0x1;
+			_tran.header.command = mexo::front::dev::flow_command_ix::echo;
 			_tran.request = ROBO_TRAN_REQUEST_GET;
-			_tran.size_actual = sizeof(last_);
-			*((robo::time_us_t*)_tran.data) = 0;
+			_tran.size_actual = sizeof(last_);			
 			return query_result::success;
 			}
 			return query_result::none;
@@ -187,6 +186,7 @@ namespace mexo {
 				step_ = step::put;
 				_tran.data[1] = index_;
 				_tran.request = ROBO_TRAN_REQUEST_PUT;
+				_tran.header.command = mexo::front::dev::flow_command_ix::var;
 				if (op_ == op::put) {
 					_tran.data[0] = mexo::var::request::put;
 					_var->encode(_tran.data + 2);
@@ -252,7 +252,7 @@ namespace mexo {
 				_tran.data[0] = mexo::var::request::index;
 				*(int32_t*)(_tran.data + 1) = (uint32_t)robo::hash(_desc->name());
 				_tran.size_actual = 5;
-				_tran.header.command = 0x02;
+				_tran.header.command = _tran.header.command = mexo::front::dev::flow_command_ix::var;
 				return result::repeat;
 			}
 			else if (step_ == step::desc_get) {
@@ -306,7 +306,7 @@ namespace mexo {
 
 		devagent::stream::query_result devagent::flow_serial::query(robo_tran_t& _tran) {
 			//todo подумать
-			_tran.header.command = 3;
+			_tran.header.command = _tran.header.command = mexo::front::dev::flow_command_ix::serial_1;
 			switch (state_) {
 			case state::none:
 				_tran.size_actual = 1;

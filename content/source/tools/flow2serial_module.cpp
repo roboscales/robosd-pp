@@ -17,17 +17,65 @@ namespace MODULE_NAME {
 	}
 
 	namespace backend {
-		class devagent : public mexo::backend::devagent {
+		class boardagent : public robo::backend::boardagent {
+			mexo::backend::devagent dev_;
+			mexo::backend::devagent::action_s goal_ = {};
+			mexo::backend::devagent::feedback_s feedback_ = {};
 		public:
-			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback) :
-				mexo::backend::devagent(_name, _boardagent, _goal, _feedback) {}
+			boardagent(robo::cstr _name, robo::backend::servo& _servo)
+				: robo::backend::boardagent(_name, _servo)
+				, dev_(RT("dev"),*this, goal_, feedback_) {
+			};
 		};
+		/*class devagent : public mexo::backend::devagent {
+			action_s goal_ = {};
+			feedback_s feedback_ = {};
+			robo::backend::boardagent boardagent_;
+		public:
+			devagent(robo::cstr _name, servo & _servo) : boardagent_(_name)
+				mexo::backend::devagent(_name, _boardagent, _goal, _feedback) {}
+		};*/
 
 
 		class servo : public mexo::backend::servo {
+			int boards_count_ = 0;
+			boardagent** boards_ = nullptr;
+		protected:
+			bool do_load(void) {
+				ROBO_LBREAKN(mexo::backend::servo::do_load());
+				ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("board_count"), boards_count_))
+				if (boards_count_ > 0) {
+					boards_ = new boardagent * [boards_count_];
+					ROBO_APP_ASSERT(boards_ != nullptr);
+					boardagent** pf = boards_;
+					robo::string key;
+					for (int i = 0; i < boards_count_; ++i, ++pf) {
+						*pf = nullptr;
+					}
+					pf = boards_;
+					for (int i = 0; i < boards_count_; ++i, ++pf) {
+						key.format(RT("board-%d"), i+1);
+						boardagent* f = new boardagent(key, *this);
+						ROBO_APP_ASSERT(f != nullptr);
+						*pf = f;
+					}
+				}
+				return true;
+			}
+			virtual void do_clean(void) {
+				if (boards_ != nullptr) {
+					boardagent** pf = boards_;
+					for (int i = 0; i < boards_count_; ++i, ++pf) {
+						if (*pf != nullptr) delete* pf;
+					}
+					delete[] boards_;
+					boards_ = nullptr;
+				}
+				mexo::backend::servo::do_clean();
+			}
 		public:
 			servo(robo::app::module & _module)
-				: mexo::backend::servo(RT("bke"), _module)
+				: mexo::backend::servo(RT("servo"), _module)
 //				, yaw_board(RT("yaw"), *this)
 			{
 			}

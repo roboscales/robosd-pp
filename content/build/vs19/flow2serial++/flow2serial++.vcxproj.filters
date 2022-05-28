@@ -61,6 +61,21 @@
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_serial.cpp">
       <Filter>source\net</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\sysworxx-ref\CanItf.c">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can_module.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com_module.cpp">
+      <Filter>source\net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">
@@ -112,6 +127,18 @@
       <Filter>source\net</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_serial.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\sysworxx-ref\CanItf.h">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\sysworxx-ref\Usbcan32.h">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.hpp">
+      <Filter>source\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\net\platform\serial\win_com.hpp">
       <Filter>source\net</Filter>
     </ClInclude>
   </ItemGroup>

@@ -682,20 +682,27 @@ namespace robo {
 		}
 		devagent::tunnel::~tunnel(void) {
 		}
-
 		bool devagent::tunnel::do_load(void) {
-			ROBO_LBREAKN(app::node::do_load());
-			string pn;
-			if ( pn.tryload(current_path(), RT("port")) ) {
-				port_ = robo::net::iserial::query<robo::net::iserial>(pn);
+			ROBO_LBREAKN(stream::do_load());
+			port_name_ = RT("");
+			port_name_.tryload(current_path(), RT("port"));
+			return true;
+		}
+
+		bool devagent::tunnel::do_start(void) {
+			ROBO_LBREAKN(app::node::do_start());
+			if ( port_name_.length() == 0 ) {
+				port_ = robo::net::iserial::query<robo::net::iserial>(port_name_);
 				ROBO_LBREAKN(port_ == nullptr);
 			}
 			return true;
 		}
-		void devagent::tunnel::do_clean(void) {
+
+		void devagent::tunnel::do_stop(void) {
 			if (port_ != nullptr) {
 				port_->release();
 			}
+			app::node::do_stop();
 		}
 
 		devagent::stream::query_result devagent::stream::query(devagent::stream::msg* _msg) {

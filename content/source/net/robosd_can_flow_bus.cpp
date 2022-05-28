@@ -29,7 +29,7 @@ namespace robo {
 						}
 						else {
 							bus::confirm(ROBO_TRAN_REFUSE);
-							robo_errlog("bus %s refuse msg 0x%h", alias(), in_packet_.id.value);
+							robo_errlog("bus %s refuse msg 0x%x", alias(), (int)in_packet_.id.value);
 						}
 						break;
 					}

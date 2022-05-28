@@ -27,14 +27,16 @@ namespace mexo {
 				#endif
 				uint8_t mode;
 			};
-			typedef enum {
-				echo = 1
-				, var = 2
-				, serial_1 = 3
-				, serial_2 = 4
-				, serial_m = 5
-				, snapshot = 6
-			} flow_command_ix;
+			struct flow_command_ix {
+				enum {
+					echo = 1
+					, var = 2
+					, serial_1 = 3
+					, serial_2 = 4
+					, serial_m = 5
+					, snapshot = 6
+				};
+			};
 		}
 	}
 }

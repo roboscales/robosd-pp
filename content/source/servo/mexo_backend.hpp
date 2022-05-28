@@ -5,6 +5,7 @@
 namespace mexo {
 	namespace backend {
 		class devagent : public robo::backend::devagent {
+
 			class echo : public stream {
 				robo::time_us_t last_ = 0;
 				robo::time_us_t period_ = 0;
@@ -103,7 +104,8 @@ namespace mexo {
 			public:
 				flow_serial(robo::cstr _name, devagent& _agent, priority _priority);
 				virtual ~flow_serial(void);
-			};
+			} * * flow_serials_ = nullptr;
+			int flow_serials_count_ = 0;
 			/*class fabric : robo::backend::{
 			public:
 				typedef ::robo::list::unique<fabric, int> map;
@@ -116,7 +118,41 @@ namespace mexo {
 				static fabric* find(cstr _type);
 				virtual ivar* create(vartable& _vartable, const  record& _record) = 0;
 			};*/
+		protected:
+			virtual bool do_load(void) {
+				ROBO_LBREAKN(robo::backend::devagent::do_load());
+				if ( robo::ini::try_load(current_path(), common_path(), RT("flow_serial_count"), flow_serials_count_) ) {
+					if (flow_serials_count_ > 0) {
+						flow_serials_ = new flow_serial * [flow_serials_count_];
+						ROBO_APP_ASSERT(flow_serials_!=nullptr);
+						flow_serial** pf = flow_serials_;
+						robo::string key;
+						for (int i = 0; i < flow_serials_count_; ++i, ++pf) {
+							*pf = nullptr;
+						}
+						pf = flow_serials_;
+						for (int i = 0; i < flow_serials_count_; ++i, ++pf) {
+							key.format(RT("flow_serial_%d"), i);
+							flow_serial* f = new flow_serial(key,*this,devagent::stream::priority::lo);
+							ROBO_APP_ASSERT(f != nullptr);
+							*pf = f;
+						}
+					}
+				}
+				return true;
+			}
 
+			virtual void do_clean(void) {
+				if (flow_serials_ != nullptr) {
+					flow_serial** pf = flow_serials_;
+					for (int i = 0; i < flow_serials_count_; ++i, ++pf) {
+						if (*pf != nullptr) delete* pf;
+					}
+					delete[] flow_serials_;
+					flow_serials_ = nullptr;
+				}
+				robo::backend::devagent::do_clean();
+			}
 		public:
 			typedef mexo::common::devagent::action_s action_s;
 			typedef mexo::common::devagent::feedback_s feedback_s;
@@ -136,7 +172,7 @@ namespace mexo {
 								robo_errlog("var query fail ");
 							}
 						});
-				vars_.query(RT("hps.mo_enco.native"));
+				//vars_.query(RT("hps.mo_enco.native"));
 			}
 		};
 		class servo : public robo::backend::servo {
