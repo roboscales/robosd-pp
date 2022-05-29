@@ -20,28 +20,31 @@ int main(int _argc, char* _argv[]) {
 		ini = RT("flow2serial++.ini");
 	}
 
-	ROBO_JAMPN(robo::system::consol::begin([&](robo::system::consol::event /**/) {robo::app::machine::stop(); }), crash);
-	robo_infolog("flow2serial++ begin %s",RT(""));
-	ROBO_JAMPN(robo::app::machine::begin(ini), crash);
-	ROBO_JAMPN(robo::app::machine::start(), crash);
+	std::thread backend([ini] {
+		ROBO_JAMPN(robo::system::consol::begin([&](robo::system::consol::event /**/) {robo::app::machine::stop(); }), crash);
+		robo_infolog("flow2serial++ begin %s", RT(""));
+		ROBO_JAMPN(robo::app::machine::begin(ini), crash);
+		ROBO_JAMPN(robo::app::machine::start(), crash);
+		{
+			std::thread frontend([] {
+				while (!robo::app::machine::terminated()) {
+					robo::app::machine::frontend_loop();
+				}
+			});
 
-	{
-		std::thread th([] {
 			while (!robo::app::machine::terminated()) {
-				robo::app::machine::frontend_loop();
+				robo::app::machine::backend_loop();
 			}
-	   });
-
-
-		while (!robo::app::machine::terminated()) {
-			robo::app::machine::backend_loop();
+			frontend.join();
 		}
-		th.join();
-	}
-crash:
+	crash:
+		robo::app::machine::finish();
+		robo::system::consol::finish();
 
-	robo::app::machine::finish();
-	robo::system::consol::finish();
+	});
+
+	backend.join();
+	
 	robo_infolog("warlock's central was finished%s",RT(""));
 	return 0;
 }

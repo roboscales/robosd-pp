@@ -89,31 +89,7 @@ namespace MODULE_NAME{
 				(*d)->poll();
 			}
 		}
-		virtual void frontend_loop(void) {
-			/*
-			static robo::time_us_t last_us = 0;
-			robo::time_us_t now_us = robo::system::env::time_us();
-			static bool odd = false;
-			static uint8_t counter = 0;
-			if (now_us - last_us > 1000000) {
-				last_us = now_us;
-				if (odd) {
-					pk.id.value = 0x0A1;
-					pk.len = 1;
-					pk.values[0] = 1;
-					drivers_[0]->exchange(pk, &res, nullptr);
-					//drivers_[1]->exchange(pk, &res, nullptr);
-				}
-				else {
-					pk.id.value = 0x2A1;
-					pk.len = 1;
-					pk.values[0] = counter++;
-					drivers_[0]->exchange(pk, nullptr, nullptr);
-					//pk.values[0]++;
-					//drivers_[1]->exchange(pk, nullptr, nullptr);
-				}
-				odd = !odd;
-			}*/
+		virtual void frontend_loop(void) {			
 		}
 		virtual bool do_load(void) { 
 			ROBO_LBREAKN(robo::app::module::do_load());

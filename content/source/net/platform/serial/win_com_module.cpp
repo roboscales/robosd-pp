@@ -9,13 +9,8 @@ namespace MODULE_NAME{
 	class module : public robo::app::module {
 		module(void)
 			: robo::app::module(MODULE_NAME_STR) {}
-		class win_com : public robo::net::win_com {
-		public:
-			robo::string name;
-			win_com(robo::cstr _key) : robo::net::win_com(){
-				name.load(MODULE_NAME_STR,_key);
-			}
-		};
+		typedef robo::net::win_com win_com;
+		
 		win_com  ** win_coms_ = nullptr;
 		int com_count_ = 0;
 
@@ -38,9 +33,12 @@ namespace MODULE_NAME{
 				b = win_coms_;
 				robo::string name;
 				for (int i = 0; i < com_count_; ++i, ++b) {
-					robo::string key(RT("comm_%d"), i + 1);
-					(*b) = new win_com(key);
-					ROBO_LBREAKN((*b) != nullptr);					
+					robo::string key(RT("comm_%d"), i );
+					robo::string alias;
+					alias.load(current_path(), key);
+					(*b) = new win_com();
+					ROBO_LBREAKN((*b) != nullptr);	
+					(*b)->begin(alias);
 				}
 			}
 			return true; 
@@ -48,7 +46,8 @@ namespace MODULE_NAME{
 		virtual bool do_start(void) {
 			win_com** b = win_coms_;
 			for (int i = 0; i < com_count_; ++i, ++b) {
-				(*b)->connect((*b)->name,100);
+				//todo alias и path - неодно и тоже! 
+				(*b)->connect((*b)->alias(),100);
 			}
 			return true;
 		}
