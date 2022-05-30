@@ -96,9 +96,7 @@ namespace robo {
 
 	void system::env::print(cstr _s) {
 		#if ROBO_UNICODE_ENABLED == 1
-		_setmode(_fileno(stdout), _O_U8TEXT);
 		std::wcout << _s;
-
 		#else
 		SetConsoleOutputCP(CP_UTF8);
 		std::cout << _s;
@@ -519,9 +517,21 @@ namespace robo {
 			return FALSE;
 			}
 		}
-
+		static HANDLE stdoutHandle;
+		static DWORD outModeInit;
 		bool system::consol::driver_begin(void){
-			ROBO_LRET( (SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE) == TRUE) );
+			#if ROBO_UNICODE_ENABLED == 1
+			_setmode(_fileno(stdout), _O_U8TEXT);
+			#endif
+			DWORD outMode = 0;
+			stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+			ROBO_LBREAKN_F(stdoutHandle != INVALID_HANDLE_VALUE, "GetStdHandle error %d", GetLastError());
+			ROBO_LBREAKN_F(GetConsoleMode(stdoutHandle, &outMode) == TRUE, "GetConsoleMode error %d", GetLastError());
+			outModeInit = outMode;
+			outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+			ROBO_LBREAKN_F(SetConsoleMode(stdoutHandle, outMode) == TRUE, "SetConsoleMode error %d", GetLastError());
+			ROBO_LBREAKN_F(SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE) == TRUE, "SetConsoleCtrlHandler error %d", GetLastError());
+			return true;
 		}
 		void system::consol::driver_finish(void) {
 			SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, FALSE);

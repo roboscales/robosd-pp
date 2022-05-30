@@ -245,6 +245,7 @@ namespace robo {
 			lock_count_++;
 			context_ = context::backend;
 			#endif
+			critical_op_ = op::skip;
 			op_ = env::lock();
 		}
 		#else
@@ -409,8 +410,10 @@ namespace robo {
 			sz = print_buffer_.get(tmp, ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE);
 			tmp[sz] = 0;
 		}
-		if(sz>0)
+		if (sz > 0) {
+			system::critical с__;
 			env::print(tmp);
+		}
 		#endif
 	}
 
@@ -425,7 +428,7 @@ namespace robo {
 				system::critical с__;
 				env::print(tmp.c_str());
 			}
-			else {
+			else {				
 				system::guard g__;
 				cstr s = tmp.c_str();
 				if (s) {

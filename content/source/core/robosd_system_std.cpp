@@ -63,8 +63,8 @@ namespace robo {
 
 	void set_consol_color_(consol_color_t text, consol_color_t background) {
 		#if ROBO_APP_ENV_ENABLED == 1
-		system::env::print(consol_colors_[text]);
-		system::env::print((cstr)background_colors_[background]);
+		system::printf(consol_colors_[text]);
+		system::printf((cstr)background_colors_[background]);
 		#endif
 	}
 
@@ -80,25 +80,25 @@ namespace robo {
 		set_consol_color_(LightGreen, Black);
 		break;
 		case robo::log::verb::detail_1:
-		set_consol_color_(LightCyan, Black);
+		set_consol_color_(White, DarkGray);
 		break;
 		case robo::log::verb::detail_2:
-		set_consol_color_(LightMagenta, Black);
+		set_consol_color_(White, Blue);
 		break;
 		case robo::log::verb::detail_3:
-		set_consol_color_(LightGreen, Blue);
+		set_consol_color_(White, Green);
 		break;
 		case robo::log::verb::detail_4:
-		set_consol_color_(LightMagenta, Blue);
+		set_consol_color_(White, Magenta);
 		break;
 		case robo::log::verb::detail_5:
-		set_consol_color_(LightCyan, Blue);
+		set_consol_color_(White, Magenta);
 		break;
 		case robo::log::verb::detail_6:
-		set_consol_color_(White, Blue);
+		set_consol_color_(White, Magenta);
 		break;
 		case robo::log::verb::detail_7:
-		set_consol_color_(White, Blue);
+		set_consol_color_(White, Magenta);
 		break;
 		default:
 		set_consol_color_((consol_color_t)((int)_verb & 0xF),
