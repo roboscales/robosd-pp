@@ -443,6 +443,7 @@ namespace robo {
 					r->owner().module_->frontend_loop();
 				}
 			}
+			frontend::queue::poll();
 		}
 
 		void machine::backend_loop_(void) {

@@ -74,7 +74,7 @@ namespace robo {
 			virtual ~performer(void);
 			bool attach_to(signal* _signal, priority _priority);
 			void dettach(void);
-			virtual bool temporary(void) { return false; }
+			//virtual bool temporary(void) { return false; }
 		};
 
 	protected:
@@ -103,9 +103,7 @@ namespace robo {
 		protected:
 			virtual  void  operator ()(void);
 		public:
-			temporary(const  ::robo::lambda< void(void) >& _lambda) : lambda_(_lambda) {
-				isfrontend_ = system::env::is_frontend();
-			}
+			temporary(const  ::robo::lambda< void(void) >& _lambda);
 		};
 	};
 
@@ -115,6 +113,73 @@ namespace robo {
 		void raise();
 	};
 
+	class pointer {
+		enum class result { pass, kill, fault };
+		int used_ = 0;
+		bool autonomic_;
+		class core {
+			friend class pointer;
+			int total_used_ = 0;
+			static core& instance_(void) {
+				static core  instance__;
+				return instance__;
+			}
+		};
+	private:
+		virtual result release_(void) {
+			if (used_ > 0) {
+				used_--;
+				if (used_ == 0) {
+					core::instance_().total_used_--;
+					if (autonomic_) {
+						return result::kill;
+					}
+					else {
+						return result::pass;
+					}
+				}
+				else {
+					return result::pass;
+				}
+			}
+			else {
+				return  result::fault;
+			}
+		}
+	protected:
+		virtual ~pointer(void) {}
+		pointer(void) : autonomic_(true) {}
+		pointer(bool _autonomic) : autonomic_(_autonomic) {}
+	public:
+		virtual result use(void) {
+			used_++;
+		}
+
+		void release(void) {
+			switch (release_()) {
+				case result::fault:
+				ROBO_VBREAK_F("fault of release");
+			case result::pass:
+				return;
+			case result::kill:
+				delete this;
+			}
+		}
+
+		static void release(pointer*& _ptr) {
+			ROBO_VBREAKN_F(_ptr != nullptr, "nullptr");
+			switch (_ptr->release_()) {
+			case result::fault:
+			ROBO_VBREAK_F("fault of release");
+			case result::pass:
+			return;
+			case result::kill:
+			delete _ptr;
+			_ptr = nullptr;
+			}
+		}
+
+	};
 	namespace frontend {
 
 		class ROBO_EXPORT queue : public signal {
@@ -342,30 +407,6 @@ namespace robo {
 		};
 
 
-		/*template<class D> class devagent_t : public D {
-		public:
-
-			typedef typename D::action_s A;			
-			typedef typename D::feedback_s F;
-
-			A & action;
-			const A & goal;
-			const F & feedback;
-
-			devagent_t(
-				D * _content
-			) : action(_content->action), goal(_content->goal), feedback(_content->feedback) {}
-
-			devagent_t(
-				D & _content
-			) : action(_content.action), goal(_content.goal), feedback(_content.feedback) {}
-			
-			devagent_t(
-				A& _action
-				, const A& _goal
-				, const F& _feedback
-			) : action(_action), goal(_goal), feedback(_feedback) {}
-		};*/
 
 
 		const struct {
@@ -546,5 +587,114 @@ namespace robo {
 		};
 
 	}
+
+	class quest :  protected signal::performer {
+	public:
+		enum class result { refuse, success };
+		enum class reaction { normal, terminate };
+		typedef ::robo::delegat::base<void, quest *> request;
+		typedef ::robo::delegat::base<reaction, result> answer;
+	private:
+		typedef robo::list::unsorted<quest> list;
+		typedef list::ref ref;
+		
+		class backend_core {
+			friend class quest;
+			list top_;
+			void request(void);
+			static backend_core& instance_(void) {
+				static backend_core  instance__;
+				return instance__;
+			}
+		};
+		class frontend_core {
+			friend class quest;
+			list top_;
+			void request(void);
+			static frontend_core& instance_(void) {
+				static frontend_core  instance__;
+				return instance__;
+			}
+		};
+		friend class backend_core;
+		friend class frontend_core;
+
+		ref ref_;
+		ref top_ref_;
+		list childs_;
+		quest* owner_;
+		request* request_;
+		answer* answer_;
+		bool isfrontend_;
+		enum class status { run, confirm, refuse } status_ = status::run;
+		void post_answer_(status _status);
+		quest(
+			quest* _owner
+			, request* _request
+			, answer* _answer
+		);
+	protected:
+		virtual  void  operator ()(void);
+	public:
+
+		static quest* create(
+			quest* _owner
+			, ::robo::lambda< void(quest *) > _request
+			, ::robo::lambda< reaction(result) > _confirm
+		) {
+			return new quest (
+				_owner
+				, new robo::delegat::slambda<void, quest*>(_request)
+				, new robo::delegat::slambda<reaction,result>(_confirm)
+			);
+		}
+
+		static quest* simple_create(
+			quest* _owner
+			, void(*_request )(quest*)
+			, reaction(*_confirm)(result)
+		) {
+			return new quest(
+				_owner
+				, new robo::delegat::ssimple<void, quest *>(_request)
+				, new robo::delegat::ssimple<reaction, result>(_confirm)
+			);
+		}
+
+		static quest* create(
+			quest* _owner
+			, void* _instance
+			, void(*_request)(void *, quest*)
+			, reaction(*_confirm)(void* ,result)
+		) {
+			return new quest(
+				_owner
+				, new robo::delegat::suni<void, quest*>(_instance,_request )
+				, new robo::delegat::suni<reaction, result>(_instance, _confirm)
+			);
+		}
+
+		template <typename C> static  quest* create(
+			quest* _owner
+			, C * _instance
+			, result(C::*_request)(quest*)
+			, reaction(C::*_confirm)(result)
+		) {
+			return new quest(
+				_owner
+				, new robo::delegat::smember<C,result, quest*>(_instance, _request)
+				, new robo::delegat::smember<C, reaction, result>(_instance, _confirm)
+			);
+		}
+
+		virtual ~quest(void) {
+			if (request_) delete request_;
+			if (answer_) delete answer_;			
+		}
+		static void post(void);
+		void confirm(void);
+		void refuse(void);
+		void terminate(void);
+	};
 }
 #endif

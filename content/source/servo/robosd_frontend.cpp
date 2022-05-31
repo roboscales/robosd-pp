@@ -61,6 +61,16 @@ namespace robo {
 		}
 	}
 
+	signal::temporary::temporary(const  ::robo::lambda< void(void) >& _lambda) : lambda_(_lambda) {
+		isfrontend_ = system::env::is_frontend();
+		if (isfrontend_) {
+			backend::queue::post(this, priority::lo);
+		}
+		else {
+			frontend::queue::post(this, priority::lo);
+		}
+	}
+
 
 	void event::raise(void) {
 		event::performer::ref* _ref = performers.first();
@@ -492,8 +502,123 @@ namespace robo {
 			static core core__;
 			return core__;
 		}
-
-
 	}
+
+	quest::quest(
+		quest* _owner
+		, request* _request
+		, answer* _answer
+	)
+		: signal::performer(true)
+		, ref_(*this)
+		, top_ref_(*this)
+		, isfrontend_ ( system::env::is_frontend() )
+		, request_(_request)
+		, answer_(_answer)
+	{
+		if (_owner != nullptr) {
+			owner_ = _owner;
+			ref_.attach_to(_owner->childs_);
+			owner_->top_ref_.dettach();
+		}
+		else {
+			owner_ = nullptr;
+		}
+		if (isfrontend_) {
+			system::critical c_;
+			top_ref_.attach_to(frontend_core::instance_().top_);
+		}
+		else {
+			top_ref_.attach_to(backend_core::instance_().top_);
+		}
+	}
+
+	void quest::post(void) {
+		if (system::env::is_frontend()) {
+			system::critical c_;
+			frontend_core::instance_().request();
+		} else {
+			backend_core::instance_().request();
+		}
+	}
+
+	void quest::backend_core::request(void) {
+		ref* r = top_.last();
+		while (r) {
+			ref* tmp = r;
+			r = r->prev();
+			ROBO_VBREAKN( tmp->owner().isfrontend_ == false);
+			frontend::queue::post(&(tmp->owner()), priority::lo);
+		}
+	}
+
+	void quest::frontend_core::request(void) {
+		ref* r = top_.last();
+		while (r) {
+			ref* tmp = r;
+			r = r->prev();
+			ROBO_VBREAKN(tmp->owner().isfrontend_ == true);
+			backend::queue::post(&(tmp->owner()), priority::lo);
+		}
+	}
+	void  quest::operator ()(void) {
+		switch (status_) {
+		case status::run:
+			ROBO_VBREAKN(system::env::is_frontend() != isfrontend_);
+			if (request_ == nullptr ) {
+				refuse();
+			}
+			else {
+				(*request_)(this);
+			}
+			return;
+		case status::confirm:		
+			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
+			if (answer_) {
+				if ((*answer_)(result::success) == reaction::terminate ) {
+					terminate();
+					return;
+				}
+			}
+			break;
+		case status::refuse:
+			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
+			if (answer_) {
+				if ((*answer_)(result::refuse) == reaction::terminate) {
+					terminate();
+					return;
+				}
+			}
+			break;
+		}
+		delete this;
+	}
+
+	void quest::post_answer_(status _status) {
+		ROBO_VBREAKN(status_==status::run);
+		status_ = _status;
+		if (isfrontend_) {
+			ROBO_VBREAKN( system::env::is_frontend() == false);
+			frontend::queue::post(this, priority::lo);
+		} else {
+			ROBO_VBREAKN(system::env::is_frontend() == true);
+			backend::queue::post(this, priority::lo);
+		}
+	}
+	void quest::confirm(void) {
+		post_answer_(status::confirm);
+	}
+	void quest::refuse(void) {
+		post_answer_(status::refuse);
+	}
+	void quest::terminate(void) {
+		quest* tmp = this;
+		while (tmp->owner_ != nullptr) {
+			tmp = tmp->owner_;
+		}
+		if (tmp != this) (*tmp->answer_)(result::refuse);
+		delete tmp;
+	}
+
 }
 

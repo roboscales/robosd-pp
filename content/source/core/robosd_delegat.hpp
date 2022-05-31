@@ -23,7 +23,7 @@ namespace robo {
                 ROBO_APP_ASSERT(delegat_);
                 return delegat_(args...);
             }
-            simple(void (*_delegat) (Args ... args))
+            simple(R (*_delegat) (Args ... args))
                 : delegat_(_delegat) {
             }
 
@@ -87,7 +87,7 @@ namespace robo {
         template <typename R, typename ... Args> class ROBO_EXPORT ssimple 
             : public  simple < base< R, Args... > , R, Args... > {
         public:
-            ssimple(void (*_delegat) (Args ... args))
+            ssimple(R (*_delegat) (Args ... args))
                 : simple < base< R, Args... >, R, Args... >(_delegat) {
             }
         };
