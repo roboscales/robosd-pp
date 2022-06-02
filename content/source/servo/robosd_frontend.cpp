@@ -524,6 +524,7 @@ namespace robo {
 		else {
 			owner_ = nullptr;
 		}
+
 		if (isfrontend_) {
 			system::critical c_;
 			top_ref_.attach_to(frontend_core::instance_().top_);
@@ -531,6 +532,7 @@ namespace robo {
 		else {
 			top_ref_.attach_to(backend_core::instance_().top_);
 		}
+		counter::instance_().inc();
 	}
 
 	void quest::post(void) {
@@ -547,6 +549,8 @@ namespace robo {
 		while (r) {
 			ref* tmp = r;
 			r = r->prev();
+			ROBO_VBREAKN(tmp->owner().status_ == status::none);
+			tmp->owner().status_ = status::run;
 			ROBO_VBREAKN( tmp->owner().isfrontend_ == false);
 			frontend::queue::post(&(tmp->owner()), priority::lo);
 		}
@@ -557,6 +561,8 @@ namespace robo {
 		while (r) {
 			ref* tmp = r;
 			r = r->prev();
+			ROBO_VBREAKN(tmp->owner().status_ == status::none);
+			tmp->owner().status_ = status::run;
 			ROBO_VBREAKN(tmp->owner().isfrontend_ == true);
 			backend::queue::post(&(tmp->owner()), priority::lo);
 		}
@@ -569,10 +575,19 @@ namespace robo {
 				refuse();
 			}
 			else {
+				use_++;
 				(*request_)(this);
 			}
 			return;
 		case status::confirm:		
+			if (use_ == 0) {
+				release();
+				return;
+			}
+			else {
+				release();
+			}
+			status_ = status::discarde;
 			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
 			if (answer_) {
 				if ((*answer_)(result::success) == reaction::terminate ) {
@@ -582,6 +597,14 @@ namespace robo {
 			}
 			break;
 		case status::refuse:
+			if (use_ == 0) {
+				release();
+				return;
+			}
+			else {
+				release();
+			}
+			status_ = status::discarde;
 			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
 			if (answer_) {
 				if ((*answer_)(result::refuse) == reaction::terminate) {
@@ -591,7 +614,21 @@ namespace robo {
 			}
 			break;
 		}
-		delete this;
+		quest* own = owner_;
+		release();
+		if (own) {
+			if (own->childs_.count() == 0) {
+				ROBO_VBREAKN(own->status_ == status::none);
+				ROBO_VBREAKN(own->isfrontend_ == robo::system::env::is_frontend() );
+				own->status_ = status::run;
+				if (own->isfrontend_) {
+					backend::queue::post(own,priority::lo);
+				}
+				else {
+					frontend::queue::post(own, priority::lo);
+				}
+			}
+		}
 	}
 
 	void quest::post_answer_(status _status) {
@@ -616,8 +653,7 @@ namespace robo {
 		while (tmp->owner_ != nullptr) {
 			tmp = tmp->owner_;
 		}
-		if (tmp != this) (*tmp->answer_)(result::refuse);
-		delete tmp;
+		tmp->release();
 	}
 
 }

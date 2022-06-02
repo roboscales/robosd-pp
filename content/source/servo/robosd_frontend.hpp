@@ -590,20 +590,56 @@ namespace robo {
 
 	class quest :  protected signal::performer {
 	public:
-		enum class result { refuse, success };
+		enum class result { refuse, success, cancel, broke };
 		enum class reaction { normal, terminate };
 		typedef ::robo::delegat::base<void, quest *> request;
 		typedef ::robo::delegat::base<reaction, result> answer;
 	private:
 		typedef robo::list::unsorted<quest> list;
 		typedef list::ref ref;
-		
+		int use_ = 0;
+		void release(void) {
+			ref* r = childs_.last();
+			while (r) {
+				quest* tmp = &(r->owner());
+				r = r->prev();
+				tmp->release();
+			}
+
+			if (use_ > 0) {
+				use_--;
+			}
+			else {
+				delete this;
+			}
+		}
 		class backend_core {
 			friend class quest;
 			list top_;
+			int counter_=0;
+			void inc(void) {
+				robo_infolog("\t\tbackend quest ++ (%d)", ++counter_);
+			}
+			void dec(void) {
+				robo_infolog("\t\tbackend quest -- (%d)", --counter_);
+			}
 			void request(void);
 			static backend_core& instance_(void) {
 				static backend_core  instance__;
+				return instance__;
+			}
+		};
+		class counter {
+			friend class quest;
+			int counter_ = 0;
+			void inc(void) {
+				robo_infolog("\t\t++ backend quest ++ (%d)", ++counter_);
+			}
+			void dec(void) {
+				robo_infolog("\t\t-- backend quest -- (%d)", --counter_);
+			}
+			static counter& instance_(void) {
+				static counter  instance__;
 				return instance__;
 			}
 		};
@@ -626,7 +662,7 @@ namespace robo {
 		request* request_;
 		answer* answer_;
 		bool isfrontend_;
-		enum class status { run, confirm, refuse } status_ = status::run;
+		enum class status { none, run, confirm, refuse, discarde } status_ = status::none;
 		void post_answer_(status _status);
 		quest(
 			quest* _owner
@@ -642,6 +678,10 @@ namespace robo {
 			, ::robo::lambda< void(quest *) > _request
 			, ::robo::lambda< reaction(result) > _confirm
 		) {
+			if (_owner != nullptr) {
+				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
+				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(), nullptr);
+			}
 			return new quest (
 				_owner
 				, new robo::delegat::slambda<void, quest*>(_request)
@@ -654,6 +694,10 @@ namespace robo {
 			, void(*_request )(quest*)
 			, reaction(*_confirm)(result)
 		) {
+			if (_owner != nullptr) {
+				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
+				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(),nullptr);
+			}
 			return new quest(
 				_owner
 				, new robo::delegat::ssimple<void, quest *>(_request)
@@ -667,6 +711,10 @@ namespace robo {
 			, void(*_request)(void *, quest*)
 			, reaction(*_confirm)(void* ,result)
 		) {
+			if (_owner != nullptr) {
+				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
+				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(),nullptr);
+			}
 			return new quest(
 				_owner
 				, new robo::delegat::suni<void, quest*>(_instance,_request )
@@ -680,6 +728,10 @@ namespace robo {
 			, result(C::*_request)(quest*)
 			, reaction(C::*_confirm)(result)
 		) {
+			if (_owner != nullptr) {
+				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
+				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(), nullptr);
+			}
 			return new quest(
 				_owner
 				, new robo::delegat::smember<C,result, quest*>(_instance, _request)
@@ -688,8 +740,38 @@ namespace robo {
 		}
 
 		virtual ~quest(void) {
+			ref* r = childs_.last();
+			while (r) {
+				quest* tmp = &(r->owner());
+				r = r->prev();
+				tmp->ref_.dettach();
+				tmp->top_ref_.dettach();
+				tmp->owner_ = nullptr;
+			}
+
+			if (answer_) {
+				switch (status_) {
+				case status::confirm:
+					(*answer_)(result::success);
+					break;
+				case status::refuse:
+					(*answer_)(result::refuse);
+					break;
+				case status::run:
+					(*answer_)(result::broke);
+					break;
+				case status::none:
+					(*answer_)(result::cancel);
+					break;
+				case status::discarde:
+					break;
+				//	(*answer_)(result::cancel);
+					//} else if()
+				}
+ 				delete answer_;
+			}
 			if (request_) delete request_;
-			if (answer_) delete answer_;			
+			counter::instance_().dec();
 		}
 		static void post(void);
 		void confirm(void);
