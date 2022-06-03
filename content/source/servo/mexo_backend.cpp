@@ -69,7 +69,20 @@ namespace mexo {
 		devagent::varindex::descriptor::descriptor(varindex& _varindex, robo::cstr _name, confirm_d* _confirm)
 			: ref_(*this)
 			, varindex_(_varindex)
-			, confirm_(_confirm) {
+			, confirm_(_confirm)
+			, lambda_(nullptr){
+			robo::system::guard g__;
+			ref_.attach_to(varindex_.request_);
+			record_ = {};
+			name_ = _name;
+			record_.name = name_.c_str();
+		}
+		devagent::varindex::descriptor::descriptor(varindex& _varindex, robo::cstr _name, lambda * _lambda)
+			: ref_(*this)
+			, varindex_(_varindex)
+			, confirm_(nullptr)
+			, lambda_(_lambda)
+			{
 			robo::system::guard g__;
 			ref_.attach_to(varindex_.request_);
 			record_ = {};
@@ -86,19 +99,27 @@ namespace mexo {
 
 		void devagent::varindex::descriptor::confirm(void) {
 			fabric* f = fabric::find(record_.type);
-			ROBO_ASSERT_F((f != nullptr), "invalid fabric: '%s' ", record_.type);
+			ROBO_VBREAKN_F((f != nullptr), "invalid fabric: '%s' ", record_.type);
 			var_ = dynamic_cast<ivar*>(f->create(varindex_, record_));
-			ROBO_ASSERT_F((var_ != nullptr), "error create var '%s' with type '%s' ", record_.name, record_.type);
-			if (confirm_) {
-				(*confirm_)(true, var_);
-			}
+			ROBO_VBREAKN_F((var_ != nullptr), "error create var '%s' with type '%s' ", record_.name, record_.type);
+
 			ref_.attach_to(varindex_.index_);
+			if (confirm_) {
+				var_->query(confirm_);
+			}
+			else if (lambda_) {
+				var_->query(lambda_);
+			} else
+			{
+				var_->query();
+			}
+
 		}
 
 		void devagent::varindex::descriptor::refuse(void) {
 			if (requery_count_ == 0) {
 				if (confirm_) {
-					(*confirm_)(false, var_);
+					(*confirm_)(var_, false);
 				}
 			}
 			else {
@@ -165,9 +186,7 @@ namespace mexo {
 				new descriptor(*this, _name, _confirm);
 			}
 			else {
-				if (_confirm != nullptr) {
-					(*_confirm)(true, v);
-				}
+				v->query(_confirm);
 			}
 		}
 
@@ -178,8 +197,8 @@ namespace mexo {
 
 		devagent::proto::result devagent::proto::request(robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
 			if (step_ == step::idle) {
-				ROBO_JAMPN_F(_var->length() > _tran.size_max - 2, fail, "invalid var size %s", _var->name());
-				ROBO_JAMPN_F(_var->addr() > 255, fail, "invalid var index ");
+				ROBO_JAMPN_F(_var->length() <= _tran.size_max - 2, fail, "invalid var size %s", _var->name());
+				ROBO_JAMPN_F(_var->addr() < 255, fail, "invalid var index ");
 				index_ = (uint8_t)_var->addr();
 				len_ = (uint8_t)_var->length();
 				op_ = _var->actual_status();
@@ -214,7 +233,6 @@ namespace mexo {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
 				ROBO_JAMPN_F(((_tran.data[0] & mexo::var::error_mask) == 0), fail, "invalid var answer (%s , %d)", _var->name(), (int)(_tran.data[0] & mexo::var::error_mask));
 				ROBO_JAMPN_F(((_tran.data[1]) == index_), fail, "invalid var index (%s , %d,%d) ", _var->name(), (int)(_tran.data[1]));
-				ROBO_JAMPN_F((len_ + 2 == _tran.size_actual), fail, "invalid var  size (%s, %d,%d) ", _var->name(), len_ + 2, _tran.size_actual);
 				if (op_ == op::put) {
 					if (step_ == step::put) {
 						ROBO_JAMPN_F((_tran.data[0] == mexo::var::request::put), fail, "invalid var  operaton (%s, %d) ", _var->name(), _tran.data[0]);
@@ -230,6 +248,7 @@ namespace mexo {
 							return result::repeat;
 						}
 						else {
+							ROBO_JAMPN_F((len_ + 2 == _tran.size_actual), fail, "invalid var  size (%s, %d,%d) ", _var->name(), len_ + 2, _tran.size_actual);
 							_var->decode(_tran.data + 2);
 							reset();
 							return result::success;

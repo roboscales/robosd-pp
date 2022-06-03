@@ -83,6 +83,7 @@ namespace robo {
 				p->dettach();
 			}
 		}
+
 	}
 
 	namespace frontend {
@@ -208,15 +209,15 @@ namespace robo {
 			ROBO_LRET(post_());
 		}
 
-		bool vartable::ivar::query(delegat& _delegat) {
+		bool vartable::ivar::query(delegat * _delegat) {
 			reset_delegat();
-			static_delegat_ = &_delegat;
+			static_delegat_ = _delegat;
 			dynamic_delegat_ = nullptr;
 			ROBO_LRET(query_());
 		}
-		bool vartable::ivar::post(delegat& _delegat) {
+		bool vartable::ivar::post(delegat * _delegat) {
 			reset_delegat();
-			static_delegat_ = &_delegat;
+			static_delegat_ = _delegat;
 			dynamic_delegat_ = nullptr;
 			ROBO_LRET(post_());
 		}
@@ -228,15 +229,15 @@ namespace robo {
 			static_delegat_ = nullptr;
 			set_repeat_count(repeat_current_max_);
 		}
-		bool vartable::ivar::query(robo::lambda<void(ivar&, bool)>& _lambda) {
+		bool vartable::ivar::query(const lambda& _lambda) {
 			reset_delegat();
-			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda);
+			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar *, bool>(_lambda);
 			static_delegat_ = dynamic_delegat_;
 			ROBO_LRET(query_());
 		}
-		bool vartable::ivar::post(robo::lambda<void(ivar&, bool)>& _lambda) {
+		bool vartable::ivar::post(const lambda& _lambda) {
 			reset_delegat();
-			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar&, bool>(_lambda);
+			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar*, bool>(_lambda);
 			static_delegat_ = dynamic_delegat_;
 			ROBO_LRET(post_());
 		}
@@ -247,6 +248,7 @@ namespace robo {
 			, map_ref_(*this, 0)
 			, instance_(_instance) {
 			map_ref_.set_key(hash(instance_.name, 0));
+			system::guard g__;
 			ROBO_ALARMN_F(map_ref_.attach_to(vartable_.vars), "eroor attach var '%s' to map ", instance_.name);
 		}
 
@@ -260,7 +262,7 @@ namespace robo {
 			case status::get:
 			status_ = status::ready;
 			finish_hook();
-			if (static_delegat_) (*static_delegat_) (*this, true);
+			if (static_delegat_) (*static_delegat_) (this, true);
 			break;
 			default:
 			ROBO_ALARM_F("error state for var '%s'", name());
@@ -270,7 +272,7 @@ namespace robo {
 		void vartable::ivar::refuse(void) {
 			status tmp = status_;
 			status_ = status::panic;
-			if (static_delegat_) (*static_delegat_) (*this, false);
+			if (static_delegat_) (*static_delegat_) (this, false);
 			if (repeat_count_ > 0) {
 				repeat_count_--;
 				finish_hook();
@@ -366,7 +368,9 @@ namespace robo {
 
 				ROBO_BREAKN_F(f, nullptr, "invalid fabric: '%s' ", _record->type);
 
-				v = f->create(*this, *_record);
+				{
+					v = f->create(*this, *_record);
+				}
 
 				ROBO_BREAKN_F(v, nullptr, "error create var '%s' with type '%s' ", _record->name, _record->type);
 
@@ -377,19 +381,22 @@ namespace robo {
 
 		vartable::fabric::map& vartable::fabric::fabrics(void) {
 			static map fabrics_;
-			return fabrics_;;
+			return fabrics_;
 		}
 
 		vartable::fabric::fabric(cstr _type) : ref_(*this, 0) {
 			ref_.set_key(hash(_type));
+			system::guard g__;
 			ref_.attach_to(fabrics());
 		}
 
 		vartable::fabric* vartable::fabric::find(cstr _type) {
+			system::guard g__;
 			return fabrics().find(hash(_type));
 		}
 
 		vartable::ivar* vartable::find_var(cstr _name) {
+			system::guard g__;
 			return vars.find(hash(_name));
 		}
 		#endif

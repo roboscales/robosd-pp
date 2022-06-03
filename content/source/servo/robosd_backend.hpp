@@ -96,6 +96,7 @@ namespace robo {
 				static void start(signal::performer* _performer, time_us_t _period) { instance().start_(_performer, _period); }
 				static void stop(signal::performer* _performer, time_us_t _period) { instance().stop_(_performer, _period); }
 				static void restart() { instance().restart_(); }
+				static void start(const  ::robo::lambda< void(void) >& _lambda, time_us_t _period) { instance().start_(new robo::signal::temporary(_lambda), _period); }
 			};
 		};
 
@@ -420,13 +421,13 @@ namespace robo {
 				virtual bool encode(uint8_t* _dst) = 0;
 				virtual bool decode(uint8_t* _dst) = 0;
 			public:
-				vartable& owner(void) { return (vartable&)frontend::vartable::ivar::owner(); }
+				vartable& vt(void) { return (vartable&)frontend::vartable::ivar::vt(); }
 			};
 
 
 			template<  typename T> class var_t : public frontend::vartable::var_t< ivar, T> {
+				typedef frontend::vartable::var_t< ivar, T> C;
 			public:
-				typedef frontend::vartable::var_t< ivar, T> B;
 				typedef frontend::vartable::ivar::delegat delegat;
 			protected:
 				struct iactual {
@@ -437,26 +438,26 @@ namespace robo {
 			public:
 
 				bool post(void) {
-					ROBO_LRET(B::post());
+					ROBO_LRET(C::post());
 				}
 				bool post(delegat& _delegat) {
-					ROBO_LRET(B::post(_delegat));
+					ROBO_LRET(C::post(_delegat));
 				}
 
 				bool post(const T& _value) {
 					actual.local = _value;
 					//robo::system::printf (RT("convert '%s/%s' %f\n\r"), B::owner().own_agent().alias(), B::name(), actual.local);
-					ROBO_LRET(B::post());
+					ROBO_LRET(C::post());
 				}
 				bool post(const T& _value, delegat& _delegat) {
 					actual.local = _value;
-					ROBO_LRET(B::post(_delegat));
+					ROBO_LRET(C::post(_delegat));
 				}
 
 				result try_post(const T& _value) {
 					actual.local = _value;
 					if (actual.remote != _value) {
-						ROBO_RET(B::post(), result::resume, result::panic);
+						ROBO_RET(C::post(), result::resume, result::panic);
 					}
 					else {
 						return result::complete;
@@ -466,7 +467,7 @@ namespace robo {
 				result try_post(const T& _value, delegat& _delegat) {
 					actual.local = _value;
 					if (actual.remote != _value) {
-						ROBO_RET(B::post(_delegat), result::resume, result::panic);
+						ROBO_RET(C::post(_delegat), result::resume, result::panic);
 					}
 					else {
 						return result::complete;
@@ -474,11 +475,11 @@ namespace robo {
 				}
 
 				bool query(void) {
-					ROBO_LRET(B::query());
+					ROBO_LRET(C::query());
 				}
 
 				bool query(delegat& _delegat) {
-					ROBO_LRET(B::query(_delegat));
+					ROBO_LRET(C::query(_delegat));
 				}
 
 				static var_t& create_var(cstr _path, cstr _name) {
@@ -492,7 +493,7 @@ namespace robo {
 						return actual.remote;
 					}
 					else {
-						return B::front.remote;
+						return C::front.remote;
 					}
 				}
 
@@ -500,7 +501,7 @@ namespace robo {
 					return actual.remote;
 				}
 
-				var_t(vartable& _vartable, cstr _name, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
+				var_t(frontend::vartable& _vartable, cstr _name, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
 					: frontend::vartable::var_t< ivar, T>(
 						_vartable
 						, _vartable.find_record_ref(_name)
@@ -508,8 +509,19 @@ namespace robo {
 						, _front_remote
 						)
 					, actual(_actual_local, _actual_remote) {
-					ROBO_VBREAKN_F(sizeof(T) == B::length(), "error typecast for var '%s/%s' ", B::owner().alias(), ivar::name());
-					B::begin();
+					ROBO_VBREAKN_F(sizeof(T) == C::length(), "error typecast for var '%s' ", ivar::name());
+					C::begin();
+				};
+				var_t(frontend::vartable& _vartable, const  robo::frontend::vartable::record& _record, T& _front_local, T& _front_remote, T& _actual_local, T& _actual_remote)
+					: frontend::vartable::var_t< ivar, T>(
+						_vartable
+						, _record
+						, _front_local
+						, _front_remote
+						)
+					, actual(_actual_local, _actual_remote) {
+					ROBO_VBREAKN_F(sizeof(T) == C::length(), "error typecast for var '%s' ", ivar::name());
+					C::begin();
 				};
 
 			public:
@@ -517,22 +529,22 @@ namespace robo {
 				virtual bool encode(uint8_t* _dst) {
 					{
 						system::guard g__;
-						if (B::actual_hook() == B::hook::frontend) {
-							actual.local = B::front.local;
+						if (C::actual_hook() == C::hook::frontend) {
+							actual.local = C::front.local;
 						}
 						else {
-							B::front.local = actual.local;
+							C::front.local = actual.local;
 						}
 					}
-					std::copy_n((uint8_t*)(&actual.local), B::length(), _dst);
+					std::copy_n((uint8_t*)(&actual.local), C::length(), _dst);
 					return true;
 				}
 
 				virtual bool decode(uint8_t* _src) {
-					std::copy_n(_src, B::length(), (uint8_t*)(&actual.remote));
+					std::copy_n(_src, C::length(), (uint8_t*)(&actual.remote));
 					{
 						system::guard g__;
-						B::front.remote = actual.remote;
+						C::front.remote = actual.remote;
 					}
 					return true;
 				}
@@ -550,10 +562,26 @@ namespace robo {
 					T remote;
 				} actual_;
 			public:
-				var(vartable& _vartable, cstr _name)
+				var(frontend::vartable& _vartable, cstr _name)
 					: var_t<T>(_vartable, _name, front_.local, front_.remote, actual_.local, actual_.remote) {};
+				var(frontend::vartable& _vartable, const  robo::frontend::vartable::record& _record)
+					: var_t<T>(_vartable, _record, front_.local, front_.remote, actual_.local, actual_.remote) {};
 			};
 
+			template < typename T> class  fabric_t: public robo::frontend::vartable::fabric {
+			public:
+				fabric_t(cstr _type_name) : robo::frontend::vartable::fabric(_type_name) {}
+				virtual robo::frontend::vartable::ivar* create(robo::frontend::vartable& _vartable, const  robo::frontend::vartable::record& _record) {
+					//vartable* own = dynamic_cast<vartable*>(&_vartable);
+					//if (own != nullptr) {
+						return new robo::backend::vartable::var<T>(_vartable, _record);
+					//}
+					//else {
+						// такое может быть?
+						//return nullptr;
+					//}
+				}
+			};
 
 			template<  typename T> class fvar_t : public var_t<T> {
 				converter* converter_ = nullptr;
@@ -797,6 +825,8 @@ namespace robo {
 					: fvar_t<T>(_vartable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
 			};
 
+
+
 			class proto {
 			public:
 				enum class result { success, repeat, fail};
@@ -807,8 +837,10 @@ namespace robo {
 			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need(void);
 			vartable(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
+			typedef frontend::vartable::ivar::lambda lambda;
 			bool query(void);
-			bool query(frontend::vartable::ivar::delegat& _delegat);
+			bool query(const lambda& _lambda);
+			bool query(frontend::vartable::ivar::delegat* _delegat);
 			bool ready(void);
 			template<class T> T& proto_cast(void) { return reinterpret_cast<T&>(proto_); }
 		protected:

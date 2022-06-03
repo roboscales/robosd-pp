@@ -27,13 +27,15 @@ namespace mexo {
 				class descriptor {
 				public:
 					typedef ::robo::list::unsorted<descriptor> queue;
-					typedef robo::delegat::base<void, bool, ivar* > confirm_d;
+					//typedef robo::delegat::base<void, bool, ivar* > confirm_d;
+					typedef ::robo::backend::vartable::ivar::delegat confirm_d;
 				private:
 					robo::string name_;
 					robo::string type_;
 					::robo::backend::vartable::record record_;
 					queue::ref ref_;
 					confirm_d* confirm_ = nullptr;
+					const lambda& _lambda;
 					ivar* var_ = nullptr;
 					int requery_count_ = 3;
 					varindex& varindex_;
@@ -41,6 +43,7 @@ namespace mexo {
 					ivar* var(void) { return var_; }
 					robo::cstr name(void) const { return name_.c_str(); }
 					descriptor(varindex& _varindex, robo::cstr _name, confirm_d* _confirm = nullptr);
+					descriptor(varindex& _varindex, robo::cstr _name, const lambda & _lambda);
 					void setup_recprd(robo::cstr _type, uint16_t _address, uint16_t _length);
 					void confirm(void);
 					void refuse(void);
@@ -106,18 +109,7 @@ namespace mexo {
 				virtual ~flow_serial(void);
 			} * * flow_serials_ = nullptr;
 			int flow_serials_count_ = 0;
-			/*class fabric : robo::backend::{
-			public:
-				typedef ::robo::list::unique<fabric, int> map;
-				typedef map::ref ref;
-				static fabric::map& fabrics(void);
-			private:
-				ref ref_;
-			public:
-				fabric(cstr _type);
-				static fabric* find(cstr _type);
-				virtual ivar* create(vartable& _vartable, const  record& _record) = 0;
-			};*/
+
 		protected:
 			virtual bool do_load(void) {
 				ROBO_LBREAKN(robo::backend::devagent::do_load());
@@ -162,7 +154,7 @@ namespace mexo {
 				:robo::backend::devagent(_name, _boardagent, _goal.agent, _feedback.agent)
 				, echo_(*this)
 				, vars_(*this, proto_, varindex::priority::normal, nullptr, 0) {
-				robo::delegat::slambda<void, bool, varindex::ivar*>* d
+/*				robo::delegat::slambda<void, bool, varindex::ivar*>* d
 					= new robo::delegat::slambda<void, bool, varindex::ivar*>(
 						[](bool _result, varindex::ivar* _var) {
 							if (_result) {
@@ -171,8 +163,9 @@ namespace mexo {
 							else {
 								robo_errlog("var query fail ");
 							}
-						});
-				//vars_.query(RT("hps.mo_enco.native"));
+						});*/
+					vars_.query(RT("hps.mo_enco.native"), [](bool _result, varindex::ivar* _v) {
+				});
 			}
 		};
 		class servo : public robo::backend::servo {

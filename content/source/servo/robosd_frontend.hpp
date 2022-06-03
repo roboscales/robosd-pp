@@ -409,11 +409,11 @@ namespace robo {
 
 
 
-		const struct {
+		/*const struct {
 			const cstr u8 = RT("u8");
 			const cstr u16 = RT("u16");
 			const cstr u32 = RT("u32");
-		} type_names;
+		} type_names;*/
 
 
 		#if ROBO_APP_MODULE_ENABLED  == 1
@@ -432,7 +432,7 @@ namespace robo {
 				const record& instance_;
 				vartable& vartable_;
 			public:
-				typedef delegat::base<void, ivar&, bool>  delegat;
+				typedef delegat::base<void, ivar *, bool>  delegat;
 				enum class status { disable, clean, ready, put, get, panic };
 				enum class hook { free, frontend, backend };
 			private:
@@ -450,8 +450,9 @@ namespace robo {
 				cstr type(void) const { return  instance_.type; };
 
 				bool query(void);
-				bool query(delegat& _delegat);
-				bool query(robo::lambda<void(ivar&, bool)>& _lambda);
+				bool query(delegat*  _delegat);
+				typedef robo::lambda<void(ivar*, bool)> lambda;
+				bool query(const lambda & _lambda);
 
 				bool is_ready(void) { return  (status_ == status::ready) || (status_ == status::panic) || (status_ == status::clean); }
 				bool is_success(void) { return  (status_ == status::ready); }
@@ -463,15 +464,15 @@ namespace robo {
 				status actual_status(void) const  { return status_; }
 			protected:
 				void reset_delegat(void);
-				vartable& owner(void) { return vartable_; }
+				vartable& vt(void) { return vartable_; }
 				void confirm(void);
 				void refuse(void);
 				ivar(vartable& _vartable, const record& _instance);
 				virtual ~ivar(void) {}
 				virtual bool rerquest(void) = 0;
 				bool post(void);
-				bool post(delegat& _delegat);
-				bool post(robo::lambda<void(ivar&, bool)>& _lambda);
+				bool post(delegat * _delegat);
+				bool post(const lambda& _lambda);
 				bool begin_hook(void);
 				void finish_hook(void);
 				hook actual_hook(void) { return hook_; }
@@ -495,9 +496,9 @@ namespace robo {
 					T& remote;
 					ifront(T& _local, T& _remote) : local(_local), remote(_remote) {}
 				} front;
-			public:
-
+			private:
 				typedef typename B::delegat  delegat;
+			public:
 
 				bool post(void) {
 					ROBO_LRET(B::post());

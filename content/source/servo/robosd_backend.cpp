@@ -793,7 +793,7 @@ namespace robo {
 		bool vartable::ivar::rerquest(void) {
 			system::guard g__;
 			ROBO_LBREAKN_F(!ref_.attached(), "var '%s' is busy and rwef is used ", name());
-			ref_.attach_to(owner().queue_);
+			ref_.attach_to(vt().queue_);
 			return true;
 		}
 
@@ -906,9 +906,16 @@ namespace robo {
 			return true;
 		}
 
-		bool vartable::query(frontend::vartable::ivar::delegat& _delegat) {
+		bool vartable::query(frontend::vartable::ivar::delegat * _delegat) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
 				ROBO_LBREAKN(r->owner().query(_delegat));
+			}
+			return true;
+		}
+
+		bool vartable::query(const lambda &_lambda) {
+			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
+				ROBO_LBREAKN(r->owner().query(_lambda));
 			}
 			return true;
 		}
@@ -921,6 +928,20 @@ namespace robo {
 			}
 			return do_ready();
 		}
+
+		namespace fabrics {
+			vartable::fabric_t<int8_t> int8_(RT("i8"));
+			vartable::fabric_t<uint8_t> uint8_(RT("u8"));
+			vartable::fabric_t<int16_t> int16_(RT("i16"));
+			vartable::fabric_t<uint16_t> uint16_(RT("u16"));
+			vartable::fabric_t<int32_t> int32_(RT("i32"));
+			vartable::fabric_t<uint32_t> uint32_(RT("u32"));
+			vartable::fabric_t<int64_t> int64_(RT("i64"));
+			vartable::fabric_t<uint64_t> uint64_(RT("u64"));
+			vartable::fabric_t<float> real_(RT("real"));
+			vartable::fabric_t<double> extnded_(RT("extended"));
+		}
+
 		#endif
 	}
 }
