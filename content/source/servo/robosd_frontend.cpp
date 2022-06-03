@@ -45,7 +45,16 @@ namespace robo {
 
 	signal::signal(void) {}
 
-	void  signal::temporary::operator ()(void) {
+	void signal::temporary::post(bool _isfrontend, ::robo::signal::performer* _performer) {
+		if (_isfrontend) {
+			frontend::queue::post(_performer, ::robo::signal::performer::priority::lo);
+		}
+		else {
+			backend::queue::post(_performer, ::robo::signal::performer::priority::lo);
+		}
+	}
+	/*
+	void  signal::temporary::lambda::operator ()(void) {
 		if (status_ == status::run) {
 			lambda_();
 			status_ = status::disposal;
@@ -61,7 +70,7 @@ namespace robo {
 		}
 	}
 
-	signal::temporary::temporary(const  ::robo::lambda< void(void) >& _lambda) : lambda_(_lambda) {
+	signal::temporary::temporary::lambda::lambda( const  ::robo::lambda< void(void) >& _lambda ) : lambda_(_lambda) {
 		isfrontend_ = system::env::is_frontend();
 		if (isfrontend_) {
 			backend::queue::post(this, priority::lo);
@@ -70,7 +79,7 @@ namespace robo {
 			frontend::queue::post(this, priority::lo);
 		}
 	}
-
+	*/
 
 	void event::raise(void) {
 		event::performer::ref* _ref = performers.first();
@@ -199,49 +208,16 @@ namespace robo {
 			ROBO_LRET(rerquest());
 		}
 
-		bool vartable::ivar::query(void) {
-			reset_delegat();
+
+		bool vartable::ivar::query(performer * _performer) {
+			performer_ = _performer;
 			ROBO_LRET(query_());
 		}
 
-		bool vartable::ivar::post(void) {
-			reset_delegat();
-			ROBO_LRET(post_());
-		}
-
-		bool vartable::ivar::query(delegat * _delegat) {
-			reset_delegat();
-			static_delegat_ = _delegat;
-			dynamic_delegat_ = nullptr;
-			ROBO_LRET(query_());
-		}
-		bool vartable::ivar::post(delegat * _delegat) {
-			reset_delegat();
-			static_delegat_ = _delegat;
-			dynamic_delegat_ = nullptr;
-			ROBO_LRET(post_());
-		}
 		void vartable::ivar::reset_delegat(void) {
-			if (dynamic_delegat_) {
-				delete dynamic_delegat_;
-				dynamic_delegat_ = nullptr;
-			}
-			static_delegat_ = nullptr;
+			performer_ = nullptr;
 			set_repeat_count(repeat_current_max_);
 		}
-		bool vartable::ivar::query(const lambda& _lambda) {
-			reset_delegat();
-			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar *, bool>(_lambda);
-			static_delegat_ = dynamic_delegat_;
-			ROBO_LRET(query_());
-		}
-		bool vartable::ivar::post(const lambda& _lambda) {
-			reset_delegat();
-			dynamic_delegat_ = new ::robo::delegat::slambda<void, ivar*, bool>(_lambda);
-			static_delegat_ = dynamic_delegat_;
-			ROBO_LRET(post_());
-		}
-
 
 		vartable::ivar::ivar(vartable& _vartable, const record& _instance)
 			: vartable_(_vartable)
@@ -262,7 +238,7 @@ namespace robo {
 			case status::get:
 			status_ = status::ready;
 			finish_hook();
-			if (static_delegat_) (*static_delegat_) (this, true);
+			if (performer_) performer_->confirm(this) ;
 			break;
 			default:
 			ROBO_ALARM_F("error state for var '%s'", name());
@@ -272,7 +248,7 @@ namespace robo {
 		void vartable::ivar::refuse(void) {
 			status tmp = status_;
 			status_ = status::panic;
-			if (static_delegat_) (*static_delegat_) (this, false);
+			if (performer_) performer_->refuse(this);
 			if (repeat_count_ > 0) {
 				repeat_count_--;
 				finish_hook();

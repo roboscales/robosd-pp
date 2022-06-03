@@ -242,6 +242,7 @@ namespace robo {
 			 *      @param [in,out] _memo
 			 */
 			static void mem_free(void* _memo);
+			static size_t mem_size(void* _memo);
 
 			#endif
 

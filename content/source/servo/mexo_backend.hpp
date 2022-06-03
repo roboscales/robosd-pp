@@ -28,22 +28,20 @@ namespace mexo {
 				public:
 					typedef ::robo::list::unsorted<descriptor> queue;
 					//typedef robo::delegat::base<void, bool, ivar* > confirm_d;
-					typedef ::robo::backend::vartable::ivar::delegat confirm_d;
+					typedef ::robo::backend::vartable::ivar::performer  performer;
 				private:
 					robo::string name_;
 					robo::string type_;
 					::robo::backend::vartable::record record_;
 					queue::ref ref_;
-					confirm_d* confirm_ = nullptr;
-					const lambda& _lambda;
+					performer* performer_ = nullptr;
 					ivar* var_ = nullptr;
 					int requery_count_ = 3;
 					varindex& varindex_;
 				public:
 					ivar* var(void) { return var_; }
 					robo::cstr name(void) const { return name_.c_str(); }
-					descriptor(varindex& _varindex, robo::cstr _name, confirm_d* _confirm = nullptr);
-					descriptor(varindex& _varindex, robo::cstr _name, const lambda & _lambda);
+					descriptor(varindex& _varindex, robo::cstr _name, performer* _performer = nullptr);
 					void setup_recprd(robo::cstr _type, uint16_t _address, uint16_t _length);
 					void confirm(void);
 					void refuse(void);
@@ -65,7 +63,7 @@ namespace mexo {
 				virtual bool do_ready(void);
 				virtual bool do_exchange_need(void);
 			public:
-				void query(robo::cstr _name, varindex::descriptor::confirm_d* _confirm = nullptr);
+				void query(robo::cstr _name, varindex::descriptor::performer * _prtformer = nullptr);
 				varindex(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
 			};
 
@@ -164,8 +162,8 @@ namespace mexo {
 								robo_errlog("var query fail ");
 							}
 						});*/
-					vars_.query(RT("hps.mo_enco.native"), [](bool _result, varindex::ivar* _v) {
-				});
+					/*vars_.query(RT("hps.mo_enco.native"), [](bool _result, varindex::ivar* _v) {
+				});*/
 			}
 		};
 		class servo : public robo::backend::servo {

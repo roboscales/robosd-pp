@@ -66,30 +66,16 @@ namespace mexo {
 			}
 		}
 
-		devagent::varindex::descriptor::descriptor(varindex& _varindex, robo::cstr _name, confirm_d* _confirm)
+		devagent::varindex::descriptor::descriptor(varindex& _varindex, robo::cstr _name, performer * _performer)
 			: ref_(*this)
 			, varindex_(_varindex)
-			, confirm_(_confirm)
-			, lambda_(nullptr){
+			, performer_(_performer){
 			robo::system::guard g__;
 			ref_.attach_to(varindex_.request_);
 			record_ = {};
 			name_ = _name;
 			record_.name = name_.c_str();
 		}
-		devagent::varindex::descriptor::descriptor(varindex& _varindex, robo::cstr _name, lambda * _lambda)
-			: ref_(*this)
-			, varindex_(_varindex)
-			, confirm_(nullptr)
-			, lambda_(_lambda)
-			{
-			robo::system::guard g__;
-			ref_.attach_to(varindex_.request_);
-			record_ = {};
-			name_ = _name;
-			record_.name = name_.c_str();
-		}
-
 		void devagent::varindex::descriptor::setup_recprd(robo::cstr _type, uint16_t _address, uint16_t _length) {
 			type_ = _type;
 			record_.type = type_.c_str();
@@ -104,22 +90,13 @@ namespace mexo {
 			ROBO_VBREAKN_F((var_ != nullptr), "error create var '%s' with type '%s' ", record_.name, record_.type);
 
 			ref_.attach_to(varindex_.index_);
-			if (confirm_) {
-				var_->query(confirm_);
-			}
-			else if (lambda_) {
-				var_->query(lambda_);
-			} else
-			{
-				var_->query();
-			}
-
+			var_->query(performer_);
 		}
 
 		void devagent::varindex::descriptor::refuse(void) {
 			if (requery_count_ == 0) {
-				if (confirm_) {
-					(*confirm_)(var_, false);
+				if (performer_) {
+					performer_->refuse(var_);
 				}
 			}
 			else {
@@ -180,13 +157,13 @@ namespace mexo {
 			return request_.count() != 0 || current_descriptor_ != nullptr;
 		}
 		
-		void devagent::varindex::query(robo::cstr _name, varindex::descriptor::confirm_d* _confirm) {
+		void devagent::varindex::query(robo::cstr _name, varindex::descriptor::performer * _performer) {
 			ivar* v = dynamic_cast<ivar*>(find_var(_name));
 			if (v == nullptr) {
-				new descriptor(*this, _name, _confirm);
+				new descriptor(*this, _name, _performer);
 			}
 			else {
-				v->query(_confirm);
+				v->query(_performer);
 			}
 		}
 

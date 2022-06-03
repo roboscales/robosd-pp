@@ -165,10 +165,21 @@ namespace robo {
 #if ROBO_APP_ALLOC_TYPE == ROBO_APP_TYPE_STD
 namespace robo {
 	void* system::env::mem_alloc(size_t _size) {
-		return malloc(_size);
+		size_t* ptr = (size_t*)malloc(_size + sizeof(size_t));
+		ROBO_APP_ASSERT(ptr!=nullptr);
+		*ptr = _size;
+		ptr++;
+		return ptr;
 	}
 	void system::env::mem_free(void* _memo) {
-		free(_memo);
+		size_t* ptr = (size_t*)(_memo);
+		ptr--;
+		free(ptr);
+	}
+	size_t system::env::mem_size(void* _memo) {
+		size_t* ptr = (size_t*)(_memo);
+		ptr--;
+		return  *ptr +sizeof(size_t);
 	}
 }
 #endif

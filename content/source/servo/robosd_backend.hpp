@@ -96,7 +96,7 @@ namespace robo {
 				static void start(signal::performer* _performer, time_us_t _period) { instance().start_(_performer, _period); }
 				static void stop(signal::performer* _performer, time_us_t _period) { instance().stop_(_performer, _period); }
 				static void restart() { instance().restart_(); }
-				static void start(const  ::robo::lambda< void(void) >& _lambda, time_us_t _period) { instance().start_(new robo::signal::temporary(_lambda), _period); }
+				//static void start(const  ::robo::lambda< void(void) >& _lambda, time_us_t _period) { instance().start_(new robo::signal::temporary::lambda(_lambda), _period); }
 			};
 		};
 
@@ -428,7 +428,7 @@ namespace robo {
 			template<  typename T> class var_t : public frontend::vartable::var_t< ivar, T> {
 				typedef frontend::vartable::var_t< ivar, T> C;
 			public:
-				typedef frontend::vartable::ivar::delegat delegat;
+				typedef frontend::vartable::ivar::performer performer;
 			protected:
 				struct iactual {
 					T& local;
@@ -437,50 +437,33 @@ namespace robo {
 				} actual;
 			public:
 
-				bool post(void) {
-					ROBO_LRET(C::post());
-				}
-				bool post(delegat& _delegat) {
-					ROBO_LRET(C::post(_delegat));
+				/*bool post(performer* _performer) {
+					ROBO_LRET(C::post(_performer));
 				}
 
-				bool post(const T& _value) {
+				bool post(const T& _value, performer* _performer=nullptr) {
 					actual.local = _value;
-					//robo::system::printf (RT("convert '%s/%s' %f\n\r"), B::owner().own_agent().alias(), B::name(), actual.local);
-					ROBO_LRET(C::post());
-				}
-				bool post(const T& _value, delegat& _delegat) {
-					actual.local = _value;
-					ROBO_LRET(C::post(_delegat));
+					ROBO_LRET(C::post(_performer));
 				}
 
-				result try_post(const T& _value) {
+				result try_post(const T& _value, performer* _performer=ullptr) {
 					actual.local = _value;
 					if (actual.remote != _value) {
-						ROBO_RET(C::post(), result::resume, result::panic);
+						ROBO_RET(C::post(_performer), result::resume, result::panic);
 					}
 					else {
 						return result::complete;
 					}
 				}
-
-				result try_post(const T& _value, delegat& _delegat) {
-					actual.local = _value;
-					if (actual.remote != _value) {
-						ROBO_RET(C::post(_delegat), result::resume, result::panic);
-					}
-					else {
-						return result::complete;
-					}
+				*/
+				bool query(performer* _performer=nullptr) {
+					ROBO_LRET(C::query(_performer));
 				}
 
-				bool query(void) {
-					ROBO_LRET(C::query());
+				template <typename ... Args> bool query(Args...arg) {
+					ROBO_LRET(C::query(create(arg...)));
 				}
 
-				bool query(delegat& _delegat) {
-					ROBO_LRET(C::query(_delegat));
-				}
 
 				static var_t& create_var(cstr _path, cstr _name) {
 					var_t* v = dynamic_cast<var_t*>(ivar::create_var(_path, _name));
@@ -629,11 +612,12 @@ namespace robo {
 					}
 				}
 
-				typedef frontend::vartable::ivar::delegat delegat;
-				result try_load(cstr _section, cstr _key, delegat& _delegat) {
+				typedef  typename T::performer* performer;
+
+				result try_load(cstr _section, cstr _key, performer * _performer) {
 					ROBO_BREAKN(ini::load(_section, _key, B::actual.local), result::panic);
 					if (B::actual.local != B::actual.remote) {
-						ROBO_RET(B::post(_delegat), result::resume, result::panic);
+						ROBO_RET(B::post(_performer), result::resume, result::panic);
 					}
 					else {
 						return result::complete;
@@ -661,21 +645,21 @@ namespace robo {
 					return result::complete;
 				}
 
-				result try_post_min(delegat& _delegat) {
+				result try_post_min(performer * _performer) {
 					if (converter_) {
 						if (fabs(B::actual.remote - converter_->min()) > converter_->eps()) {
 							B::actual.local = converter_->min();
-							ROBO_RET(B::post(_delegat), result::resume, result::panic);
+							ROBO_RET(B::post(_performer), result::resume, result::panic);
 						}
 					}
 					return result::complete;
 				}
 				converter* conv(void) { return converter_; }
-				result try_post_max(delegat& _delegat) {
+				result try_post_max(performer* _performer) {
 					if (converter_) {
 						if (fabs(B::actual.remote - converter_->max()) > converter_->eps()) {
 							B::actual.local = converter_->max();
-							ROBO_RET(B::post(_delegat), result::resume, result::panic);
+							ROBO_RET(B::post(_performer), result::resume, result::panic);
 						}
 					}
 					return result::complete;
@@ -697,18 +681,18 @@ namespace robo {
 					}
 				}
 
-				result try_post(const T& _value, delegat& _delegat) {
+				result try_post(const T& _value, performer* _performer) {
 					if (converter_) {
 						B::actual.local = _value;
 						if (fabs(B::actual.remote - _value) > converter_->eps()) {
-							ROBO_RET(B::post(_delegat), result::resume, result::panic);
+							ROBO_RET(B::post(_performer), result::resume, result::panic);
 						}
 						else {
 							return result::complete;
 						}
 					}
 					else {
-						return B::try_post(_value, _delegat);;
+						return B::try_post(_value, _performer);;
 					}
 				}
 
@@ -837,10 +821,8 @@ namespace robo {
 			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need(void);
 			vartable(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
-			typedef frontend::vartable::ivar::lambda lambda;
 			bool query(void);
-			bool query(const lambda& _lambda);
-			bool query(frontend::vartable::ivar::delegat* _delegat);
+			bool query(frontend::vartable::ivar::performer* _performer);
 			bool ready(void);
 			template<class T> T& proto_cast(void) { return reinterpret_cast<T&>(proto_); }
 		protected:

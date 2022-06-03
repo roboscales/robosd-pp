@@ -139,7 +139,7 @@ namespace robo {
 				};
 				word header;
 			};
-			void* memo(void) { return (void*)(&header + 1); }
+			void* memo(void) { return (void*)( ((word *)&header) + 1); }
 		};
 
 		word  memo_[size_ + 1];
@@ -355,8 +355,8 @@ namespace robo {
 			else {
 				ptr = env::mem_alloc(_sz);
 				ROBO_APP_ASSERT(ptr != nullptr);
-				size_t * psz = (((size_t*)ptr) - 1 );
-				_tsz = * psz;
+				_tsz = system::env::mem_size(ptr);
+				
 			}
 		}
 		memstat_.total.payload += _sz;
@@ -378,8 +378,7 @@ namespace robo {
 		}
 		else {
 			ROBO_APP_ASSERT(system::env::is_frontend());
-			size_t * psz = (((size_t*)_memo) - 1 );
-			_tsz = * psz;
+			_tsz = system::env::mem_size(_memo);
 
 			env::mem_free(_memo);
 		}
@@ -474,7 +473,7 @@ void* operator new(size_t size) {
 	tmp = malloc(size);
 	#endif
 	ROBO_APP_ASSERT(tmp != nullptr)
-		return tmp;
+	return tmp;
 }
 
 void operator delete(void* ptr) {

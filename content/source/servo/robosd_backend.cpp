@@ -251,8 +251,10 @@ namespace robo {
 			if (_timer == 0) {
 				_timer = new timer(_period);
 			}
-			_performer->attach_to(&(_timer->on_tick), signal::performer::priority::normal);
-			_timer->wakeup();
+			if (_performer) {
+				_performer->attach_to(&(_timer->on_tick), signal::performer::priority::normal);
+				_timer->wakeup();
+			}
 		}
 		void timer::core::stop_(signal::performer* _performer, time_us_t _period) {
 			_performer->cancel();
@@ -906,19 +908,13 @@ namespace robo {
 			return true;
 		}
 
-		bool vartable::query(frontend::vartable::ivar::delegat * _delegat) {
+		bool vartable::query(frontend::vartable::ivar::performer * _performer) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
-				ROBO_LBREAKN(r->owner().query(_delegat));
+				ROBO_LBREAKN(r->owner().query(_performer));
 			}
 			return true;
 		}
 
-		bool vartable::query(const lambda &_lambda) {
-			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
-				ROBO_LBREAKN(r->owner().query(_lambda));
-			}
-			return true;
-		}
 
 		bool vartable::ready(void) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {

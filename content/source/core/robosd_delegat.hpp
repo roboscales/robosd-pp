@@ -124,6 +124,93 @@ namespace robo {
                 : rmember < base< R, Args... >, C, R, Args... >(_instance, _member) {}
         };
 
+        /*
+        * 
+        * Так нельзя! удаление может произойти в контексте, отличном от создания а так нельзя
+        namespace temporary {
+            template< class C > class killer {
+                C* ptr_;
+            public:
+                killer(C* _ptr): ptr_(_ptr) {}
+                ~killer() { delete ptr_; }
+            };
+
+            template< class B, typename R, typename ... Args > class simple : public ::robo::delegat::simple<B, R, Args... > {
+                friend class killer<simple>;
+                virtual ~simple() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<simple> k_(this);
+                    return ::robo::delegat::simple<B, R, Args... >::operator()(args...);
+                };
+                simple(R(*_delegat) (Args ... args))
+                    : ::robo::delegat::simple<B, R, Args... >(_delegat) {}
+            };
+
+            template< typename R, typename ... Args > class ssimple : public ::robo::delegat::ssimple<R, Args... > {
+                friend class killer<ssimple>;
+                virtual ~ssimple() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<ssimple> k_(this);
+                    return ::robo::delegat::ssimple<R, Args... >::operator()(args...);
+                };
+                ssimple(R(*_delegat) (Args ... args))
+                    : ::robo::delegat::ssimple<R, Args... >(_delegat) {}
+            };
+
+
+            template< class B, typename R, typename ... Args > class uni : public ::robo::delegat::uni<B, R, Args... > {
+                friend class killer<uni>;
+                virtual ~uni() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<uni> k_(this);
+                    return ::robo::delegat::uni<B, R, Args... >::operator()(args...);
+                };
+                uni(void* _instance, R(*_delegat) (void*, Args ... args))
+                    : ::robo::delegat::simple<B, R, Args... >(_instance, _delegat) {}
+            };
+
+            template< typename R, typename ... Args > class suni : public ::robo::delegat::suni<R, Args... > {
+                friend class killer<suni>;
+                virtual ~suni() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<suni> k_(this);
+                    return ::robo::delegat::suni<R, Args... >::operator()(args...);
+                };
+                suni(void* _instance, R(*_delegat) (void*, Args ... args))
+                    : ::robo::delegat::suni<R, Args... >(_instance,_delegat) {}
+            };
+
+            template< class B, typename R, typename ... Args > class lambda : public ::robo::delegat::lambda<B, R, Args... > {
+                friend class killer<lambda>;
+                virtual ~lambda() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<lambda> k_(this);
+                    return ::robo::delegat::lambda<B, R, Args... >::operator()(args...);
+                };
+                lambda(::robo::lambda< R(Args... args) > _lambda)
+                    : ::robo::delegat::lambda<B, R, Args... >( _lambda) {}
+            };
+
+            template< typename R, typename ... Args > class slambda : public ::robo::delegat::slambda<R, Args... > {
+                friend class killer<slambda>;
+                virtual ~slambda() {}
+            public:
+                virtual R operator ()(Args... args) {
+                    killer<slambda> k_(this);
+                    return ::robo::delegat::slambda<R, Args... >::operator()(args...);
+                };
+                slambda(::robo::lambda< R(Args... args) > _lambda)
+                    : ::robo::delegat::slambda<R, Args... >(_lambda) {}
+            };
+
+        }
+
+        */
     }
 }
 #endif
