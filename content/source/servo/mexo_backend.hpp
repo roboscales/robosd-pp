@@ -5,23 +5,7 @@
 namespace mexo {
 	namespace backend {
 		class devagent : public robo::backend::devagent {
-
-			class echo : public stream {
-				robo::time_us_t last_ = 0;
-				robo::time_us_t period_ = 0;
-				bool show_enable_ = false;
-				enum class state { idle, request } state_ = state::idle;
-			protected:
-				bool do_load(void);
-			public:
-				echo(devagent& _agent);
-				virtual bool exchange_need(void);
-				virtual query_result query(robo_tran_t& _tran);
-				virtual void confirm(const robo_tran_t& _tran);
-			} echo_;
-
-
-
+		protected:
 			class varindex : public ::robo::backend::vartable {
 			public:
 				class descriptor {
@@ -63,9 +47,27 @@ namespace mexo {
 				virtual bool do_ready(void);
 				virtual bool do_exchange_need(void);
 			public:
-				void query(robo::cstr _name, varindex::descriptor::performer * _prtformer = nullptr);
+				bool query(robo::cstr _name, varindex::descriptor::performer* _prtformer = nullptr);
+				template <typename ... Args> bool query(robo::cstr _name, Args...arg) {
+					return query(_name, ivar::performer::create(arg...));
+				}
 				varindex(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
 			};
+
+		private:
+			class echo : public stream {
+				robo::time_us_t last_ = 0;
+				robo::time_us_t period_ = 0;
+				bool show_enable_ = false;
+				enum class state { idle, request } state_ = state::idle;
+			protected:
+				bool do_load(void);
+			public:
+				echo(devagent& _agent);
+				virtual bool exchange_need(void);
+				virtual query_result query(robo_tran_t& _tran);
+				virtual void confirm(const robo_tran_t& _tran);
+			} echo_;
 
 			class proto : public varindex::proto {
 				uint8_t index_ = 0;
@@ -107,9 +109,54 @@ namespace mexo {
 				virtual ~flow_serial(void);
 			} * * flow_serials_ = nullptr;
 			int flow_serials_count_ = 0;
-
 		protected:
+			typedef ::robo::quest quest;
+
+			quest* var_query_quest(quest* _owner, ::robo::cstr _var) {
+
+				::robo::string* sv = new ::robo::string(_var);
+				//*sv = _var;
+				//delete sv;
+				return ::robo::quest::create(
+					_owner,
+
+					[this, sv ](::robo::quest* _quest) {
+
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
+
+						if( !vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
+								if (_result) {
+									_quest->confirm();
+								}	else {
+									_quest->refuse();
+								}
+							})
+						) {
+							_quest->refuse();
+						};
+					}
+					, [this,sv](::robo::quest::result r)->robo::quest::reaction {
+
+						if (r == robo::quest::result::success) {
+							if (sv != nullptr) {
+								robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", this->alias(), sv->c_str());
+								delete sv;
+							}
+							return robo::quest::reaction::normal;
+						}
+						else {
+							if (sv != nullptr) {
+								robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", this->alias(), sv->c_str(), (int)r );
+								delete sv;
+							}
+							return robo::quest::reaction::terminate;
+						}
+					}
+					);
+			}
+
 			virtual bool do_load(void) {
+
 				ROBO_LBREAKN(robo::backend::devagent::do_load());
 				if ( robo::ini::try_load(current_path(), common_path(), RT("flow_serial_count"), flow_serials_count_) ) {
 					if (flow_serials_count_ > 0) {
@@ -143,27 +190,16 @@ namespace mexo {
 				}
 				robo::backend::devagent::do_clean();
 			}
-		public:
+		protected:
 			typedef mexo::common::devagent::action_s action_s;
 			typedef mexo::common::devagent::feedback_s feedback_s;
-			proto proto_;
-			varindex vars_;
+			proto varproto;
+			varindex vars;
 			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback)
 				:robo::backend::devagent(_name, _boardagent, _goal.agent, _feedback.agent)
 				, echo_(*this)
-				, vars_(*this, proto_, varindex::priority::normal, nullptr, 0) {
-/*				robo::delegat::slambda<void, bool, varindex::ivar*>* d
-					= new robo::delegat::slambda<void, bool, varindex::ivar*>(
-						[](bool _result, varindex::ivar* _var) {
-							if (_result) {
-								robo_detaillog(1, robo::log::mask::disabled, "var '%s' query success ", _var->name());
-							}
-							else {
-								robo_errlog("var query fail ");
-							}
-						});*/
-					/*vars_.query(RT("hps.mo_enco.native"), [](bool _result, varindex::ivar* _v) {
-				});*/
+				, vars(*this, varproto, varindex::priority::normal, nullptr, 0) {
+
 			}
 		};
 		class servo : public robo::backend::servo {

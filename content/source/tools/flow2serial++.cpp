@@ -23,8 +23,15 @@ int main(int _argc, char* _argv[]) {
 	std::thread backend([ini] {
 		ROBO_JAMPN(robo::system::consol::begin([&](robo::system::consol::event /**/) {robo::app::machine::stop(); }), crash);
 		robo_infolog("flow2serial++ begin %s", RT(""));
+		
+
+//::robo::string* sv = new ::robo::string(RT("gbplf"));
+//*sv = _var;
+//delete sv;
+
 		ROBO_JAMPN(robo::app::machine::begin(ini), crash);
 		ROBO_JAMPN(robo::app::machine::start(), crash);
+
 		{
 			std::thread frontend([] {
 				while (!robo::app::machine::terminated()) {

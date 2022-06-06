@@ -263,7 +263,47 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual bool do_start(void);
+			/*
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			quest* var_query_quest(quest* _owner, ::robo::cstr _var) {
 
+				::robo::string* sv = new ::robo::string(_var);
+
+				return ::robo::quest::create(
+					_owner,
+
+					[this, sv](::robo::quest* _quest) {
+
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
+
+						if (!vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
+							if (_result) {
+								_quest->confirm();
+							}
+							else {
+								_quest->refuse();
+							}
+										})
+							) {
+							_quest->refuse();
+						};
+					}
+					, [this, sv](::robo::quest::result r)->robo::quest::reaction {
+
+						if (r == robo::quest::result::success) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", this->alias(), sv->c_str());
+							delete sv;
+							return robo::quest::reaction::normal;
+						}
+						else {
+							robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", this->alias(), sv->c_str(), (int)r);
+							delete sv;
+							return robo::quest::reaction::terminate;
+						}
+					}
+					);
+			}
+			#endif*/
 		public:
 			//статистика  трафика
 			itrafic trafic;
@@ -285,6 +325,27 @@ namespace robo {
 			commands actual_command(void) { return goal.command; };
 			const state_s & actual_state(void) { return  feedback.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
+
+			::robo::quest* quest_configure(::robo::quest* _owner) {
+				return ::robo::quest::create(
+					_owner
+					, [this](robo::quest* _quest) {
+						_quest->confirm();
+					}
+					, [this](robo::quest::result r)->robo::quest::reaction {
+						if (r == robo::quest::result::success) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s configure success finished", this->alias());
+							feedback.state.local = state_s::locals::ready;
+							return robo::quest::reaction::normal;
+						}
+						else {
+							robo_errlog("\t\tquest: %s configure terminated", this->alias());
+							feedback.state.local = state_s::locals::disabled;
+							return robo::quest::reaction::terminate;
+						}
+					}
+					);
+			}
 
 		};
 
@@ -413,6 +474,7 @@ namespace robo {
 				friend class vartable;
 				typedef ::robo::list::unsorted<ivar> queue;
 				typedef queue::ref ref;
+				
 				ref ref_;
 			protected:
 				ivar(frontend::vartable& _vartable, const record& _instance);
@@ -422,6 +484,77 @@ namespace robo {
 				virtual bool decode(uint8_t* _dst) = 0;
 			public:
 				vartable& vt(void) { return (vartable&)frontend::vartable::ivar::vt(); }
+
+				class ROBO_EXPORT  performer : public frontend::vartable::ivar::performer {
+				protected:
+					typedef ::robo::delegat::base<void, ivar*, bool>  delegat;
+					performer(delegat& _delegat) : frontend::vartable::ivar::performer((frontend::vartable::ivar::performer::delegat &)_delegat){}
+				public:
+					//operator frontend::vartable::ivar::performer* () { return (frontend::vartable::ivar::performer*)this;  }
+					
+					static performer* create(const ::robo::lambda<void(ivar*, bool)>& _lambda) {
+						return new temporary::lambda(_lambda);
+					}
+					//вот такая кривизна
+					enum class support { simple };
+					static performer* create(void(*_simple)(ivar*, bool), support /*_support*/) {
+						return new temporary::simple(_simple);
+					}
+					static performer* create(void* _instance, void(*_uni)(void*, ivar*, bool)) {
+						return new temporary::uni(_instance, _uni);
+					}
+					template <typename C> static performer* create(C& _instance, void (C::* _member) (ivar*, bool)) {
+						return new temporary::member<C>(_instance, _member);
+					}
+
+				};
+
+				class lambda : public performer {
+					::robo::delegat::slambda< void, ivar*, bool> delegat;
+				public:
+					lambda(const ::robo::lambda<void(ivar*, bool)>& _lambda)
+						: performer(delegat)
+						, delegat(_lambda) {}
+				};
+
+				class simple : public performer {
+					::robo::delegat::ssimple< void, ivar*, bool> delegat;
+				public:
+					simple(void(*_simple)(ivar*, bool))
+						: performer(delegat)
+						, delegat(_simple) {}
+				};
+
+				class uni : public performer {
+					::robo::delegat::suni< void, ivar*, bool> delegat;
+				public:
+					uni(void* _instance, void(*_uni)(void*, ivar*, bool))
+						: performer(delegat)
+						, delegat(_instance, _uni) {}
+				};
+
+				template <class C> class ROBO_EXPORT member
+					: public performer {
+					::robo::delegat::srmember< C, void, ivar*, bool> delegat;
+				public:
+					member(C& _instance, void (C::* _member) (ivar*, bool))
+						: delegat::smember < void, ivar*, bool >(_instance, _member) {}
+				};
+
+				class temporary {
+				public:
+					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::lambda > lambda;
+					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::uni > uni;
+					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::simple > simple;
+
+					template <class C> class ROBO_EXPORT member
+						: public   ::robo::backend::vartable::ivar::member <C> {
+					public:
+						member(C& _instance, void (C::* _member) (ivar*, bool))
+							: ::robo::backend::vartable::ivar::member <C>(_instance, _member) {}
+					};
+				};
+
 			};
 
 
@@ -555,14 +688,8 @@ namespace robo {
 			public:
 				fabric_t(cstr _type_name) : robo::frontend::vartable::fabric(_type_name) {}
 				virtual robo::frontend::vartable::ivar* create(robo::frontend::vartable& _vartable, const  robo::frontend::vartable::record& _record) {
-					//vartable* own = dynamic_cast<vartable*>(&_vartable);
-					//if (own != nullptr) {
+
 						return new robo::backend::vartable::var<T>(_vartable, _record);
-					//}
-					//else {
-						// такое может быть?
-						//return nullptr;
-					//}
 				}
 			};
 
@@ -821,13 +948,15 @@ namespace robo {
 			virtual void confirm(const robo_tran_t& _tran);
 			virtual bool exchange_need(void);
 			vartable(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
-			bool query(void);
 			bool query(frontend::vartable::ivar::performer* _performer);
 			bool ready(void);
 			template<class T> T& proto_cast(void) { return reinterpret_cast<T&>(proto_); }
 		protected:
 			virtual bool do_ready(void) { return true;  }
 			virtual bool do_exchange_need(void) { return false; }
+
+
+
 		private:
 			proto& proto_;
 			ivar::queue queue_;

@@ -468,6 +468,7 @@ namespace mexo {
 	void dev::do_create_vars(void) {
 		if (var::machine::actual_mode() >= var::machine::mode::full) {
 			var::record::create( var::const_uint8, present_.mode, RT("dev.mode"), key() , vars );
+			var::record::create(var::uint8, present_.error, RT("dev.error"), key(), vars);
 		}
 		if (var::machine::actual_mode() >= var::machine::mode::config) {
 			var::record::create(var::uint8, action_.mode, RT("act.dev.mode"), key(), vars);

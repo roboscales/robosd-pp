@@ -13,7 +13,7 @@ namespace MODULE_NAME{
 		virtual void refuse(void) = 0;
 		void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {	
 			if (outcomm_ && (outcomm_->id.value == _id) ) {
-				outcomm_ == nullptr;
+				outcomm_ = nullptr;
 				confirm();
 			}
 			else {

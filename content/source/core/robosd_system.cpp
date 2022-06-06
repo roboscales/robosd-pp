@@ -71,6 +71,8 @@ namespace robo {
 		fault_function_ = _function;
 		fault_line = _line;
 		#if ROBO_APP_ENV_ENABLED == 1
+		string * t = new string [1];
+		delete[] t;
 		system::env::abort();
 		#else
 		while (true) {}

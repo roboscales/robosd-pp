@@ -287,6 +287,40 @@ C##_##P##_performer_ C##_##P##_performer__; \
 	, C##_##P##_SUBA_ANSW \
 );
 
+#define FLOW_PERFORMER_RECORD_C( C ) FLOW_PERFORMER_RECORD_C_( C )
+#define FLOW_PERFORMER_RECORD_C_( C ) \
+::robo::net::flow::rout_record C##_rout_record_( \
+	C##_PORT_PATH \
+	, C##_PATH \
+	, C##_SUBA \
+	, C##_SUBA_ANSW \
+);
+
+#define FLOW_PERFORMER_CUSTOM_RECORD_C( C, E) FLOW_PERFORMER_CUSTOM_RECORD_C_( C, E )
+#define FLOW_PERFORMER_CUSTOM_RECORD_C_(C, E) \
+class C##_performer_  : public ::robo::net::flow::performer { \
+public:\
+	C##_performer_ (void) : performer(C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND) {}\
+	virtual void execute(void) { E 	} \
+}; \
+C##_performer_ C##_performer__; \
+::robo::net::flow::rout_record C##_rout_record_( \
+	C##_PORT_PATH \
+	, C##_PATH \
+	, C##_SUBA \
+	, C##_SUBA_ANSW \
+);
+
+#define FLOW_SERIAL_PERFORMER_RECORD_C( C, NI,NO ) FLOW_SERIAL_PERFORMER_RECORD_C_( C, NI,NO )
+#define FLOW_SERIAL_PERFORMER_RECORD_C_(C, NI,NO) \
+::robo::net::flow::serial_proto_t<NI, NO, void>  C##_proto_(C##_PATH,C##_PATH, ::robo::net::flow::performer::kind_t:: C##_KIND);\
+::robo::net::flow::rout_record C##_rout_record_( \
+	C##_PORT_PATH \
+	, C##_PATH \
+	, C##_SUBA \
+	, C##_SUBA_ANSW \
+);
+
 #define FLOW_SERIAL_FRONTEND_PERFORMER( C, IN, ON ) FLOW_SERIAL_FRONTEND_PERFORMER_( C, IN, ON )
 #define FLOW_SERIAL_FRONTEND_PERFORMER_( C, IN, ON ) \
 ::robo::net::flow::serial_proto_t<IN,ON, ::robo::system::guard>  C##_proto_(C##_PATH, ::robo::net::flow::performer::kind_t::frontend);

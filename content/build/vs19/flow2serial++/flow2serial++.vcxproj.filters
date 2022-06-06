@@ -76,6 +76,9 @@
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com_module.cpp">
       <Filter>source\net</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_alocator.cpp">
+      <Filter>source\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">

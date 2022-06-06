@@ -20,6 +20,10 @@ namespace robo {
 		*((stds*)value_) = RT("");
 	}
 
+	string* string::create(void) {
+		return new string;
+	}
+
 
 	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
 
@@ -126,7 +130,7 @@ namespace robo {
 		_d((const uint8_t*)buf,sz);
 		delete[] buf;
 		#else
-		_d(c_str(), length());
+		_d((const uint8_t*)c_str(), length());
 		#endif
 	}
 

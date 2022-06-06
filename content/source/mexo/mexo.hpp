@@ -258,8 +258,9 @@ namespace mexo {
 		typedef front::dev::feedback_s feetback_s;
 
 		struct present_s {
-			int mode;
+			uint8_t mode;
 			bool action_actual;
+			uint8_t error;
 		};
 		struct config_s {
 			int tag;

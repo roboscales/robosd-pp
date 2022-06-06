@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_alocator.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_convert.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />

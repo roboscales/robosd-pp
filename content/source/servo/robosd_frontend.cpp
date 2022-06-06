@@ -355,6 +355,14 @@ namespace robo {
 			}
 		}
 
+		void vartable::ivar::performer::post_(void) {
+			if (isfrontend_) {
+				::robo::frontend::queue::post(this, priority::lo);
+			} else {
+				::robo::backend::queue::post(this, priority::lo);
+			}
+		}
+
 		vartable::fabric::map& vartable::fabric::fabrics(void) {
 			static map fabrics_;
 			return fabrics_;
@@ -532,10 +540,12 @@ namespace robo {
 		while (r) {
 			ref* tmp = r;
 			r = r->prev();
-			ROBO_VBREAKN(tmp->owner().status_ == status::none);
+			ROBO_JAMPN_F(tmp->owner().status_ == status::none, nxt, "error status %d", (int)tmp->owner().status_);
 			tmp->owner().status_ = status::run;
-			ROBO_VBREAKN( tmp->owner().isfrontend_ == false);
+			ROBO_JAMPN_F( tmp->owner().isfrontend_ == false, nxt, "backend required");
 			frontend::queue::post(&(tmp->owner()), priority::lo);
+			tmp->dettach();
+			nxt:;
 		}
 	}
 
@@ -544,10 +554,12 @@ namespace robo {
 		while (r) {
 			ref* tmp = r;
 			r = r->prev();
-			ROBO_VBREAKN(tmp->owner().status_ == status::none);
+			ROBO_JAMPN_F(tmp->owner().status_ == status::none,nxt,"error status %d",(int)tmp->owner().status_);
 			tmp->owner().status_ = status::run;
-			ROBO_VBREAKN(tmp->owner().isfrontend_ == true);
+			ROBO_JAMPN_F(tmp->owner().isfrontend_ == true , nxt, "frontend required");
 			backend::queue::post(&(tmp->owner()), priority::lo);
+			tmp->dettach();
+			nxt:;
 		}
 	}
 	void  quest::operator ()(void) {

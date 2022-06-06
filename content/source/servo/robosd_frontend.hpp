@@ -402,7 +402,7 @@ namespace robo {
 
 				class ROBO_EXPORT  performer : public ::robo::signal::performer {
 				public:
-					typedef delegat::base<void, ivar*, bool>  delegat;
+					typedef ::robo::delegat::base<void, ivar*, bool>  delegat;
 				private:
 					delegat& delegat_;
 					ivar* var_ = nullptr;
@@ -432,6 +432,24 @@ namespace robo {
 						result_ = false;
 						post_();
 					}
+				public:
+					static performer* create(performer* _performer) {
+						return _performer;
+					}
+					static performer* create(const ::robo::lambda<void(ivar*, bool)>& _lambda) {
+						return new temporary::lambda(_lambda);
+					}
+					enum class support { simple};
+					static performer* create(void(*_simple)(ivar*, bool), support /*_support*/ ) {
+						return new temporary::simple(_simple);
+					}
+					static performer* create(void* _instance, void(*_uni)(void*, ivar*, bool)) {
+						return new temporary::uni(_instance, _uni);
+					}
+					template <typename C> static performer* create(C& _instance, void (C::* _member) (ivar*, bool)) {
+						return new temporary::member<C>(_instance, _member);
+					}
+
 				};
 				class lambda : public performer {
 					::robo::delegat::slambda< void, ivar*, bool> delegat;
@@ -500,7 +518,7 @@ namespace robo {
 
 				bool query(performer *  _performer = nullptr);
 				template <typename ... Args> bool query(Args...arg) {
-					return query(create(arg...));
+					return query(performer::create(arg...));
 				}
 
 
@@ -513,18 +531,6 @@ namespace robo {
 				typedef map::ref map_ref;
 				status actual_status(void) const  { return status_; }
 			protected:
-				performer* create(const ::robo::lambda<void(ivar*, bool)>& _lambda) {
-					return new temporary::lambda(_lambda);
-				}
-				performer* create(void(*_simple)(ivar*, bool)) {
-					return new temporary::simple(_simple);
-				}
-				performer* create(void* _instance, void(*_uni)(void*, ivar*, bool)) {
-					return new temporary::uni(_instance, _uni);
-				}
-				template <typename C> performer* create(C& _instance, void (C::* _member) (ivar*, bool)) {
-					return new temporary::member<C>(_instance, _member);
-				}
 
 				void reset_delegat(void);
 				vartable& vt(void) { return vartable_; }

@@ -100,6 +100,7 @@ namespace mexo {
 				}
 			}
 			else {
+				robo_detaillog(6, robo::log::mask::disabled, "var '%s' try request (%d)", record_.name, requery_count_);
 				requery_count_--;
 				ref_.attach_to(varindex_.request_);
 			}
@@ -157,13 +158,14 @@ namespace mexo {
 			return request_.count() != 0 || current_descriptor_ != nullptr;
 		}
 		
-		void devagent::varindex::query(robo::cstr _name, varindex::descriptor::performer * _performer) {
-			ivar* v = dynamic_cast<ivar*>(find_var(_name));
+		bool devagent::varindex::query(robo::cstr _name, varindex::descriptor::performer * _performer) {
+			ivar* v = dynamic_cast<ivar*>(find_var(_name));			
 			if (v == nullptr) {
-				new descriptor(*this, _name, _performer);
+				descriptor* d = new descriptor(*this, _name, _performer);
+				return ( d !=nullptr);
 			}
 			else {
-				v->query(_performer);
+				return v->query(_performer);
 			}
 		}
 

@@ -17,25 +17,36 @@ namespace MODULE_NAME {
 	}
 
 	namespace backend {
+
+		class devagent : public mexo::backend::devagent {
+			action_s goal_ = {};
+			feedback_s feedback_ = {};
+		public:
+			devagent(robo::cstr _name,  robo::backend::boardagent & _boardagent) :
+				mexo::backend::devagent(_name, _boardagent, goal_, feedback_) {}
+			virtual bool do_load(void) {
+				ROBO_LBREAKN(mexo::backend::devagent::do_load());
+				if (feedback.state.local == state_s::locals::configure) {
+					quest_configure(nullptr);					
+					::robo::quest::post();
+				}
+				return true;
+			}
+
+		};
+
+
+
 		class boardagent : public robo::backend::boardagent {
-			mexo::backend::devagent dev_;
-			mexo::backend::devagent::action_s goal_ = {};
-			mexo::backend::devagent::feedback_s feedback_ = {};
+			devagent dev_;
 		public:
 			boardagent(robo::cstr _name, robo::backend::servo& _servo)
 				: robo::backend::boardagent(_name, _servo)
-				, dev_(RT("dev"),*this, goal_, feedback_) {
+				, dev_(RT("dev"),*this) {
 			};
+			
 		};
-		/*class devagent : public mexo::backend::devagent {
-			action_s goal_ = {};
-			feedback_s feedback_ = {};
-			robo::backend::boardagent boardagent_;
-		public:
-			devagent(robo::cstr _name, servo & _servo) : boardagent_(_name)
-				mexo::backend::devagent(_name, _boardagent, _goal, _feedback) {}
-		};*/
-
+		
 
 		class servo : public mexo::backend::servo {
 			int boards_count_ = 0;
@@ -60,6 +71,8 @@ namespace MODULE_NAME {
 						*pf = f;
 					}
 				}
+
+
 				return true;
 			}
 			virtual void do_clean(void) {

@@ -801,13 +801,7 @@ namespace robo {
 
 
 		vartable::query_result vartable::query(robo_tran_t & _tran) {
-			if (current_ != nullptr) {
-				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
-				current_->refuse();
-				current_ = nullptr;
-				return query_result::none;
-			}
-			{
+			if (current_ == nullptr) {
 				system::guard g__;
 				current_ = queue_.pop();
 			}
@@ -868,17 +862,18 @@ namespace robo {
 				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
 			}
 			else {
+				ivar* tmp = current_;
 				switch (proto_.confirm(_tran, current_)) {
 				case proto::result::success:
-					current_->confirm();
 					current_ = nullptr;
-				break;
+					tmp->confirm();
+					break;
 				case proto::result::repeat:
-				break;
-					case proto::result::fail:
+					break;
+				case proto::result::fail:
 					ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
-					current_->refuse();
-					current_ = nullptr;		
+					current_ = nullptr;
+					tmp->refuse();
 				}
 				/*if (_tran.status == ROBO_TRAN_COMPLETE) {
 					if (_tran.size_actual > current_->length()) {
@@ -901,12 +896,6 @@ namespace robo {
 			}
 		}
 
-		bool vartable::query(void) {
-			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
-				ROBO_LBREAKN(r->owner().query());
-			}
-			return true;
-		}
 
 		bool vartable::query(frontend::vartable::ivar::performer * _performer) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {

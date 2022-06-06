@@ -20,6 +20,7 @@ namespace robo {
 		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
 		virtual ~string(void);
+		static string* create(void);
 		string(void);
 		string(const string& _src);
 		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
