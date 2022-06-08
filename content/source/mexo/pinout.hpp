@@ -61,9 +61,14 @@ namespace mexo {
 				default : reset();
 			}
 		} 
-
 	};
 	template <typename D>  pinout<D> pinout<D>::instance_;
+
+	template <typename D> class swch:public D  {
+	public:
+		void on(void) { D::set(); } 
+		void off(void) { D::reset(); } 
+	};
 	
 	class  dummy_pinout {
 		public:
