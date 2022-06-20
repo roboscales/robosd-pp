@@ -9,9 +9,9 @@ namespace mexo {
 		namespace ACTUATOR_TEMPLATE_NAME {
 			struct mode : public ACTUATOR_PS_TEMPLATE_NAME::mode {
 				enum {
-					cl_ofset = 16
+					cl_ofset = 16 
 					#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  
-					,speed_ov_current =3
+					,speed_ov_current =3 
 					#endif
 					#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  
 					,position_ov_current =4

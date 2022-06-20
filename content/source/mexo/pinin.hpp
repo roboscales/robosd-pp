@@ -12,6 +12,8 @@ namespace mexo {
 		enum class state{ set =1,reset = 0} state_ = state::reset;
 		robo::time_us_t last_us_ = 0;
 		robo::time_us_t period_us_ = 0;
+		robo::time_us_t pressed_us_ = 0;
+		robo::time_us_t pushdown_us_ = 0;
 		public:
 		void begin(robo::time_us_t _period_us){
 			period_us_ = _period_us;
@@ -38,16 +40,21 @@ namespace mexo {
 				if(state_ ==  state::reset){
 					state_ =  state::set;
 					raise();
+					pushdown_us_ = ::robo::system::env::time_us();
+				}else{
+					pressed_us_=::robo::system::env::time_us()-pushdown_us_;
 				}
 			} else {
 				if(state_ ==  state::set){
 					state_ =  state::reset;
+					pressed_us_ = pushdown_us_ = 0;
 				}
 			}
 		}
 		bool get(void){
 			return D::get();
 		}
+		robo::time_us_t pressed_us(){ return pressed_us_;}
 	};
 }
 #endif

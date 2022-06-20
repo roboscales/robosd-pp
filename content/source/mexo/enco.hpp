@@ -14,7 +14,7 @@ namespace mexo {
 			, typename unative_t
 			, typename doutput_t
 			, typename output_t
-		> class increment_machine
+		> class abs_machine
 			: public handler, public D {
 		public:
 			static  inline const  int shift = (round_resolution - raw_resolution);
@@ -157,15 +157,15 @@ namespace mexo {
 				return true;
 			}
 		public:
-			increment_machine(const config_s& _config, present_s& _present)
+			abs_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
 			const doutput_t& delta_ref(void) { return  present_cast<present_s>().delta; }
 			doutput_t& delta_acc_ref(void) { return  present_cast<present_s>().delta_acc; }
 			const output_t& position_ref(void) { return  present_cast<present_s>().position; }
 		};
 
-		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution > class increment32_t
-			: public increment_machine <
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution > class abs32_t
+			: public abs_machine <
 					q
 					, D
 					, 32
@@ -177,7 +177,7 @@ namespace mexo {
 					, typename q::long_signal_t
 				>
 			{
-			typedef increment_machine <
+			typedef abs_machine <
 				q
 				, D
 				, 32
@@ -191,13 +191,13 @@ namespace mexo {
 			protected:
 
 		public:
-			increment32_t(const typename A::config_s& _config, typename A::present_s& _present)
+			abs32_t(const typename A::config_s& _config, typename A::present_s& _present)
 				: A(_config, _present) {}
 		};
 
-		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution> class increment16_t
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution> class abs16_t
 			: public
-			increment_machine <
+			abs_machine <
 			q
 			, D
 			, 16
@@ -209,7 +209,7 @@ namespace mexo {
 			, typename q::long_signal_t
 			>
 		{
-			typedef increment_machine <
+			typedef abs_machine <
 				q
 				, D
 				, 16
@@ -223,13 +223,13 @@ namespace mexo {
 		protected:
 
 		public:
-			increment16_t(const typename A::config_s& _config, typename A::present_s& _present)
+			abs16_t(const typename A::config_s& _config, typename A::present_s& _present)
 				: A(_config, _present) {}
 		};
 
-		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution > class increment64_t
+		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution > class abs64_t
 			: public
-			increment_machine <
+			abs_machine <
 			q
 			, D
 			, 32
@@ -241,7 +241,7 @@ namespace mexo {
 			, int64_t
 			>
 		{
-			typedef increment_machine <
+			typedef abs_machine <
 				q
 				, D
 				, 32
@@ -255,7 +255,7 @@ namespace mexo {
 		protected:
 
 		public:
-			increment64_t(const typename A::config_s& _config, typename A::present_s& _present)
+			abs64_t(const typename A::config_s& _config, typename A::present_s& _present)
 				: A(_config, _present) {}
 		};
 

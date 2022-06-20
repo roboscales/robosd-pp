@@ -17,12 +17,14 @@ namespace MODULE_NAME{
 				confirm();
 			}
 			else {
-				if (incomm_ != nullptr) {
+				if (incomm_ != nullptr) {					
 					incomm_->id.value = _id;
-					incomm_->len = _len;
-					std::copy_n(_data, _len, incomm_->values);
-					incomm_ = nullptr;
-					confirm();
+					if (!( incomm_->id.user )) {
+						incomm_->len = _len;
+						std::copy_n(_data, _len, incomm_->values);
+						incomm_ = nullptr;
+						confirm();
+					}
 				}
 			}
 		}

@@ -7,7 +7,7 @@ namespace robo{
 	namespace edev{
 		namespace joint {
 			namespace dcmachine {
-				class ideal2 : public agent::block {
+				class ROBO_EXPORT ideal2 : public agent::block {
 				private:
 					arma::fmat A;
 					arma::fmat IA;

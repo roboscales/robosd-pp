@@ -370,11 +370,13 @@ namespace mexo {
 		: task(_name, false, _prev) {}
 
 	periodic_task::~periodic_task(void) {
-		machine::slot::delegat::ref** pref = refs_;
-		for (size_t n = 0; n < ref_count_; ++n, ++pref) {
-			delete* pref;
+		if (refs_ != nullptr) {
+			machine::slot::delegat::ref** pref = refs_;
+			for (size_t n = 0; n < ref_count_; ++n, ++pref) {
+				delete* pref;
+			}
+			delete[] refs_;
 		}
-		delete[] refs_;
 	}
 
 	subsystem_handler::subsystem_handler(cstr  _name, subsystem* _subsystem)

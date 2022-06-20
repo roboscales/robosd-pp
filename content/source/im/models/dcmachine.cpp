@@ -71,12 +71,15 @@ namespace robo{
 				}
 
 				bool ideal2::do_load(cstr _specific_sect, cstr _common_sect) {
+					float Un;
+					float nxx;
 					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Rs"), Rs));
 					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ls"), Ls));
-					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Km"), Km));
-					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Ke"), Ke));
 					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("J"), J));
 					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Kv"), Kv));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("Un"), Un));
+					ROBO_LBREAKN(ini::load(_specific_sect, _common_sect, RT("nxx"), nxx));
+					Km = Ke =  Un / (nxx * pi<float> / 30.f);
 					return true;
 				}
 

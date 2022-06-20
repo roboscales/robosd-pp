@@ -52,6 +52,6 @@ int main(int _argc, char* _argv[]) {
 
 	backend.join();
 	
-	robo_infolog("warlock's central was finished%s",RT(""));
+	robo_infolog("petronius's central was finished%s",RT(""));
 	return 0;
 }
