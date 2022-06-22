@@ -4,6 +4,7 @@
 #include "robosd_app_tuning.hpp"
 #include "robosd_target.hpp"
 #include <limits>
+#include <algorithm>
 
 #ifndef ROBO_TYPE_RANDOM
 #define ROBO_TYPE_RANDOM int
@@ -112,7 +113,23 @@ namespace robo {
 		return T(res);
 	}
 
-
+	template<typename  T, int N> void copy(std::initializer_list<T>  _src, T(&_dst)[N]) {
+		size_t n = _src.end() - _src.begin();
+		if(n==0) {
+			std::fill_n(_dst, N, (T)0);
+		}
+		if (n > N) n = N;
+		std::copy_n(_src.begin(), n, _dst);
+		std::fill_n(_dst + n, N - n, (T)0);
+	}
+	template<typename  T, int N> void copyf(const T * _src,size_t n, T(&_dst)[N]) {
+		if (n == 0) {
+			std::fill_n(_dst, N, (T)0);
+		}
+		if (n > N) n = N;
+		std::copy_n(_src, n, _dst);
+		std::fill_n(_dst + n, N - n, (T)0);
+	}
 
 	/*template<typename T>
 	constexpr T one_div_sqrt3 = T(1) / csqrt(T(3));
