@@ -25,8 +25,6 @@
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can_module.cpp" />
-    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.cpp" />
-    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can_module.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com_module.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_can.cpp" />
@@ -49,7 +47,6 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_delegat.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.hpp" />
-    <ClInclude Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\serial\win_com.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.hpp" />
@@ -158,7 +155,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN32.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;USBCAN32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -176,7 +173,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN64.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;USBCAN64.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -198,7 +195,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN32.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;USBCAN32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -220,7 +217,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;vs_can_api.lib;USBCAN64.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);robosd-core++.lib;USBCAN64.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>

@@ -112,7 +112,7 @@ namespace robo {
 			: std::numeric_limits<double>::quiet_NaN();
 		return T(res);
 	}
-
+	/*
 	template<typename  T, int N> void copy(std::initializer_list<T>  _src, T(&_dst)[N]) {
 		size_t n = _src.end() - _src.begin();
 		if(n==0) {
@@ -129,7 +129,7 @@ namespace robo {
 		if (n > N) n = N;
 		std::copy_n(_src, n, _dst);
 		std::fill_n(_dst + n, N - n, (T)0);
-	}
+	}*/
 
 	/*template<typename T>
 	constexpr T one_div_sqrt3 = T(1) / csqrt(T(3));

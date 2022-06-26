@@ -30,12 +30,6 @@
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.cpp">
       <Filter>source\net</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.cpp">
-      <Filter>source\net</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can_module.cpp">
-      <Filter>source\net</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -94,9 +88,6 @@
       <Filter>source\net</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can_flow_bus.hpp">
-      <Filter>source\net</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\net\platform\can\vscom\robosd_vscom_can.hpp">
       <Filter>source\net</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp">
