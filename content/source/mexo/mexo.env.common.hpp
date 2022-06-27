@@ -55,7 +55,7 @@
 #define  ENV_PROTO_SWITCH_ENABLED 0
 #endif
 
-#define ROBO_APP_SYSTEM_ENABLED 1
+//#define ROBO_APP_SYSTEM_ENABLED 1
 
 #ifdef ROBO_APP_FREEMASTER_SERIAL_ENABLED 
 #error ROBO_APP_FREEMASTER_SERIAL_ENABLED will be defined automatically in mexo.env.common.hpp

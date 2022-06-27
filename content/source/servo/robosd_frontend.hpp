@@ -72,7 +72,7 @@ namespace robo {
 			virtual  void  operator ()(void) = 0;
 			performer(bool _once = false);
 			virtual ~performer(void);
-			bool attach_to(signal* _signal, priority _priority);
+			bool attach_to(signal* _signal, priority _priority = priority::lo);
 			void dettach(void);
 			//virtual bool temporary(void) { return false; }
 		};
@@ -359,9 +359,9 @@ namespace robo {
 				void* ptr = (void*)&_obj;
 				core_().apply_action_(ptr, (void*)((uint8_t*)ptr + sizeof(T) / sizeof(uint8_t)), _on_apply_action);
 			}
-			template<typename T> static void exchange(T& _obj, signal::performer* _on_apply_action = nullptr) {
+			template<typename T> static void exchange(T& _obj, signal::performer* _on_exchange = nullptr) {
 				void* ptr = (void*)&_obj;
-				core_().exchange_(ptr, (void*)((uint8_t*)ptr + sizeof(T) / sizeof(uint8_t)), _on_apply_action);
+				core_().exchange_(ptr, (void*)((uint8_t*)ptr + sizeof(T) / sizeof(uint8_t)), _on_exchange);
 			}
 			template<typename T> static void update_feedback(T& _obj, signal::performer* _on_update_feedback_ = nullptr) {
 				void* ptr = (void*)&_obj;
