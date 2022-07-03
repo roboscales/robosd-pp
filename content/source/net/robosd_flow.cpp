@@ -318,8 +318,83 @@ namespace robo {
 				local_.reset();
 				declared_count_ = 0;
 			}
+			snapshot_proto::snapshot_proto(
+				cstr _command_path
+				, kind_t _kind
+				, snapshot& _snapshot
+			)
+				: performer(
+					_command_path
+					, _kind
+				)
+				, snapshot_(_snapshot) {
+				if (snapshot_.size() <= max_size()) {
+					page_count_ = 1;
+					page_size_ = max_size();
+				}
+				else {
+					page_size_ = max_size() - 1;
+					page_count_ = (snapshot_.size() / (max_size() - 1));
+					if (page_count_ * page_size_ < snapshot_.size()) page_count_++;
+				}
+			}
+			void snapshot_proto::update_and_post(void) {
+				snapshot_.update();
+				if (snapshot_.size() <= max_size()) {
+					put_answer(snapshot_.data(), snapshot_.size());
+				}
+				else {
+					size_t sz = max_size() - 1;
+					msg* m = msg_query();
+					ROBO_VBREAKN(m != nullptr)
+						m->set_size(sz + 1);
+					page_ = 0;
+					m->put(page_);
+					m->put(snapshot_.data(), 1, sz);
+					actual_size_ = snapshot_.size() - sz;
+					actual_ = snapshot_.data() + sz;
+				}
+			}
+			void snapshot_proto::execute(void) {
+				if (in_msg != nullptr) {
+					if (in_msg->size() == 1) {
+						post_page_(in_msg->data()[0]);
+					}
+				}
+				else {
+					if (page_ < page_count_) {
+						post_page_(page_ + 1);
+					}
+				}
+			}
+
+			void snapshot_proto::post_page_(size_t _page) {
+				if (page_ == 0) {
+					update_and_post();
+				}
+				else {
+					size_t sz = max_size() - 1;
+					size_t offset = _page * sz;
+					size_t out_sz = snapshot_.size() - offset;
+					if (out_sz > sz) {
+						out_sz = sz;
+					}
+					msg* m = msg_query();
+					ROBO_VBREAKN(m != nullptr)
+
+					page_ = _page;
+					m->set_size(out_sz + 1);
+					m->put(page_);
+					m->put(snapshot_.data() + offset, 1, out_sz);
+
+					offset += out_sz;
+					actual_size_ = snapshot_.size() - offset;
+					actual_ = snapshot_.data() + offset;
+				}
+			}
 			
 		}
+
 	}
 }
 

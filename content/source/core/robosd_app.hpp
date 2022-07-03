@@ -59,10 +59,36 @@ namespace robo {
 				char_t* buf_ = nullptr;
 				char_t* top_ = nullptr;
 				size_t space_ = 0;
-				string common_;
 				static path_root& ref(void) {
 					static path_root path_root_;
 					return path_root_;
+				}
+				struct common {
+					string value;
+					int use_count = 1;
+					typedef ::robo::list::unsorted<common> stack;
+					stack::ref ref;
+					common(cstr _value) : ref(*this), value(_value) {
+						ref.attach_to( path_root::ref().common_stack );
+					}
+					void use() { use_count++; }
+					void release() { 
+						if (use_count > 0) { 
+							use_count--; 
+							if (use_count == 0) 
+								delete this; 
+						} 
+					}
+				};
+				common::stack common_stack;
+				static cstr common_path(void) {
+					path_root& root_ = path_root::ref();
+					if (root_.common_stack.count() > 0) {
+						return root_.common_stack.last()->owner().value.c_str();
+					}
+					else {
+						return nullptr;
+					}
 				}
 			};
 			char_t* store_top_ = nullptr;

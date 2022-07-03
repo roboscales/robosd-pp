@@ -217,6 +217,58 @@ namespace robo {
 				virtual ~tunnel(void);
 			};
 
+			class ROBO_EXPORT datamap : public stream {
+			protected:
+				uint8_t * data_;
+				uint8_t* buffer_;
+				size_t size_;
+				uint8_t page_;
+				enum class state { stopped, startup, get, complete, panic } state_ = state::stopped;
+				robo_tran_command_id_t dev_command_;
+				friend class wakeup;
+				class ROBO_EXPORT  wakeup : public signal::performer {
+				public:
+					virtual  void  operator ()() {
+						if (datamap_->state_ == state::complete) {
+							datamap_->state_ = state::startup;
+						}
+					};
+					datamap* datamap_;
+					wakeup(datamap* _datamap) : signal::performer(false), datamap_(_datamap) {}
+				} wakeup_;				
+			public:
+				struct {
+					event on_start;
+					event on_complete;
+					event on_panic;
+				} events;
+				const uint8_t * raw() { return data_; } //to do осмыслить
+				size_t size() { return size_; }
+				time_us_t period_us=0;
+				datamap(cstr _name, devagent& _agent, priority _priority, uint8_t * _data, uint8_t* _buffer, size_t _size, robo_tran_command_id_t _dev_command);
+				virtual ~datamap();
+				virtual query_result query(robo_tran_t& _tran);
+				virtual void confirm(const robo_tran_t& _tran);
+				virtual query_result first_query(robo_tran_t& _tran);
+
+				virtual bool exchange_need(void) { return !(state_ == state::stopped || state_ == state::complete); }
+				virtual void on_complete(void) {}
+
+				void start() {
+					state_ = state::startup;
+					timer::core::start(&wakeup_, period_us);
+				};
+				void stop() {
+					state_ = state::stopped;
+					wakeup_.dettach();
+				}
+				virtual bool do_load(void)
+				{
+					ROBO_LBREAKN(stream::do_load());
+					ROBO_LBREAKN(ini::load(current_path(),common_path(),RT("period_us"),period_us))
+					return true;
+				}
+			};
 			typedef common::devagent::state_s state_s;
 			typedef common::devagent::commands commands;
 			typedef common::devagent::statuses statuses;
@@ -329,9 +381,6 @@ namespace robo {
 			::robo::quest* quest_configure(::robo::quest* _owner) {
 				return ::robo::quest::create(
 					_owner
-					, [this](robo::quest* _quest) {
-						_quest->confirm();
-					}
 					, [this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
 							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s configure success finished", this->alias());

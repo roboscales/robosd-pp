@@ -47,7 +47,6 @@ namespace mexo {
 				void power_off(void) { owner().off(); }
 				bool power_active(void) { return owner().active(); }
 			};
-
 		};
 
 		template < typename C, typename ... Args > class pwm

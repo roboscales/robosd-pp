@@ -98,15 +98,26 @@ namespace robo {
 				root_.top_ += n;
 				root_.space_ -= n;
 				*root_.top_ = 0;
-				if (!root_.common_.tryload(root_.buf_, RT("COMMON"))) {
-					if (owner_ == nullptr) {
-						root_.common_ = RT(".common");
+				string cm;
+				if (!cm.tryload(root_.buf_, RT("COMMON"))) {
+					if (root_.common_stack.count() > 0) {
+						root_.common_stack.last()->owner().use();
 					}
+					else {
+						new path_root::common(RT(".common"));
+					}
+				}
+				else {
+					new path_root::common(cm);
 				}
 			}
 		}
 		void node::path_pop_(void) {
 			path_root& root_ = path_root::ref();
+			if (root_.common_stack.count() > 0) {
+				path_root::common* tmp = &(root_.common_stack.last()->owner());
+				tmp->release();
+			}
 			if (owner_ == nullptr) {
 				if (root_.buf_ == nullptr) {
 					delete[] root_.buf_;
@@ -142,15 +153,18 @@ namespace robo {
 		cstr node::path::value(void) {
 			return path_root::ref().buf_;
 		}
+
 		cstr node::path::common(void) {
-			return path_root::ref().common_;
+			cstr s = path_root::common_path();
+			return ((s == nullptr) || (*s == 0)) ? RT("") : s;
 		}
+
 		cstr node::current_path(void) {
 			cstr s = path_root::ref().buf_;
 			return ( (s == nullptr) || (*s==0 ))? name_:s;
 		}
 		cstr node::common_path(void) {
-			cstr s = path_root::ref().common_.c_str();
+			cstr s = path_root::common_path();
 			return ((s == nullptr) || (*s == 0)) ? name_ : s;
 		}
 		

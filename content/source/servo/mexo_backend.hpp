@@ -108,6 +108,8 @@ namespace mexo {
 				flow_serial(robo::cstr _name, devagent& _agent, priority _priority);
 				virtual ~flow_serial(void);
 			} * * flow_serials_ = nullptr;
+
+
 			int flow_serials_count_ = 0;
 		protected:
 			typedef ::robo::quest quest;
@@ -118,23 +120,7 @@ namespace mexo {
 				//*sv = _var;
 				//delete sv;
 				return ::robo::quest::create(
-					_owner,
-
-					[this, sv ](::robo::quest* _quest) {
-
-						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
-
-						if( !vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
-								if (_result) {
-									_quest->confirm();
-								}	else {
-									_quest->refuse();
-								}
-							})
-						) {
-							_quest->refuse();
-						};
-					}
+					_owner
 					, [this,sv](::robo::quest::result r)->robo::quest::reaction {
 
 						if (r == robo::quest::result::success) {
@@ -151,6 +137,22 @@ namespace mexo {
 							}
 							return robo::quest::reaction::terminate;
 						}
+					}
+					, [this, sv](::robo::quest* _quest) {
+
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
+
+						if (!vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
+							if (_result) {
+								_quest->confirm();
+							}
+							else {
+								_quest->refuse();
+							}
+										})
+							) {
+							_quest->refuse();
+						};
 					}
 					);
 			}

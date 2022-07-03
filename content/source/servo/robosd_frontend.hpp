@@ -737,8 +737,8 @@ namespace robo {
 
 		static quest* create(
 			quest* _owner
-			, ::robo::lambda< void(quest *) > _request
 			, ::robo::lambda< reaction(result) > _confirm
+			, ::robo::lambda< void(quest*) > _request = [](quest* _q) { _q->confirm();  }
 		) {
 			if (_owner != nullptr) {
 				ROBO_BREAKN(_owner->status_ == status::none, nullptr);

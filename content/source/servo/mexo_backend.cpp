@@ -50,15 +50,15 @@ namespace mexo {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
 				switch (state_) {
 				case state::idle:
-				state_ = state::request;
-				break;
+					state_ = state::request;
+					break;
 				case state::request:
-				state_ = state::idle;
-				if (show_enable_) {
-					int tm = (int)(*((robo::time_us_t*)_tran.data));
-					int err = tm - (int)last_;
-					robo_detaillog(6, robo::log::mask::disabled, "echo %d (err: %d)", tm, err);
-				}
+					state_ = state::idle;
+					if (show_enable_) {
+						int tm = (int)(*((robo::time_us_t*)_tran.data));
+						int err = tm - (int)last_;
+						robo_detaillog(6, robo::log::mask::disabled, "echo %d (err: %d)", tm, err);
+					}
 				}
 			}
 			else {

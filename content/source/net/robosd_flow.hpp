@@ -29,6 +29,8 @@ namespace robo {
 				size_t size(void) { return size_; }
 				size_t max_size(void);
 				void release(void);
+				template<typename S> void put(const S& _data) { put((uint8_t*)&_data, sizeof(S) / sizeof(uint8_t)); };
+				template<typename S> void put(const S& _data, size_t _offset) { put((uint8_t*)&_data, _offset, sizeof(S) / sizeof(uint8_t)); };
 				bool put(const uint8_t* _data, size_t _size);
 				bool put(const uint8_t* _data, size_t _offset, size_t _size);
 				bool put(iserial& _serial, size_t _offset, size_t _size);
@@ -205,6 +207,34 @@ namespace robo {
 			protected:
 				virtual void execute(void);
 			};
+
+			struct snapshot {
+				virtual size_t size() = 0;
+				virtual uint8_t * data()= 0;				
+				virtual void update() = 0;
+			};
+
+			class snapshot_proto : public performer {
+				snapshot & snapshot_;
+				size_t actual_size_ = 0;
+				uint8_t* actual_ = nullptr;
+				size_t declared_ = 0;
+				size_t page_ = 0;
+				size_t page_count_;
+				size_t page_size_;
+			public:
+				snapshot_proto(
+					cstr _command_path
+					, kind_t _kind
+					, snapshot& _snapshot
+				);
+				void update_and_post(void);
+			protected:
+				virtual void execute(void);
+			private:
+				void post_page_(size_t _page);
+			};
+
 			template <typename D, unsigned SA, unsigned SB, typename G = void > class hardware_serial_proto_t
 				: protected hardware_bridge_t<D, SA, SB, G>
 				, public serial_proto {

@@ -30,6 +30,9 @@ namespace robo {
 				_list.add_before_p(this, _next);
 			}
 		public:
+			T* next_ptr() { if (next) { return &(next->owner()); } else return nullptr; };
+			T* prev_ptr() { if (prev) { return &(prev->owner()); } else return nullptr; };
+
 			virtual ~base_ref(void) {
 				dettach();
 			}

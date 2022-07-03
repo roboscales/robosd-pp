@@ -714,6 +714,104 @@ namespace robo {
 			}
 			return ret;
 		};
+		
+		devagent::datamap::datamap(cstr _name, devagent& _agent, priority _priority, uint8_t* _data, uint8_t* _buffer, size_t _size, robo_tran_command_id_t _dev_command)
+			:
+			stream(_name, _agent, _priority), data_(_data), buffer_(_buffer), size_(_size), dev_command_(_dev_command), wakeup_(this) {
+
+		}
+		devagent::datamap::~datamap() {
+
+		}
+		devagent::stream::query_result devagent::datamap::first_query(robo_tran_t& _tran) {
+			_tran.data[0] = 0x0;
+			page_ = 0;
+			_tran.size_actual = 1;
+			_tran.header.command = dev_command_;
+			_tran.request = ROBO_TRAN_REQUEST_PUT;
+			return query_result::repeat;
+		}
+		devagent::stream::query_result  devagent::datamap::query(robo_tran_t& _tran) {
+			switch (state_) {
+			case state::startup:
+				page_ = 0;
+				events.on_start.raise();
+				return first_query(_tran);
+			case state::get:
+				if (size_ > _tran.size_max) {
+					size_t size_max = _tran.size_max - 1;
+					size_t sz = size_ - page_ * size_max;
+					if (size_max < sz) {
+						sz = size_max;
+					}
+					_tran.data[0] = page_;
+					_tran.size_actual = sz + 1;
+				}
+				else {
+					_tran.size_actual = size_;
+				}
+				_tran.header.command = dev_command_;
+				_tran.request = ROBO_TRAN_REQUEST_GET;
+				return query_result::repeat;
+			default:
+				return query_result::none;
+			}
+		}
+		void devagent::datamap::confirm(const robo_tran_t& _tran) {
+			if (_tran.status == ROBO_TRAN_COMPLETE) {
+				if (_tran.request == ROBO_TRAN_REQUEST_GET) {
+					if (state_ == state::get) {
+						if (_tran.size_actual > 0) {
+							if (size_ > _tran.size_max) {
+								uint8_t inpage = _tran.data[0];
+								if (inpage == page_) {
+									size_t size_max = _tran.size_max - 1;
+									size_t offset = page_ * size_max;
+									size_t new_ofset = offset + _tran.size_actual - 1;
+									if (new_ofset <= size_) {
+										if (buffer_) {
+											std::copy_n(_tran.data + 1, _tran.size_actual - 1, buffer_ + offset);
+										}
+										else {
+											std::copy_n(_tran.data + 1, _tran.size_actual - 1, data_ + offset);
+										}
+										page_++;
+										if (new_ofset == size_) {
+											if (buffer_)
+												std::copy_n(buffer_, size_, data_ );
+											page_ = 0;
+											state_ = state::complete;
+											on_complete();
+											events.on_complete.raise();
+										}
+										return;
+									}
+								}
+							}
+							else {
+								std::copy_n(_tran.data, _tran.size_actual, data_);
+								page_ = 0;
+								state_ = state::complete;
+								on_complete();
+								events.on_complete.raise();
+								return;
+							}
+						}
+					}
+				}
+				else {
+					state_ = state::get;
+					return;
+				}
+			}
+			if (state_ != state::stopped) {
+				state_ = state::panic;
+				events.on_panic.raise();
+				robo_errlog("data map transporrt error -  agent: %s", own_agent().alias());
+			}
+		};
+
+		
 
 		bool boardagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
