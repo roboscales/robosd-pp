@@ -112,6 +112,60 @@ namespace robo {
 			: std::numeric_limits<double>::quiet_NaN();
 		return T(res);
 	}
+
+	class ostram {
+		uint8_t* memo_;
+		size_t size_;
+		size_t actual_size_ = 0;
+		uint8_t* ptr_;
+	public:
+		constexpr void reset(void) {
+			ptr_ = memo_;
+			actual_size_ = 0;
+		}
+		constexpr size_t actual_size() { return actual_size_;  }
+		constexpr ostram(uint8_t* _memo, size_t _sz) : memo_(_memo), size_(_sz), ptr_(_memo) {}
+		template <typename T> constexpr bool put(const T& _data) {
+			if (sizeof(T) + actual_size_ <= size_) {
+				std::copy_n((const uint8_t*)&_data, sizeof(T), ptr_);
+				actual_size_ += sizeof(T);
+				ptr_ += sizeof(T);
+				return true;
+			}
+			else return false;
+		}
+		template <typename T> constexpr ostram & operator << (const T& _data) {
+			put(_data);
+			return this;
+		}
+	};
+
+	class istram {
+		const uint8_t* memo_;
+		size_t size_;
+		size_t actual_size_ = 0;
+		const uint8_t* ptr_;
+	public:
+		constexpr void reset(void) {
+			ptr_ = memo_;
+			actual_size_ = 0;
+		}
+		constexpr size_t actual_size() { return actual_size_; }
+		constexpr istram(const uint8_t* _memo, size_t _sz) : memo_(_memo), size_(_sz), ptr_(_memo) {}
+		template <typename T> constexpr bool get( T& _data) {
+			if (sizeof(T) + actual_size_ <= size_) {
+				std::copy_n(ptr_, sizeof(T), (uint8_t*)&_data);
+				actual_size_ += sizeof(T);
+				ptr_ += sizeof(T);
+				return true;
+			}
+			else return false;
+		}
+		template <typename T> constexpr istram& operator >> ( T& _data) {
+			get(_data);
+			return this;
+		}
+	};
 	/*
 	template<typename  T, int N> void copy(std::initializer_list<T>  _src, T(&_dst)[N]) {
 		size_t n = _src.end() - _src.begin();

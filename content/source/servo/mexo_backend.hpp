@@ -108,9 +108,8 @@ namespace mexo {
 				flow_serial(robo::cstr _name, devagent& _agent, priority _priority);
 				virtual ~flow_serial(void);
 			} * * flow_serials_ = nullptr;
-
-
 			int flow_serials_count_ = 0;
+
 		protected:
 			typedef ::robo::quest quest;
 

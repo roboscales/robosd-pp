@@ -229,7 +229,7 @@ namespace robo {
 				class ROBO_EXPORT  wakeup : public signal::performer {
 				public:
 					virtual  void  operator ()() {
-						if (datamap_->state_ == state::complete) {
+						if (datamap_->state_ == state::complete || datamap_->state_ == state::panic) {
 							datamap_->state_ = state::startup;
 						}
 					};
@@ -265,7 +265,7 @@ namespace robo {
 				virtual bool do_load(void)
 				{
 					ROBO_LBREAKN(stream::do_load());
-					ROBO_LBREAKN(ini::load(current_path(),common_path(),RT("period_us"),period_us))
+					ROBO_LBREAKN(ini::load(current_path(),common_path(),RT("datamap_period_us"),period_us))
 					return true;
 				}
 			};

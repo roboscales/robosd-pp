@@ -108,12 +108,19 @@ namespace robo{
 		return (int32_t)tmp;
 	}
 
-
 	float converter::to_float(int value) const{
 		if (scale_)
 			return  (float)value / scale_ + offset_;
 		else
 			return 0.f;
 	}
+
+	double converter::to_double(int value) const {
+		if (scale_)
+			return  (double)value / scale_ + offset_;
+		else
+			return 0.f;
+	}
+
 #endif	
 }

@@ -240,6 +240,7 @@ namespace robo {
 					p->performer_index_[r.suba_] = prf;
 					prf->port_ = p;
 					prf->rout_record_ = &r;
+					prf->begin();
 				}
 				for (performer::ref* pr = instance_().performers_.first(); pr; pr = pr->next()) {
 					performer& p = pr->owner();
@@ -328,15 +329,6 @@ namespace robo {
 					, _kind
 				)
 				, snapshot_(_snapshot) {
-				if (snapshot_.size() <= max_size()) {
-					page_count_ = 1;
-					page_size_ = max_size();
-				}
-				else {
-					page_size_ = max_size() - 1;
-					page_count_ = (snapshot_.size() / (max_size() - 1));
-					if (page_count_ * page_size_ < snapshot_.size()) page_count_++;
-				}
 			}
 			void snapshot_proto::update_and_post(void) {
 				snapshot_.update();
@@ -346,13 +338,24 @@ namespace robo {
 				else {
 					size_t sz = max_size() - 1;
 					msg* m = msg_query();
-					ROBO_VBREAKN(m != nullptr)
-						m->set_size(sz + 1);
+					ROBO_VBREAKN(m != nullptr);
+					m->set_size(sz + 1);
 					page_ = 0;
 					m->put(page_);
 					m->put(snapshot_.data(), 1, sz);
 					actual_size_ = snapshot_.size() - sz;
 					actual_ = snapshot_.data() + sz;
+				}
+			}
+			void snapshot_proto::begin(void) {
+				if (snapshot_.size() <= max_size()) {
+					page_count_ = 1;
+					page_size_ = max_size();
+				}
+				else {
+					page_size_ = max_size() - 1;
+					page_count_ = (snapshot_.size() / (max_size() - 1));
+					if (page_count_ * page_size_ < snapshot_.size()) page_count_++;
 				}
 			}
 			void snapshot_proto::execute(void) {

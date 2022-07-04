@@ -86,6 +86,43 @@ namespace mexo {
 		return _x;
 	}
 
+	template <typename D, typename S > D pack(const S & _x, uint8_t _shift) {
+		if (_x == S(0)) {
+			return (D)0;
+		}
+		else {
+			S tmp=_x;
+			if (_shift > 0) {
+				int  r = (1 << (_shift - 1)) - 1;
+				if (tmp > S(0)) {
+					if ((int)(std::numeric_limits<S>::max() - _x) < r) {
+						tmp = std::numeric_limits<S>::max() >> _shift;
+					}
+					else {
+						tmp = (tmp + r) >> _shift;
+					}
+				}
+				else {
+					if ((int)(tmp + std::numeric_limits<S>::max()) < r) {
+						tmp = -(std::numeric_limits<S>::max() >> _shift);
+					}
+					else {
+						tmp = - ((r - tmp) >> _shift);
+					}
+				}
+			}
+			if (std::numeric_limits<D>::digits < std::numeric_limits<S>::digits) {
+				if (tmp < -std::numeric_limits<D>::max()) {
+					return -std::numeric_limits<D>::max();
+				}
+				else if (_x > std::numeric_limits<D>::max()) {
+					return std::numeric_limits<D>::max();
+				}
+			}
+			return D(tmp);
+		}
+	}
+
 	template< typename digit > struct fixed_point {
 
 		typedef typename  digit::discret_t discret_t;

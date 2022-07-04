@@ -13,7 +13,7 @@
 namespace mexo {
 	namespace front {
 		namespace dev {
-			struct mode { enum { idle = 0, fault = 0x255 }; };
+			struct mode { enum { idle = 0/*, fault = 0x255*/ }; };
 			struct action_s 
 			{
 				#ifdef MEXO_SERVO_SIDE
@@ -26,6 +26,7 @@ namespace mexo {
 				robo::common::devagent::feedback_s agent;
 				#endif
 				uint8_t mode;
+				bool fault;
 			};
 			struct flow_command_ix {
 				enum {
@@ -37,6 +38,7 @@ namespace mexo {
 					, snapshot = 6
 				};
 			};
+
 		}
 	}
 }

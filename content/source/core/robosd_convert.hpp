@@ -39,6 +39,7 @@ namespace robo{
 		uint32_t to_u32(float _value) const;
 
 		float to_float(int _value) const;
+		double to_double(int _value) const;
 		converter( cstr _name, app::node * _owner );
 		static converter * find(cstr _name);
 	protected:

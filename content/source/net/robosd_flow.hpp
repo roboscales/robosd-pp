@@ -67,6 +67,7 @@ namespace robo {
 					msg* in_msg = nullptr;
 					size_t max_size(void);
 					virtual void execute(void) = 0;
+					virtual void begin(void) {};
 					bool put_answer(const uint8_t* _data, size_t _size);
 					bool put_answer(msg* _msg);
 				public:
@@ -210,18 +211,18 @@ namespace robo {
 
 			struct snapshot {
 				virtual size_t size() = 0;
-				virtual uint8_t * data()= 0;				
+				virtual const uint8_t * data()= 0;				
 				virtual void update() = 0;
 			};
 
 			class snapshot_proto : public performer {
 				snapshot & snapshot_;
 				size_t actual_size_ = 0;
-				uint8_t* actual_ = nullptr;
+				const uint8_t* actual_ = nullptr;
 				size_t declared_ = 0;
 				size_t page_ = 0;
-				size_t page_count_;
-				size_t page_size_;
+				size_t page_count_=0;
+				size_t page_size_=0;
 			public:
 				snapshot_proto(
 					cstr _command_path
@@ -231,6 +232,7 @@ namespace robo {
 				void update_and_post(void);
 			protected:
 				virtual void execute(void);
+				virtual void begin(void);
 			private:
 				void post_page_(size_t _page);
 			};
