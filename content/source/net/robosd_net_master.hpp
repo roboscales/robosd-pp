@@ -174,7 +174,7 @@ namespace robo{
 }
 			virtual bool do_load(void) {
 				ROBO_LBREAKN(app::node::do_load());
-				ROBO_LBREAKN(phys::do_load(current_path(), common_path()));
+				ROBO_LBREAKN(phys::do_load(current_path(), defaults_path()));
 				return true;
 			}
 			virtual void do_clean(void) {

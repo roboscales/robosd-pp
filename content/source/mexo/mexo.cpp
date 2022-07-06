@@ -402,13 +402,14 @@ namespace mexo {
 		}
 	}
 
-	dev::dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config)
+	dev::dev(cstr  _name, action_s& _action, feedback_s& _feedback, present_s& _present, config_s& _config)
 		: node(_name, nullptr)
 		, idle(*this)
 		, actual_mode_(&idle)
 		, backend_(this, &dev::backend__)
 		, backend_ref_(backend_)
 		, action_(_action)
+		, feedback_(_feedback)
 		, present_(_present)
 		, config_(_config) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend, nullptr);
@@ -459,7 +460,16 @@ namespace mexo {
 				actual_mode_->applay_action();
 			}
 		}
+		if(wait_feedback_==wait::wait){
+			do_update_feedback();
+			wait_feedback_ = wait::complete;
+		}
 	}
+	void dev::do_update_feedback(void) {
+		feedback_.mode = present_.mode;
+		feedback_.fault = present_.error != 0;
+	}
+
 	dev::mode::mode(int _index, cstr  _name, dev& _dev)
 		: node(_name, &_dev)
 		, ref_(*this, _index) {

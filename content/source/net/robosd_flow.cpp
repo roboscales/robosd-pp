@@ -330,21 +330,26 @@ namespace robo {
 				)
 				, snapshot_(_snapshot) {
 			}
-			void snapshot_proto::update_and_post(void) {
-				snapshot_.update();
-				if (snapshot_.size() <= max_size()) {
-					put_answer(snapshot_.data(), snapshot_.size());
+			bool snapshot_proto::update_and_post(void) {
+				if (snapshot_.check_update()) {
+					if (snapshot_.size() <= max_size()) {
+						put_answer(snapshot_.data(), snapshot_.size());
+					}
+					else {
+						size_t sz = max_size() - 1;
+						msg* m = msg_query();
+						ROBO_LBREAKN(m != nullptr);
+						m->set_size(sz + 1);
+						page_ = 0;
+						m->put(page_);
+						m->put(snapshot_.data(), 1, sz);
+						actual_size_ = snapshot_.size() - sz;
+						actual_ = snapshot_.data() + sz;
+					}
+					return true;
 				}
 				else {
-					size_t sz = max_size() - 1;
-					msg* m = msg_query();
-					ROBO_VBREAKN(m != nullptr);
-					m->set_size(sz + 1);
-					page_ = 0;
-					m->put(page_);
-					m->put(snapshot_.data(), 1, sz);
-					actual_size_ = snapshot_.size() - sz;
-					actual_ = snapshot_.data() + sz;
+					return false;
 				}
 			}
 			void snapshot_proto::begin(void) {

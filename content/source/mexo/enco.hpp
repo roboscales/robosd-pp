@@ -51,76 +51,76 @@ namespace mexo {
 			}
 
 			void execute(void) {				
-				present_s& present = present_cast<present_s>();
-				const config_s& config = config_cast<config_s>();
-				if (config.native_offset != native_offset_prev || config.position_offset != position_offset_prev) {
+				present_s& prsnt = present<abs_machine>();
+				const config_s& conf = config<abs_machine>();
+				if (conf.native_offset != native_offset_prev || conf.position_offset != position_offset_prev) {
 					do_handler_reconfig();
 					return;
 				}
-				present.counter.total++;
-				present.native.raw = D::encode();
+				prsnt.counter.total++;
+				prsnt.native.raw = D::encode();
 				D::query();
 				if (start_pause_tick == 0) {
 					if ( !D::error() ) {
-						unative_t tmp = present.native.raw << shift;
-						native_t  tmp_delta = (native_t)(tmp - present.native.ceiled);
-						present.native.ceiled = tmp;
+						unative_t tmp = prsnt.native.raw << shift;
+						native_t  tmp_delta = (native_t)(tmp - prsnt.native.ceiled);
+						prsnt.native.ceiled = tmp;
 						//todo проверить на всехли компиляторах shift будет арифметический
-						present.native.delta = (native_t)(tmp_delta >> shift);// (((native_t)(tmp_delta)) >> shift);
+						prsnt.native.delta = (native_t)(tmp_delta >> shift);// (((native_t)(tmp_delta)) >> shift);
 						output_t dtmp;
-						if (config.inverce) {
-							 dtmp = -q::round_l(present.native.delta , value_shift);
+						if (conf.inverce) {
+							 dtmp = -q::round_l(prsnt.native.delta , value_shift);
 						}
 						else {
-							dtmp = q::round_l(present.native.delta, value_shift);
+							dtmp = q::round_l(prsnt.native.delta, value_shift);
 						}
 						if(dtmp > std::numeric_limits<doutput_t>::max()){
-							present.delta = present.delta_acc = std::numeric_limits<doutput_t>::max();
+							prsnt.delta = prsnt.delta_acc = std::numeric_limits<doutput_t>::max();
 						} else if(dtmp < -std::numeric_limits<doutput_t>::max()) {
-							present.delta = present.delta_acc = -std::numeric_limits<doutput_t>::max();
+							prsnt.delta = prsnt.delta_acc = -std::numeric_limits<doutput_t>::max();
 						} else {
-							present.delta = dtmp;
-							output_t adtmp =  (output_t)present.delta_acc + present.delta;
+							prsnt.delta = dtmp;
+							output_t adtmp =  (output_t)prsnt.delta_acc + prsnt.delta;
 							if(dtmp > std::numeric_limits<doutput_t>::max()){
-								present.delta_acc = std::numeric_limits<doutput_t>::max();								
+								prsnt.delta_acc = std::numeric_limits<doutput_t>::max();
 							} else if(dtmp < -std::numeric_limits<doutput_t>::max()) {
-								present.delta_acc = -std::numeric_limits<doutput_t>::max();
+								prsnt.delta_acc = -std::numeric_limits<doutput_t>::max();
 							}	else {						
-								present.delta_acc += present.delta;						
+								prsnt.delta_acc += prsnt.delta;
 							}
 						}
 					}
 					else {
-						present.counter.fault++;
+						prsnt.counter.fault++;
 						//to do так делать нельзя, та как накапливается ошибка!
-						present.native.delta = present.delta_acc = 0;
+						prsnt.native.delta = prsnt.delta_acc = 0;
 						/*present.native.raw += present.native.delta;
 						present.native.ceiled += (present.native.delta << shift);
 						present.delta_acc += present.delta;*/
 					}
-					present.acc += present.native.delta;
+					prsnt.acc += prsnt.native.delta;
 					//todo round_l не катит
-					present.position = q::round_l(present.acc, value_shift);
-					present.position -= config.position_offset;
+					prsnt.position = q::round_l(prsnt.acc, value_shift);
+					prsnt.position -= conf.position_offset;
 				}
 				else {
 					if ( !D::error() )  {
-						present.native.ceiled = present.native.raw << shift;
-						unative_t tmp = present.native.ceiled - config.native_offset;
-						if (config.inverce) {
-							present.acc = (output_t)(std::numeric_limits<unative_t>::max() - tmp);
+						prsnt.native.ceiled = prsnt.native.raw << shift;
+						unative_t tmp = prsnt.native.ceiled - conf.native_offset;
+						if (conf.inverce) {
+							prsnt.acc = (output_t)(std::numeric_limits<unative_t>::max() - tmp);
 						}
 						else {
-							present.acc = (output_t)tmp;
+							prsnt.acc = (output_t)tmp;
 						}
-						present.acc = q::round_l(present.acc, shift );
-						present.position = q::round_l(present.acc, value_shift );
-						present.position -= config.position_offset;
+						prsnt.acc = q::round_l(prsnt.acc, shift );
+						prsnt.position = q::round_l(prsnt.acc, value_shift );
+						prsnt.position -= conf.position_offset;
 						start_pause_tick--;
 					}
 					else {
 						if(D::error())
-							present.counter.fault++;
+							prsnt.counter.fault++;
 					}
 
 				}
@@ -128,40 +128,40 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				handler::do_handler_create_vars(_vars, _master_key);
-				present_s& present = present_cast<present_s>();
+				present_s& prsnt = present<abs_machine>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					if (round_resolution == 32) {
-						var::record::create(::mexo::var::uint32, present.native.raw, RT("native"), _master_key, _vars);
+						var::record::create(::mexo::var::uint32, prsnt.native.raw, RT("native"), _master_key, _vars);
 					}
 					else if (round_resolution == 16){
-						var::record::create(::mexo::var::uint16, present.native.raw, RT("native"), _master_key, _vars);
+						var::record::create(::mexo::var::uint16, prsnt.native.raw, RT("native"), _master_key, _vars);
 					}
-					var::record::create(::mexo::var::uint32, present.counter.fault, RT("cnt.fault"), _master_key, _vars);
-					var::record::create(::mexo::var::uint32, present.counter.total, RT("cnt.tot"), _master_key, _vars);
-					var::record::create(q::var::signal, present.delta, RT("delta"), _master_key, _vars);
-					var::record::create(q::var::signal, present.delta_acc, RT("delta_acc"), _master_key, _vars);
-					var::record::create(q::var::long_signal, present.position, RT("po"), _master_key, _vars);
+					var::record::create(::mexo::var::uint32, prsnt.counter.fault, RT("cnt.fault"), _master_key, _vars);
+					var::record::create(::mexo::var::uint32, prsnt.counter.total, RT("cnt.tot"), _master_key, _vars);
+					var::record::create(q::var::signal, prsnt.delta, RT("delta"), _master_key, _vars);
+					var::record::create(q::var::signal, prsnt.delta_acc, RT("delta_acc"), _master_key, _vars);
+					var::record::create(q::var::long_signal, prsnt.position, RT("po"), _master_key, _vars);
 				}
 			}
 			#endif
 
 			virtual bool do_handler_reconfig(void) {
-				present_s& present = present_cast<present_s>();
-				const config_s& config = config_cast<config_s>();
-				present.native = {};
-				present.counter = {};
-				start_pause_tick = 1 << config.init_count_shift;
-				position_offset_prev = config.position_offset;
-				native_offset_prev = config.native_offset;
+				present_s& prsnt = present<abs_machine>();
+				const config_s& conf = config<abs_machine>();
+				prsnt.native = {};
+				prsnt.counter = {};
+				start_pause_tick = 1 << conf.init_count_shift;
+				position_offset_prev = conf.position_offset;
+				native_offset_prev = conf.native_offset;
 				D::query();
 				return true;
 			}
 		public:
 			abs_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
-			const doutput_t& delta_ref(void) { return  present_cast<present_s>().delta; }
-			doutput_t& delta_acc_ref(void) { return  present_cast<present_s>().delta_acc; }
-			const output_t& position_ref(void) { return  present_cast<present_s>().position; }
+			const doutput_t& delta_ref(void) { return  present<abs_machine>().delta; }
+			doutput_t& delta_acc_ref(void) { return  present<abs_machine>().delta_acc; }
+			const output_t& position_ref(void) { return  present<abs_machine>().position; }
 		};
 
 		template <typename q, typename D, uint8_t raw_resolution, uint8_t actual_resolution > class abs32_t
@@ -282,7 +282,7 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				A::do_handler_create_vars(_vars, _master_key);
-				present_s& present = present_cast<present_s>();
+				present_s& present = present<dev_t>();
 				const config_s& config = config_cast<config_s>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					var::record::create(var::const_uint8, present.active, RT("active"), _master_key, _vars);
@@ -306,7 +306,7 @@ namespace mexo {
 
 
 			void execute(void) {
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = handler::present<positioner>();
 				const config_s& config = handler::config_cast<config_s>();
 				unative_t tmp;
 				if (config.inverce) {
@@ -346,7 +346,7 @@ namespace mexo {
 			void on() { handler::present_cast<present_s>().active = true; };
 			void off() { handler::present_cast<present_s>().active = false; };
 			void angle_set(signal_t _angle) {
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = handler::present<positioner>();
 				if (present.active == false) {
 					present.fb.output.rotate(_angle);
 				}

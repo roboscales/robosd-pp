@@ -559,7 +559,7 @@ namespace mexo {
 	protected:
 		virtual void execute(void) {
 			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			present_s& present = handler::present<positioner>();
 			long_signal_t tmp = (long_signal_t)config.scale * *A::deseired;
 			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
@@ -605,17 +605,17 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = config_cast<config_s>();
+			const config_s& conf = config<ramp>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
-				var::record::create(q::var::signal, config.rampStep, RT("st"), _master_key, _vars);
-				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
+				var::record::create(q::var::signal, conf.rampStep, RT("st"), _master_key, _vars);
+				var::record::create(var::uint8, conf.shift, RT("sh"), _master_key, _vars);
 			}
 		};
 		#endif
 		virtual void execute(void) {
 			satstate_t remote = A::master_satstate;
-			const config_s& config =handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& config =handler::config<ramp>();
+			present_s& present = handler::present<ramp>();
 			if (remote == satstate_t::both) {
 				present.satstate.actual = satstate_t::both;
 				return;
@@ -679,7 +679,7 @@ namespace mexo {
 
 		virtual void do_handler_adjust(void) {
 			//const config_s& config = config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			present_s& present = handler::present<ramp>();
 			*A::output = 0;
 			present.satstate.actual = satstate_t::both;
 		}
@@ -713,31 +713,31 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = config_cast<config_s>();
-			present_s& present = present_cast<present_s>();
+			const config_s& cnfg = config<fast_filter>();
+			present_s& psnt = present<fast_filter>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
-				var::record::create(var::uint8, config.shift, RT("sh"), _master_key, _vars);
+				var::record::create(var::uint8, cnfg.shift, RT("sh"), _master_key, _vars);
 				var::record::create(q::var::parameter, gain, RT("g"), _master_key, _vars);
 			}
 			if (var::machine::actual_mode() >= var::machine::mode::full) {
-				var::record::create(q::var::signal, present.fb.output, RT("o"), _master_key, _vars);
+				var::record::create(q::var::signal, psnt.fb.output, RT("o"), _master_key, _vars);
 			}
 		};
 		#endif
 
 
 		void execute(void) {
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config<fast_filter>();
+			present_s& present = handler::present<fast_filter>();
 			long_signal_t tmp = (long_signal_t)present.fb.output * gain + A::input;
 			present.fb.output = (signal_t)(((int)tmp) >> config.shift);
 		}
 		bool do_handler_reconfig(void) {
-			const config_s& config = handler::config_cast<config_s>();
+			const config_s& config = handler::config<fast_filter>();
 			gain = (1 << config.shift) - 1;
 			return true;
 		}
-		virtual void do_handler_adjust(void) { handler::present_cast<present_s>().fb.output = 0; }
+		virtual void do_handler_adjust(void) { handler::present<fast_filter>().fb.output = 0; }
 
 	public:
 		fast_filter(const config_s& _config
@@ -775,47 +775,47 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			B::do_handler_create_vars(_vars, _master_key);
-			present_s& present = present_cast<present_s>();
-			const config_s& config = config_cast<config_s>();
+			present_s& prsnt = present<filter>();
+			const config_s& conf = config<filter>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
-				var::record::create(q::var::parameter, config.gain, RT("g"), _master_key, _vars);
-				var::record::create(var::uint8, config.shift.gain, RT("sh.g"), _master_key, _vars);
-				var::record::create(var::uint8, config.shift.gain, RT("sh.presc"), _master_key, _vars);
-				var::record::create(var::uint8, config.shift.gain, RT("sh.val"), _master_key, _vars);
+				var::record::create(q::var::parameter, conf.gain, RT("g"), _master_key, _vars);
+				var::record::create(var::uint8, conf.shift.gain, RT("sh.g"), _master_key, _vars);
+				var::record::create(var::uint8, conf.shift.gain, RT("sh.presc"), _master_key, _vars);
+				var::record::create(var::uint8, conf.shift.gain, RT("sh.val"), _master_key, _vars);
 			}
 			if (var::machine::actual_mode() >= var::machine::mode::full) {
-				var::record::create(q::var::signal, present.fb.output, RT("o"), _master_key, _vars);
+				var::record::create(q::var::signal, prsnt.fb.output, RT("o"), _master_key, _vars);
 			}
 		}
 		#endif
 
 		void execute(void) {
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<filter>();
+			const config_s& conf = handler::config<filter>();
 			long_signal_t tmp = present.filtered * gain1 + B::input * gain2;
-			present.filtered = q::round_l(tmp, config.shift.gain);
-			present.fb.output = q:: template round_t<signal_t>(present.filtered, config.shift.value+ config.shift.gain);
+			present.filtered = q::round_l(tmp, conf.shift.gain);
+			present.fb.output = q:: template round_t<signal_t>(present.filtered, conf.shift.value+ conf.shift.gain);
 			if (autoreset) {
 				B::input = (signal_t)0;
 			}
 		}
 
 		bool do_handler_reconfig(void) {
-			const config_s& config = handler::config_cast<config_s>();
-			parameter_t ones = (parameter_t)(1 << config.shift.gain);
-			if (config.gain > ones) {
+			const config_s& conf = handler::config<filter>();
+			parameter_t ones = (parameter_t)(1 << conf.shift.gain);
+			if (conf.gain > ones) {
 				gain1 = ones;
 			}
 			else {
-				gain1 = config.gain;
+				gain1 = conf.gain;
 			}
-			gain2 = (ones - config.gain) * (1 << config.shift.presc)*(1<< config.shift.gain);
+			gain2 = (ones - conf.gain) * (1 << conf.shift.presc)*(1<< conf.shift.gain);
 			return true;
 		};
 		
 		virtual void do_handler_adjust(void) {
 			//const config_s& config = template config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			present_s& present = handler::present<filter>();
 			present.fb.output = 0;
 			present.filtered = 0;
 		}

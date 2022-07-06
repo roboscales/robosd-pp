@@ -815,7 +815,7 @@ namespace robo {
 
 		bool boardagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
-			ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("REQUEST_PAUSE_US"), request_pause_us_));
+			ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("REQUEST_PAUSE_US"), request_pause_us_));
 			return true;
 		}
 		void boardagent::do_clean(void) {
@@ -837,17 +837,17 @@ namespace robo {
 			uint8_t tmp;
 			//			ROBO_LBREAKN(ini::load(name(), RT("BUS_ID"), tmp));
 			//			dev_id_.bus = tmp;
-			ROBO_LBREAKN(ini::load(current_path(), common_path(),  RT("BOARD_DEV_ID"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("BOARD_DEV_ID"), tmp));
 			dev_id_.dev = tmp;
 			ROBO_LBREAKN(ini::load(current_path(), RT("BOARD_ADDRESS"), tmp));
 			dev_id_.address = tmp;
 
-			ROBO_LBREAKN(ini::load(current_path(), common_path(),  RT("ENABLED"), tmp));
+			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
 				feedback.state.local = state_s::locals::configure;
-				ROBO_LBREAKN(bus_alias_.load(current_path(), common_path(),  RT("BUS_ALIAS")));
-				ROBO_LBREAKN(router_alias_.load(current_path(), common_path(), RT("ROUTER_ALIAS")));
+				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
+				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			}
 			else {
 				feedback.state.local = state_s::locals::disabled;

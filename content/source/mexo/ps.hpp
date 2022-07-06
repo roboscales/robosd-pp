@@ -28,8 +28,8 @@ namespace mexo {
 		class dev :public ::mexo::dev {
 			control& control_;
 		public:
-			dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config, control& _control)
-				: ::mexo::dev(_name, _action, _present, _config)
+			dev(cstr  _name, action_s& _action, feedback_s& _feedback, present_s& _present, config_s& _config, control& _control)
+				: ::mexo::dev(_name, _action, _feedback, _present, _config)
 				, control_(_control) {}
 			void enable(void) { control_.enable(); }
 			void on(void) { control_.on(); }
@@ -68,7 +68,7 @@ namespace mexo {
 			inverter_t inverter;
 		protected:
 			void execute(void) {
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = handler::present<pwm>();
 
 				switch (status_) {
 				case status::off:
@@ -117,7 +117,7 @@ namespace mexo {
 			}
 			virtual bool do_handler_reconfig(void) {
 				ROBO_LBREAKN(A::do_handler_reconfig());
-				const config_s& config = handler::config_cast<config_s>();
+				const config_s& config = handler::config<pwm>();
 				inverter.reconfig(config.voltage.low, config.voltage.hi, config.duty.low, config.duty.hi);
 				if (status_ == status::configure) {
 					status_ = status::off;
@@ -127,8 +127,8 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				A::do_handler_create_vars(_vars, _master_key);
-				const config_s& config =  A::config_cast<config_s>();
-				present_s& present = A::present_cast<present_s>();
+				const config_s& config =  A::config<pwm>();
+				present_s& present = A::present<pwm>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					::mexo::var::record::create(::mexo::var::const_uint8, command_, RT("cmd"), _master_key, _vars);
 					::mexo::var::record::create(::mexo::var::const_uint8, status_, RT("status"), _master_key, _vars);
@@ -147,7 +147,7 @@ namespace mexo {
 			pwm(const config_s& _config, present_s& _present, Args ... args)
 				: A(_config.cb, _present.cb), inverter(_present.inverter, args...) {}
 
-			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return handler::config_cast<config_s>().voltage; }
+			const range_s < typename C::inverter::signal_t >& pwm_voltage_limits(void) { return handler::config<pwm>().voltage; }
 			//void set_voltage_req(const C::inverter::signal_t* _voltage_req) { set_input(_voltage_req); }
 		};
 

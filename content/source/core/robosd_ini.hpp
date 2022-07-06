@@ -28,7 +28,7 @@ namespace robo {
 				return true;
 			}
 			else {
-				ROBO_LRET_F(try_load(_sect_second, _key, _value), "error load number param %s(or%s)/%s", _sect_first,_sect_second, _key);
+				ROBO_LRET_F(try_load(_sect_second, _key, _value), "error load number param %s(or %s)/%s", _sect_first,_sect_second, _key);
 			}
 		}
 

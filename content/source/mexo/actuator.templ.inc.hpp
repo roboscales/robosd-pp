@@ -103,27 +103,27 @@ protected:
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
 	void speed_mode_applay_action(void) {
-		const action_s& action = ::mexo::dev::action_cast<action_s>();
-		const config_s& config = ::mexo::dev::config_cast<config_s>();
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		const action_s& act= ::mexo::dev::action<dev_t>();
+		const config_s& conf = ::mexo::dev::config<dev_t>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 
-		if (config.ps.invers) {
-			present.speed_deseired = -action.speed;
+		if (conf.ps.invers) {
+			present.speed_deseired = -act.speed;
 		}
 		else {
-			present.speed_deseired = action.speed;
+			present.speed_deseired = act.speed;
 		}
-		present.ps.voltage_range_desired.hi = action.ps.voltage;
-		present.ps.voltage_range_desired.low = -action.ps.voltage;
-		present.ps.current_range_desired.hi = action.ps.current;
-		present.ps.current_range_desired.low = -action.ps.current;
+		present.ps.voltage_range_desired.hi = act.ps.voltage;
+		present.ps.voltage_range_desired.low = -act.ps.voltage;
+		present.ps.current_range_desired.hi = act.ps.current;
+		present.ps.current_range_desired.low = -act.ps.current;
 	}
 	#endif
 public:
 #if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 protected:	
 	void speed_ov_current_mode_start(void) {
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 		motion_ov_current.set_output(&present.ps.current_deseired);
 		motion_ov_current.set_input(&present.speed_deseired);
 		dev_t < types, hardwaresys_t > ::mode_current_start();
@@ -162,7 +162,7 @@ protected:
 	#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
 protected:
 	void speed_ov_voltage_cl_mode_start(void) {
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 		motion_ov_voltage_cl.set_output(&present.ps.voltage_deseired);
 		motion_ov_voltage_cl.set_input(&present.speed_deseired);
 		dev_t < types, hardwaresys_t > ::mode_limmiter_start();
@@ -202,29 +202,29 @@ public:
 	#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
 	void position_mode_applay_action(void) {
-		const action_s& action = ::mexo::dev::action_cast<action_s>();
-		const config_s& config = ::mexo::dev::config_cast<config_s>();
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		const action_s& act = ::mexo::dev::action<dev_t>();
+		const config_s& conf = ::mexo::dev::config<dev_t>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 
-		if (config.ps.invers) {
-			present.position_deseired = -action.position;
+		if (conf.ps.invers) {
+			present.position_deseired = -act.position;
 		}
 		else {
-			present.position_deseired = action.position;
+			present.position_deseired = act.position;
 		}
-		present.speed_range_desired.hi = action.speed;
-		present.speed_range_desired.low = -action.speed;
-		present.ps.voltage_range_desired.hi = action.ps.voltage;
-		present.ps.voltage_range_desired.low = -action.ps.voltage;
-		present.ps.current_range_desired.hi = action.ps.current;
-		present.ps.current_range_desired.low = -action.ps.current;
+		present.speed_range_desired.hi = act.speed;
+		present.speed_range_desired.low = -act.speed;
+		present.ps.voltage_range_desired.hi = act.ps.voltage;
+		present.ps.voltage_range_desired.low = -act.ps.voltage;
+		present.ps.current_range_desired.hi = act.ps.current;
+		present.ps.current_range_desired.low = -act.ps.current;
 	}
 	#endif
 	
 	#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
 protected:
 	void position_ov_current_mode_start(void) {
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 		
 		positioner_ov_current.set_output(&present.speed_deseired);
 		positioner_ov_current.set_input(&present.position_deseired);			
@@ -265,7 +265,7 @@ public:
 	#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
 protected:
 	void position_ov_voltage_cl_mode_start(void) {
-		present_s& present = ::mexo::dev::present_cast<present_s>();
+		present_s& present = ::mexo::dev::present<dev_t>();
 
 		positioner_ov_voltage_cl.set_output(&present.speed_deseired);
 		positioner_ov_voltage_cl.set_input(&present.position_deseired);
@@ -303,8 +303,8 @@ public:
 			::mexo::ps::dev::mode(_index, RT("mod_po_cl"), _owner) {}
 	} position_ov_voltage_cl_mode;
 	#endif
-	dev_t (hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present, int _slot_index)
-		: ps_t(_hardwaresys, _name, _action.ps, _config.ps, _present.ps )
+	dev_t (hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, feedback_s& _feedback, config_s& _config, present_s& _present, int _slot_index)
+		: ps_t(_hardwaresys, _name, _action.ps, _feedback.ps, _config.ps, _present.ps )
 		, slot_index_(_slot_index)
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		, motion_ov_current(
@@ -460,30 +460,45 @@ public:
 		#endif
 	}
 	protected:
+		virtual void do_update_feedback(void) {
+			ps_t::do_update_feedback();
+
+			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
+			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
+			feedback< dev_t >().speed = present<dev_t>().speed_filter.fb.output;
+			#else
+			feedback< dev_t >().speed = hardwaresys.motor_enco_block.delta_acc_ref();
+			#endif
+			feedback< dev_t >().position = hardwaresys.motor_enco_block.position_ref();
+			#else
+			feedback< dev_t >().speed = 0;
+			feedback< dev_t >().position = 0;
+			#endif
+		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void do_create_vars(void) {
 			ps_t::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& action = action_cast<action_s>();
+				const action_s& act = action<dev_t>();
 
 				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::signal, action.speed, RT("act.sp"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, act.speed, RT("act.sp"), key(), vars);
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::long_signal, action.position, RT("act.po"), key(), vars);
+				::mexo::var::record::create(typename types::var::long_signal, act.position, RT("act.po"), key(), vars);
 				#endif
 			}
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
-				const present_s& present = present_cast<present_s>();
+				const present_s& prsnt = present<dev_t>();
 				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::signal, present.speed_deseired, RT("desrd.sp"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, prsnt.speed_deseired, RT("desrd.sp"), key(), vars);
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::long_signal, present.position_deseired, RT("desrd.po"), key(), vars);
+				::mexo::var::record::create(typename types::var::long_signal, prsnt.position_deseired, RT("desrd.po"), key(), vars);
 				#endif
 				/*
 

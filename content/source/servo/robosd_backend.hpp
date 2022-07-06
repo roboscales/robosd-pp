@@ -265,7 +265,7 @@ namespace robo {
 				virtual bool do_load(void)
 				{
 					ROBO_LBREAKN(stream::do_load());
-					ROBO_LBREAKN(ini::load(current_path(),common_path(),RT("datamap_period_us"),period_us))
+					ROBO_LBREAKN(ini::load(current_path(),defaults_path(),RT("datamap_period_us"),period_us))
 					return true;
 				}
 			};

@@ -57,7 +57,7 @@ namespace mexo {
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				handler::do_handler_create_vars(_vars, _master_key);
 				const config_s& config = handler::config_cast<config_s>();
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = handler::present<positioner>();
                 if (var::machine::actual_mode() >= var::machine::mode::tuning) {
                     var::record::create(::mexo::var::uint32, config.timeout.relax_us, RT("tm.relax_us"), _master_key, _vars);
                     var::record::create(::mexo::var::uint32, config.timeout.force_us, RT("tm.force_us"), _master_key, _vars);
@@ -70,13 +70,13 @@ namespace mexo {
 			#endif
 
 			void do_handler_adjust(void) {
-				present_s& present = handler::present_cast<present_s>();
+				present_s& present = handler::present<positioner>();
 				const config_s& config = handler::config_cast<config_s>();
 			}
 
 			void execute(void) {
                 ::robo::time_us_t now_us_ = ::robo:system::env::time_us();
-                present_s& present = handler::present_cast<present_s>();
+                present_s& present = handler::present<positioner>();
                 const config_s& config = handler::config_cast<config_s>();
 
                 switch (present.status) {

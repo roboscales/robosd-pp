@@ -6,8 +6,8 @@ namespace mexo {
 
 		bool devagent::echo::do_load(void) {
 			ROBO_LBREAKN(stream::do_load());
-			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("echo_period_us"), period_));
-			ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("echo_show_enable"), show_enable_));
+			ROBO_LBREAKN(robo::ini::load(current_path(), defaults_path(), RT("echo_period_us"), period_));
+			ROBO_LBREAKN(robo::ini::load(current_path(), defaults_path(), RT("echo_show_enable"), show_enable_));
 			return true;
 		}
 

@@ -255,29 +255,56 @@ namespace mexo {
 		virtual  ~dev(void){}
 			
 		typedef front::dev::action_s action_s;
-		typedef front::dev::feedback_s feetback_s;
+		typedef front::dev::feedback_s feedback_s;
 
 		struct present_s {
 			uint8_t mode;
 			bool action_actual;
 			uint8_t error;
+			//template<typename T> operator T& () { return reinterpret_cast<T&>(*this)}
 		};
 		struct config_s {
 			int tag;
 		};
 
-		template <typename S> S& action_cast(void) {
-			return reinterpret_cast <S&>(action_);
+		template <typename T> typename T::action_s& action(void) {
+			return reinterpret_cast <typename T::action_s&>(action_);
 		}
 
-		template <typename P> P& present_cast(void) {
-			return reinterpret_cast <P&>(present_);
+		template <typename T> typename T::present_s& present(void) {
+			return reinterpret_cast <typename T::present_s&>(present_);
 		}
 
-		template <typename P> P& config_cast(void) {
-			return reinterpret_cast <P&>(config_);
+		template <typename T> typename T::config_s& config(void) {
+			return reinterpret_cast <typename T::config_s&>(config_);
 		}
-
+		template <typename T> typename T::feedback_s& feedback(void) {
+			return reinterpret_cast <typename T::feedback_s& >(feedback_);
+		}
+	private:
+		enum class wait { none = 0, wait = 1, complete = 2 } wait_feedback_ = wait::none;
+	protected:
+		virtual void do_update_feedback(void);
+	public:
+		bool check_update_feedback(void) {
+			if (::robo::system::env::is_backend()) {
+				do_update_feedback();
+				return true;
+			}
+			else {
+				switch (wait_feedback_) {
+				case wait::none:
+					wait_feedback_ = wait::wait;
+					return false;
+				case wait::wait:
+					return false;
+				case wait::complete:
+					wait_feedback_ = wait::none;
+					return true;
+				}
+				return false;
+			}
+		}
 		class mode : public node {
 			friend class dev;
 		public:
@@ -308,7 +335,7 @@ namespace mexo {
 		};
 
 		idle_mode idle;
-		dev(cstr  _name, action_s& _action, present_s& _present, config_s& _config);
+		dev(cstr  _name, action_s& _action, feedback_s& _feedback, present_s& _present, config_s& _config);
 		void switch_to(int _mode);
 		void action_enable(void) { action_enabled_ = true;  }
 		void action_disable(void) { action_enabled_ = false; }
@@ -330,9 +357,11 @@ namespace mexo {
 		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
 		::mexo::machine::slot::delegat::ref  backend_ref_;
 		action_s& action_;
+		feedback_s& feedback_;
 		present_s& present_;
 		config_s& config_;
 		void backend__(void);
+		protected:
 	};
 
 	class task : public node, public machine::slot::delegat {
@@ -653,8 +682,8 @@ namespace mexo {
 		virtual void do_handler_create_vars(var::record::list&/* _vars*/, int /*_master_key*/) {};
 		#endif
 	public:
-		template <typename S>  const  S& config_cast() { return reinterpret_cast <const  S&>(config_); }
-		template <typename P>   P& present_cast() { return reinterpret_cast <P&>(present_); }
+		template <typename P>  const  typename P::config_s& config(void) { return reinterpret_cast <const  typename P::config_s&>(config_); }
+		template <typename P>  typename P::present_s& present(void) { return reinterpret_cast <typename P::present_s&>(present_); }
 		handler(const config_s& _config, present_s& _present) :config_(_config), present_(_present) {}
 	};
 
@@ -763,13 +792,13 @@ namespace mexo {
 
 	protected:
 		void update_satstate(void) {
-			present_s& present = present_cast<present_s>();
+			present_s& prsnt = present<controller_handler>();
 			satstate_t remote = master_satstate;
 			if (remote == satstate_t::none) {
-				present.satstate.actual = present.satstate.local;
+				prsnt.satstate.actual = prsnt.satstate.local;
 			}
 			else {
-				present.satstate.actual = remote;
+				prsnt.satstate.actual = remote;
 			}
 		}
 		virtual bool do_handler_reconfig(void) {
@@ -780,10 +809,10 @@ namespace mexo {
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
-			present_s& present = present_cast<present_s>();
+			present_s& prsnt = present<controller_handler>();
 			if (var::machine::actual_mode() == var::machine::mode::full) {
-				var::record::create(var::const_uint8, present.satstate.actual, RT("ss.ac"), _master_key, _vars);
-				var::record::create(var::const_uint8, present.satstate.local, RT("ss.loc"), _master_key, _vars);
+				var::record::create(var::const_uint8, prsnt.satstate.actual, RT("ss.ac"), _master_key, _vars);
+				var::record::create(var::const_uint8, prsnt.satstate.local, RT("ss.loc"), _master_key, _vars);
 			}
 		};
 		#endif
@@ -858,8 +887,8 @@ namespace mexo {
 		};
 		sence_handler(const config_s& _config, present_s& _present)
 			: handler(_config, _present.ref) {}
-		const O& output(void) { const present_s& present = present_cast<present_s>();  return present.output; }
-		const D& delta(void) { const present_s& present = present_cast<present_s>();  return present.delta; }
+		const O& output(void) { const present_s& present = present<dev_t>();  return present.output; }
+		const D& delta(void) { const present_s& present = present<dev_t>();  return present.delta; }
 	};
 
 	template< typename R, typename S > class sence_block_t
@@ -969,7 +998,7 @@ namespace mexo {
 	protected:
 		I* deseired;
 	public:
-		const satstate_t& actual_satstate(void) { return present_cast<present_s>().actual_satstate; }
+		const satstate_t& actual_satstate(void) { return present<finall_controller_handler>().actual_satstate; }
 
 		typedef I input_t;
 
@@ -1003,7 +1032,7 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			if (var::machine::actual_mode() == var::machine::mode::full) {
-				var::record::create(var::const_uint8, present_cast<present_s>().actual_satstate, RT("ss"), _master_key, _vars);
+				var::record::create(var::const_uint8, present<finall_controller_handler>().actual_satstate, RT("ss"), _master_key, _vars);
 			}
 		};
 		#endif

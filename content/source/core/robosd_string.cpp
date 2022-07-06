@@ -26,6 +26,7 @@ namespace robo {
 
 
 	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
+	
 
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 
@@ -135,6 +136,9 @@ namespace robo {
 	}
 
 	bool string::format(cstr _format, va_list _args) {
+		if (_args == nullptr || *_args == 0) {
+			(*this) = _format;
+		}
 		stream_s stream;
 		if (system::env::is_backend()) {			
 			if(sprintf_backend_(stream, _format, _args)){
@@ -174,6 +178,14 @@ namespace robo {
 		}		
 	}
 	
+	bool string::tryload(cstr _first_section, cstr _second_section, cstr _key) {
+		if (!tryload(_first_section, _key)) {
+			return tryload(_second_section, _key);
+		}
+		else {
+			return true;
+		}
+	}
 	bool string::tryload(cstr _section, cstr _key) {
 		#if ROBO_APP_INI_ENABLED == 1
 		if (system::env::is_backend()) {

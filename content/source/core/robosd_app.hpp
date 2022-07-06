@@ -63,13 +63,14 @@ namespace robo {
 					static path_root path_root_;
 					return path_root_;
 				}
-				struct common {
+				struct defaults {
 					string value;
 					int use_count = 1;
-					typedef ::robo::list::unsorted<common> stack;
+					typedef ::robo::list::unsorted<defaults> stack;
 					stack::ref ref;
-					common(cstr _value) : ref(*this), value(_value) {
-						ref.attach_to( path_root::ref().common_stack );
+					defaults(cstr _value) : ref(*this)  {
+						ref.attach_to( path_root::ref().defaults_stack );
+						value = _value;
 					}
 					void use() { use_count++; }
 					void release() { 
@@ -80,14 +81,32 @@ namespace robo {
 						} 
 					}
 				};
-				common::stack common_stack;
-				static cstr common_path(void) {
-					path_root& root_ = path_root::ref();
-					if (root_.common_stack.count() > 0) {
-						return root_.common_stack.last()->owner().value.c_str();
+				defaults::stack defaults_stack;
+				static cstr defaults_path(void) {
+					const string* p = ref().defaults_path_ptr();
+					if (p!=nullptr) {
+						return p->c_str();
 					}
 					else {
 						return nullptr;
+					}
+				}
+				const string *  defaults_path_ptr(void) {
+				//	path_root& root_ = path_root::ref();
+					if (defaults_stack.count() > 0) {
+						return & defaults_stack.last()->owner().value;
+					}
+					else {
+						return nullptr;
+					}
+				}
+				bool try_use_last(void) {
+					if (defaults_stack.count() > 0) {
+						defaults_stack.last()->owner().use();
+						return true;
+					}
+					else {
+						return false;
 					}
 				}
 			};
@@ -102,10 +121,10 @@ namespace robo {
 				path(node& _node);
 				~path(void);
 				cstr value(void);
-				cstr common(void);
+				cstr defaults(void);
 			};
 			cstr current_path(void);
-			cstr common_path(void);
+			cstr defaults_path(void);
 		public:
 			bool load(void);
 			void clean(void);

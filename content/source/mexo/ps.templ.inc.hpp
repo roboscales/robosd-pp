@@ -142,27 +142,27 @@ protected:
 		void do_create_vars(void) {
 			::mexo::ps::dev::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& action = action_cast<action_s>();
-				const config_s& config = config_cast<config_s>();
-				::mexo::var::record::create(::mexo::var::uint8, config.invers, RT("act.invers"), key(), vars);
-				::mexo::var::record::create(typename types::var::signal, action.voltage, RT("act.v"), key(), vars);
+				const action_s& act = action<dev_t>();
+				const config_s& conf = config<dev_t>();
+				::mexo::var::record::create(::mexo::var::uint8, conf.invers, RT("act.invers"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, act.voltage, RT("act.v"), key(), vars);
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, action.current, RT("act.c"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, act.current, RT("act.c"), key(), vars);
 				#endif
 			}
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
-				const present_s& present = present_cast<present_s>();
+				const present_s& psnt = present<dev_t>();
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, present.voltage_required, RT("req.v"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, psnt.voltage_required, RT("req.v"), key(), vars);
 				#endif		
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, psnt.voltage_deseired, RT("desrd.v"), key(), vars);
 				#endif
 
 				#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, present.current_deseired, RT("desrd.c"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, psnt.current_deseired, RT("desrd.c"), key(), vars);
 				#endif
 			}
 
@@ -170,20 +170,33 @@ protected:
 		#endif
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 	protected:
+		virtual void do_update_feedback(void) {
+			::mexo::ps::dev::do_update_feedback();			
+			feedback< dev_t >().voltage = present< dev_t >().voltage_required;
+			#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
+			feedback< dev_t >().current = present< dev_t >().current_filter.fb.output;
+			#else
+			feedback< dev_t >().current = hardwaresys.current_sence_block.current_delta_ref();			
+			#endif
+			#else
+			feedback< dev_t >().current = 0;
+			#endif
+		}
+
 		void voltage_mode_start(void) {
 
-			present_s& present = present_cast<present_s>();
+			present_s& prsnt = present<dev_t>();
 
-			hardwaresys.power_supply_block.set_input(&present.voltage_required);
-			voltage_regulator.set_output(&present.voltage_required);
-			voltage_regulator.set_input(&present.voltage_deseired);
+			hardwaresys.power_supply_block.set_input(&prsnt.voltage_required);
+			voltage_regulator.set_output(&prsnt.voltage_required);
+			voltage_regulator.set_input(&prsnt.voltage_deseired);
 
 			hardwaresys.reconfig();
 			voltage_regulator.reconfig();
 			voltage_regulator.start();
 			on();
 		}
-
 		virtual void voltage_mode_stop(void) {
 			off();
 			voltage_regulator.stop();
@@ -199,15 +212,15 @@ protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 
 			virtual void applay_action(void) {
-				const action_s& action = owner().template action_cast<action_s>();
-				const config_s& config = owner().template config_cast<config_s>();
-				present_s& present = owner().template present_cast<present_s>();
+				const action_s& act= owner().template action<dev_t>();
+				const config_s& conf = owner().template config<dev_t>();
+				present_s& present = owner().template present<dev_t>();
 
-				if (config.invers) {
-					present.voltage_deseired = -action.voltage;
+				if (conf.invers) {
+					present.voltage_deseired = -act.voltage;
 				}
 				else {
-					present.voltage_deseired = action.voltage;
+					present.voltage_deseired = act.voltage;
 				}
 			}
 
@@ -251,11 +264,11 @@ protected:
 		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 	protected:
 		void mode_current_start(void) {
-			present_s& present = present_cast<present_s>();
+			present_s& prsnt = present<dev_t>();
 
-			hardwaresys.power_supply_block.set_input(&present.voltage_required);
-			current_regulator.set_output(&present.voltage_required);
-			current_regulator.set_input(&present.current_deseired);
+			hardwaresys.power_supply_block.set_input(&prsnt.voltage_required);
+			current_regulator.set_output(&prsnt.voltage_required);
+			current_regulator.set_input(&prsnt.current_deseired);
 
 			hardwaresys.reconfig();
 			current_regulator.reconfig();
@@ -275,18 +288,18 @@ protected:
 		protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 			virtual void applay_action(void) {
-				const action_s& action = owner().template action_cast<action_s>();
-				const config_s& config = owner().template config_cast<config_s>();
-				present_s& present = owner().template present_cast<present_s>();
+				const action_s& act= owner().template action<dev_t>();
+				const config_s& config = owner().template config<dev_t>();
+				present_s& present = owner().template present<dev_t>();
 				if (config.invers) {
-					present.current_deseired = -action.current;
+					present.current_deseired = -act.current;
 				}
 				else {
-					present.current_deseired = action.current;
+					present.current_deseired = act.current;
 				}
 
-				present.voltage_range_desired.hi = action.voltage;
-				present.voltage_range_desired.low = -action.voltage;
+				present.voltage_range_desired.hi = act.voltage;
+				present.voltage_range_desired.low = -act.voltage;
 
 			}
 			virtual void do_start(void) {
@@ -303,12 +316,12 @@ protected:
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 	protected:
 		void mode_limmiter_start(void) {
-			present_s& present = present_cast<present_s>();
+			present_s& prsnt = present<dev_t>();
 
-			hardwaresys.power_supply_block.set_input(&present.voltage_required);
-			current_limmiter.set_output(&present.voltage_required);
-			current_limmiter.set_input(&present.voltage_deseired);
-			present.voltage_range_desired = hardwaresys.power_supply_block.pwm_voltage_limits();
+			hardwaresys.power_supply_block.set_input(&prsnt.voltage_required);
+			current_limmiter.set_output(&prsnt.voltage_required);
+			current_limmiter.set_input(&prsnt.voltage_deseired);
+			prsnt.voltage_range_desired = hardwaresys.power_supply_block.pwm_voltage_limits();
 			hardwaresys.power_supply_block.reconfig();
 			current_limmiter.reconfig();
 			current_limmiter.start();
@@ -327,19 +340,19 @@ protected:
 		protected:
 			dev_t& owner(void) { return owner_cast<dev_t>(); }
 			virtual void applay_action(void) {
-				const action_s& action = owner().template action_cast<action_s>();
-				const config_s& config = owner().template config_cast<config_s>();
-				present_s& present = owner().template present_cast<present_s>();
+				const action_s& act= owner().template action<dev_t>();
+				const config_s& conf= owner().template config<dev_t>();
+				present_s& present = owner().template present<dev_t>();
 
-				if (config.invers) {
-					present.voltage_deseired = -action.voltage;
+				if (conf.invers) {
+					present.voltage_deseired = -act.voltage;
 				}
 				else {
-					present.voltage_deseired = action.voltage;
+					present.voltage_deseired = act.voltage;
 				}
 
-				present.current_range_desired.hi = action.current;
-				present.current_range_desired.low = -action.current;
+				present.current_range_desired.hi = act.current;
+				present.current_range_desired.low = -act.current;
 			}
 
 			virtual void do_start(void) {
@@ -362,8 +375,8 @@ protected:
 		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
 		current_limmiter_mode_t current_limmiter_mode;
 		#endif
-		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, config_s& _config, present_s& _present)
-			: ::mexo::ps::dev(_name, _action.dev, _present.dev, _config.dev, _hardwaresys.power_supply_block )
+		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, feedback_s& _feedback, config_s& _config, present_s& _present)
+			: ::mexo::ps::dev(_name, _action.dev, _feedback.dev, _present.dev, _config.dev, _hardwaresys.power_supply_block )
 			, hardwaresys(_hardwaresys)
 			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())

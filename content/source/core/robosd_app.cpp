@@ -77,6 +77,10 @@ namespace robo {
 				root_.space_ = path_root::size-1;
 			}
 			else {
+				string cm;
+				string key;
+				key.format(RT("%s.defaults"),name());
+				cm.tryload(root_.buf_, defaults_path(), key);
 				size_t n;
 				if (root_.space_ > 1) {
 					if (root_.buf_[0] == 0) {
@@ -98,24 +102,35 @@ namespace robo {
 				root_.top_ += n;
 				root_.space_ -= n;
 				*root_.top_ = 0;
-				string cm;
-				if (!cm.tryload(root_.buf_, RT("COMMON"))) {
-					if (root_.common_stack.count() > 0) {
-						root_.common_stack.last()->owner().use();
+				if (cm.length() == 0) {
+					if ((!cm.tryload(root_.buf_, RT("defaults")))) {
+						const string* ptr = root_.defaults_path_ptr();
+						if ((ptr != nullptr) && (ptr->length() > 3)) {
+							cstr c = ptr->c_str() + ptr->length() - 3;
+							cstr k = RT(".%s");
+							if (c[0] == k[0] && c[1] == k[1] && c[2] == k[2]) {
+								cm.format(ptr->c_str(), name());
+								new path_root::defaults(cm);
+								return;
+							}
+						}
+						if (!root_.try_use_last()) {
+							new path_root::defaults(RT(".defaults"));
+						}
 					}
 					else {
-						new path_root::common(RT(".common"));
+						new path_root::defaults(cm);
 					}
 				}
 				else {
-					new path_root::common(cm);
+					new path_root::defaults(cm);
 				}
 			}
 		}
 		void node::path_pop_(void) {
 			path_root& root_ = path_root::ref();
-			if (root_.common_stack.count() > 0) {
-				path_root::common* tmp = &(root_.common_stack.last()->owner());
+			if (root_.defaults_stack.count() > 0) {
+				path_root::defaults* tmp = &(root_.defaults_stack.last()->owner());
 				tmp->release();
 			}
 			if (owner_ == nullptr) {
@@ -154,8 +169,8 @@ namespace robo {
 			return path_root::ref().buf_;
 		}
 
-		cstr node::path::common(void) {
-			cstr s = path_root::common_path();
+		cstr node::path::defaults(void) {
+			cstr s = path_root::defaults_path();
 			return ((s == nullptr) || (*s == 0)) ? RT("") : s;
 		}
 
@@ -163,8 +178,8 @@ namespace robo {
 			cstr s = path_root::ref().buf_;
 			return ( (s == nullptr) || (*s==0 ))? name_:s;
 		}
-		cstr node::common_path(void) {
-			cstr s = path_root::common_path();
+		cstr node::defaults_path(void) {
+			cstr s = path_root::defaults_path();
 			return ((s == nullptr) || (*s == 0)) ? name_ : s;
 		}
 		

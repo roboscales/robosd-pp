@@ -159,7 +159,7 @@ namespace mexo {
 			virtual bool do_load(void) {
 
 				ROBO_LBREAKN(robo::backend::devagent::do_load());
-				if ( robo::ini::try_load(current_path(), common_path(), RT("flow_serial_count"), flow_serials_count_) ) {
+				if ( robo::ini::try_load(current_path(), defaults_path(), RT("flow_serial_count"), flow_serials_count_) ) {
 					if (flow_serials_count_ > 0) {
 						flow_serials_ = new flow_serial * [flow_serials_count_];
 						ROBO_APP_ASSERT(flow_serials_!=nullptr);

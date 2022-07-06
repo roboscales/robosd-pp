@@ -54,7 +54,7 @@ namespace MODULE_NAME {
 		protected:
 			bool do_load(void) {
 				ROBO_LBREAKN(mexo::backend::servo::do_load());
-				ROBO_LBREAKN(robo::ini::load(current_path(), common_path(), RT("board_count"), boards_count_))
+				ROBO_LBREAKN(robo::ini::load(current_path(), defaults_path(), RT("board_count"), boards_count_))
 				if (boards_count_ > 0) {
 					boards_ = new boardagent * [boards_count_];
 					ROBO_APP_ASSERT(boards_ != nullptr);

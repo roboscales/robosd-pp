@@ -34,8 +34,8 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config<quazzy_adapt>();
+			present_s& present = handler::present<quazzy_adapt>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
 				var::record::create(q::var::parameter, config.modelGain, RT("mg"), _master_key, _vars);
@@ -63,8 +63,8 @@ namespace mexo {
 				return;
 			}
 
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<quazzy_adapt>();
+			const config_s& config = handler::config<quazzy_adapt>();
 
 			present.error = (long_signal_t) * A::deseired - actual;
 
@@ -126,8 +126,8 @@ namespace mexo {
 		}
 
 		void do_handler_adjust(void) {
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<quazzy_adapt>();
+			const config_s& config = handler::config<quazzy_adapt>();
 
 			if (config.propGain > (parameter_t)0) {
 				present.control = (long_signal_t)config.adjust_value * (1 << config.control_shift);
@@ -185,8 +185,8 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1		
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config<limmiter>();
+			//present_s& present = handler::present<limmiter>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 				var::record::create(q::var::parameter, config.qa.propGain, RT("pg"), _master_key, _vars);
 				var::record::create(q::var::parameter, config.qa.modelGain, RT("mg"), _master_key, _vars);
@@ -205,8 +205,8 @@ namespace mexo {
 		const range_s<signal_t>& signal_range_;
 	protected:
 		void execute(void) {
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<limmiter>();
+			const config_s& config = handler::config<limmiter>();
 
 			present.hi.lm.signal = actual - signal_range_.hi;
 			present.low.lm.signal = actual - signal_range_.low;
@@ -252,7 +252,7 @@ namespace mexo {
 		virtual void do_handler_adjust(void) {
 			r_hi_.do_handler_adjust();
 			r_low_.do_handler_adjust();
-			handler::present_cast<present_s>().control_des = 0;
+			handler::present<limmiter>().control_des = 0;
 			*A::output = 0;
 		}
 	public:
@@ -320,8 +320,8 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1					
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& config = handler::config<motion>();
+			present_s& present = handler::present<motion>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
 				var::record::create(q::var::parameter, config.modelGain, RT("mg"), _master_key, _vars);
@@ -350,25 +350,25 @@ namespace mexo {
 				return;
 			}
 
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<motion>();
+			const config_s& config = handler::config<motion>();
 
 			present.error = (long_signal_t) * A::deseired - actual;
 
 			
 			if (  actual ==0 ){
 				if(present.error>0){
-					if(present.force>config.forceLim-config.forceStep)
-							present.force=config.forceLim;
+					if(present.force> config.forceLim- config.forceStep)
+						present.force= config.forceLim;
 					else {
-						present.force+=config.forceStep;
+						present.force+= config.forceStep;
 					}
-				}else if (present.error<0){                
+				}else if (present.error<0){
 					signal_t fm = -config.forceLim;
-					if(present.force < fm+config.forceStep){
+					if(present.force < fm+ config.forceStep){
 						present.force=fm;
 					} else{
-						present.force-=config.forceStep;	
+						present.force-= config.forceStep;
 					}
 				}
 			}else {
@@ -430,14 +430,14 @@ namespace mexo {
 		}
 
 		void do_handler_adjust(void) {
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<motion>();
+			const config_s& conf = handler::config<motion>();
 
-			if (config.propGain > (parameter_t)0) {
-				present.control = (long_signal_t)config.adjust_value * (1 << config.controlShift);
-				*A::output = config.adjust_value;
-				present.model = present.control / config.propGain;
-				present.model_l = present.model * (1 << config.modelShift);
+			if (conf.propGain > (parameter_t)0) {
+				present.control = (long_signal_t)conf.adjust_value * (1 << conf.controlShift);
+				*A::output = conf.adjust_value;
+				present.model = present.control / conf.propGain;
+				present.model_l = present.model * (1 << conf.modelShift);
 			}
 			else {
 				present.control = (long_signal_t)0;
@@ -480,15 +480,15 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1					
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present_cast<present_s>();
+			const config_s& conf = handler::config<positioner>();
+			present_s& present = handler::present<positioner>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
-				var::record::create(q::var::parameter, config.propGain, RT("pg"), _master_key, _vars);
-				var::record::create(q::var::parameter, config.diffGain, RT("dg"), _master_key, _vars);
-				var::record::create(var::uint8, config.controlShift, RT("co_sh"), _master_key, _vars);
-				var::record::create(q::var::parameter, config.diffQuadrGain, RT("qg"), _master_key, _vars);
-				var::record::create(q::var::signal, config.deadZone, RT("dz"), _master_key, _vars);
-				var::record::create(q::var::signal, config.crawlSpeed, RT("cr_sp"), _master_key, _vars);
+				var::record::create(q::var::parameter, conf.propGain, RT("pg"), _master_key, _vars);
+				var::record::create(q::var::parameter, conf.diffGain, RT("dg"), _master_key, _vars);
+				var::record::create(var::uint8, conf.controlShift, RT("co_sh"), _master_key, _vars);
+				var::record::create(q::var::parameter, conf.diffQuadrGain, RT("qg"), _master_key, _vars);
+				var::record::create(q::var::signal, conf.deadZone, RT("dz"), _master_key, _vars);
+				var::record::create(q::var::signal, conf.crawlSpeed, RT("cr_sp"), _master_key, _vars);
 			}
 		};
 	#endif
@@ -513,8 +513,8 @@ namespace mexo {
 				return;
 			}
 
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<positioner>();
+			const config_s& config = handler::config<positioner>();
 
 			present.error = *A::deseired - actual;
 			const long_signal_t max_err = std::numeric_limits<long_signal_t>::max() / 256 ;
@@ -580,12 +580,12 @@ namespace mexo {
 			
 
 		void do_handler_adjust(void) {
-			present_s& present = handler::present_cast<present_s>();
-			const config_s& config = handler::config_cast<config_s>();
+			present_s& present = handler::present<positioner>();
+			const config_s& conf= handler::config<positioner>();
 
-			if (config.propGain > (parameter_t)0) {
-				present.control = (long_signal_t)config.adjust_value * (1 << config.controlShift);
-				*A::output = config.adjust_value;
+			if (conf.propGain > (parameter_t)0) {
+				present.control = (long_signal_t)conf.adjust_value * (1 << conf.controlShift);
+				*A::output = conf.adjust_value;
 			}
 			else {
 				present.control = (long_signal_t)0;

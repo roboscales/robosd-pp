@@ -11,10 +11,10 @@ namespace robo{
 	};
 	bool converter::do_load(void){
 		robo::string key;
-		ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("offset"),offset_));
-		ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("scale"),scale_));
-		ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("min"),min_));
-		ROBO_LBREAKN(ini::load(current_path(), common_path(), RT("max"),max_));
+		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("offset"),offset_));
+		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("scale"),scale_));
+		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("min"),min_));
+		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("max"),max_));
 		eps_ = abs(0.5f/scale_);
 		return true;
 	}
