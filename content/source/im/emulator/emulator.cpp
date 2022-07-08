@@ -26,13 +26,22 @@ int main(int _argc, robo::cstr _argv[])
 	ROBO_JAMPN( robo::system::consol::begin([&](robo::system::consol::event /**/) {terminated = true; }), crash);
 	ROBO_JAMPN(robo::edev::agent::begin(emu_ini), crash);
 	//robo::system::env::begin();
-
-	
-	while (!terminated) {
-		auto t1 = Time::now();
-		fsec fs = t1 - t0;
-		double sec = fs.count();
-		robo::edev::agent::run(sec);
+	{
+		static double sec = 0;
+		std::thread th(
+			[&]() {
+				while (!terminated) {
+					robo::edev::agent::backgrounf_run(sec);
+				}
+			}
+		);
+		while (!terminated) {
+			auto t1 = Time::now();
+			fsec fs = t1 - t0;
+			sec = fs.count();
+			robo::edev::agent::run(sec);
+		}
+		th.join();
 	}
 crash:
 	robo::edev::agent::finish();

@@ -274,11 +274,11 @@ namespace robo {
 			typedef common::devagent::statuses statuses;
 			typedef common::devagent::action_s action_s;
 			typedef common::devagent::feedback_s feedback_s;
-			template <typename F> F& feedback_cast(void) {
-				return reinterpret_cast <F&>(feedback);
+			template <typename F> typename F::feedback_s & feedback(void) {
+				return reinterpret_cast <typename F::feedback_s&>(feedback_);
 			}
-			template <typename A> A& goal_cast(void) {
-				return reinterpret_cast <A&>(goal);
+			template <typename A> typename A::action_s& goal(void) {
+				return reinterpret_cast <typename A::action_s& > (goal_);
 			}
 
 		private:
@@ -292,21 +292,21 @@ namespace robo {
 			//state_s actual_state_;
 			stream::list streams_;
 			//commands actual_command_ = commands::stop;
+			action_s& goal_;
+			feedback_s& feedback_;
 		protected:
-			action_s& goal;
-			feedback_s& feedback;
 			virtual bool agent_apply_action(commands _command) {
 				if (_command == commands::sw2dirrect) {
 					return true;
 				}
 				else {
-					goal.command = _command;
+					goal_.command = _command;
 					return false;
 				}
 			}
 
 			virtual void agent_uppdate_feedback(void) {
-				feedback.status = actual_status(goal.command);
+				feedback_.status = actual_status(goal_.command);
 			}
 
 			bool exchabge_enabled(void);
@@ -374,8 +374,8 @@ namespace robo {
 			//тенкущий (вычисляемый) статус
 			statuses actual_status(commands _command);
 			//тенкущая команда
-			commands actual_command(void) { return goal.command; };
-			const state_s & actual_state(void) { return  feedback.state; };
+			commands actual_command(void) { return goal_.command; };
+			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 
 			::robo::quest* quest_configure(::robo::quest* _owner) {
@@ -384,12 +384,12 @@ namespace robo {
 					, [this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
 							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s configure success finished", this->alias());
-							feedback.state.local = state_s::locals::ready;
+							feedback_.state.local = state_s::locals::ready;
 							return robo::quest::reaction::normal;
 						}
 						else {
 							robo_errlog("\t\tquest: %s configure terminated", this->alias());
-							feedback.state.local = state_s::locals::disabled;
+							feedback_.state.local = state_s::locals::disabled;
 							return robo::quest::reaction::terminate;
 						}
 					}

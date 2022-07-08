@@ -84,7 +84,7 @@ namespace robo {
 		}
 			
 		bool can_flow_bus::ready(void) {
-			return wait_id_ == idle_id;
+			return (wait_id_ == idle_id)  && driver_.ready();
 		}
 
 		can_flow_bus::can_flow_bus(robo::cstr _name, robo::app::module* _owner, driver & _driver)

@@ -282,27 +282,18 @@ namespace mexo {
 			return reinterpret_cast <typename T::feedback_s& >(feedback_);
 		}
 	private:
-		enum class wait { none = 0, wait = 1, complete = 2 } wait_feedback_ = wait::none;
+		bool wait_feedback_ = false;
 	protected:
 		virtual void do_update_feedback(void);
 	public:
-		bool check_update_feedback(void) {
+		void update_feedback(void) {
 			if (::robo::system::env::is_backend()) {
 				do_update_feedback();
-				return true;
 			}
 			else {
-				switch (wait_feedback_) {
-				case wait::none:
-					wait_feedback_ = wait::wait;
-					return false;
-				case wait::wait:
-					return false;
-				case wait::complete:
-					wait_feedback_ = wait::none;
-					return true;
-				}
-				return false;
+				::robo::system::critical c__;
+				wait_feedback_ = true;
+				while (wait_feedback_ == true) ::system::env::sleep();
 			}
 		}
 		class mode : public node {

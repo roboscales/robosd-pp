@@ -212,7 +212,7 @@ namespace robo {
 			struct snapshot {
 				virtual size_t size() = 0;
 				virtual const uint8_t * data()= 0;				
-				virtual bool check_update() = 0;
+				virtual void update() = 0;
 			};
 
 			class snapshot_proto : public performer {
@@ -229,7 +229,7 @@ namespace robo {
 					, kind_t _kind
 					, snapshot& _snapshot
 				);
-				bool update_and_post(void);
+				void update_and_post(void);
 			protected:
 				virtual void execute(void);
 				virtual void begin(void);

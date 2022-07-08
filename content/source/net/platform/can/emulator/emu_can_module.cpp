@@ -11,7 +11,7 @@ namespace MODULE_NAME{
 		robo::delegat::srmember<phys, void, ::robo::net::ican&, uint32_t, const uint8_t*, uint8_t   > on_can_receive_;
 		robo::delegat::srmember<phys, void, ::robo::net::ican&, ::robo::net::ican::event  > on_can_event_;
 		virtual void confirm(void) = 0;
-		virtual void refuse(void) = 0;
+		virtual void refuse(void) = 0;		
 		void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {			
 			if (incomm_ != nullptr) {
 				incomm_->id.value = _id;
@@ -30,6 +30,8 @@ namespace MODULE_NAME{
 			}
 		}
 		robo::net::emu_can::port can_;
+	protected:
+		bool ready(void) { return can_.ready(); }
 	public:
 		void send(const robo::net::can_flow_bus::packet* _outcomm) {
 			if (can_.ready()) {

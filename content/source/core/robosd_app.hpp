@@ -19,6 +19,7 @@ namespace robo {
 			typedef  list::ref ref;
 			typedef  map::ref mref;
 			robo::string store_name_;
+			robo::string display_alias_;
 			node* owner_ = nullptr;
 			ref ref_;
 			mref own_ref_;
@@ -125,14 +126,34 @@ namespace robo {
 			};
 			cstr current_path(void);
 			cstr defaults_path(void);
-		public:
+//			const node* owner_ptr(void) { return owner_; }
+		public:			
 			bool load(void);
 			void clean(void);
 			cstr name(void) { return name_; }
 			//void push_path(string& _path);
 			robo::cstr tree_path(void);
 			state actual_state(void) { return actual_state_; }
-			const cstr alias(void) { return alias_.length() == 0 ? name_ : alias_.c_str(); };
+			const cstr alias(void) {
+				if (alias_.length() != 0) {
+					return alias_.c_str();
+				}
+				else {
+					return name();
+				}
+			}
+			const cstr display_alias(void) { 
+				if (alias_.length() != 0) {
+					return alias_.c_str();
+				}
+				else {
+					if (display_alias_.length() == 0) {
+						display_alias_.format(RT("%s.%s"), owner_ !=nullptr ? owner_->alias() : RT(""), name());
+					}
+					return display_alias_.c_str();
+				}
+				
+			};
 
 			node(void);
 			virtual ~node(void);

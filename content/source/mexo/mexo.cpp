@@ -460,9 +460,9 @@ namespace mexo {
 				actual_mode_->applay_action();
 			}
 		}
-		if(wait_feedback_==wait::wait){
+		if(wait_feedback_){
 			do_update_feedback();
-			wait_feedback_ = wait::complete;
+			wait_feedback_ = false;
 		}
 	}
 	void dev::do_update_feedback(void) {

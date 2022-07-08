@@ -7,25 +7,25 @@
 namespace robo{
 	namespace kinematiks {
 		
-		constexpr void rangle_sut(float & _values) {
-			while (_values > pi<float>) {
-				_values = -2 * pi<float>;
+		template<typename T> constexpr void rangle_sut(T & _values) {
+			while (_values > pi<T>) {
+				_values = -2 * pi<T>;
 			}
-			while (_values < -pi<float>) {
-				_values += 2 * pi<float>;
+			while (_values < -pi<T>) {
+				_values += 2 * pi<T>;
 			}			
 		}
 
-		constexpr void rangle_add(float & _values, float _add) {
+		template<typename T> constexpr void rangle_add(T& _values, T _add) {
 			_values += _add;
 			rangle_sut(_values);
 		}
-		constexpr void rangle_sub(float& _values, float _add) {
+		template<typename T> constexpr void rangle_sub(T& _values, T _add) {
 			_values -= _add;
 			rangle_sut(_values);
 		}
 
-		template<int n> constexpr float epsilon = std::numeric_limits<float>::epsilon() * n; //n попугаев
+		template<typename T,int n> constexpr T epsilon = std::numeric_limits<T>::epsilon() * n; //n попугаев
 
 		/*template<typename T, size_t N> constexpr const std::span<T, N> span(const T(&_arr)[N]) {
 			return  std::span<T, N>((T *) &(_arr[0]),N);
@@ -38,114 +38,112 @@ namespace robo{
 				return  std::span<T, M>((T*)&(arr_[O]), M);
 			}			
 		};*/
-		
-		namespace axis {
-			struct far {
+
+		namespace  axis {
+			template<typename T, class S> struct orient_span_t : public std::span<T, S::count> {
+				constexpr orient_span_t(const S& _s) : std::span<T, S::count>((T*)&_s.memo[0], S::count) {}
+				template< class F > constexpr  orient_span_t(const F & _src) :
+					std::span<T, S::count>(_src.subspan < F::orientofs, S::count > ()) {
+				}
+			};
+			template<typename T, class S> struct position_span_t : public std::span<T, S::count> {
+				constexpr position_span_t(const S& _s) : std::span<T, S::count>((T*)&_s.memo[0], S::count) {}
+				template< class F > constexpr  position_span_t(const F& _src) :
+					std::span<T, S::count>(_src.subspan < F::posofs, S::count >()) {}
+			};
+			template<typename T> struct euclid {
 				enum { count = 3 };
+				typedef position_span_t<T,euclid> span;
 				union {
 					struct {
-						float x;
-						float y;
-						float z;
+						T x;
+						T y;
+						T z;
 					};
-					float memo[count];
+					T memo[count];
 				};
 			};
-			struct euclid {
+			template<typename T> struct cilinder {
 				enum { count = 3 };
+				typedef position_span_t<T, cilinder> span;
 				union {
 					struct {
-						float x;
-						float y;
-						float z;
+						T radius;
+						T height;
+						T yaw;
 					};
-					float memo[count];
-				};
-			};
-			struct cilinder {
-				enum { count = 3 };
-				union {
-					struct {
-						float radius;
-						float height;
-						float yaw;
-					};
-					float memo[count];
+					T memo[count];
 				};
 			};
 
-			struct sphere {
+			template<typename T> struct sphere {
 				enum { count = 3 };
+				typedef position_span_t<T, sphere> span;
 				union {
 					struct {
-						float radius;
-						float yaw;
-						float pitch;
+						T radius;
+						T yaw;
+						T pitch;
 					};
-					float memo[count];
+					T memo[count];
 				};
 			};
 
-			struct euler {
+			template<typename T>struct euler {
 				enum { count = 3 };
+				typedef orient_span_t<T, euler> span;
 				union {
 					struct {
-						float precession;
-						float nutation;
-						float rotation;
+						T precession;
+						T nutation;
+						T rotation;
 					};
-					float memo[count];
+					T memo[count];
 				};
 			};
-			struct avionic {
+			template<typename T>struct avionic {
 				enum { count = 3 };
+				/*struct span : public std::span<T, count> {
+					template<class F> constexpr  span(const F& _src, size_t _offset) :
+						std::span<T, count>(&_src[_offset], count) {}
+				};
+				*/
+				typedef orient_span_t<T, avionic> span;
+
 				union {
 					struct {
-						float yaw;
-						float pith;
-						float roll;
+						T yaw;
+						T pith;
+						T roll;
 					};
-					float memo[count];
+					T memo[count];
 				};
 
-				constexpr avionic(void) : yaw(0.f), pith(0.f), roll(0.f) {
+				constexpr avionic(void) : yaw(T(0)), pith(T(0)), roll(T(0)) {
+				}
+				constexpr avionic(const span & _src) {
+					std::copy_n(_src.begin(), count, memo);
 				}
 
-				constexpr avionic( float _yaw, float _pith, float _roll) : yaw(_yaw), pith(_pith), roll(_roll) {
+				constexpr avionic( T _yaw, T _pith, T _roll) : yaw(_yaw), pith(_pith), roll(_roll) {
 					rangle_sut(_yaw);
-					rangle_sut(_roll);
-					sutyaw();
+					rangle_sut(_roll);					
 				}
 
-				float norm(void) {
+				T norm(void) {
 					return sqrt( yaw * yaw + pith * pith + roll * roll );
 				}
-				constexpr void sutyaw(void) {
-					 /*if (yaw < -pi<float>*0.99995) {
-						yaw = -pi<float>*0.99995;
-					}
-					if (roll < -pi<float>*0.99995) {
-						roll = -pi<float>*0.99995;
-					}
-					if (yaw > pi<float>*0.99995) {
-						yaw = pi<float>*0.99995;
-					}
-					if (roll > pi<float>*0.99995) {
-						roll = pi<float>*0.99995;
-					}*/
-				}
+
 				constexpr avionic& operator -= (const avionic& _src) {
 					rangle_sub( yaw , _src.yaw );
 					rangle_sub( pith , _src.pith);
-					rangle_sub( roll , _src.roll);
-					sutyaw();
+					rangle_sub( roll , _src.roll);					
 					return *this;
 				}
 				constexpr avionic& operator += (const avionic& _src) {
 					rangle_add(yaw, _src.yaw);
 					rangle_add(pith, _src.pith);
 					rangle_add(roll, _src.roll);
-					sutyaw();
 					return *this;
 				}
 
@@ -159,26 +157,32 @@ namespace robo{
 				avionic tmp(_src1);
 				return tmp -= _src2;
 			}*/
-		}
+		};
 		
-		struct quaternion {
+		template<typename T> struct quaternion {
 			enum { count = 4 };
+			typedef  std::span<T, count> span  ;
 			union {
 				struct {
-					double w;
-					double x;
-					double y;
-					double z;
+					T w;
+					T x;
+					T y;
+					T z;
 				};
-				double memo[count];
+				T memo[count];
 			};
+			
+			using avionic = typename  axis::avionic<T>;
 			constexpr quaternion(void) {
 				std::fill_n(memo,count,0.f);
 			}
+			//constexpr quaternion(const span& _src) {
+				//std::copy_n(_src.begin(), count, memo);
+			//}
 			constexpr quaternion (const quaternion& _src) {
 				std::copy_n(_src.memo, count, memo);
 			}
-			quaternion(const axis::avionic& _src) {
+			quaternion(const avionic& _src) {
 				from(_src);
 			}
 			constexpr quaternion(const quaternion& _src, bool _inv) {
@@ -193,45 +197,43 @@ namespace robo{
 				}
 			}
 			constexpr quaternion(
-				double _x,
-				double _y,
-				double _z
+				T _x,
+				T _y,
+				T _z
 			) {
-				w = 0;
+				w = T(0);
 				x = _x;
 				y = _y;
 				z = _z;
 			}
 
+			constexpr quaternion(
+				T _w,
+				T _x,
+				T _y,
+				T _z
+			) {
+				w = _w;
+				x = _x;
+				y = _y;
+				z = _z;
+			}
 			constexpr quaternion& operator = (const quaternion& _src) {
 				std::copy_n(_src.memo, count, memo);
 				return *this;
 			}
-			void from(const axis::avionic& _src) {
-				double Rd2 = _src.roll/2.;
-				double Pd2 = -_src.pith / 2.;
-				double Yd2 = _src.yaw / 2.;
 
-				double  csR = std::cos(Rd2);
-				double  snR = std::sin(Rd2);
-				double  csP = std::cos(Pd2);
-				double  snP = std::sin(Pd2);
-				double  csY = std::cos(Yd2);
-				double  snY = std::sin(Yd2);
-				w = csR * csP * csY + snR * snP * snY;
-				x = snR * csP * csY - csR * snP * snY;
-				y = csR * snP * csY + snR * csP * snY;
-				z = csR * csP * snY - snR * snP * csY;
-			}
-			quaternion& operator = (const axis::avionic& _src) {
-				from(_src);
+
+			quaternion& operator = (const avionic& _src) {
+				//todo говнокод
+				*this << axis::orient_span_t<T, avionic>(_src);
 				return *this;
 			}
 			constexpr quaternion& operator *= (const quaternion& _src) {
-				double _w = w;
-				double _x = x;
-				double _y = y;
-				double _z = z;
+				T _w = w;
+				T _x = x;
+				T _y = y;
+				T _z = z;
 				w = _w * _src.w - _x * _src.x - _y * _src.y - _z * _src.z;
 				x = _x * _src.w + _w * _src.x + _y * _src.z - _z * _src.y;   // x component
 				y = _w * _src.y - _x * _src.z + _y * _src.w + _z * _src.x;   // y component
@@ -255,98 +257,56 @@ namespace robo{
 				return *this;
 			}
 			
-			void to(axis::avionic & _avc) {
-				double d1 = 2. * (x * z - w * y);
-				if (d1 > 1.) {
-					d1= 1. - std::numeric_limits<double>::epsilon();
-				}
-				if (d1< -1.) {
-					d1= -1. + std::numeric_limits<double>::epsilon();
-				}
-				double tmp  = -asin(d1);
-				_avc.pith = (float)-tmp;
-				double d2= tmp - pi<double> / 2.f;
-				if ( abs(d2) < pi<double>*0.00000003f) {
-					double YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
-					//вариант первый
-					double roll1,roll2;
-					if (tmp < 0) {
-						roll1 = YR - _avc.yaw;
-					}
-					else {
-						roll1 = _avc.yaw - YR;
-					}
-					//вариант второй YAW+PITCH > pi
-					if (YR > 0) {
-						YR = YR - 2 * pi<double>;
-					}
-					else {
-						YR = YR + 2. * pi<double>;
-					}
-					
-					if (tmp < 0) {
-						roll2 = YR - _avc.yaw;
-					}
-					else {
-						roll2 = _avc.yaw - YR;
-					}
-
-					double df1 = roll1 - _avc.roll;
-					
-					double df2 = roll2 - _avc.roll;
-					
-					if (abs(df2 > df1)) {
-						_avc.roll = (float)roll1;
-					}
-					else {
-						_avc.roll = (float)roll2;
-					}
-
-				}
-				else {
-					_avc.yaw = (float)atan2( 2 * (x * y + w * z) , 1 - 2 * ( y*y + z*z ) );
-					_avc.roll = (float)atan2( 2 * ( w * x + y * z), 1 - 2 * ( x*x + y*y ));
-				}
+			void to(avionic& _avc) {
 			}
 			double norm(void) {
 				return sqrt( w*w + x*x + y*y +z*z );			
 			}
 		};
 
-		constexpr quaternion operator * (const quaternion& _src1, const quaternion& _src2) {
+		
+
+		template<typename T> constexpr quaternion<T> operator * (const quaternion<T>& _src1, const quaternion<T>& _src2) {
 			quaternion tmp(_src1);
 			return tmp *= _src2;
 		}
-		constexpr quaternion operator + (const quaternion& _src1, const quaternion& _src2) {
-			quaternion tmp(_src1);
+		template<typename T> constexpr quaternion<T> operator + (const quaternion<T>& _src1, const quaternion<T>& _src2) {
+			quaternion<T>tmp(_src1);
 			return tmp += _src2;
 		}
-		constexpr quaternion operator - (const quaternion& _src1, const quaternion& _src2) {
-			quaternion tmp(_src1);
+		template<typename T>constexpr quaternion<T> operator - (const quaternion<T>& _src1, const quaternion<T>& _src2) {
+			quaternion<T> tmp(_src1);
 			return tmp -= _src2;
 		}
 
 		enum class op { set, inc };
 		
-		template<class P, class O > struct point_t {
-			enum { count = P::count + O::count };
+		template< typename T, class P, class  O > struct point_t {
+			typedef T type;
+			typedef P position_t;
+			typedef O orient_t;
+			enum { count = P::count + O::count};
 			union {
 				struct {
-					P position;
-					O orient;
+					position_t position;
+					orient_t orient;
 				};
-				float memo[count];
+				T memo[count];
 			};
-			struct span : public std::span<float, count> {
-				using bz =  std::span<float, count>;
-				span(const std::span<float, count>& _src) : bz(_src) {}
-				span(float * _src,size_t _count) : bz(_src, _count) {}
-				span& operator = (const span& _src) {
-					*((bz*)this) = (const bz&)_src;
+			struct span : public std::span<type, count> {
+				typedef P position_t;
+				typedef O orient_t;
+				enum { orientofs = P::count, posofs = 0 };
+				using std::span<type, count>::span;
+				span(const type(&_arr)[count]) : std::span<type, count>((type*)(&_arr[0]), count) {}
+				orient_t::span orient() const {
+					return
+						std::span(*this).subspan <orientofs, O::count>();
 				}
-				span(const float(&_arr)[count]): bz((float *)(&_arr[0]),count) {					
+				position_t::span position() const {
+					return 
+						std::span(*this).subspan<posofs, P::count>();
 				}
-
 			};
 			
 			point_t(void) {
@@ -385,7 +345,7 @@ namespace robo{
 			}
 			template<class Q> point_t& operator = (const Q& _src) {
 				typedef typename Q::from from;
-				from:: template to<point_t>::set((const from::arr&)_src.memo, *this);
+				from:: template to<point_t>::set(typename from::span(_src.memo), *this);
 				return *this;
 			}
 			template<class Q> point_t(const Q& _src) {
@@ -406,30 +366,139 @@ namespace robo{
 				Q:: template to<point_t>::inc(_span, *this);
 			}
 			void inc(const span& _src) {
-				const float* s = _src.data(), * d = memo;
+				const type* s = _src.data(), * d = memo;
 				for (int i = 0; i < count; ++s, ++d) *d += *s;
 			}
 		};
-		namespace point {
-			typedef point_t< axis::euclid, axis::avionic > absolute;
-			typedef point_t< axis::cilinder, axis::avionic > cilinder;
-			typedef point_t< axis::sphere, axis::avionic > sphere;
-			typedef point_t< axis::euclid, quaternion > hamilton;
-			
-			void convert(const absolute::span& _src, hamilton& _dst, op _op);
-			void convert(const hamilton::span& _src, absolute& _dst, op _op);
-			void convert(const cilinder::span& _src, hamilton& _dst, op _op);
-			void convert(const hamilton::span& _src, cilinder& _dst, op _op);
-			void convert(const sphere::span& _src, hamilton& _dst, op _op);
-			void convert(const hamilton::span& _src, sphere& _dst, op _op);
+
+		template<typename T> quaternion<T>& operator  << (quaternion<T>& _dst, const typename axis::avionic<T>::span& _src) {
+			T Yd2 = _src[0] / 2.;
+			T Pd2 = -_src[1] / 2.;
+			T Rd2 = _src[2] / 2.;
+
+			T  csR = std::cos(Rd2);
+			T  snR = std::sin(Rd2);
+			T  csP = std::cos(Pd2);
+			T  snP = std::sin(Pd2);
+			T  csY = std::cos(Yd2);
+			T  snY = std::sin(Yd2);
+			_dst.w = csR * csP * csY + snR * snP * snY;
+			_dst.x = snR * csP * csY - csR * snP * snY;
+			_dst.y = csR * snP * csY + snR * csP * snY;
+			_dst.z = csR * csP * snY - snR * snP * csY;
+			return _dst;
 		}
-		template<class P, class O> template <class Q> void point_t<P,O>::from::to<Q>::doit(const span& _span, Q& _dst, op _op) {
-			point::convert(_span,_dst, _op);
+		template<typename T> quaternion<T>& operator  << (quaternion<T>& _dst, const typename axis::euclid<T>::span& _src) {
+			_dst.w = 0;
+			_dst.x = _src[0];
+			_dst.y = _src[1];
+			_dst.z = _src[2];
+			return _dst;
+		}
+		
+		template<typename T> typename axis::euclid<T>& operator  << (typename axis::euclid<T>& _dst, const  typename quaternion<T>::span& _src) {
+			_dst.x = _src[1];
+			_dst.y = _src[2];
+			_dst.z = _src[3];
+			return _dst;
+		}
+
+		template<typename T> typename axis::avionic<T>& operator  << (typename axis::avionic<T>& _avc, const  typename quaternion<T>::span& _src) {
+			T w = _src[0];
+			T x = _src[1];
+			T y = _src[2];
+			T z = _src[3];
+			T d1 = 2. * (x * z - w * y);
+			if (d1 > 1.) {
+				d1 = 1. - std::numeric_limits<T>::epsilon();
+			}
+			if (d1 < -1.) {
+				d1 = -1. + std::numeric_limits<T>::epsilon();
+			}
+			T tmp = -asin(d1);
+			_avc.pith = -tmp;
+			T d2 = tmp - pi<T> / 2.f;
+			if (abs(d2) < pi<T>*0.00000003f) {
+				T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
+				//вариант первый
+				T roll1, roll2;
+				if (tmp < 0) {
+					roll1 = YR - _avc.yaw;
+				}
+				else {
+					roll1 = _avc.yaw - YR;
+				}
+				//вариант второй YAW+PITCH > pi
+				if (YR > 0) {
+					YR = YR - 2 * pi<T>;
+				}
+				else {
+					YR = YR + 2. * pi<T>;
+				}
+
+				if (tmp < 0) {
+					roll2 = YR - _avc.yaw;
+				}
+				else {
+					roll2 = _avc.yaw - YR;
+				}
+
+				T df1 = roll1 - _avc.roll;
+
+				T df2 = roll2 - _avc.roll;
+
+				if (abs(df2) > abs(df1)) {
+					_avc.roll = (T)roll1;
+				}
+				else {
+					_avc.roll = (T)roll2;
+				}
+
+			}
+			else {
+				_avc.yaw = (T)atan2(2 * (x * y + w * z), 1 - 2 * (y * y + z * z));
+				_avc.roll = (T)atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y));
+			}
+			return _avc;
+		}
+
+
+		template<typename T>  struct point {
+			typedef point_t< T, typename axis::euclid<T>, typename axis::avionic<T> > absolute;
+			typedef point_t< T, typename axis::cilinder<T>, typename axis::avionic<T> > cilinder;
+			typedef point_t< T, typename axis::sphere<T>, typename axis::avionic<T> > sphere;
+			typedef point_t< T, typename quaternion<T>, quaternion<T> > hamilton;
+
+			template <class P> static void convert(const P & _src, hamilton& _dst, op _op) {
+				if (_op == op::set) {
+					_dst.position <<  P::position_t::span(_src);
+					_dst.orient <<  P::orient_t::span(_src);
+				}
+			}
+			template <class P> static void convert(const typename hamilton::span& _src, P & _dst, op _op) {
+				if (_op == op::set) {
+					_dst.position << _src.position();
+					_dst.orient << _src.orient();
+				}
+			}
+		};
+		/*template <class P> hamilton& operator  <<(hamilton& _dstconst, P& _src) {
+			_dst.position << P::position_t::span(_src);
+			_dst.orient << P::orient_t::span(_src);
+		}
+		template <class P>  P& operator << (P& _dst, const typename hamilton::span& _src, ) {
+			_dst.position << _src.position();
+			_dst.orient << _src.orient();
+		}*/
+
+		template<typename T, class P, class O> template <class Q> void point_t<T,P,O>::from::to<Q>::doit(const span& _span, Q& _dst, op _op) {			
+			point<T>::convert(_span, _dst, _op);
 		}
 		
 		template< class P, class A > struct target_t : public P, public A {
 			typedef A point;
 			typedef P payload;
+			using T = typename A::type;
 			//operator point& () { return (const point&)*this; };
 			
 			//по умолчанию
@@ -447,7 +516,7 @@ namespace robo{
 			//конструктор через конвертацию
 			template <class B, typename ... Args > target_t(
 				const B& from
-				, const std::span<float, B::count>  _span
+				, const std::span<T, B::count>  _span
 				, Args ...args
 			)
 				: P(args...)
@@ -455,7 +524,7 @@ namespace robo{
 
 			//конструктор без конвертации
 			template <typename ... Args > target_t(
-				const std::span<float, A::count>  _span
+				const std::span<T, A::count>  _span
 				, Args ...args
 			)
 				: P( args...)
@@ -463,7 +532,7 @@ namespace robo{
 
 			//установить новые данные без коныертации
 			template <typename ... Args > void applay(
-				const std::span<float,A::count>  _span
+				const std::span<T,A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
@@ -473,17 +542,40 @@ namespace robo{
 			//установить новые данные с конвертацией
 			template <class B, typename ... Args > void applay(
 				const B& from
-				, const std::span<float, B::count>  _span
+				, const std::span<T, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				A::applay(from, B::span(_span.data(), B::count));
 			}
 
+			//установить новые данные с конвертацией из чуждого буфера
+			template <typename T2, class B, typename ... Args > void applay(
+				const B& from
+				, const std::span<T2, B::count>  _span
+				, Args ...args
+			) {
+				P::applay(args...);
+				T buf[B::count];
+				std::copy_n(_span.data(), B::count, buf);
+				A::applay(from, B::span(buf, B::count));
+			}
+
+			//установить новые данные без конвертации из чуждого буфера
+			template <typename T2, typename ... Args > void applay(
+				const std::span<T, A::count>  _span
+				, Args ...args
+			) {
+				P::applay(args...);
+				T buf[A::count];
+				std::copy_n(_span.data(), A::count, buf);
+				A::applay(A::span(buf, A::count));
+			}
+
 			//Инкрментировать данные с конвертацией
 			template <class B, typename ... Args > void inc(
 				const B& from
-				, const std::span<float, B::count>  _span
+				, const std::span<T, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
@@ -492,12 +584,36 @@ namespace robo{
 
 			//Инкрментировать данные без конвертации
 			template <typename ... Args > void inc(
-				const std::span<float, A::count>  _span
+				const std::span<T, A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				A::inc(A::span(_span.data(), A::count));
 			}
+
+			//Инкрментировать новые данные с конвертацией из чуждого буфера
+			template <typename T2, class B, typename ... Args > void inc(
+				const B& from
+				, const std::span<T2, B::count>  _span
+				, Args ...args
+			) {
+				P::applay(args...);
+				T buf[B::count];
+				std::copy_n(_span.data(), B::count, buf);
+				A::inc(from, B::span(buf, B::count));
+			}
+
+			//Инкрментировать новые данные без конвертации из чуждого буфера
+			template <typename T2, typename ... Args > void inc(
+				const std::span<T, A::count>  _span
+				, Args ...args
+			) {
+				P::applay(args...);
+				T buf[A::count];
+				std::copy_n(_span.data(), A::count, buf);
+				A::inc(A::span(buf, A::count));
+			}
+
 		};
 
 		template <typename T> T signt(T val) {
@@ -522,10 +638,10 @@ namespace robo{
 					std::fill_n(memo, size::total, T(0));
 				}
 			}
-			constexpr matrix(const float(&_array)[size::total]) {
+			constexpr matrix(const T(&_array)[size::total]) {
 				std::copy_n(_array, size::total, memo);
 			}
-			constexpr matrix & operator = (const float(&_array)[size::total]) {
+			constexpr matrix & operator = (const T(&_array)[size::total]) {
 				std::copy_n(_array, size::total, memo);
 				return *this;
 			}
@@ -538,6 +654,7 @@ namespace robo{
 				return *this;
 			}*/
 		};
+		
 		template<typename T, size_t M, size_t N> class eye: public matrix<T,M,N> {
 		private:
 			typedef matrix<T, M, N> A;
@@ -560,20 +677,23 @@ namespace robo{
 			const T* B =& _m2.memo[0];
 			T* C = &tmp.memo[0];
 			for (int i = 0; i < M; ++i) {
-				float* c = C + i * N;
+				T* c = C + i * N;
 				for (int j = 0; j < N; ++j)
 					c[j] = 0;
 				for (int k = 0; k < K; ++k) {
-					const float* b = B + k * N;
-					float a = A[i * K + k];
+					const T* b = B + k * N;
+					T a = A[i * K + k];
 					for (int j = 0; j < N; ++j)
 						c[j] += a * b[j];
 				}
 			}
 			return tmp;
 		}
-		namespace joint {
+		
+		template<typename T> struct joint {
+			using quaternion = ::robo::kinematiks::quaternion<T>;			
 			class series;
+
 			class actuator {
 			protected:
 				virtual void do_move(double _data) = 0;
@@ -588,25 +708,30 @@ namespace robo{
 			public:
 
 				friend class series;
-				struct point {
-					quaternion offset;
-					quaternion orient;
+
+				struct point: public ::robo::kinematiks::point<T>::hamilton {
 					quaternion iorient;
 				};
+
 				point local;
 				point supply;
 				point base;
 
-				actuator(int _index, series& _series);
+				actuator(int _index, series& _series) : ref_(*this, _index) {
+					ref_.attach_to(_series.actuators);
+					local.orient.w = 1;
+					supply.orient.w = 1;
+					base.orient.w = 1;
+				}
 				void update_forvard(actuator* _prev) {
 					actuator* next = ref_.next_ptr();
 					if (_prev != nullptr) {
 						base.orient = _prev->base.orient;
-						base.offset = _prev->base.offset;
-						base.offset = _prev->base.offset + _prev->base.orient * local.offset * _prev->base.iorient;
+						base.position = _prev->base.position;
+						base.position = _prev->base.position + _prev->base.orient * local.position * _prev->base.iorient;
 					}
 					else {
-						base.offset = local.offset;
+						base.position = local.position;
 					}
 					base.orient *= local.orient;
 					base.orient *= supply.orient;
@@ -619,12 +744,12 @@ namespace robo{
 					quaternion tmp = base.orient;
 					tmp *= _q;
 					tmp *= base.iorient;
-					tmp += base.offset;
+					tmp += base.position;
 					return tmp;
 				}				
 				quaternion map_target(const quaternion& _q) {
 					quaternion tmp = base.iorient;
-					tmp *= (_q- base.offset);
+					tmp *= (_q- base.position);
 					tmp *= base.orient;
 					return tmp;
 				}
@@ -636,8 +761,8 @@ namespace robo{
 			class yaw : public actuator {
 			protected:
 				virtual void do_move(double _data) {
-					supply.orient.w = cos(_data / 2);
-					supply.orient.z = sin(_data / 2);
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.z = sin(_data / 2);
 				}
 			public:
 				yaw(int _index, series& _series) : actuator(_index, _series) {}
@@ -646,8 +771,8 @@ namespace robo{
 			class pitch : public actuator {
 			protected:
 				virtual void do_move(double _data) {
-					supply.orient.w = cos(_data / 2);
-					supply.orient.y = sin(_data / 2);
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.y = sin(_data / 2);
 				}
 			public:
 				pitch(int _index, series& _series) : actuator(_index, _series) {}
@@ -656,26 +781,42 @@ namespace robo{
 			class roll : public actuator {
 			protected:
 				virtual void do_move(double _data) {
-					supply.orient.w = cos(_data / 2);
-					supply.orient.x = sin(_data / 2);
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.x = sin(_data / 2);
 				}
 			public:
 				roll(int _index, series& _series) : actuator(_index, _series) {}
 			};
 
 			class series {
-				actuator::list actuators_;
+				
 				friend class actuator;
 			public:
+				typename actuator::list actuators;
 				series() {}
 				void update_forvard(void) {
-					actuator::ref* r = actuators_.first();
+					typename  actuator::ref* r = actuators.first();
 					if (r) {
 						r->owner().update_forvard(nullptr);
 					}
 				}
+
+				/*template<typename C, unsigned N> void move(const C& _src) {
+					ROBO_APP_ASSERT(N == actuators_.count);
+					for (actuator::ref* r = actuators_.first(), const typename C::feetback fole * src = &_src.first(); r = r->next(), ++src) {
+						r->owner().move(src->position);
+					}
+				}*/
+				template<unsigned N> void move(const std::span<double, N>& _src) {
+					ROBO_APP_ASSERT(N == actuators.count);
+					typename actuator::ref* r = actuators.first();
+					const double* src = &_src.first();
+					for (;r; r = r->next(), ++src) {
+						r->owner().move(src);
+					}
+				}
 			};
-		}
+		};
 
 		/*
 		namespace actuator {
@@ -763,6 +904,6 @@ namespace robo{
 
 		void angle_deltag(const arma::fvec& _p1, const  arma::fvec& _p2, arma::fvec& _dst);
 		*/
-	}
+	};
 }
 #endif

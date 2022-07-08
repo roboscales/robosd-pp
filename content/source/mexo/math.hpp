@@ -558,8 +558,8 @@ namespace mexo {
 		typedef typename A::present_s present_s;
 	protected:
 		virtual void execute(void) {
-			const config_s& config = handler::config_cast<config_s>();
-			present_s& present = handler::present<positioner>();
+			const config_s& config = handler::config<to_digit_scale>();
+			present_s& present = handler::present<to_digit_scale>();
 			long_signal_t tmp = (long_signal_t)config.scale * *A::deseired;
 			present.satstate.local = q::round_s(tmp, A::range, config.shift, *A::output);
 			A::update_satstate();
@@ -571,7 +571,7 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
 			A::do_handler_create_vars(_vars,_master_key);
-			const config_s& config = config_cast<config_s>();
+			const config_s& config = handler::config<to_digit_scale>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 				var::record::create(q::var::parameter, config.scale, RT("g"), _master_key, _vars );
 				var::record::create(var::uint8,  config.shift , RT("sh"), _master_key, _vars);

@@ -78,7 +78,11 @@ namespace robo {
 				p->owner().run_(time);
 			}
 		}
-
+		void agent::backgrounf_run(double time){
+			for (agent::ref* p = agents_().first(); p; p = p->next()) {
+				p->owner().do_background_run(time);
+			}
+		}
 		void agent::run_(double _time) {
 			if (_time >= next_time_) {
 				for (block::ref* p = blocks_.first(); p; p = p->next()) {
@@ -86,8 +90,7 @@ namespace robo {
 				}
 				next_time_ += sample_time;
 				do_priotitet_run(_time);
-			}
-			do_background_run(_time);
+			};
 		}
 
 		bool agent::try_attach_(cstr _name, cstr _lib, cstr _type, void* _instance) {

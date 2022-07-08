@@ -283,8 +283,8 @@ namespace robo {
 			: app::node(_name, &_boardagent)
 			, boardagent_(_boardagent)
 			, bus_ref_(*this, 0)
-			, goal(_goal)
-			, feedback(_feedback)	{
+			, goal_(_goal)
+			, feedback_(_feedback)	{
 		}
 
 		router::record* devagent::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
@@ -294,7 +294,7 @@ namespace robo {
 			else {
 				router::record* rec = router_->resolve(_bus_id, _tran_header);
 				if (rec == 0) {
-					ROBO_ALARM_F("tran header is't resolved: agent: agent '%s' 0x%x, bus 0x%x, dev 0x%x, command 0x%x", alias(), dev_id().value, _bus_id, _tran_header->dev_id, _tran_header->command);
+					ROBO_ALARM_F("tran header is't resolved: agent: agent '%s' 0x%x, bus 0x%x, dev 0x%x, command 0x%x", display_alias(), dev_id().value, _bus_id, _tran_header->dev_id, _tran_header->command);
 				}
 				return rec;
 			}
@@ -312,7 +312,7 @@ namespace robo {
 				//ready
 				statuses::idle,		statuses::service,	statuses::busy,		statuses::independed,statuses::dirrect,	statuses::busy
 			};
-			switch (feedback.state.local) {
+			switch (feedback_.state.local) {
 			case state_s::locals::unknown:
 			return statuses::unknown;
 			case state_s::locals::disabled:
@@ -320,7 +320,7 @@ namespace robo {
 			case state_s::locals::configure:
 			return statuses::busy;
 			case state_s::locals::ready:
-			return tb[((int)feedback.state.remote.status * 5) + (int)_command];
+			return tb[((int)feedback_.state.remote.status * 5) + (int)_command];
 			default:
 			return statuses::unknown;
 			}
@@ -472,10 +472,10 @@ namespace robo {
 				if (now - request_begin_us_ >= timeout_us_) {
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", display_alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
 					}
 					else {
-						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", alias(), now - request_begin_us_, now, request_begin_us_);
+						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", display_alias(), now - request_begin_us_, now, request_begin_us_);
 					}
 					cancel();
 				}
@@ -490,10 +490,10 @@ namespace robo {
 				{
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->alias(), broken_obj->dev_id().value);
+						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
 					}
 					else {
-						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", alias(), now - request_begin_us_, now, request_begin_us_);
+						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object 'unknown'", display_alias(), request_begin_us_);
 					}
 				}
 				message_.confirm();
@@ -581,12 +581,12 @@ namespace robo {
 									break;
 								}
 								else {
-									ROBO_LBREAK_F("error load key from array  for  router '%s'", alias())
+									ROBO_LBREAK_F("error load key from array  for  router '%s'", display_alias())
 								}
 								case wait::end:
 									if (*c == '"') {
 										int bus_id = robo::hash(vs+1, c - 1, 0);
-										ROBO_LBREAKN_F(find<bus>(bus_id) != nullptr, "bus is't found by string '%s' for  router '%s'", vs, alias());
+										ROBO_LBREAKN_F(find<bus>(bus_id) != nullptr, "bus is't found by string '%s' for  router '%s'", vs, display_alias());
 										int tmp[4];
 										ROBO_LBREAKN(string::to_number_array(c+1, tmp, 4));
 										rec->bus_id = bus_id;
@@ -807,7 +807,7 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				robo_errlog("data map transporrt error -  agent: %s", own_agent().alias());
+				robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 			}
 		};
 
@@ -823,11 +823,11 @@ namespace robo {
 		}
 
 		bool devagent::exchabge_enabled(void) {
-			return feedback.state.local > state_s::locals::disabled; 
+			return feedback_.state.local > state_s::locals::disabled; 
 		}
 		bool devagent::configure_complete(void) {
-			ROBO_LBREAKN(feedback.state.local == state_s::locals::configure);
-			feedback.state.local = state_s::locals::ready;
+			ROBO_LBREAKN(feedback_.state.local == state_s::locals::configure);
+			feedback_.state.local = state_s::locals::ready;
 			return true;
 		}
 
@@ -845,19 +845,19 @@ namespace robo {
 			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
-				feedback.state.local = state_s::locals::configure;
+				feedback_.state.local = state_s::locals::configure;
 				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
 				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			}
 			else {
-				feedback.state.local = state_s::locals::disabled;
+				feedback_.state.local = state_s::locals::disabled;
 			}
 			return true;
 		}
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			if (feedback.state.local == state_s::locals::configure) {
+			if (feedback_.state.local == state_s::locals::configure) {
 				bus* b = find<bus>(bus_alias_);
 				bus_ref_.set_key(dev_id_.value);
 				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);
@@ -866,11 +866,11 @@ namespace robo {
 					dev_id_.bus = b->id();
 				}
 				else {
-					ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), alias(), dev_id_.value)
+					ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), display_alias(), dev_id_.value)
 				}
 
 				router_ = find<router>(router_alias_);
-				ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), alias(), dev_id_.value);
+				ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), display_alias(), dev_id_.value);
 				robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
 			}
 			return true;
@@ -915,7 +915,7 @@ namespace robo {
 				return query_result::repeat;
 				break;
 			default :
-				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().display_alias(), current_->name());
 				current_->refuse();
 				current_ = nullptr;
 				return query_result::none;
@@ -957,7 +957,7 @@ namespace robo {
 
 		void vartable::confirm(const robo_tran_t & _tran) {
 			if (current_ == nullptr) {
-				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
+				ROBO_ALARM_F("invalid proto for %s/%S", own_agent().display_alias(), current_->name());
 			}
 			else {
 				ivar* tmp = current_;
@@ -969,7 +969,7 @@ namespace robo {
 				case proto::result::repeat:
 					break;
 				case proto::result::fail:
-					ROBO_ALARM_F("invalid proto for %s/%S", own_agent().alias(), current_->name());
+					ROBO_ALARM_F("invalid proto for %s/%S", own_agent().display_alias(), current_->name());
 					current_ = nullptr;
 					tmp->refuse();
 				}

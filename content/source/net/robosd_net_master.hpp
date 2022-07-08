@@ -167,7 +167,7 @@ namespace robo{
 			
 			virtual bool ready(void){
 				guard g__;
-				return state_ == state::idle;
+				return (state_ == state::idle) && (phys::ready());
 			}		
 			#if ROBO_APP_MODULE_ENABLED ==1
 			master_t(cstr _name, app::node* _owner) : app::node(_name, _owner) {
