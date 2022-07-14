@@ -136,9 +136,6 @@ namespace robo {
 	}
 
 	bool string::format(cstr _format, va_list _args) {
-		if (_args == nullptr || *_args == 0) {
-			(*this) = _format;
-		}
 		stream_s stream;
 		if (system::env::is_backend()) {			
 			if(sprintf_backend_(stream, _format, _args)){

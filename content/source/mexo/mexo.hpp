@@ -742,7 +742,7 @@ namespace mexo {
 		const range_s<O>& range;
 		const satstate_t& master_satstate;
 		const  O   actual_output(void) { return  *output; }
-		const satstate_t& actual_satstate(void) { return present_cast<present_s>().satstate.actual; }
+		const satstate_t& actual_satstate(void) { return present<controller_handler>().satstate.actual; }
 
 		typedef I input_t;
 		typedef O output_t;
@@ -909,7 +909,7 @@ namespace mexo {
 			output_t output;
 		};
 		output_t& output(void) {
-			return present_cast<present_s>().output;
+			return present<function_handler>().output;
 		}
 		function_handler(
 			const config_s& _config

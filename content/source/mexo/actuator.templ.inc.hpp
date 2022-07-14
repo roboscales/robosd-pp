@@ -465,11 +465,11 @@ public:
 
 			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
-			feedback< dev_t >().speed = present<dev_t>().speed_filter.fb.output;
+			ps_t::template  feedback< dev_t >().speed = ps_t::template  present<dev_t>().speed_filter.fb.output;
 			#else
-			feedback< dev_t >().speed = hardwaresys.motor_enco_block.delta_acc_ref();
+			ps_t::template  feedback< dev_t >().speed = ps_t::template  hardwaresys.motor_enco_block.delta_acc_ref();
 			#endif
-			feedback< dev_t >().position = hardwaresys.motor_enco_block.position_ref();
+			ps_t:: template feedback< dev_t >().position = ps_t::hardwaresys.motor_enco_block.position_ref();
 			#else
 			feedback< dev_t >().speed = 0;
 			feedback< dev_t >().position = 0;

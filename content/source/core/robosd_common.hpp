@@ -136,7 +136,7 @@ namespace robo {
 		}
 		template <typename T> constexpr ostram & operator << (const T& _data) {
 			put(_data);
-			return this;
+			return *this;
 		}
 	};
 
@@ -163,7 +163,7 @@ namespace robo {
 		}
 		template <typename T> constexpr istram& operator >> ( T& _data) {
 			get(_data);
-			return this;
+			return *this;
 		}
 	};
 	/*

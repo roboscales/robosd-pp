@@ -127,7 +127,7 @@ namespace mexo {
 		public:
 			machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
-			bool ready(void) { return present_cast<present_s>().ready; }
+			bool ready(void) { return present<machine>().ready; }
 		};
 
 
@@ -159,8 +159,8 @@ namespace mexo {
 			unsigned int init_count_ = 0;
 			bool init_ = false;
 			void reset_(void) {
-				present_cast<present_s>().acc = 0;
-				init_count_ = 1 << config_cast<config_s>().init_count_shift;
+				present<single_machine>().acc = 0;
+				init_count_ = 1 << config<single_machine>().init_count_shift;
 			}
 		public:
 			void reset(void) {
@@ -169,18 +169,18 @@ namespace mexo {
 			}
 		protected:
 			void execute(void) {
-				present_s& present = present<dev_t>();
-				const config_s& config = config_cast<config_s>();
-				present.native = D::raw[config.index];
+				present_s& prsnt = present<single_machine>();
+				const config_s& conf = config<single_machine>();
+				prsnt.native = D::raw[conf.index];
 				if (init_) {
-					present.value = config.scale * (present.native - present.offset);
+					prsnt.value = conf.scale * (prsnt.native - prsnt.offset);
 				}
 				else {
-					present.acc += present.native;
+					prsnt.acc += prsnt.native;
 					init_count_--;
 					if (init_count_ == 0) {
-						present.offset = (present.acc + (1 << (config.init_count_shift - 1))) >> config.init_count_shift;
-						present.value = config.scale * (present.native - present.offset);
+						prsnt.offset = (prsnt.acc + (1 << (conf.init_count_shift - 1))) >> conf.init_count_shift;
+						prsnt.value = conf.scale * (prsnt.native - prsnt.offset);
 						init_ = true;
 
 					}
@@ -198,7 +198,7 @@ namespace mexo {
 			single_machine(const config_s& _config, present_s& _present)
 				: handler(_config.sb, _present.sb) {}
 
-			bool ready(void) { return present_cast<present_s>().ready; }
+			bool ready(void) { return present<single_machine>().ready; }
 		};
 
 		template < typename q, typename D  > class current_sence : public machine<q, D> {
@@ -259,26 +259,26 @@ namespace mexo {
 				, cs_(_cs) 
 			{}
 			typename q::signal_t& current_ref(void) { 
-				present_s& present = handler::present<positioner>(); 
+				present_s& present = handler::present<current_abc_sence>(); 
 				return present.current.cross; 
 			}
 			typename q::signal_t& current_delta_ref(void) { 
-				present_s& present = handler::present<positioner>(); 
+				present_s& present = handler::present<current_abc_sence>(); 
 				return present.delta.cross; 
 			}
 			typename q::signal_t& lat_current_ref(void) { 
-				present_s& present = handler::present<positioner>(); 
+				present_s& present = handler::present<current_abc_sence>(); 
 				return present.current.lateral; 
 			}
 			typename q::signal_t& lat_current_delta_ref(void) { 
-				present_s& present = handler::present<positioner>(); 
+				present_s& present = handler::present<current_abc_sence>(); 
 				return present.delta.lateral; 
 			}
 
 		protected:
 			void execute(void) {
 				BB::execute();
-				present_s& present = handler::present<positioner>();
+				present_s& present = handler::present<current_abc_sence>();
 				dq_t tmp = present.current;
 
 				present.abc.A = present.adc.values[0];

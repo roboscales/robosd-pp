@@ -306,8 +306,8 @@ namespace mexo {
 
 
 			void execute(void) {
-				present_s& present = handler::present<positioner>();
-				const config_s& config = handler::config_cast<config_s>();
+				present_s& present = handler::present<rotator_t>();
+				const config_s& config = handler::config<config_s>();
 				unative_t tmp;
 				if (config.inverce) {
 					tmp = std::numeric_limits<unative_t>::max() - A::input;
@@ -329,12 +329,12 @@ namespace mexo {
 				
 			}
 			bool do_handler_reconfig(void) {
-				handler::present_cast<present_s>().fb.output.rotate((signal_t)0);
+				handler::present<rotator_t>().fb.output.rotate((signal_t)0);
 				on();
 				return true;
 			}
 			virtual void do_handler_adjust(void) {
-				handler::present_cast<present_s>().fb.output.rotate(q::scale_l(A::input));
+				handler::present<rotator_t>().fb.output.rotate(q::scale_l(A::input));
 			}
 		public:
 			rotator_t(const config_s& _config
@@ -343,10 +343,10 @@ namespace mexo {
 			)
 				: A(_config.fb, _present.fb, _input) {
 			}
-			void on() { handler::present_cast<present_s>().active = true; };
-			void off() { handler::present_cast<present_s>().active = false; };
+			void on() { handler::present<rotator_t>().active = true; };
+			void off() { handler::present<rotator_t>().active = false; };
 			void angle_set(signal_t _angle) {
-				present_s& present = handler::present<positioner>();
+				present_s& present = handler::present<rotator_t>();
 				if (present.active == false) {
 					present.fb.output.rotate(_angle);
 				}
