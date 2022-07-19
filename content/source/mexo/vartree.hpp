@@ -94,7 +94,7 @@ namespace mexo {
 			, invalid_offset = 0x30
 			, invalid_length = 0x40
 		} error;
-		#ifdef ROBO_APP_MEXO_SIDE
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		class record {
 			void setup_(
 				types _type

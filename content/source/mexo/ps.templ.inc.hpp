@@ -142,27 +142,27 @@ protected:
 		void do_create_vars(void) {
 			::mexo::ps::dev::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& act = action<dev_t>();
+				action_s& act = action<dev_t>();
 				const config_s& conf = config<dev_t>();
 				::mexo::var::record::create(::mexo::var::uint8, conf.invers, RT("act.invers"), key(), vars);
-				::mexo::var::record::create(typename types::var::signal, act.voltage, RT("act.v"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.voltage, RT("act.v"), key(), vars);
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, act.current, RT("act.c"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.current, RT("act.c"), key(), vars);
 				#endif
 			}
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
 				const present_s& psnt = present<dev_t>();
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, psnt.voltage_required, RT("req.v"), key(), vars);
+				::mexo::var::record::create(types::var::signal, psnt.voltage_required, RT("req.v"), key(), vars);
 				#endif		
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, psnt.voltage_deseired, RT("desrd.v"), key(), vars);
+				::mexo::var::record::create(types::var::signal, psnt.voltage_deseired, RT("desrd.v"), key(), vars);
 				#endif
 
 				#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, psnt.current_deseired, RT("desrd.c"), key(), vars);
+				::mexo::var::record::create(types::var::signal, psnt.current_deseired, RT("desrd.c"), key(), vars);
 				#endif
 			}
 

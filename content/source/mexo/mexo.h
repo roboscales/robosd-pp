@@ -11,7 +11,8 @@ void mexo_begin(void);
 void mexo_start(void);
 void mexo_priority_loop(void);
 void mexo_backend_loop(void);
-void mexo_frontend_loop();
+void mexo_frontend_loop(void);
+void mexo_raise_fault(void);
 
 #if defined(__cplusplus)
 }

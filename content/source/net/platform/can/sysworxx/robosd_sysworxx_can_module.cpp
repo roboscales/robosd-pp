@@ -60,7 +60,9 @@ namespace MODULE_NAME{
 		}
 		robo::time_us_t wd_us(const robo::net::can_flow_bus::packet* _packet) {
 			//todo!!
-			return _packet->len * 1000+200;
+			robo::time_us_t tm = _packet->len * 100 + 200;
+			if (tm < 2000) tm = 2000;
+			return tm ;
 		}
 		bool do_load( robo::cstr _current, robo::cstr _common) {
 			//ROBO_LBREAKN(robo::ini::load(_common, _current, RT("CHANNEL"), can_.channel));
@@ -75,6 +77,9 @@ namespace MODULE_NAME{
 
 		void poll(void) {
 			can_.poll();
+		}
+		bool ready(void) {
+			return can_.ready();
 		}
 		phys(void) 
 			: on_can_receive_(*this, &phys::on_can_receive__) 

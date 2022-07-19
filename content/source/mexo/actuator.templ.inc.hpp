@@ -10,6 +10,7 @@ namespace ACTUATOR_TEMPLATE_NAME {
 public:
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::action_t<types> action_s;
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::feedback_t<types> feedback_s;
+	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::profil_t<types> profil_s;
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::mode mode;
 
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
@@ -377,13 +378,13 @@ public:
 		, speed_ov_current_mode(mode::speed_ov_current, *this)
 		#endif
 		#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
-		, speed_ov_voltage_cl_mode(17,*this)
+		, speed_ov_voltage_cl_mode(mode::speed_ov_voltage_cl,*this)
 		#endif
 		#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
 		, position_ov_current_mode(mode::position_ov_current,*this)
 		#endif
 		#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
-		, position_ov_voltage_cl_mode(18,*this)
+		, position_ov_voltage_cl_mode(mode::position_ov_voltage_cl,*this)
 		#endif
 	{
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
@@ -459,55 +460,98 @@ public:
 		positioner_ov_current.setup(_slot_index);
 		#endif
 	}
+	public:
+		#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED) == 1
+		const profil_s profil(int _mode) {
+			config_s& cf = ps_t::template config< dev_t >();
+			profil_s p;
+			p.crawl_speed = 0;
+			p.dead_zone = 0;
+			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
+			switch (_mode) {
+			#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1
+			case mode::speed_ov_voltage_cl:
+			#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
+			p.crawl_speed = cf.positioner_ov_voltage_cl.crawlSpeed;
+			p.dead_zone = cf.positioner_ov_voltage_cl.deadZone;
+			#endif
+			break;
+			#endif
+			#if ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
+			case mode::position_ov_voltage_cl:
+			p.crawl_speed = cf.positioner_ov_voltage_cl.crawlSpeed;
+			p.dead_zone = cf.positioner_ov_voltage_cl.deadZone;
+			break;
+			#endif
+			#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
+			case mode::speed_ov_current_cl:
+			#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
+			p.crawl_speed = cf.positioner_ov_current.crawlSpeed;
+			#endif
+			break;
+			#endif
+			#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
+			case mode::position_ov_current_cl:
+			p.crawl_speed = cf.positioner_ov_current.crawlSpeed;
+			break;
+			#endif
+			}
+			return p;
+		}
+		#endif
 	protected:
 		virtual void do_update_feedback(void) {
-			ps_t::do_update_feedback();
+			feedback_s& fb = ps_t::template feedback< dev_t >();
+			present_s& pr = ps_t::template present< dev_t >();
+			config_s& cf = ps_t::template config< dev_t >();
 
-			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
+			ps_t::do_update_feedback();
+			
 			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
-			ps_t::template  feedback< dev_t >().speed = ps_t::template  present<dev_t>().speed_filter.fb.output;
+			fb.speed = pr.speed_filter.fb.output;
 			#else
-			ps_t::template  feedback< dev_t >().speed = ps_t::template  hardwaresys.motor_enco_block.delta_acc_ref();
+			fb.speed = ps_t::hardwaresys.motor_enco_block.delta_acc_ref();
 			#endif
-			ps_t:: template feedback< dev_t >().position = ps_t::hardwaresys.motor_enco_block.position_ref();
+			fb.position = ps_t::hardwaresys.motor_enco_block.position_ref();
 			#else
-			feedback< dev_t >().speed = 0;
-			feedback< dev_t >().position = 0;
+			fb.speed = 0;
+			fb.position = 0;
+			fb.crawl_speed = 0;
 			#endif
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void do_create_vars(void) {
 			ps_t::do_create_vars();
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& act = action<dev_t>();
+				const action_s& act = ps_t::template action<dev_t>();
 
 				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::signal, act.speed, RT("act.sp"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.speed, RT("act.sp"), ps_t::key(), ps_t::vars);
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::long_signal, act.position, RT("act.po"), key(), vars);
+				::mexo::var::record::create(types::var::long_signal, act.position, RT("act.po"), ps_t::key(), ps_t::vars);
 				#endif
 			}
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::full) {
-				const present_s& prsnt = present<dev_t>();
+				const present_s& prsnt = ps_t::template present<dev_t>();
 				#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::signal, prsnt.speed_deseired, RT("desrd.sp"), key(), vars);
+				::mexo::var::record::create(types::var::signal, prsnt.speed_deseired, RT("desrd.sp"), ps_t::key(), ps_t::vars);
 				#endif
 				#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1  \
 				|| ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1 
-				::mexo::var::record::create(typename types::var::long_signal, prsnt.position_deseired, RT("desrd.po"), key(), vars);
+				::mexo::var::record::create(types::var::long_signal, prsnt.position_deseired, RT("desrd.po"), ps_t::key(), ps_t::vars);
 				#endif
 				/*
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1 || POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, present.voltage_required, RT("req.v"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, present.voltage_required, RT("req.v"), ps_t::key(), ps_t::vars);
 				#endif		
 
 				#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1 ||  POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), key(), vars);
+				::mexo::var::record::create(typename types::var::signal, present.voltage_deseired, RT("desrd.v"), ps_t::key(), ps_t::vars);
 				#endif*/
 			}
 

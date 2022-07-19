@@ -378,17 +378,18 @@ namespace robo {
 			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 
-			::robo::quest* quest_configure(::robo::quest* _owner) {
+			::robo::quest* quest_configure(::robo::quest* _owner,::robo::quest* _sema=nullptr) {
 				return ::robo::quest::create(
 					_owner
+					, _sema
 					, [this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
-							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s configure success finished", this->alias());
+							robo_infolog("====================================================================================\n\t\tquest: %s configure success finished\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::ready;
 							return robo::quest::reaction::normal;
 						}
 						else {
-							robo_errlog("\t\tquest: %s configure terminated", this->alias());
+							robo_errlog("====================================================================================\n\t\tquest: %s configure terminated\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::disabled;
 							return robo::quest::reaction::terminate;
 						}
@@ -618,6 +619,14 @@ namespace robo {
 					iactual(T& _local, T& _remote) : local(_local), remote(_remote) {}
 				} actual;
 			public:
+				virtual bool applay(cstr _s) {
+					if (is_frontend__) {
+						return string::to_number(_s, C::front.local);
+					}
+					else {
+						return string::to_number(_s, actual.local);
+					}
+				}
 
 				/*bool post(performer* _performer) {
 					ROBO_LRET(C::post(_performer));
@@ -745,6 +754,25 @@ namespace robo {
 			template<  typename T> class fvar_t : public var_t<T> {
 				converter* converter_ = nullptr;
 			public:
+				fvar_t * find( cstr _path, cstr _name) {
+					app::node* _node = app::node::find(_path);
+					ROBO_BREAKN_F(_node, nullptr, "invalid path: '%s' ", _path);
+					vartable* ct = dynamic_cast<vartable*>(_node);
+					ROBO_BREAKN_F(ct, nullptr, "invalid object '%s' ", _path);
+					vartable::ivar * v = ct->find_var(_name);
+					ROBO_BREAKN_F(v, nullptr, "var is't found '%s.%s' ", _path, _name);
+					fvar_t* fv = dynamic_cast<fvar_t*>(v);
+					ROBO_BREAKN_F(fv, nullptr, "var is't found '%s.%s' ", _path, _name);
+					return fv;
+				}
+				fvar_t* find(vartable* _vt, cstr _name) {
+					vartable::ivar* v = _vt->find_var(_name);
+					ROBO_BREAKN_F(v, nullptr, "var is't found '%s.%s' ", _vt->own_agent().alias(), _name);
+					fvar_t* fv = dynamic_cast<fvar_t*>(v);
+					ROBO_BREAKN_F(fv, nullptr, "var is't found '%s.%s' ", _vt->own_agent().alias(), _name);
+					return fv;
+				}
+
 				typedef var_t<T> B;
 				bool set_converter(cstr _name) {
 					converter_ = dynamic_cast<converter*>(app::node::find(_name));

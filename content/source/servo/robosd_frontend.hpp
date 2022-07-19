@@ -395,6 +395,7 @@ namespace robo {
 			class ivar {
 				const record& instance_;
 				vartable& vartable_;
+				bool paranoic_put_;
 			public:
 				
 				/////////////////////////////////////////////////////
@@ -507,8 +508,8 @@ namespace robo {
 				status status_ = status::disable;
 				hook hook_ = hook::free;
 				performer * performer_ = nullptr;
-				int repeat_count_ = 0;
-				int repeat_current_max_ = 30000000;
+				int repeat_count_ = 3;
+				int repeat_current_max_ = 3;
 			public:
 				enum { invalid_value = -1 };
 				uint16_t addr(void) const { return  instance_.address; };
@@ -525,11 +526,29 @@ namespace robo {
 				bool is_ready(void) { return  (status_ == status::ready) || (status_ == status::panic) || (status_ == status::clean); }
 				bool is_success(void) { return  (status_ == status::ready); }
 				bool is_busy(void) { return !is_ready(); }
-
+				bool is_paranoic_put(void) { return paranoic_put_;  }
+				void set_paranoic_put(bool _paranoic_put) { paranoic_put_ = _paranoic_put; }
 
 				typedef ::robo::list::unique<ivar, int> map;
 				typedef map::ref map_ref;
 				status actual_status(void) const  { return status_; }
+
+				virtual bool applay(cstr _s) {
+					return false;
+				}
+
+				bool post(cstr _s, performer* _performer = nullptr) {
+					ROBO_LBREAKN( applay(_s) );
+					ROBO_LBREAKN( post(_performer) );
+					return true;
+				}
+
+				template <typename ... Args> bool post(cstr _s, Args...arg) {
+					ROBO_LBREAKN( applay(_s));
+					ROBO_LBREAKN( post(performer::create( arg... ) ) );
+					return true;
+				}
+
 			protected:
 
 				void reset_delegat(void);
@@ -543,7 +562,7 @@ namespace robo {
 
 
 				template <typename ... Args> bool post(Args...arg) {
-					return post( create(arg...) );
+					return post(performer::create(arg...) );
 				}
 
 
@@ -573,7 +592,6 @@ namespace robo {
 			private:
 				typedef typename B::performer  performer;
 			public:
-
 				template <typename ... Args> bool post(Args...arg) {
 					ROBO_LRET(B::post(create(arg...)));
 				}
@@ -636,7 +654,9 @@ namespace robo {
 			size_t count_ = 0;
 			const record* find_record(cstr _name);
 			ivar* create_var(cstr _name);
+		public:
 			ivar* find_var(cstr _name);
+
 		};
 
 
@@ -649,17 +669,17 @@ namespace robo {
 		};
 
 	}
-
 	class quest :  protected signal::performer {
 	public:
 		enum class result { refuse, success, cancel, broke };
 		enum class reaction { normal, terminate };
 		typedef ::robo::delegat::base<void, quest *> request;
-		typedef ::robo::delegat::base<reaction, result> answer;
+		typedef ::robo::delegat::base<reaction, result> answer;		
 	private:
 		typedef robo::list::unsorted<quest> list;
 		typedef list::ref ref;
 		int use_ = 0;
+		void  happyend_(void);
 		void release(void) {
 			ref* r = childs_.last();
 			while (r) {
@@ -691,6 +711,7 @@ namespace robo {
 				return instance__;
 			}
 		};
+
 		class counter {
 			friend class quest;
 			int counter_ = 0;
@@ -718,8 +739,10 @@ namespace robo {
 		friend class frontend_core;
 
 		ref ref_;
+		ref sema_ref_;
 		ref top_ref_;
 		list childs_;
+		list owned_;
 		quest* owner_;
 		request* request_;
 		answer* answer_;
@@ -728,6 +751,7 @@ namespace robo {
 		void post_answer_(status _status);
 		quest(
 			quest* _owner
+			, quest* _sema
 			, request* _request
 			, answer* _answer
 		);
@@ -737,6 +761,7 @@ namespace robo {
 
 		static quest* create(
 			quest* _owner
+			, quest* _sema
 			, ::robo::lambda< reaction(result) > _confirm
 			, ::robo::lambda< void(quest*) > _request = [](quest* _q) { _q->confirm();  }
 		) {
@@ -746,6 +771,7 @@ namespace robo {
 			}
 			return new quest (
 				_owner
+				, _sema
 				, new robo::delegat::slambda<void, quest*>(_request)
 				, new robo::delegat::slambda<reaction,result>(_confirm)
 			);
@@ -753,6 +779,7 @@ namespace robo {
 
 		static quest* simple_create(
 			quest* _owner
+			, quest* _sema
 			, void(*_request )(quest*)
 			, reaction(*_confirm)(result)
 		) {
@@ -762,6 +789,7 @@ namespace robo {
 			}
 			return new quest(
 				_owner
+				, _sema
 				, new robo::delegat::ssimple<void, quest *>(_request)
 				, new robo::delegat::ssimple<reaction, result>(_confirm)
 			);
@@ -769,6 +797,7 @@ namespace robo {
 
 		static quest* create(
 			quest* _owner
+			, quest* _sema
 			, void* _instance
 			, void(*_request)(void *, quest*)
 			, reaction(*_confirm)(void* ,result)
@@ -779,6 +808,7 @@ namespace robo {
 			}
 			return new quest(
 				_owner
+				, _sema
 				, new robo::delegat::suni<void, quest*>(_instance,_request )
 				, new robo::delegat::suni<reaction, result>(_instance, _confirm)
 			);
@@ -786,6 +816,7 @@ namespace robo {
 
 		template <typename C> static  quest* create(
 			quest* _owner
+			, quest* _sema
 			, C * _instance
 			, result(C::*_request)(quest*)
 			, reaction(C::*_confirm)(result)
@@ -796,6 +827,7 @@ namespace robo {
 			}
 			return new quest(
 				_owner
+				, _sema
 				, new robo::delegat::smember<C,result, quest*>(_instance, _request)
 				, new robo::delegat::smember<C, reaction, result>(_instance, _confirm)
 			);
@@ -809,6 +841,17 @@ namespace robo {
 				tmp->ref_.dettach();
 				tmp->top_ref_.dettach();
 				tmp->owner_ = nullptr;
+			}
+			r = owned_.last();
+			while (r) {
+				quest* tmp = &(r->owner());
+				r = r->prev();
+				if (tmp->status_ == status::confirm) {
+					tmp->happyend_();
+				}
+				else {
+					tmp->terminate();
+				}
 			}
 
 			if (answer_) {

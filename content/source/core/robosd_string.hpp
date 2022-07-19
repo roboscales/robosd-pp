@@ -105,7 +105,10 @@ namespace robo {
 			char_t* endc;
 			ROBO_LRET(to_number(c_str(), endc, _value));
 		}
-
+		template <typename T> static bool to_number(cstr begc, T& _value) {
+			char_t* endc;
+			ROBO_LRET(to_number(begc, endc, _value));
+		}
 		template <typename T> static bool scan_numbers(cstr begc, size_t _max_count, T* _values, size_t& _count) {
 			char_t* endc;
 			_count = 0;

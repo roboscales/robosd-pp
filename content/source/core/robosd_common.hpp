@@ -103,7 +103,16 @@ namespace robo {
 			: csqrt_helper(x, (curr + x / curr) / 2., curr);
 	}
 
-
+	template<typename T> bool constexpr parity(T  _n)
+	{
+			bool res = 0;
+			while (_n)
+			{
+					res = !res;
+					_n     = _n & (_n - 1);
+			}    
+			return res;
+	}
 
 	template<typename T>  T  constexpr csqrt(T x) {
 		double dx = (double)x;

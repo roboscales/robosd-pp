@@ -113,29 +113,55 @@ namespace mexo {
 		protected:
 			typedef ::robo::quest quest;
 
-			quest* var_query_quest(quest* _owner, ::robo::cstr _var) {
-
-				::robo::string* sv = new ::robo::string(_var);
-				//*sv = _var;
-				//delete sv;
-				return ::robo::quest::create(
-					_owner
-					, [this,sv](::robo::quest::result r)->robo::quest::reaction {
-
-						if (r == robo::quest::result::success) {
-							if (sv != nullptr) {
-								robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", this->alias(), sv->c_str());
-								delete sv;
-							}
-							return robo::quest::reaction::normal;
+			static auto lambda_(quest* _quest) {
+				return varindex::ivar::performer::create(
+					[_quest](varindex::ivar* _var, bool _result) {
+						if (_result) {
+							_quest->confirm();
 						}
 						else {
-							if (sv != nullptr) {
-								robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", this->alias(), sv->c_str(), (int)r );
-								delete sv;
-							}
-							return robo::quest::reaction::terminate;
+							_quest->refuse();
 						}
+					}
+				);
+			}
+			static auto post_var_(quest* _quest, varindex::ivar * _v, ::robo::cstr _value) {
+				if (!_v->post(
+					_value
+					, lambda_(_quest)
+				)) {
+					_quest->refuse();
+				}
+			}
+			robo::quest::reaction reacton_(::robo::quest::result _r, ::robo::string * _sv, ::robo::string* _vv=nullptr) {
+				if (_r == robo::quest::result::success) {
+					if (_sv != nullptr) {
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", display_alias(), _sv->c_str() );
+						delete _sv;
+					}
+					if (_vv == nullptr) {
+						delete _vv;
+					}
+					return robo::quest::reaction::normal;
+				}
+				else {
+					if (_sv != nullptr) {
+						robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), (int)_r);
+						delete _sv;
+					}
+					if (_vv == nullptr) {
+						delete _vv;
+					}
+					return robo::quest::reaction::terminate;
+				}
+			}
+			quest* var_query_quest(quest* _owner, ::robo::cstr _var, quest* _sema = nullptr) {
+				::robo::string* sv = new ::robo::string(_var);
+				return ::robo::quest::create(
+					_owner
+					, _sema
+					, [this,sv](::robo::quest::result _r)->robo::quest::reaction {
+						return this->reacton_(_r, sv);
 					}
 					, [this, sv](::robo::quest* _quest) {
 
@@ -149,13 +175,44 @@ namespace mexo {
 								_quest->refuse();
 							}
 										})
-							) {
+						) {
 							_quest->refuse();
-						};
+						}
 					}
 					);
 			}
+		
+			quest* var_post_quest(quest* _owner, ::robo::cstr _var, ::robo::cstr _value ,quest* _sema = nullptr) {
 
+				::robo::string* sv = new ::robo::string(_var);
+				::robo::string* vv = new ::robo::string(_value);
+				//*sv = _var;
+				//delete sv;
+				return ::robo::quest::create(
+					_owner
+					, _sema
+					, [this, sv, vv](::robo::quest::result _r)->robo::quest::reaction {
+						return this->reacton_(_r, sv, vv);
+					}
+					, [this, sv, vv](::robo::quest* _quest) {
+
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start to post", this->alias(), sv->c_str());
+						varindex::ivar* v = dynamic_cast<varindex::ivar*>(vars.find_var(sv->c_str()));
+						if (v) {
+							post_var_(_quest, v, vv->c_str());
+						}
+						else {
+							if (!vars.query(sv->c_str(), [this, _quest, vv](varindex::ivar* _var, bool _result) {
+								post_var_(_quest, _var, vv->c_str());
+							}
+							)) {
+								_quest->refuse();
+							}
+						}
+					}
+				);
+			}
+			
 			virtual bool do_load(void) {
 
 				ROBO_LBREAKN(robo::backend::devagent::do_load());

@@ -282,8 +282,8 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				A::do_handler_create_vars(_vars, _master_key);
-				present_s& present = present<dev_t>();
-				const config_s& config = config_cast<config_s>();
+				present_s& present = A::template present<rotator_t>();
+				const config_s& config = A::template config<rotator_t>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					var::record::create(var::const_uint8, present.active, RT("active"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.fb.output.si, RT("ab.sin"), _master_key, _vars);

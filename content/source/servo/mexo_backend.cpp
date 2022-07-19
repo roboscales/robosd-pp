@@ -175,6 +175,7 @@ namespace mexo {
 		}
 
 		devagent::proto::result devagent::proto::request(robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
+			_tran.header.command = mexo::front::dev::flow_command_ix::var;
 			if (step_ == step::idle) {
 				ROBO_JAMPN_F(_var->length() <= _tran.size_max - 2, fail, "invalid var size %s", _var->name());
 				ROBO_JAMPN_F(_var->addr() < 255, fail, "invalid var index ");
@@ -184,12 +185,11 @@ namespace mexo {
 				step_ = step::put;
 				_tran.data[1] = index_;
 				_tran.request = ROBO_TRAN_REQUEST_PUT;
-				_tran.header.command = mexo::front::dev::flow_command_ix::var;
 				if (op_ == op::put) {
 					_tran.data[0] = mexo::var::request::put;
 					_var->encode(_tran.data + 2);
 					_tran.size_actual = 2 + len_;
-					return result::success;
+					return result::repeat;
 				}
 				else if (op_ == op::get) {
 					_tran.data[0] = mexo::var::request::get;
@@ -200,7 +200,12 @@ namespace mexo {
 			}
 			else if (step_ == step::get) {
 				_tran.request = ROBO_TRAN_REQUEST_GET;
-				_tran.size_actual = 2 + len_;
+				if (op_ == op::get) {
+					_tran.size_actual = 2 + len_;
+				}
+				else {
+					_tran.size_actual = 2;
+				}
 				return result::success;
 			}
 			robo_errlog("error proto series (%s)", _var->name());
@@ -215,6 +220,11 @@ namespace mexo {
 				if (op_ == op::put) {
 					if (step_ == step::put) {
 						ROBO_JAMPN_F((_tran.data[0] == mexo::var::request::put), fail, "invalid var  operaton (%s, %d) ", _var->name(), _tran.data[0]);
+						//reset();
+						step_ = step::get;
+						return result::repeat;
+					}
+					else {
 						reset();
 						return result::success;
 					}

@@ -214,6 +214,11 @@ namespace robo {
 			ROBO_LRET(query_());
 		}
 
+		bool vartable::ivar::post(performer* _performer) {
+			performer_ = _performer;
+			ROBO_LRET(post_());
+		}
+
 		void vartable::ivar::reset_delegat(void) {
 			performer_ = nullptr;
 			set_repeat_count(repeat_current_max_);
@@ -233,7 +238,12 @@ namespace robo {
 			case status::put:
 			status_ = status::ready;
 			finish_hook();
-			query_();
+			if (paranoic_put_) {
+				query_();
+			}
+			else {
+				if (performer_) performer_->confirm(this);
+			}
 			break;
 			case status::get:
 			status_ = status::ready;
@@ -243,12 +253,12 @@ namespace robo {
 			default:
 			ROBO_ALARM_F("error state for var '%s'", name());
 			}
+			reset_delegat();
 		}
 
 		void vartable::ivar::refuse(void) {
 			status tmp = status_;
 			status_ = status::panic;
-			if (performer_) performer_->refuse(this);
 			if (repeat_count_ > 0) {
 				repeat_count_--;
 				finish_hook();
@@ -266,7 +276,9 @@ namespace robo {
 				}
 			}
 			else {
+				if (performer_) performer_->refuse(this);
 				finish_hook();
+				reset_delegat();
 			}
 		}
 
@@ -497,11 +509,13 @@ namespace robo {
 
 	quest::quest(
 		quest* _owner
+		, quest* _sema
 		, request* _request
 		, answer* _answer
 	)
 		: signal::performer(true)
 		, ref_(*this)
+		, sema_ref_(*this)
 		, top_ref_(*this)
 		, isfrontend_ ( system::env::is_frontend() )
 		, request_(_request)
@@ -515,15 +529,22 @@ namespace robo {
 		else {
 			owner_ = nullptr;
 		}
-
-		if (isfrontend_) {
-			system::critical c_;
-			top_ref_.attach_to(frontend_core::instance_().top_);
-		}
-		else {
-			top_ref_.attach_to(backend_core::instance_().top_);
+		if (_request != nullptr) {
+			if (isfrontend_) {
+				system::critical c_;
+				top_ref_.attach_to(frontend_core::instance_().top_);
+			}
+			else {
+				top_ref_.attach_to(backend_core::instance_().top_);
+			}
 		}
 		counter::instance_().inc();
+		if (_sema != nullptr  ) {
+			ROBO_VBREAKN( (_sema != this) && (_sema != owner_) );
+			quest * r = new quest(this, nullptr, nullptr, nullptr);
+			ROBO_VBREAKN( r != nullptr );
+			r->sema_ref_.attach_to(_sema->owned_);
+		}
 	}
 
 	void quest::post(void) {
@@ -560,6 +581,23 @@ namespace robo {
 			backend::queue::post(&(tmp->owner()), priority::lo);
 			tmp->dettach();
 			nxt:;
+		}
+	}
+	void  quest::happyend_(void) {
+		quest* own = owner_;
+		release();
+		if (own) {
+			if (own->childs_.count() == 0) {
+				ROBO_VBREAKN(own->status_ == status::none);
+				ROBO_VBREAKN(own->isfrontend_ == robo::system::env::is_frontend());
+				own->status_ = status::run;
+				if (own->isfrontend_) {
+					backend::queue::post(own, priority::lo);
+				}
+				else {
+					frontend::queue::post(own, priority::lo);
+				}
+			}
 		}
 	}
 	void  quest::operator ()(void) {
@@ -609,21 +647,7 @@ namespace robo {
 			}
 			break;
 		}
-		quest* own = owner_;
-		release();
-		if (own) {
-			if (own->childs_.count() == 0) {
-				ROBO_VBREAKN(own->status_ == status::none);
-				ROBO_VBREAKN(own->isfrontend_ == robo::system::env::is_frontend() );
-				own->status_ = status::run;
-				if (own->isfrontend_) {
-					backend::queue::post(own,priority::lo);
-				}
-				else {
-					frontend::queue::post(own, priority::lo);
-				}
-			}
-		}
+		happyend_();
 	}
 
 	void quest::post_answer_(status _status) {
@@ -639,9 +663,25 @@ namespace robo {
 	}
 	void quest::confirm(void) {
 		post_answer_(status::confirm);
+		ref* r = owned_.last();
+		while (r) {
+			quest* tmp = &(r->owner());
+			r = r->prev();
+			tmp->status_ = status::confirm;
+//			tmp-> status_ = status::run;
+//			tmp->confirm();
+		}
 	}
 	void quest::refuse(void) {
 		post_answer_(status::refuse);
+		ref* r = owned_.last();
+		while (r) {
+			quest* tmp = &(r->owner());
+			r = r->prev();
+			//tmp->status_ = status::run;
+			//tmp->refuse();
+			tmp->status_ = status::refuse;
+		}
 	}
 	void quest::terminate(void) {
 		quest* tmp = this;

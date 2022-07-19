@@ -149,14 +149,13 @@ namespace robo {
 							}
 							pfr->in_msg = _msg;
 							pfr->request_ = (_msg != nullptr) ? performer::request::put : performer::request::get;
+							return true;;
 						}
-						else {
-							if (_msg)
-								_msg->release();
-						}
-					}
+					} 
 				}
-				return true;
+				if (_msg)
+					_msg->release();
+				return false;
 			}
 
 			msg* port::get(uint8_t _suba) {

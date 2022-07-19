@@ -332,7 +332,7 @@ namespace robo {
 				time_us_t tm = system::env::time_us();
 				if (boardagent_.request_pause_us_ < tm - boardagent_.last_request_us_) {
 					stream::query_result ret;
-					for (stream::ref* _ref = streams_.first(); _ref; _ref = _ref->next()) {
+					for (stream::ref* _ref = streams_.last(); _ref; _ref = _ref->prev()) {
 						if (_ref->owner().exchange_need()) {
 							ret = _ref->owner().query(_msg);
 							if (ret == stream::query_result::none) {
@@ -517,8 +517,8 @@ namespace robo {
 
 					if (current_agent_ref_) {
 						do {
-						message_.ownbus = this;
-						reset();
+							message_.ownbus = this;
+							reset();
 							devagent::stream::query_result res = current_agent_ref_->owner().query(&message_);
 							switch (res) {
 							case devagent::stream::query_result::success:

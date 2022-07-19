@@ -39,10 +39,19 @@ namespace mexo {
 			template<typename types>struct feedback_t {
 				ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
 				#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
+				mexo_proto_signal_t crawl_speed;
+				mexo_proto_long_signal_t dead_zone;
 				mexo_proto_signal_t speed;
 				mexo_proto_long_signal_t position;
 				#endif
 			};
+			#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
+			template<typename types>struct profil_t {
+				//ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
+				mexo_proto_signal_t crawl_speed;
+				mexo_proto_long_signal_t dead_zone;
+			};
+			#endif
 		}
 	}
 }

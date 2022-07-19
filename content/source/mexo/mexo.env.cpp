@@ -376,7 +376,7 @@ namespace mexo{
 		#ifndef ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 
 		#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
 		#endif
-
+		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		namespace vartree{
 			::robo::termo::node root(
 				RT8("vt")
@@ -567,6 +567,7 @@ namespace mexo{
 		
 		#endif
 	}	
+	#endif
 
 
 	#if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
@@ -661,6 +662,7 @@ namespace mexo{
 	
 	#endif
 
+	#if ROBO_APP_MEXO_VAR_ENABLED == 1
 	#ifndef ENV_NET_FLOW_VAR_ENABLED
 	#define ENV_NET_FLOW_VAR_ENABLED 0
 	#endif 
@@ -695,6 +697,7 @@ namespace mexo{
 		, ENV_NET_FLOW_VAR_SUBA
 		, ENV_NET_FLOW_VAR_SUBA_ANSW
 	);
+	#endif
 	#endif
 	#endif
 }

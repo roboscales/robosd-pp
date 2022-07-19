@@ -69,6 +69,9 @@ namespace mexo {
 		#endif
 		tp.off(tp_verb::frontend);
 	}
+	void machine::raise_fault_(void){
+		slots_ref_.raise_fault.execute();
+	}
 	machine::slots& machine::slots_(void) {
 		static machine::slots slots__;
 		return slots__;
@@ -93,6 +96,9 @@ namespace mexo {
 		case slot::kind::frontend:
 		return frontend;
 		
+		case slot::kind::raise_fault:
+		return raise_fault;
+
 		default:
 		ROBO_APP_CRASH();
 		return dummy;
@@ -105,6 +111,7 @@ namespace mexo {
 		control.free();
 		backend.free();
 		frontend.free();
+		raise_fault.free();
 		dummy.free();
 		for (int i = 0; i < slot_count; i++) {
 			periodic[i].free();
@@ -478,9 +485,9 @@ namespace mexo {
 
 	#if ROBO_APP_MEXO_VAR_ENABLED == 1
 	void dev::do_create_vars(void) {
+		var::record::create(var::uint8, present_.error, RT("dev.error"), key(), vars);
 		if (var::machine::actual_mode() >= var::machine::mode::full) {
 			var::record::create( var::const_uint8, present_.mode, RT("dev.mode"), key() , vars );
-			var::record::create(var::uint8, present_.error, RT("dev.error"), key(), vars);
 		}
 		if (var::machine::actual_mode() >= var::machine::mode::config) {
 			var::record::create(var::uint8, action_.mode, RT("act.dev.mode"), key(), vars);
@@ -492,37 +499,37 @@ namespace mexo {
 		if (command_ == command::start) {
 			switch (state_) {
 			case state::stopped:
-			onBegin();
-			state_ = state::begin;
-			case state::begin:
-			if (doBegin()) {
+			onPrepare();
+			state_ = state::prepare;
+			case state::prepare:
+			if (doPrepare() == result::success) {
 				state_ = state::startup;
 				onStartup();
 			}
 			else
 				break;
 			case  state::startup:
-			if (doStartup()) {
+			if (doStartup() == result::success) {
 				state_ = state::execute;
 				onExecute();
 			}
 			else
 				break;
 			case state::execute:
-			if (doExecute()) {
+			if (doExecute() == result::success) {
 				stop();
 			}
 			else
 				break;
 			case state::shutdown:
-			if (doShutdown()) {
-				state_ = state::reset;
-				onReset();
+			if (doShutdown() == result::success) {
+				state_ = state::relax;
+				onRelax();
 			}
 			else
 				break;
-			case state::reset:
-			if (doReset()) {
+			case state::relax:
+			if (doRelax() == result::success) {
 				onFinish();
 				state_ = state::stopped;
 			}
@@ -535,23 +542,23 @@ namespace mexo {
 			case state::stopped:
 				doIdle();
 			break;
-			case state::begin:
-				state_ = state::reset;
-			onReset();
+			case state::prepare:
+				state_ = state::prepare;
+			onPrepare();
 			break;
 			case state::startup:
 			case state::execute :
 				state_ = state::shutdown;
 			onShutdown();
 			case state::shutdown :
-			if (doShutdown()) {
-				state_ = state::reset;
-				onReset();
+			if (doShutdown() == result::success) {
+				state_ = state::relax;
+				onRelax();
 			}
 			else
 				break;
-			case state::reset:
-			if (doReset()) {
+			case state::relax:
+			if (doRelax() == result::success) {
 				onFinish();
 				state_ = state::stopped;
 				return true;
@@ -620,11 +627,10 @@ void mexo_priority_loop(void) {
 }
 void mexo_backend_loop(void) {
 	mexo::machine::backend_loop();
-	#if ROBO_APP_NET_FLOW_ENABLED==1	
-	#endif
 }
 void mexo_frontend_loop() {
 	mexo::machine::frontend_loop();
-	#if ROBO_APP_NET_FLOW_ENABLED==1	
-	#endif
+}
+void mexo_raise_fault() {
+	mexo::machine::raise_fault();
 }

@@ -605,7 +605,7 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& conf = config<ramp>();
+			const config_s& conf = A::template config<ramp>();
 			if (var::machine::actual_mode() >= var::machine::mode::tuning) {
 				var::record::create(q::var::signal, conf.rampStep, RT("st"), _master_key, _vars);
 				var::record::create(var::uint8, conf.shift, RT("sh"), _master_key, _vars);
@@ -713,8 +713,8 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			A::do_handler_create_vars(_vars, _master_key);
-			const config_s& cnfg = config<fast_filter>();
-			present_s& psnt = present<fast_filter>();
+			const config_s& cnfg = A::template config<fast_filter>();
+			present_s& psnt = A::template present<fast_filter>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
 				var::record::create(var::uint8, cnfg.shift, RT("sh"), _master_key, _vars);
 				var::record::create(q::var::parameter, gain, RT("g"), _master_key, _vars);
@@ -775,8 +775,8 @@ namespace mexo {
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			B::do_handler_create_vars(_vars, _master_key);
-			present_s& prsnt = present<filter>();
-			const config_s& conf = config<filter>();
+			present_s& prsnt = B::template present<filter>();
+			const config_s& conf = B::template config<filter>();
 			if (var::machine::actual_mode() >= var::machine::mode::config) {
 				var::record::create(q::var::parameter, conf.gain, RT("g"), _master_key, _vars);
 				var::record::create(var::uint8, conf.shift.gain, RT("sh.g"), _master_key, _vars);

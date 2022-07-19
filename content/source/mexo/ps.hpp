@@ -127,8 +127,8 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				A::do_handler_create_vars(_vars, _master_key);
-				const config_s& config =  A::config<pwm>();
-				present_s& present = A::present<pwm>();
+				const config_s& config =  A::template config<pwm>();
+				present_s& present = A::template present<pwm>();
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
 					::mexo::var::record::create(::mexo::var::const_uint8, command_, RT("cmd"), _master_key, _vars);
 					::mexo::var::record::create(::mexo::var::const_uint8, status_, RT("status"), _master_key, _vars);
@@ -211,7 +211,7 @@ namespace mexo {
 			}
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			void create_var(int  _master_key, var::record::list& _list) {
-				var::record::create(types::var::const_discret, present.duty, RT("duty"), _master_key, _list);
+				var::record::create(q::var::const_discret, present.duty, RT("duty"), _master_key, _list);
 			}
 			#endif
 			dc_inverter(present_s & _present) : present(_present) {}
@@ -325,9 +325,9 @@ namespace mexo {
 #if ROBO_APP_MEXO_VAR_ENABLED == 1
 			void create_var(int  _master_key	, var::record::list& _vars) {
 				if (var::machine::actual_mode() >= var::machine::mode::full) {
-					var::record::create(types::var::const_discret, present.duty.A, RT("duty.A"), _master_key, _vars);
-					var::record::create(types::var::const_discret, present.duty.B, RT("duty.B"), _master_key, _vars);
-					var::record::create(types::var::const_discret, present.duty.C, RT("duty.C"), _master_key, _vars);
+					var::record::create(q::var::const_discret, present.duty.A, RT("duty.A"), _master_key, _vars);
+					var::record::create(q::var::const_discret, present.duty.B, RT("duty.B"), _master_key, _vars);
+					var::record::create(q::var::const_discret, present.duty.C, RT("duty.C"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.A, RT("pwm.A"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.B, RT("pwm.B"), _master_key, _vars);
 					var::record::create(q::var::const_signal, present.pwm.C, RT("pwm.C"), _master_key, _vars);

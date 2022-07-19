@@ -52,7 +52,7 @@ namespace mexo {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, priority, control, backend, frontend };
+			enum class kind { begin = slot_count, start, priority, control, backend, frontend, raise_fault };
 			class delegat : public ::robo::delegat::base<void> {
 			public:
 				typedef list::unsorted<delegat> list;
@@ -159,6 +159,7 @@ namespace mexo {
 			slot control;
 			slot backend;
 			slot frontend;
+			slot raise_fault;
 			slot periodic[slot_count];
 			slot dummy;
 			slot& operator [] (slot::kind _kind);
@@ -177,6 +178,7 @@ namespace mexo {
 		#endif
 		void backend_loop_(void);
 		void frontend_loop_(void);
+		void raise_fault_(void);
 		static machine instance_;
 	public:
 		machine(void);
@@ -189,6 +191,7 @@ namespace mexo {
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
 		static int slot_index(void) { return instance_.slot_index_; }
+		static void raise_fault(void) { instance_.raise_fault_(); }
 	};
 	class node {
 	public:
@@ -223,7 +226,7 @@ namespace mexo {
 		virtual void do_create_vars(void) {};
 	public:
 		virtual ~node(void){}
-		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		#ifdef ROBO_APP_MEXO_SIDE
 		var::record::list vars;
 		#endif
 		static node& root(void);
@@ -305,7 +308,7 @@ namespace mexo {
 		private:
 			ref ref_;
 		protected:
-			template<typename T>T& owner_cast(void) { return *((T*)node::owner()); };
+			template<typename T>T& owner_cast(void) { return *(T*)node::owner(); };
 			virtual void applay_action(void) = 0;
 			virtual void do_start(void) = 0;
 			virtual void do_stop(void) = 0;
@@ -1150,29 +1153,28 @@ namespace mexo {
 			command command_ = command::stop;
 			enum class state {
 				stopped = 0,
-				begin = 1,
+				prepare = 1,
 				startup = 3,
 				execute = 4,
 				shutdown = 5,
-				reset = 6
+				relax = 6
 			} ;
-			state state_;
+			state state_ = state::stopped;
 			void start_(void) { command_ = command::start; };
 			bool run_(void);
 		protected:
-
-			virtual void onBegin(void) {}
+			virtual void onPrepare(void) {}
 			virtual void onStartup(void) {}
 			virtual void onExecute(void) {}
 			virtual void onFinish(void) {}
 			virtual void onShutdown(void) {}
-			virtual void onReset(void) {}
+			virtual void onRelax(void) {}
 
-			virtual bool doBegin(void) { return true; }
-			virtual bool doStartup(void) { return true; }
-			virtual bool doExecute(void) { return true; }
-			virtual bool doShutdown(void) { return true; }
-			virtual bool doReset(void) { return true; }
+			virtual result doPrepare(void) { return result::success; }
+			virtual result doStartup(void) { return result::success; }
+			virtual result doExecute(void) { return result::success; }
+			virtual result doShutdown(void) { return result::success; }
+			virtual result doRelax(void) { return result::success; }
 			virtual void doIdle(void) {};
 			virtual void doTerminate(void) {};
 		protected:

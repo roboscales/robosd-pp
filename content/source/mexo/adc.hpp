@@ -296,7 +296,7 @@ namespace mexo {
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				BB::do_handler_create_vars(_vars, _master_key);
-				present_s& present = present<dev_t>();
+				present_s& present = BB::template present<current_abc_sence>();
 				var::record::create(q::var::const_signal, present.abc.A, RT("A"), _master_key, _vars);
 				var::record::create(q::var::const_signal, present.abc.B, RT("B"), _master_key, _vars);
 				var::record::create(q::var::const_signal, present.abc.C, RT("C"), _master_key, _vars);
