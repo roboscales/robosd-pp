@@ -325,6 +325,7 @@ namespace robo {
 			static cstr source(void);
 			static void finish(void);
 			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
+			static void load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size);
 		};
 		#endif
 

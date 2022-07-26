@@ -141,10 +141,12 @@ protected:
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		void do_create_vars(void) {
 			::mexo::ps::dev::do_create_vars();
-			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				action_s& act = action<dev_t>();
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::tuning) {
 				const config_s& conf = config<dev_t>();
 				::mexo::var::record::create(::mexo::var::uint8, conf.invers, RT("act.invers"), key(), vars);
+			}
+			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
+				action_s& act = action<dev_t>();
 				::mexo::var::record::create(types::var::signal, act.voltage, RT("act.v"), key(), vars);
 				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
 				::mexo::var::record::create(types::var::signal, act.current, RT("act.c"), key(), vars);
@@ -171,17 +173,32 @@ protected:
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 	protected:
 		virtual void do_update_feedback(void) {
-			::mexo::ps::dev::do_update_feedback();			
-			feedback< dev_t >().voltage = present< dev_t >().voltage_required;
-			#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
-			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
-			feedback< dev_t >().current = present< dev_t >().current_filter.fb.output;
-			#else
-			feedback< dev_t >().current = hardwaresys.current_sence_block.current_delta_ref();			
-			#endif
-			#else
-			feedback< dev_t >().current = 0;
-			#endif
+			::mexo::ps::dev::do_update_feedback();
+			const config_s& conf = config<dev_t>();
+			if (conf.invers) {
+				feedback< dev_t >().voltage = -present< dev_t >().voltage_required;
+				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+				#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
+				feedback< dev_t >().current = -present< dev_t >().current_filter.fb.output;
+				#else
+				feedback< dev_t >().current = -hardwaresys.current_sence_block.current_delta_ref();
+				#endif
+				#else
+				feedback< dev_t >().current = 0;
+				#endif
+			}
+			else {
+				feedback< dev_t >().voltage = present< dev_t >().voltage_required;
+				#if POWER_SUPPLY_CURRENT_MEASSURY_ENABLED == 1
+				#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
+				feedback< dev_t >().current = present< dev_t >().current_filter.fb.output;
+				#else
+				feedback< dev_t >().current = hardwaresys.current_sence_block.current_delta_ref();
+				#endif
+				#else
+				feedback< dev_t >().current = 0;
+				#endif
+			}
 		}
 
 		void voltage_mode_start(void) {

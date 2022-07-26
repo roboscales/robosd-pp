@@ -112,6 +112,15 @@ namespace robo {
 	#endif
 	#endif
 
+	#if ROBO_APP_INI_ENABLED ==1
+	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
+		size_t _size;
+		load_data(_dst, _max_sz, _section, _key, _size);
+		return _size > 0;
+	}
+	#endif
+
+
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	class allocator {
 		friend class system;

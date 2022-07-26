@@ -135,26 +135,39 @@ namespace mexo {
 			}
 			robo::quest::reaction reacton_(::robo::quest::result _r, ::robo::string * _sv, ::robo::string* _vv=nullptr) {
 				if (_r == robo::quest::result::success) {
-					if (_sv != nullptr) {
-						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", display_alias(), _sv->c_str() );
-						delete _sv;
-					}
-					if (_vv == nullptr) {
+					if(_vv != nullptr ){
+						if (_sv != nullptr) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest post var  %s/%s = %s  - success", display_alias(), _sv->c_str(), _vv->c_str() );
+							delete _sv;
+						}
 						delete _vv;
+					}
+					else {
+						if (_sv != nullptr) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest query var %s/%s  - success", display_alias(), _sv->c_str());
+							delete _sv;
+						}
 					}
 					return robo::quest::reaction::normal;
 				}
 				else {
-					if (_sv != nullptr) {
-						robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), (int)_r);
-						delete _sv;
-					}
-					if (_vv == nullptr) {
+					if (_vv != nullptr) {
+						if (_sv != nullptr) {
+							robo_errlog("\t\tquest post var  %s/%s =%s - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), _vv->c_str() , (int)_r);
+							delete _sv;
+						}
 						delete _vv;
+					}
+					else {
+						if (_sv != nullptr) {
+							robo_errlog("\t\tquest var query %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), (int)_r);
+							delete _sv;
+						}
 					}
 					return robo::quest::reaction::terminate;
 				}
 			}
+
 			quest* var_query_quest(quest* _owner, ::robo::cstr _var, quest* _sema = nullptr) {
 				::robo::string* sv = new ::robo::string(_var);
 				return ::robo::quest::create(
@@ -165,7 +178,7 @@ namespace mexo {
 					}
 					, [this, sv](::robo::quest* _quest) {
 
-						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->display_alias(), sv->c_str());
 
 						if (!vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
 							if (_result) {
@@ -196,14 +209,19 @@ namespace mexo {
 					}
 					, [this, sv, vv](::robo::quest* _quest) {
 
-						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start to post", this->alias(), sv->c_str());
+						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s=%s - start to post", this->display_alias(), sv->c_str(), vv->c_str());
 						varindex::ivar* v = dynamic_cast<varindex::ivar*>(vars.find_var(sv->c_str()));
 						if (v) {
 							post_var_(_quest, v, vv->c_str());
 						}
 						else {
 							if (!vars.query(sv->c_str(), [this, _quest, vv](varindex::ivar* _var, bool _result) {
-								post_var_(_quest, _var, vv->c_str());
+								if (_result) {
+									post_var_(_quest, _var, vv->c_str());
+								}
+								else {
+									_quest->refuse();
+								}
 							}
 							)) {
 								_quest->refuse();
@@ -213,6 +231,189 @@ namespace mexo {
 				);
 			}
 			
+/*			int startup_var_counter_ = 0;
+			int common_startup_counter_ = 0;
+			bool post_startup_vars_(quest * _quest, robo::cstr _sect, int * _counter) {
+				const size_t N = ROBO_STRING_BUFFER_SIZE;
+				robo::char_t keys[N];
+
+				robo::string startup;
+
+				ROBO_LBREAKN_F(startup.load(defaults_path(), _sect), "var's section %s for %s isn't found", _sect, display_alias());
+
+				size_t sz = 0;
+				::robo::system::ini::load_data(keys, N, startup.c_str(), nullptr, sz);
+				ROBO_LBREAKN_F( (sz >= _N - 2), "var's list for %s is oversized (%u)", display_alias(), sz);
+				
+				robo::char_t* bg = keys;
+				robo::char_t* ptr = keys;
+				while (sz > 0) {
+					if (*ptr == 0) {
+						ROBO_LBREAKN(post_startup_var_(_quest, startup, bg, _counter));
+						bg = ptr + 1;
+					}
+					ptr++;
+					sz--;
+				}
+
+				return true;
+			}*/
+			
+			/*bool post_startup_vars_(quest* _quest) {
+				post_startup_vars_(_quest,RT("startup"), &startup_var_counter_);
+			}
+			bool post_common_startup_vars_(quest* _quest) {
+				post_startup_vars_(_quest, RT("common_startup"), &common_startup_counter_);
+			}
+			*/
+			/*
+			void post_startup_var__(quest* _quest, robo::cstr _sect, robo::cstr _key, varindex::ivar* _var, int * _counter) {
+				robo::string value;
+				if (!value.load(_sect, _key)) {
+					_quest->refuse();
+				}
+				else {
+					if (!_var->post(value, varindex::ivar::performer::create(
+						[_quest, _counter](varindex::ivar* _v, bool _res) {
+							if (_res) {
+								(*_counter)--;
+								if ( (*_counter) == 0) {
+									_quest->confirm();
+								}
+							}
+							else {
+								_quest->refuse();
+							}
+						}))) {
+						_quest->refuse();
+					}
+					robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s = %s - start to post ", this->alias(), _key, value.c_str());
+				}
+			}
+
+			bool post_startup_var_(quest* _quest, robo::cstr _sect, robo::cstr _key, int * _counter) {
+				varindex::ivar* v = dynamic_cast<varindex::ivar*>(vars.find_var(_key));
+				if (v) {
+					post_startup_var__(_quest, _sect, _key, v, _counter);
+				}
+				else {
+					if (!vars.query(_key, [this, _quest, _sect, _key, _counter](varindex::ivar* _var, bool _result) {
+						if (_result) {
+							post_startup_var__(_quest, _sect, _key, _var, _counter);
+						}
+						else {
+							_quest->refuse();
+						}
+					}
+					)) {
+						_quest->refuse();
+					}
+				}
+			}
+			
+			quest* startup_var_query_quest(quest* _owner, robo::cstr _sect, int* _counter, quest* _sema = nullptr) {
+
+				//todo
+				//список строк заканивается двумя нулями
+				quest* q = ::robo::quest::create(
+					_owner
+					, _sema
+					, [this ](::robo::quest::result _r)->robo::quest::reaction {
+						if (_r == robo::quest::result::success) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'load var's section' for %s  - success", display_alias());
+							return robo::quest::reaction::normal;
+						}
+						else {
+							robo_errlog("\t\tquest: 'load var's section' for  %s  - refused, canceled or termibated (%d) ", display_alias(), (int)_r);
+							return robo::quest::reaction::terminate;
+						}					
+					}
+					, [this,q](::robo::quest* _quest) {
+						this->post_startup_vars_(q, );
+					}
+				);
+				return q;
+				
+			}
+			*/
+			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _sect) {
+				const size_t N = ROBO_STRING_BUFFER_SIZE;
+				robo::char_t keys[N];
+
+				robo::string startup;
+
+				ROBO_LBREAKN_F(startup.load(current_path(), defaults_path(), _sect), "var's section %s for %s isn't found", _sect, display_alias());
+
+				size_t sz = 0;
+				::robo::system::ini::load_data(keys, N, startup.c_str(), nullptr, sz);
+				ROBO_LBREAKN_F((sz < N - 2), "var's list for %s is oversized (%u)", display_alias(), sz);
+
+				robo::char_t* bg = keys;
+				robo::char_t* ptr = keys;
+				while (sz > 0) {
+					if (*ptr == 0) {
+						robo::cstr r = RT("#");
+						if (*bg != r[0]) {
+							robo::string value;
+							if (!value.load(startup, bg)) {
+								return false;
+							}
+							else {
+								var_post_quest(_owner, bg, value.c_str(), _sema);
+							}
+						}
+						bg = ptr + 1;
+					}
+					ptr++;
+					sz--;
+				}
+
+				return true;
+			}
+
+			quest* post_startup_vars(quest* _owner, robo::cstr _sect, quest* _sema = nullptr) {
+
+				//todo
+				//список строк заканивается двумя нулями
+				quest* end_load = ::robo::quest::create(
+					_owner
+					, nullptr
+					, [this,_sect](::robo::quest::result _r)->robo::quest::reaction {
+						if (_r == robo::quest::result::success) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'load startup var's ' for %s/%s  - success", display_alias(),_sect);
+							return robo::quest::reaction::normal;
+						}
+						else {
+							robo_errlog("\t\tquest: 'load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sect, (int)_r);
+							return robo::quest::reaction::terminate;
+						}
+					}
+					);
+				quest* begin_load = ::robo::quest::create(
+					end_load
+					, _sema
+					, [this, _sect](::robo::quest::result _r)->robo::quest::reaction {
+						if (_r == robo::quest::result::success) {
+							robo_detaillog(6, robo::log::mask::disabled, "\tquest: 'begin load startup var's ' for %s/%s  - success", display_alias(), _sect);
+							return robo::quest::reaction::normal;
+						}
+						else {
+							robo_errlog("\tquest: 'begin load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sect, (int)_r);
+							return robo::quest::reaction::terminate;
+						}
+					}
+				);
+				if (!post_startup_vars_(end_load, begin_load, _sect)) {
+					begin_load->terminate();
+					if(_sema)
+						_sema->terminate();
+					return nullptr;
+				}
+				else {
+					return begin_load;
+				}
+
+			}
 			virtual bool do_load(void) {
 
 				ROBO_LBREAKN(robo::backend::devagent::do_load());

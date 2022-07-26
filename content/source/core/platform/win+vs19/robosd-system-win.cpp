@@ -402,15 +402,55 @@ namespace robo {
 	void system::ini::finish(void) {
 		g_robo_ini_fn = nullptr;
 	}
-	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
-		ROBO_LBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
-
+	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t & _size) {
+		_size = 0;
+		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
 		#if ROBO_UNICODE_ENABLED == 1
-		return GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
+		_size = (size_t)GetPrivateProfileStringW(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn);
 		#else
-		return GetPrivateProfileStringA(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn) > 0;
+		_size = (size_t)GetPrivateProfileStringA(_section, _key, RT(""), _dst, (DWORD)_max_sz, g_robo_ini_fn);
 		#endif
 	}
+	/*
+	bool  load_section(cstr _section, ::robo::delegat::base<void, cstr>* _worker) {
+		if (g_robo_ini_fn) {
+
+			robo_size_t nSize = ROBO_INI_SECTION_MAX_LENGTH_MAX;
+			robo_string_t keys;
+			robo_size_t sz;
+			ROBO_CHECKRET(robo_string_new(&keys, nSize));
+			sz = GetPrivateProfileStringA(_section, NULL, NULL, keys, ROBO_INI_SECTION_MAX_LENGTH_MAX, g_robo_ini_fn);
+			if (sz == 0 || sz >= ROBO_INI_SECTION_MAX_LENGTH_MAX) {
+				ROBO_CHECKRET(robo_string_delete(&keys));
+				return ROBO_ANSW_NO;
+			}
+			else {
+
+				robo_size_t cnt = 0;
+
+				for (robo_size_t i = 0; i < nSize; ++i) {
+					if (keys[i] == '\0') {
+						if (i > cnt) {
+							//string s = &SectionBuffer[l];
+							//Sections.push_back(s);
+							ROBO_CHECKRET(_event(_section, &keys[cnt], _instance));
+							//robo_infolog("key: %s", keys-1);
+						}
+						else if (i == cnt)  // 2 zeros detected
+							break;
+						cnt = i + 1;
+					}
+				}
+				ROBO_CHECKRET(robo_string_delete(&keys));
+				return ROBO_ANSW_YES;
+			}
+		}
+		else {
+			robo_errlog("ini is't initialized");
+			return ROBO_ERROR;
+		}
+	}*/
+
 	#endif
 
 	#if ROBO_APP_SHARED_TYPE == ROBO_APP_TYPE_WIN

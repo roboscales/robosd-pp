@@ -38,7 +38,7 @@ namespace mexo {
 			};
 			template<typename types>struct feedback_t {
 				ACTUATOR_PS_TEMPLATE_NAME::feedback_t<types> ps;
-				#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
+				#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
 				mexo_proto_signal_t crawl_speed;
 				mexo_proto_long_signal_t dead_zone;
 				mexo_proto_signal_t speed;

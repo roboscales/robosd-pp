@@ -461,7 +461,6 @@ public:
 		#endif
 	}
 	public:
-		#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED) == 1
 		const profil_s profil(int _mode) {
 			config_s& cf = ps_t::template config< dev_t >();
 			profil_s p;
@@ -501,18 +500,28 @@ public:
 		#endif
 	protected:
 		virtual void do_update_feedback(void) {
+			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
 			feedback_s& fb = ps_t::template feedback< dev_t >();
 			present_s& pr = ps_t::template present< dev_t >();
 			config_s& cf = ps_t::template config< dev_t >();
 
 			ps_t::do_update_feedback();
-			
-			#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
-			fb.speed = pr.speed_filter.fb.output;
-			#else
-			fb.speed = ps_t::hardwaresys.motor_enco_block.delta_acc_ref();
-			#endif
-			fb.position = ps_t::hardwaresys.motor_enco_block.position_ref();
+			if (cf.ps.invers) {
+				#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
+				fb.speed = -pr.speed_filter.fb.output;
+				#else
+				fb.speed = -ps_t::hardwaresys.motor_enco_block.delta_acc_ref();
+				#endif
+				fb.position = -ps_t::hardwaresys.motor_enco_block.position_ref();
+			}
+			else {
+				#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
+				fb.speed = pr.speed_filter.fb.output;
+				#else
+				fb.speed = ps_t::hardwaresys.motor_enco_block.delta_acc_ref();
+				#endif
+				fb.position = ps_t::hardwaresys.motor_enco_block.position_ref();
+			}
 			#else
 			fb.speed = 0;
 			fb.position = 0;

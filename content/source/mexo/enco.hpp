@@ -98,24 +98,27 @@ namespace mexo {
 						present.native.ceiled += (present.native.delta << shift);
 						present.delta_acc += present.delta;*/
 					}
-					prsnt.acc += prsnt.native.delta;
+					if (conf.inverce) {
+						prsnt.acc -= prsnt.native.delta;
+					}
+					else {
+						prsnt.acc += prsnt.native.delta;
+					}
 					//todo round_l не катит
 					prsnt.position = q::round_l(prsnt.acc, value_shift);
-					prsnt.position -= conf.position_offset;
+					prsnt.position += conf.position_offset;
 				}
 				else {
 					if ( !D::error() )  {
 						prsnt.native.ceiled = prsnt.native.raw << shift;
-						unative_t tmp = prsnt.native.ceiled - conf.native_offset;
+						unative_t tmp = prsnt.native.ceiled + conf.native_offset;
 						if (conf.inverce) {
-							prsnt.acc = (output_t)(std::numeric_limits<unative_t>::max() - tmp);
+							tmp = std::numeric_limits<unative_t>::max() - tmp;
 						}
-						else {
-							prsnt.acc = (output_t)tmp;
-						}
+						prsnt.acc = (output_t)(native_t)tmp;
 						prsnt.acc = q::round_l(prsnt.acc, shift );
 						prsnt.position = q::round_l(prsnt.acc, value_shift );
-						prsnt.position -= conf.position_offset;
+						prsnt.position += conf.position_offset;
 						start_pause_tick--;
 					}
 					else {
@@ -141,6 +144,28 @@ namespace mexo {
 					var::record::create(q::var::signal, prsnt.delta, RT("delta"), _master_key, _vars);
 					var::record::create(q::var::signal, prsnt.delta_acc, RT("delta_acc"), _master_key, _vars);
 					var::record::create(q::var::long_signal, prsnt.position, RT("po"), _master_key, _vars);
+				}
+
+				if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+					const config_s& cfg = config<abs_machine>();
+					if (round_resolution == 32) {
+						var::record::create(::mexo::var::uint32, cfg.native_offset, RT("native_offset"), _master_key, _vars);
+					} else if (round_resolution == 16) {
+						var::record::create(::mexo::var::uint16, cfg.native_offset, RT("native_offset"), _master_key, _vars);
+					}
+					//todo govnocod
+					switch( sizeof(cfg.position_offset)){
+						case 2:
+							var::record::create(::mexo::var::int16, cfg.position_offset, RT("position_offset"), _master_key, _vars);
+							break;
+						case 4:
+							var::record::create(::mexo::var::int32, cfg.position_offset, RT("position_offset"), _master_key, _vars);
+							break;
+						case 8:
+							var::record::create(::mexo::var::int64, cfg.position_offset, RT("position_offset"), _master_key, _vars);
+							break;
+					}
+					var::record::create(::mexo::var::uint8, cfg.inverce, RT("inverce"), _master_key, _vars);
 				}
 			}
 			#endif
