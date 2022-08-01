@@ -395,8 +395,30 @@ namespace robo {
 				}
 			}
 			
+			
+			goal_proto::goal_proto(
+					cstr _command_path
+					, kind_t _kind
+					, goal& _goal
+					, snapshot_proto & _snapshot_proto
+				): performer(
+					_command_path
+					, _kind
+				)
+				, goal_(_goal)
+				, snapshot_proto_(_snapshot_proto){
+			}
+			
+			void goal_proto::execute(void){
+				if (in_msg != nullptr) {
+						goal_.applay(in_msg->data(),in_msg->size());
+				}
+				snapshot_proto_.post_page_(0);
+			}
+			
+			void goal_proto::begin(void){
+			}
 		}
-
 	}
 }
 

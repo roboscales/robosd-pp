@@ -53,7 +53,7 @@ namespace mexo {
 		class slot {
 		public:
 			enum class kind { begin = slot_count, start, priority, control, backend, frontend, raise_fault };
-			class delegat : public ::robo::delegat::base<void> {
+			class delegat : public ::robo::delegat::ref<void> {
 			public:
 				typedef list::unsorted<delegat> list;
 				typedef list::ref ref;
@@ -227,7 +227,9 @@ namespace mexo {
 	public:
 		virtual ~node(void){}
 		#ifdef ROBO_APP_MEXO_SIDE
+		#if ROBO_APP_MEXO_VAR_ENABLED ==1
 		var::record::list vars;
+		#endif
 		#endif
 		static node& root(void);
 		node* owner(void) { return owner_; };
@@ -348,7 +350,7 @@ namespace mexo {
 		mode::map modes_;
 		mode* actual_mode_;
 		
-		::robo::delegat::member< mexo::machine::slot::delegat, dev, void> backend_;
+		::robo::delegat::owned::fabric < mexo::machine::slot::delegat, void>::member<dev> backend_;
 		::mexo::machine::slot::delegat::ref  backend_ref_;
 		action_s& action_;
 		feedback_s& feedback_;

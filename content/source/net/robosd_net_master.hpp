@@ -8,7 +8,7 @@ namespace robo{
     namespace net{        
 		template< typename P > class imaster_t {
 		public:
-			typedef  ::robo::delegat::base<void, bool> confirm_delegat;
+			typedef  ::robo::delegat::ref<void, bool> confirm_delegat;
 			virtual void exchange(const P& _outcom_packet, P *  _incom_packet, confirm_delegat* _confirm) = 0;
 			virtual void cancel(void) = 0;
 			virtual bool ready(void) = 0;

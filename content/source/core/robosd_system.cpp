@@ -2,6 +2,7 @@
 #include "core/robosd_log.hpp"
 #include "core/robosd_string.hpp"
 #include "core/robosd_ring_buf.hpp"
+#include "core/robosd_autonum.hpp"
 #include <algorithm>
 //#include <iostream>
 
@@ -423,8 +424,15 @@ namespace robo {
 			env::print(tmp);
 		}
 		#endif
-	}
+		::robo::delegat::autonum::receicledbin::frontend_clean();
 
+	}
+	void system::backend_loop(void) {
+		#if ROBO_APP_MODULE_ENABLED == 1
+		system::env::backend_loop();
+		#endif
+		::robo::delegat::autonum::receicledbin::backend_clean();
+	}
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 	void system::printf(cstr _format, va_list _args) {
 		#if ROBO_APP_ENV_ENABLED == 1

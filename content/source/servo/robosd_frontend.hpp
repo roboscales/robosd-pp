@@ -16,6 +16,7 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_delegat.hpp"
+#include "core/robosd_autonum.hpp"
 #include "core/robosd_app.hpp"
 namespace robo {
 	class ROBO_EXPORT dev_id_t {
@@ -48,21 +49,25 @@ namespace robo {
 
 	class ROBO_EXPORT signal {
 	public:
-		class ROBO_EXPORT  performer {
+		class ROBO_EXPORT  performer  {
 		public:
 			enum class priority { lo = -1, normal = 0, hi = 1 };
-			typedef list::sorted <performer, priority> list;
+			typedef ::robo::list::sorted <performer, priority> list;
 			typedef list::ref ref;
 			friend class signal;
+			typedef list::ref ref;
+			//typedef ::robo::list::unsorted <performer> recyclingbin;
 		protected:
 			ref ref_;
 			bool once_;
 		public:
+			virtual void attach(void) {};
+			virtual void dettach(void);
 			inline bool once(void) { return once_; }
 			inline void set_once(bool _once) { once_ = _once; }
 			inline bool cancel(void) {
 				if (ref_.attached()) {
-					ref_.dettach();
+					dettach();
 					return false;
 				}
 				else {
@@ -73,7 +78,7 @@ namespace robo {
 			performer(bool _once = false);
 			virtual ~performer(void);
 			bool attach_to(signal* _signal, priority _priority = priority::lo);
-			void dettach(void);
+			
 			//virtual bool temporary(void) { return false; }
 		};
 
@@ -84,59 +89,9 @@ namespace robo {
 
 		signal(void);
 
-		typedef delegat::lambda< performer, void >  lambda;
-		typedef delegat::uni< performer, void>  uni;
-		typedef delegat::simple< performer, void>  simple;
-		template <class C> class ROBO_EXPORT member
-			: public  delegat::rmember < performer, C, void > {
-		public:
-			member(C & _instance, void (C::* _member) (void))
-				: delegat::rmember < performer, C, void >(_instance, _member){}
-		};
-
-		class temporary {
-		public:
-			static void post(bool _isfrontend, ::robo::signal::performer *);
-			template< typename T> class performer : public T{
-				enum class status {
-					run, disposal
-				} status_ = status::run;
-				bool isfrontend_;
-				virtual ~performer() {}
-			protected:
-				virtual  void  operator ()(void) {
-					if (status_ == status::run) {
-						this->T::operator()();
-						status_ = status::disposal;
-						post(isfrontend_, this);
-					}
-					else {
-						delete this;
-					}
-
-				}
-			public:
-				template<typename ... Args > performer(Args... args):  T(args...) {
-					isfrontend_ = system::env::is_frontend();
-				}
-				void raise(void) {
-					post(false, this);
-				}
-			};
-
-			typedef performer< ::robo::signal::lambda > lambda;
-			typedef performer< ::robo::signal::uni >  uni;
-			typedef performer < ::robo::signal::simple >  simple;
-			template <class C> class ROBO_EXPORT member
-				: public  ::robo::signal::member <C>  {
-			public:
-				member(C & _instance, void (C::* _member) (void))
-					: ::robo::signal::member <C>(_instance, _member) {}
-			};
-		};
+		using owned = ::robo::delegat::owned::fabric < performer, void>;
+		using autonum = ::robo::delegat::autonum::fabric<performer, void>;
 	};
-
-
 
 	class ROBO_EXPORT event :public signal {
 	public:
@@ -151,15 +106,16 @@ namespace robo {
 			void post_(signal::performer* _performer, signal::performer::priority _priority);
 			static queue& instance_();
 		public:
+			~queue(void);
 			static void post(signal::performer* _performer, signal::performer::priority _priority) { instance_().post_(_performer, _priority); }
 			static void poll(void) { instance_().poll_(); }
 		};
 
 		class ROBO_EXPORT timer {
-			signal::performer& frontend_performer_;
-			signal::member<timer> start_delegat_;
-			signal::member<timer> stop_delegat_;
-			signal::member<timer> execute_delegat_;
+			signal::performer * frontend_performer_;
+			signal::owned::member<timer> start_delegat_;
+			signal::owned::member<timer> stop_delegat_;
+			signal::owned::member<timer> execute_delegat_;
 			time_us_t period_ = 0;
 			signal::performer* backend_performer_;
 			void start_(void);
@@ -168,13 +124,19 @@ namespace robo {
 		public:
 			void start(time_us_t _period);
 			void stop(void);
-			timer(signal::performer& _frontend_performer, bool _once = false, signal::performer* _backend_performer = nullptr)
+			timer(signal::performer * _frontend_performer, bool _once = false, signal::performer* _backend_performer = nullptr)
 				: frontend_performer_(_frontend_performer)
 				, start_delegat_(*this, &timer::start_)
 				, stop_delegat_(*this, &timer::stop_)
 				, execute_delegat_(*this, &timer::execute_)
 				, backend_performer_(_backend_performer) {
 				execute_delegat_.set_once(_once);
+				if (frontend_performer_) frontend_performer_->attach();
+				if (backend_performer_) backend_performer_->attach();
+			}
+			virtual ~timer(void) {
+				if (frontend_performer_) frontend_performer_->dettach();
+				if (backend_performer_) backend_performer_->dettach();
 			}
 		};
 
@@ -186,7 +148,7 @@ namespace robo {
 			repeater(time_us_t _period = default_period_us)
 				: performer(false)
 				, period_(_period)
-				, timer_(*this) {}
+				, timer_(this) {}
 			void start(void) { timer_.start(period_); }
 			void start(time_us_t _period) { period_ = _period;  start(); }
 			void stop(void) { timer_.stop(); }
@@ -195,9 +157,9 @@ namespace robo {
 
 		class ROBO_EXPORT pulse {
 			signal::performer* frontend_performer_;
-			signal::member<pulse> start_delegat_;
-			signal::member<pulse> stop_delegat_;
-			signal::member<pulse> execute_delegat_;
+			signal::owned::member<pulse> start_delegat_;
+			signal::owned::member<pulse> stop_delegat_;
+			signal::owned::member<pulse> execute_delegat_;
 			time_us_t period_ = 0;
 			signal::performer* backend_performer_;
 			void start_(void);
@@ -213,6 +175,9 @@ namespace robo {
 				, execute_delegat_(*this, &pulse::execute_)
 				, backend_performer_(_backend_performer) {
 				execute_delegat_.set_once(true);
+				if (backend_performer_) {
+					backend_performer_->attach();
+				}
 			}
 		};
 
@@ -245,8 +210,8 @@ namespace robo {
 		private:
 			performer* performer_ = nullptr;
 			signal::performer* confirm_;
-			signal::member<command> execute_delegat_;
-			signal::member<command> configure_delegat_;
+			signal::owned::member<command> execute_delegat_;
+			signal::owned::member<command> configure_delegat_;
 			void execute_(void);
 			void configure_(void);
 			int id_;
@@ -289,7 +254,7 @@ namespace robo {
 			struct  action {
 				shared* owner_;
 				void (shared::* member_) (void);
-				signal::member<action> run_;
+				signal::owned::member<action> run_;
 				tuple* tuple_ = nullptr;
 				void execute_(void);
 				action(
@@ -399,105 +364,40 @@ namespace robo {
 			public:
 				
 				/////////////////////////////////////////////////////
-				//typedef delegat::base<void, ivar *, bool>  delegat;
+				//typedef delegat::ref<void, ivar *, bool>  delegat;
 
 				class ROBO_EXPORT  performer : public ::robo::signal::performer {
-				public:
-					typedef ::robo::delegat::base<void, ivar*, bool>  delegat;
 				private:
-					delegat& delegat_;
-					ivar* var_ = nullptr;
-					bool result_ =false;
 					bool isfrontend_;
 					void post_();
-				public:
-					virtual  void  operator ()(void) {
-						delegat_(var_, result_);
-					};
 				protected:
-					performer(delegat& _delegat) : delegat_(_delegat), isfrontend_(::robo::system::env::is_frontend()) {}
+					ivar* var = nullptr;
+					bool result = false;
+					performer() : isfrontend_(::robo::system::env::is_frontend()) {}
 					public:
 					void confirm(ivar * _var) {
-						var_ = _var;
-						result_ = true;
+						var = _var;
+						result = true;
 						post_();
-						/*if (isfrontend_) {
-							::robo::frontend::queue::post(this, priority::lo);
-						}
-						else {
-							::robo::backend::queue::post(this, priority::lo);
-						}*/
 					}
 					void refuse(ivar* _var) {
-						var_ = _var;
-						result_ = false;
+						var = _var;
+						result = false;
 						post_();
 					}
-				public:
-					static performer* create(performer* _performer) {
-						return _performer;
-					}
-					static performer* create(const ::robo::lambda<void(ivar*, bool)>& _lambda) {
-						return new temporary::lambda(_lambda);
-					}
-					enum class support { simple};
-					static performer* create(void(*_simple)(ivar*, bool), support /*_support*/ ) {
-						return new temporary::simple(_simple);
-					}
-					static performer* create(void* _instance, void(*_uni)(void*, ivar*, bool)) {
-						return new temporary::uni(_instance, _uni);
-					}
-					template <typename C> static performer* create(C& _instance, void (C::* _member) (ivar*, bool)) {
-						return new temporary::member<C>(_instance, _member);
-					}
-
 				};
-				class lambda : public performer {
-					::robo::delegat::slambda< void, ivar*, bool> delegat;
-				public:
-					lambda(const ::robo::lambda<void(ivar*, bool)>& _lambda)
-						: performer(delegat)
-						, delegat(_lambda) {}
-				};
-
-				class simple : public performer {
-					::robo::delegat::ssimple< void, ivar*, bool> delegat;
-				public:
-					simple( void( * _simple)(ivar*, bool))
-						: performer(delegat)
-						, delegat(_simple) {}
-				};
-
-				class uni : public performer {
-					::robo::delegat::suni< void, ivar*, bool> delegat;
-				public:
-					uni(void * _instance, void(*_uni)(void* , ivar*, bool))
-						: performer(delegat)
-						, delegat(_instance, _uni) {}
-				};
-
-				template <class C> class ROBO_EXPORT member
-					: public performer {
-					::robo::delegat::srmember< C, void, ivar*, bool> delegat;
-				public:
-					member(C & _instance, void (C::* _member) (ivar*, bool))
-						: delegat::smember < void, ivar*, bool >(_instance, _member) {}
-				};
-
-				class temporary {
-				public:
-
-					typedef ::robo::signal::temporary::performer< ::robo::frontend::vartable::ivar::lambda > lambda;
-					typedef ::robo::signal::temporary::performer< ::robo::frontend::vartable::ivar::uni > uni;
-					typedef ::robo::signal::temporary::performer< ::robo::frontend::vartable::ivar::simple > simple;
-
-					template <class C> class ROBO_EXPORT member
-						: public   ::robo::frontend::vartable::ivar::member <C> {
-					public:
-						member(C & _instance, void (C::* _member) (ivar*, bool))
-							: ::robo::frontend::vartable::ivar::member <C>(_instance, _member) {}
+				class answer : public performer {
+				protected:
+					virtual  void  operator ()(void) {
+						(*this)(var, result);
 					};
+					virtual  void  operator ()(ivar*, bool) = 0;
+				public:
+					using autonum = ::robo::delegat::autonum::fabric<answer, void, ivar*, bool>;
+					using owned = ::robo::delegat::owned::fabric<answer, void, ivar*, bool>;
 				};
+
+
 
 				/////////////////////////////////////////////////////
 
@@ -510,17 +410,21 @@ namespace robo {
 				performer * performer_ = nullptr;
 				int repeat_count_ = 3;
 				int repeat_current_max_ = 3;
+			protected:
 			public:
+				bool post_a(cstr _s, performer* _answer = nullptr) {
+					ROBO_LBREAKN(applay(_s));
+					ROBO_LBREAKN(post_a(_answer));
+					return true;
+				}
+				bool query_a(performer* _answer = nullptr);
+
 				enum { invalid_value = -1 };
 				uint16_t addr(void) const { return  instance_.address; };
 				uint16_t length(void) const { return  instance_.length; };
 				cstr name(void) const { return  instance_.name; };
 				cstr type(void) const { return  instance_.type; };
 
-				bool query(performer *  _performer = nullptr);
-				template <typename ... Args> bool query(Args...arg) {
-					return query(performer::create(arg...));
-				}
 
 
 				bool is_ready(void) { return  (status_ == status::ready) || (status_ == status::panic) || (status_ == status::clean); }
@@ -537,15 +441,13 @@ namespace robo {
 					return false;
 				}
 
-				bool post(cstr _s, performer* _performer = nullptr) {
-					ROBO_LBREAKN( applay(_s) );
-					ROBO_LBREAKN( post(_performer) );
-					return true;
+
+				template <typename ... Args> bool query(Args...arg) {
+					return query_a(answer::autonum::fabric::create(arg...));
 				}
 
-				template <typename ... Args> bool post(cstr _s, Args...arg) {
-					ROBO_LBREAKN( applay(_s));
-					ROBO_LBREAKN( post(performer::create( arg... ) ) );
+				template <typename ... Args> bool post_a(cstr _s, Args...arg) {				
+					ROBO_LBREAKN(post_a(_s, answer::autonum::fabric::create (arg...)));
 					return true;
 				}
 
@@ -558,12 +460,12 @@ namespace robo {
 				ivar(vartable& _vartable, const record& _instance);
 				virtual ~ivar(void) {}
 				virtual bool rerquest(void) = 0;
-				bool post(performer* _performer = nullptr);
+				bool post_a(performer* _performer = nullptr);
 
 
-				template <typename ... Args> bool post(Args...arg) {
-					return post(performer::create(arg...) );
-				}
+				/*template <typename ... Args> bool post(Args...arg) {
+					return post(answer::autonum::fabric::create(arg...) );
+				}*/
 
 
 				bool begin_hook(void);
@@ -592,29 +494,30 @@ namespace robo {
 			private:
 				typedef typename B::performer  performer;
 			public:
+				/*
 				template <typename ... Args> bool post(Args...arg) {
-					ROBO_LRET(B::post(create(arg...)));
+					ROBO_LRET(B::post(B::answer::autonum::fabric::create(arg...)));
 				}
 
 				template <typename ... Args> bool post(const T& _value, Args...arg) {
 					front.local = _value;
-					ROBO_LRET(B::post(create(arg...)));
+					ROBO_LRET(B::post(B::answer::autonum::fabric::create(arg...)));
 				}
 
 				template <typename ... Args> bool try_post(Args...arg) {
-					return B::post(create(arg...));
+					return B::post(B::performer::autonum::fabric(arg...));
 				}
 
 				template <typename ... Args>  result try_post(const T& _value, Args...arg) {
 					front.local = _value;
 					if (front.remote != _value) {
-						ROBO_RET(B::post(create(arg...)), result::resume, result::panic);
+						ROBO_RET(B::post(B::performer::autonum::fabric(arg...)), result::resume, result::panic);
 					}
 					else {
 						return result::complete;
 					}
 				}
-
+				*/
 
 				static var_t& create_var(cstr _path, cstr _name) {
 					var_t* v = dynamic_cast<var_t*>(ivar::create_var(_path, _name));
@@ -669,12 +572,16 @@ namespace robo {
 		};
 
 	}
+	//todo 
 	class quest :  protected signal::performer {
 	public:
 		enum class result { refuse, success, cancel, broke };
 		enum class reaction { normal, terminate };
-		typedef ::robo::delegat::base<void, quest *> request;
-		typedef ::robo::delegat::base<reaction, result> answer;		
+		using request_fabric = ::robo::delegat::autonum_fabric<void, quest*>;
+		using answer_fabric = ::robo::delegat::autonum_fabric< reaction, result >;
+
+		using request = request_fabric::ref ;
+		using answer = answer_fabric::ref ;
 	private:
 		typedef robo::list::unsorted<quest> list;
 		typedef list::ref ref;
@@ -757,69 +664,13 @@ namespace robo {
 		);
 	protected:
 		virtual  void  operator ()(void);
+
 	public:
-
 		static quest* create(
 			quest* _owner
 			, quest* _sema
-			, ::robo::lambda< reaction(result) > _confirm
-			, ::robo::lambda< void(quest*) > _request = [](quest* _q) { _q->confirm();  }
-		) {
-			if (_owner != nullptr) {
-				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
-				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(), nullptr);
-			}
-			return new quest (
-				_owner
-				, _sema
-				, new robo::delegat::slambda<void, quest*>(_request)
-				, new robo::delegat::slambda<reaction,result>(_confirm)
-			);
-		}
-
-		static quest* simple_create(
-			quest* _owner
-			, quest* _sema
-			, void(*_request )(quest*)
-			, reaction(*_confirm)(result)
-		) {
-			if (_owner != nullptr) {
-				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
-				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(),nullptr);
-			}
-			return new quest(
-				_owner
-				, _sema
-				, new robo::delegat::ssimple<void, quest *>(_request)
-				, new robo::delegat::ssimple<reaction, result>(_confirm)
-			);
-		}
-
-		static quest* create(
-			quest* _owner
-			, quest* _sema
-			, void* _instance
-			, void(*_request)(void *, quest*)
-			, reaction(*_confirm)(void* ,result)
-		) {
-			if (_owner != nullptr) {
-				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
-				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(),nullptr);
-			}
-			return new quest(
-				_owner
-				, _sema
-				, new robo::delegat::suni<void, quest*>(_instance,_request )
-				, new robo::delegat::suni<reaction, result>(_instance, _confirm)
-			);
-		}
-
-		template <typename C> static  quest* create(
-			quest* _owner
-			, quest* _sema
-			, C * _instance
-			, result(C::*_request)(quest*)
-			, reaction(C::*_confirm)(result)
+			, answer* _answer
+			, request* _request =  request_fabric::create( [](quest* _q) {  _q->confirm();  } )
 		) {
 			if (_owner != nullptr) {
 				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
@@ -828,11 +679,38 @@ namespace robo {
 			return new quest(
 				_owner
 				, _sema
-				, new robo::delegat::smember<C,result, quest*>(_instance, _request)
-				, new robo::delegat::smember<C, reaction, result>(_instance, _confirm)
+				, _request
+				, _answer
+			);
+		}
+		static quest* create(
+			quest* _owner
+			, quest* _sema
+			, lambda<reaction(result)> _answer
+			, lambda<void(quest*)> _request = [](quest* _q) {  _q->confirm();  }
+		) {
+			return create(
+				_owner
+				, _sema
+				, answer_fabric::create(_answer)
+				, request_fabric::create(_request)
 			);
 		}
 
+		template <class C> static quest* create(
+			quest* _owner
+			, quest* _sema
+			, C & _instance
+			, reaction (C::* _answer) (result)
+			, void(C::* _request)(quest *)
+		) {
+			return create(
+				_owner
+				, _sema
+				, answer_fabric::create(C, _answer)
+				, request_fabric::create(C, _request)
+			);
+		}
 		virtual ~quest(void) {
 			ref* r = childs_.last();
 			while (r) {
@@ -842,10 +720,9 @@ namespace robo {
 				tmp->top_ref_.dettach();
 				tmp->owner_ = nullptr;
 			}
-			r = owned_.last();
-			while (r) {
+
+			while ( (r = owned_.last())!=nullptr ) {
 				quest* tmp = &(r->owner());
-				r = r->prev();
 				if (tmp->status_ == status::confirm) {
 					tmp->happyend_();
 				}
@@ -873,9 +750,11 @@ namespace robo {
 				//	(*answer_)(result::cancel);
 					//} else if()
 				}
- 				delete answer_;
+ 				answer_->dettach();
 			}
-			if (request_) delete request_;
+			if (request_) {
+				request_->dettach();
+			}
 			counter::instance_().dec();
 		}
 		static void post(void);

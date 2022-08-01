@@ -35,8 +35,8 @@ namespace robo {
 				struct remote_s {
 					enum class statuses {
 						unknown = 0, //неясное
-						fault = 2, //устрйоство находится в аварии
-						ready = 3, //устройство работает в штатном режиме
+						fault = 1, //устрйоство находится в аварии
+						ready = 2, //устройство работает в штатном режиме
 					} status = statuses::unknown;
 					enum class powers {
 						unknown = 0, //неясное

@@ -80,7 +80,7 @@ namespace robo{
 
         class ROBO_EXPORT port: public link {
         public:
-            typedef ::robo::delegat::base<void, const uint8_t*, size_t > reader;
+            typedef ::robo::delegat::ref<void, const uint8_t*, size_t > reader;
         private:
             reader* reader_ = nullptr;
             ::robo::string alias_;

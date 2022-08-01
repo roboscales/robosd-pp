@@ -36,7 +36,11 @@ namespace robo {
 
 	bool signal::performer::attach_to(signal* _signal, priority _priority) {
 		ref_.set_key(_priority);
-		ROBO_LRET(ref_.attach_to(_signal->performers))
+		if (!ref_.attached()) {
+			ROBO_LBREAKN(ref_.attach_to(_signal->performers))
+			attach();
+		}
+		return true;
 	}
 
 	void signal::performer::dettach(void) {
@@ -44,42 +48,6 @@ namespace robo {
 	}
 
 	signal::signal(void) {}
-
-	void signal::temporary::post(bool _isfrontend, ::robo::signal::performer* _performer) {
-		if (_isfrontend) {
-			frontend::queue::post(_performer, ::robo::signal::performer::priority::lo);
-		}
-		else {
-			backend::queue::post(_performer, ::robo::signal::performer::priority::lo);
-		}
-	}
-	/*
-	void  signal::temporary::lambda::operator ()(void) {
-		if (status_ == status::run) {
-			lambda_();
-			status_ = status::disposal;
-			if (isfrontend_) {
-				frontend::queue::post(this, priority::lo);
-			}
-			else {
-				backend::queue::post(this, priority::lo);
-			}
-		}
-		else {
-			delete this;
-		}
-	}
-
-	signal::temporary::temporary::lambda::lambda( const  ::robo::lambda< void(void) >& _lambda ) : lambda_(_lambda) {
-		isfrontend_ = system::env::is_frontend();
-		if (isfrontend_) {
-			backend::queue::post(this, priority::lo);
-		}
-		else {
-			frontend::queue::post(this, priority::lo);
-		}
-	}
-	*/
 
 	void event::raise(void) {
 		event::performer::ref* _ref = performers.first();
@@ -96,6 +64,23 @@ namespace robo {
 	}
 
 	namespace frontend {
+		queue::~queue(void) {
+			performer* p = nullptr;
+
+			do {
+				{
+					system::guard g_;
+					p = performers.pop();
+				}
+				if (p != nullptr) {
+					p->dettach();
+				}
+				else {
+					break;
+				}
+			} while (true);
+
+		}
 		void queue::poll_(void) {
 			performer* p = nullptr;
 			{
@@ -103,6 +88,7 @@ namespace robo {
 				p = performers.pop();
 			}
 			if (p != nullptr) {
+				p->dettach();
 				(*p)();
 			}
 		}
@@ -128,7 +114,7 @@ namespace robo {
 
 		void timer::execute_(void) {
 			if (backend_performer_)(*(backend_performer_))();
-			queue::post(&frontend_performer_, signal::performer::priority::hi);
+			queue::post(frontend_performer_, signal::performer::priority::hi);
 		}
 
 		void timer::start(time_us_t _period) {
@@ -151,9 +137,13 @@ namespace robo {
 		}
 
 		void pulse::execute_(void) {
-			if (backend_performer_)(*(backend_performer_))();
+			if (backend_performer_) {
+				backend_performer_->dettach();
+				(*(backend_performer_))();
+			}
 			backend_performer_ = nullptr;
 			queue::post(frontend_performer_, signal::performer::priority::hi);
+			frontend_performer_ = nullptr;
 		}
 
 		void pulse::start(time_us_t _period) {
@@ -209,12 +199,12 @@ namespace robo {
 		}
 
 
-		bool vartable::ivar::query(performer * _performer) {
+		bool vartable::ivar::query_a(performer * _performer) {
 			performer_ = _performer;
 			ROBO_LRET(query_());
 		}
 
-		bool vartable::ivar::post(performer* _performer) {
+		bool vartable::ivar::post_a(performer* _performer) {
 			performer_ = _performer;
 			ROBO_LRET(post_());
 		}
@@ -530,6 +520,7 @@ namespace robo {
 			owner_ = nullptr;
 		}
 		if (_request != nullptr) {
+			_request->attach();
 			if (isfrontend_) {
 				system::critical c_;
 				top_ref_.attach_to(frontend_core::instance_().top_);
@@ -537,6 +528,9 @@ namespace robo {
 			else {
 				top_ref_.attach_to(backend_core::instance_().top_);
 			}
+		}
+		if (answer_ != nullptr) {
+			answer_->attach();
 		}
 		counter::instance_().inc();
 		if (_sema != nullptr  ) {

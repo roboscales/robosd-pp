@@ -39,7 +39,7 @@ namespace robo {
 		bool tryload(cstr _section, cstr _key);
 		bool tryload(cstr _first_section, cstr _second_section, cstr _key);
 
-		bool load(delegat::base<bool, uint8_t*, size_t >& _converter);
+		bool load(delegat::ref<bool, uint8_t*, size_t >& _converter);
 		size_t length(void) const;
 		cstr c_str() const;
 		operator cstr () const; //todo осмыслить

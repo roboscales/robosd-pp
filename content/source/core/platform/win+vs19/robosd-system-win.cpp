@@ -412,7 +412,7 @@ namespace robo {
 		#endif
 	}
 	/*
-	bool  load_section(cstr _section, ::robo::delegat::base<void, cstr>* _worker) {
+	bool  load_section(cstr _section, ::robo::delegat::ref<void, cstr>* _worker) {
 		if (g_robo_ini_fn) {
 
 			robo_size_t nSize = ROBO_INI_SECTION_MAX_LENGTH_MAX;

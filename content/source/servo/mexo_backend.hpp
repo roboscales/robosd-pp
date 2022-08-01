@@ -11,7 +11,7 @@ namespace mexo {
 				class descriptor {
 				public:
 					typedef ::robo::list::unsorted<descriptor> queue;
-					//typedef robo::delegat::base<void, bool, ivar* > confirm_d;
+					//typedef robo::delegat::ref<void, bool, ivar* > confirm_d;
 					typedef ::robo::backend::vartable::ivar::performer  performer;
 				private:
 					robo::string name_;
@@ -46,10 +46,11 @@ namespace mexo {
 				void confirm(const robo_tran_t& _tran);
 				virtual bool do_ready(void);
 				virtual bool do_exchange_need(void);
+				bool query_a(robo::cstr _name, varindex::descriptor::performer* _prtformer = nullptr);
 			public:
-				bool query(robo::cstr _name, varindex::descriptor::performer* _prtformer = nullptr);
 				template <typename ... Args> bool query(robo::cstr _name, Args...arg) {
-					return query(_name, ivar::performer::create(arg...));
+					return query_a(_name, varindex::ivar::answer::autonum::fabric::create(arg...));
+					return false;
 				}
 				varindex(devagent& _agent, proto& _proto, priority _priority, const record* const _records, size_t _count);
 			};
@@ -113,22 +114,21 @@ namespace mexo {
 		protected:
 			typedef ::robo::quest quest;
 
-			static auto lambda_(quest* _quest) {
-				return varindex::ivar::performer::create(
+			static auto answer_(quest* _quest) {
+				return 
 					[_quest](varindex::ivar* _var, bool _result) {
-						if (_result) {
-							_quest->confirm();
-						}
-						else {
-							_quest->refuse();
-						}
+					if (_result) {
+						_quest->confirm();
 					}
-				);
+					else {
+						_quest->refuse();
+					}
+				};
 			}
 			static auto post_var_(quest* _quest, varindex::ivar * _v, ::robo::cstr _value) {
 				if (!_v->post(
 					_value
-					, lambda_(_quest)
+					, answer_(_quest)
 				)) {
 					_quest->refuse();
 				}
@@ -173,28 +173,31 @@ namespace mexo {
 				return ::robo::quest::create(
 					_owner
 					, _sema
-					, [this,sv](::robo::quest::result _r)->robo::quest::reaction {
+					, ::robo::quest::answer_fabric::create( [this,sv](::robo::quest::result _r)->robo::quest::reaction {
 						return this->reacton_(_r, sv);
-					}
-					, [this, sv](::robo::quest* _quest) {
+					})
+					, ::robo::quest::request_fabric::create( [this, sv](::robo::quest* _quest) {
 
 						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->display_alias(), sv->c_str());
 
-						if (!vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
+						if (!vars.query(sv->c_str(), 
+							 [this, _quest, sv](varindex::ivar* _var, bool _result) {
 							if (_result) {
 								_quest->confirm();
 							}
 							else {
 								_quest->refuse();
 							}
-										})
+						}
+												
+						)
 						) {
 							_quest->refuse();
 						}
-					}
+					})
 					);
 			}
-		
+			
 			quest* var_post_quest(quest* _owner, ::robo::cstr _var, ::robo::cstr _value ,quest* _sema = nullptr) {
 
 				::robo::string* sv = new ::robo::string(_var);
@@ -204,10 +207,11 @@ namespace mexo {
 				return ::robo::quest::create(
 					_owner
 					, _sema
-					, [this, sv, vv](::robo::quest::result _r)->robo::quest::reaction {
+					, ::robo::quest::answer_fabric::create( [this, sv, vv](::robo::quest::result _r)->robo::quest::reaction {
 						return this->reacton_(_r, sv, vv);
 					}
-					, [this, sv, vv](::robo::quest* _quest) {
+					)
+					, ::robo::quest::request_fabric::create( [this, sv, vv](::robo::quest* _quest) {
 
 						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s=%s - start to post", this->display_alias(), sv->c_str(), vv->c_str());
 						varindex::ivar* v = dynamic_cast<varindex::ivar*>(vars.find_var(sv->c_str()));
@@ -215,7 +219,9 @@ namespace mexo {
 							post_var_(_quest, v, vv->c_str());
 						}
 						else {
-							if (!vars.query(sv->c_str(), [this, _quest, vv](varindex::ivar* _var, bool _result) {
+							if (!vars.query(sv->c_str(), 
+											
+							 [this, _quest, vv](varindex::ivar* _var, bool _result) {
 								if (_result) {
 									post_var_(_quest, _var, vv->c_str());
 								}
@@ -223,11 +229,13 @@ namespace mexo {
 									_quest->refuse();
 								}
 							}
+							
 							)) {
 								_quest->refuse();
 							}
 						}
-					}
+					})
+
 				);
 			}
 			
@@ -336,6 +344,195 @@ namespace mexo {
 				
 			}
 			*/
+
+			class post_vars_quest {
+				//using vat_answer_fabric = ::robo::delegat::autonum_fabric< void, varindex::ivar*, bool >;
+				devagent& devagent_;
+				enum { bufsz = ROBO_STRING_BUFFER_SIZE };
+				robo::char_t keys_[bufsz] = {};
+				robo::char_t* begin_ch_ = nullptr;
+				robo::char_t* current_ch_ = nullptr;
+				size_t counter_ = 0;
+				robo::string value_;
+				robo::string section_common_sturtup_;
+				robo::string section_startup_;
+				robo::cstr section_ = nullptr;
+				quest* quest_ = nullptr;
+				bool begin_( robo::cstr _sect) {
+					section_ = _sect;
+					::robo::system::ini::load_data(keys_, bufsz, section_, nullptr, counter_);
+					ROBO_LBREAKN_F( ( counter_ < bufsz - 2), "var's list for %s is oversized (%u)", devagent_.display_alias(), counter_);
+					begin_ch_ = current_ch_ = keys_;
+					return true;
+				}
+				enum class result { fault, complete, next};
+				
+				auto lambda_() {
+					return
+						[this](varindex::ivar* _var, bool _result) {
+						if (_result) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\t\t%s/%s=%s post complete ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
+							if (counter_ > 0) {
+								begin_ch_ = current_ch_ + 1;
+								current_ch_++;
+								counter_--;
+							}
+							this->run_();
+						}
+						else {
+							robo_errlog("\t\t\t%s/%s=%s post complete ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
+							this->refuse_();
+						}
+					};
+					
+				}
+				result  post_var_(varindex::ivar* _var, ::robo::cstr _value) {
+					return
+						_var->post(
+							_value
+							, lambda_()
+					) ? result::next : result::fault;
+
+				}
+				result  post_var_(::robo::cstr _var, ::robo::cstr _value) {
+					robo_detaillog(6, robo::log::mask::disabled, "\t\t\t%s/%s=%s - start to posting", devagent_.display_alias(), _var, _value);
+					varindex::ivar* v = dynamic_cast<varindex::ivar*>(devagent_.vars.find_var(_var));
+					if (v) {
+						return post_var_(v, _value);
+					}
+					else {
+						return devagent_.vars.query(_var, 						
+							[this, _value](varindex::ivar* _var, bool _result) {
+							if (_result) {
+								post_var_(_var, _value);
+							}
+							else {
+								this->refuse_();
+							}
+						}
+						) ? result::next : result::fault;
+					}
+				}
+
+
+				result next_(void) {
+					while (counter_ > 0) {
+						if (*current_ch_ == 0) {
+							const robo::cstr r = RT("#");
+							if (*begin_ch_ != r[0]) {
+								robo::string value;
+								if (!value_.load(section_, begin_ch_)) {
+									return result::fault;
+								}
+								else {
+									return post_var_(begin_ch_, value_.c_str());
+								}
+							}
+							begin_ch_ = current_ch_ + 1;
+						}
+						current_ch_++;
+						counter_--;
+						//return counter_ == 0 ? result::complete : result::next;
+					}
+					return result::complete;
+				}
+				enum class status { none, common, specific, complete, panic } status_ = status::none;
+				void run_(void) {
+					switch (status_) {
+					case status::none:
+						if (!begin_(RT("common_startup"))) {
+							refuse_();
+							break;
+						}
+						else {
+							status_ = status::common;
+						}
+					case status::common:
+						switch (next_()) {
+						case result::complete:
+							if (!begin_(section_startup_)) {
+								refuse_();
+								break;
+							}else {
+								status_ = status::specific;
+								run_();// todo говнокод
+							}
+							break;
+						case result::fault:
+							refuse_();
+							break;
+						case result::next:
+							break;
+						}
+						break;
+					case status::specific:
+						switch (next_()) {
+						case result::complete:
+							confirm_();
+							break;
+						case result::fault:
+							refuse_();
+							break;
+							case result::next:
+							break;
+						}
+						break;
+					case status::complete:
+						break;
+					case status::panic:
+						break;
+					}
+				}
+
+				void confirm_(void) {
+					if (quest_ != nullptr) {
+						quest_->confirm();
+					}
+				}
+
+				void refuse_(void) {
+					status_ = status::panic;
+					if (quest_ != nullptr) {
+						quest_->refuse();
+					}
+				}
+
+
+				post_vars_quest(devagent& _devagent): devagent_(_devagent){
+
+				}
+			public:
+				static quest * begin(devagent& _devagent, quest * _owner, quest * _sema) {
+					post_vars_quest* inst = new post_vars_quest(_devagent);
+					quest* q = nullptr;
+					ROBO_JAMPN_F(inst->section_common_sturtup_.load(_devagent.current_path(), _devagent.defaults_path(), RT("common_startup")), fault, "var's section 'common_startup' for %s isn't found", _devagent.display_alias());
+					ROBO_JAMPN_F(inst->section_startup_.load(_devagent.current_path(), _devagent.defaults_path(), RT("startup")), fault, "var's section 'startup' for %s isn't found", _devagent.display_alias());
+					q = quest::create(_owner, _sema
+						, quest::answer_fabric::create( [inst](::robo::quest::result _r)->robo::quest::reaction {
+							if (_r == robo::quest::result::success) {
+								robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'startup vars load for %s' - complete", inst->devagent_.display_alias());
+								delete inst;
+								return robo::quest::reaction::normal;
+							}
+							else {
+								robo_errlog("\t\tquest: 'startup vars load for %s' - refused, canceled or termibated (%d) ", inst->devagent_.display_alias(), (int)_r);
+								delete inst;
+								return robo::quest::reaction::terminate;
+							}
+						}
+						)
+						, quest::request_fabric::create( [inst](quest* _q) { inst->run_();  } )
+					);
+					inst->quest_ = q;
+					return q;
+				fault:
+					if(q != nullptr)
+						delete q;
+					if (inst != nullptr)
+						delete inst;
+					return nullptr;
+				}
+			};
 			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _sect) {
 				const size_t N = ROBO_STRING_BUFFER_SIZE;
 				robo::char_t keys[N];

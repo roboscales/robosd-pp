@@ -313,6 +313,7 @@ namespace robo {
 		#endif
 
 		static void frontend_loop(void);
+		static void backend_loop(void);
 		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
 		static void printf(cstr _format, ...);		

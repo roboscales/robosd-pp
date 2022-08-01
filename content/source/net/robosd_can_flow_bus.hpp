@@ -18,7 +18,7 @@ namespace robo {
 			packet out_packet_;
 			driver& driver_;
 			uint16_t wait_id_ = idle_id;
-			::robo::delegat::smember<can_flow_bus, void, bool > confirm_delegat_;
+			::robo::delegat::owned_fabric<void,bool>::member<can_flow_bus > confirm_delegat_;
 		protected:
 			virtual bool do_load(void);
 

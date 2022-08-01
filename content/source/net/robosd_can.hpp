@@ -16,8 +16,8 @@ namespace robo {
 				, disconnect
 				, fault
 			};
-			typedef delegat::base<void, ican&, uint32_t, const uint8_t*, uint8_t   > on_receive_f;
-			typedef delegat::base<void, ican&, event> on_event_f;
+			typedef delegat::ref<void, ican&, uint32_t, const uint8_t*, uint8_t   > on_receive_f;
+			typedef delegat::ref<void, ican&, event> on_event_f;
 		private:
 			ref ref_;
 

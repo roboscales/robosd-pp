@@ -107,6 +107,7 @@ namespace robo {
 			bool wait_(time_ms_t _timeout);
 			bool ready_(void);
 			static queue& instance_(void);
+			~queue(void);
 		public:
 			static void poll(void) { instance_().poll_(); }
 			static void post(signal::performer* _performer, signal::performer::priority _priority) { instance_().post_(_performer, _priority); }
@@ -269,6 +270,22 @@ namespace robo {
 					return true;
 				}
 			};
+			class ROBO_EXPORT exchange : public datamap {
+				robo_tran_command_id_t out_command_;
+			protected:
+				virtual size_t encode(uint8_t* _data, size_t _max_size) = 0;
+			public:
+				exchange(
+					cstr _name
+					, devagent& _agent
+					, priority _priority
+					, uint8_t* _out_data, uint8_t* _out_buffer, size_t _out_size
+					, robo_tran_command_id_t _out_dev_command
+					, robo_tran_command_id_t _in_dev_command
+				);
+				virtual ~exchange(void);
+				virtual query_result first_query(robo_tran_t& _tran);
+			};
 			typedef common::devagent::state_s state_s;
 			typedef common::devagent::commands commands;
 			typedef common::devagent::statuses statuses;
@@ -382,7 +399,7 @@ namespace robo {
 				return ::robo::quest::create(
 					_owner
 					, _sema
-					, [this](robo::quest::result r)->robo::quest::reaction {
+					, ::robo::quest::answer_fabric::create( [this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
 							robo_infolog("====================================================================================\n\t\tquest: %s configure success finished\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::ready;
@@ -393,7 +410,8 @@ namespace robo {
 							feedback_.state.local = state_s::locals::disabled;
 							return robo::quest::reaction::terminate;
 						}
-					}
+						}
+						)					
 					);
 			}
 
@@ -535,76 +553,26 @@ namespace robo {
 			public:
 				vartable& vt(void) { return (vartable&)frontend::vartable::ivar::vt(); }
 
-				class ROBO_EXPORT  performer : public frontend::vartable::ivar::performer {
+				class answer : public performer {
 				protected:
-					typedef ::robo::delegat::base<void, ivar*, bool>  delegat;
-					performer(delegat& _delegat) : frontend::vartable::ivar::performer((frontend::vartable::ivar::performer::delegat &)_delegat){}
-				public:
-					//operator frontend::vartable::ivar::performer* () { return (frontend::vartable::ivar::performer*)this;  }
-					
-					static performer* create(const ::robo::lambda<void(ivar*, bool)>& _lambda) {
-						return new temporary::lambda(_lambda);
-					}
-					//вот такая кривизна
-					enum class support { simple };
-					static performer* create(void(*_simple)(ivar*, bool), support /*_support*/) {
-						return new temporary::simple(_simple);
-					}
-					static performer* create(void* _instance, void(*_uni)(void*, ivar*, bool)) {
-						return new temporary::uni(_instance, _uni);
-					}
-					template <typename C> static performer* create(C& _instance, void (C::* _member) (ivar*, bool)) {
-						return new temporary::member<C>(_instance, _member);
-					}
-
-				};
-
-				class lambda : public performer {
-					::robo::delegat::slambda< void, ivar*, bool> delegat;
-				public:
-					lambda(const ::robo::lambda<void(ivar*, bool)>& _lambda)
-						: performer(delegat)
-						, delegat(_lambda) {}
-				};
-
-				class simple : public performer {
-					::robo::delegat::ssimple< void, ivar*, bool> delegat;
-				public:
-					simple(void(*_simple)(ivar*, bool))
-						: performer(delegat)
-						, delegat(_simple) {}
-				};
-
-				class uni : public performer {
-					::robo::delegat::suni< void, ivar*, bool> delegat;
-				public:
-					uni(void* _instance, void(*_uni)(void*, ivar*, bool))
-						: performer(delegat)
-						, delegat(_instance, _uni) {}
-				};
-
-				template <class C> class ROBO_EXPORT member
-					: public performer {
-					::robo::delegat::srmember< C, void, ivar*, bool> delegat;
-				public:
-					member(C& _instance, void (C::* _member) (ivar*, bool))
-						: delegat::smember < void, ivar*, bool >(_instance, _member) {}
-				};
-
-				class temporary {
-				public:
-					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::lambda > lambda;
-					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::uni > uni;
-					typedef ::robo::signal::temporary::performer< ::robo::backend::vartable::ivar::simple > simple;
-
-					template <class C> class ROBO_EXPORT member
-						: public   ::robo::backend::vartable::ivar::member <C> {
-					public:
-						member(C& _instance, void (C::* _member) (ivar*, bool))
-							: ::robo::backend::vartable::ivar::member <C>(_instance, _member) {}
+					virtual  void  operator ()(void) {
+						(*this)((ivar *)var, result);
 					};
+					virtual  void  operator ()(ivar*, bool) = 0;
+				public:
+					using autonum = ::robo::delegat::autonum::fabric<answer, void, ivar*, bool>;
+					using owned = ::robo::delegat::owned::fabric<answer, void, ivar*, bool>;
 				};
-
+				
+				template <typename ... Args> bool query(Args...arg) {
+					performer* p = answer::autonum::fabric::create(arg...);
+					return query_a( p );
+				}
+				template <typename ... Args> bool post(cstr _s, Args...arg) {
+					performer* p = answer::autonum::fabric::create(arg...);
+					ROBO_LBREAKN(post_a(_s,p ));
+					return true;
+				}
 			};
 
 
@@ -652,7 +620,7 @@ namespace robo {
 				}
 
 				template <typename ... Args> bool query(Args...arg) {
-					ROBO_LRET(C::query(create(arg...)));
+					ROBO_LRET(C::query(performer::autonum::fabric(arg...)));
 				}
 
 
@@ -1064,7 +1032,7 @@ namespace robo {
 				bool agents_stopped(void);
 				bool agents_set_work_mode(void);
 				bool agents_active(void);
-				//				void forall_exec( delegat::base<void, devagent> & _f);
+				//				void forall_exec( delegat::ref<void, devagent> & _f);
 				//				bool all_set(robo::lambda <bool(agent*)>  _f);
 				//				bool any_set(robo::lambda <bool(agent*)>  _f);
 				bool continue_sleep(void) { return  task::continue_sleep(); }

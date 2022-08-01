@@ -413,7 +413,7 @@ namespace mexo {
 		: node(_name, nullptr)
 		, idle(*this)
 		, actual_mode_(&idle)
-		, backend_(this, &dev::backend__)
+		, backend_(*this, &dev::backend__)
 		, backend_ref_(backend_)
 		, action_(_action)
 		, feedback_(_feedback)

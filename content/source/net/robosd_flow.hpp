@@ -215,7 +215,12 @@ namespace robo {
 				virtual void update() = 0;
 			};
 
+			struct goal {
+				virtual void applay(const uint8_t * data, size_t _size) = 0;
+			};
+
 			class snapshot_proto : public performer {
+				friend class goal_proto;
 				snapshot & snapshot_;
 				size_t actual_size_ = 0;
 				const uint8_t* actual_ = nullptr;
@@ -235,6 +240,22 @@ namespace robo {
 				virtual void begin(void);
 			private:
 				void post_page_(size_t _page);
+			};
+
+			class goal_proto : public performer {
+				goal & goal_;
+				snapshot_proto & snapshot_proto_;
+			public:
+				goal_proto(
+					cstr _command_path
+					, kind_t _kind
+					, goal& _goal
+					, snapshot_proto & _snapshot_proto
+				);
+			protected:
+				virtual void execute(void);
+				virtual void begin(void);
+			private:
 			};
 
 			template <typename D, unsigned SA, unsigned SB, typename G = void > class hardware_serial_proto_t

@@ -8,8 +8,8 @@ namespace MODULE_NAME{
 	class phys {
 		robo::net::can_flow_bus::packet* incomm_= nullptr;
 		//const robo::net::can_flow_bus::packet* outcomm_ = nullptr;
-		robo::delegat::srmember<phys, void, ::robo::net::ican&, uint32_t, const uint8_t*, uint8_t   > on_can_receive_;
-		robo::delegat::srmember<phys, void, ::robo::net::ican&, ::robo::net::ican::event  > on_can_event_;
+		robo::delegat::owned_fabric<void, ::robo::net::ican&, uint32_t, const uint8_t*, uint8_t>::member<phys> on_can_receive_;
+		robo::delegat::owned_fabric<void, ::robo::net::ican&, ::robo::net::ican::event  >::member<phys> on_can_event_;
 		virtual void confirm(void) = 0;
 		virtual void refuse(void) = 0;		
 		void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {			

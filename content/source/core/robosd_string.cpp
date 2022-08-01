@@ -202,7 +202,7 @@ namespace robo {
 		return false;
 	}
 
-	bool string::load(delegat::base<bool, uint8_t*, size_t >& _converter) {
+	bool string::load(delegat::ref<bool, uint8_t*, size_t >& _converter) {
 		#if ROBO_APP_ENV_ENABLED == 1
 		if (system::env::is_backend()) {
 			ROBO_LBREAKN(_converter((uint8_t*)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)));

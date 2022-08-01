@@ -3,6 +3,21 @@
 #include "core/robosd_ini.hpp"
 namespace robo {
 	namespace backend {
+		queue::~queue(void) {
+			performer* p = nullptr;
+			do {
+				{
+					system::guard g_;
+					p = performers.pop();
+				}
+				if (p != nullptr) {
+					p->dettach();
+				}
+				else {
+					break;
+				}
+			} while (true);
+		}
 		void queue::poll_(void) {
 			performer* p = nullptr;
 			{
@@ -10,6 +25,7 @@ namespace robo {
 				p = performers.pop();
 			}
 			if (p != nullptr) {
+				p->dettach();
 				(*p)();
 			}
 		}
@@ -320,7 +336,7 @@ namespace robo {
 			case state_s::locals::configure:
 			return statuses::busy;
 			case state_s::locals::ready:
-			return tb[((int)feedback_.state.remote.status * 5) + (int)_command];
+			return tb[((int)feedback_.state.remote.status * 6) + (int)_command];
 			default:
 			return statuses::unknown;
 			}
@@ -811,6 +827,34 @@ namespace robo {
 			}
 		};
 
+		devagent::exchange::exchange(
+			cstr _name
+			, devagent& _agent
+			, priority _priority
+			, uint8_t* _out_data, uint8_t* _out_buffer, size_t _out_size
+			, robo_tran_command_id_t _out_dev_command
+			, robo_tran_command_id_t _in_dev_command
+		)
+			:
+			datamap(_name, _agent, _priority, _out_data, _out_buffer, _out_size, _out_dev_command)
+			, out_command_(_out_dev_command){
+		}
+		devagent::exchange::~exchange() {
+
+		}
+		devagent::stream::query_result devagent::exchange::first_query(robo_tran_t& _tran) {
+			datamap::first_query(_tran);
+			_tran.header.command = out_command_;
+			size_t sz = encode(_tran.data, _tran.size_max);
+			if (sz == 0) {
+				return query_result::none;
+			}
+			else {
+				_tran.size_actual = sz;
+			}
+			return query_result::repeat;
+		}
+		
 		
 
 		bool boardagent::do_load(void) {
@@ -997,7 +1041,7 @@ namespace robo {
 
 		bool vartable::query(frontend::vartable::ivar::performer * _performer) {
 			for (frontend::vartable::ivar::map_ref* r = vars.first(); r; r = r->next()) {
-				ROBO_LBREAKN(r->owner().query(_performer));
+				ROBO_LBREAKN(r->owner().query_a(_performer));
 			}
 			return true;
 		}

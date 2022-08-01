@@ -36,6 +36,7 @@ namespace mexo {
 					, serial_2 = 4
 					, serial_m = 5
 					, snapshot = 6
+					, goal = 7
 				};
 			};
 

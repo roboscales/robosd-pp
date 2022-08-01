@@ -90,7 +90,7 @@ namespace mexo {
 			ROBO_VBREAKN_F((var_ != nullptr), "error create var '%s' with type '%s' ", record_.name, record_.type);
 
 			ref_.attach_to(varindex_.index_);
-			var_->query(performer_);
+			var_->query_a(performer_);
 		}
 
 		void devagent::varindex::descriptor::refuse(void) {
@@ -158,14 +158,14 @@ namespace mexo {
 			return request_.count() != 0 || current_descriptor_ != nullptr;
 		}
 		
-		bool devagent::varindex::query(robo::cstr _name, varindex::descriptor::performer * _performer) {
+		bool devagent::varindex::query_a(robo::cstr _name, varindex::descriptor::performer * _performer) {
 			ivar* v = dynamic_cast<ivar*>(find_var(_name));			
 			if (v == nullptr) {
 				descriptor* d = new descriptor(*this, _name, _performer);
 				return ( d !=nullptr);
 			}
 			else {
-				return v->query(_performer);
+				return v->query_a(_performer);
 			}
 		}
 

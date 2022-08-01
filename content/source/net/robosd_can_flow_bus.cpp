@@ -89,7 +89,7 @@ namespace robo {
 
 		can_flow_bus::can_flow_bus(robo::cstr _name, robo::app::module* _owner, driver & _driver)
 			: robo::backend::bus(_name, _owner)
-			, confirm_delegat_(this, &can_flow_bus::exchange_confirm)
+			, confirm_delegat_(*this, &can_flow_bus::exchange_confirm)
 			, driver_(_driver) {
 				message_.tran.size_max = packet_size;
 		}

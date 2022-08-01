@@ -9,7 +9,11 @@ typedef burst_t * burst_p;
 #endif
 
 struct burst_s{
+	#if BURST_DEV_COUNT == 0
+	burst_dev_ref_p devs;
+	#else	
 	burst_dev_ref_t devs[BURST_DEV_COUNT];
+	#endif
 	burst_dev_ref_p devs_end;
 };
 
@@ -69,8 +73,8 @@ void burst_start(void){
 		if(p->start)
 			p->start(p->dev);
 	}
-	burst_sw_start();
 	burst_hw_start();
+	burst_sw_start();
 }
 
 void burst_prioritet_loop(void){

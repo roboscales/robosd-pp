@@ -10,3 +10,4 @@
 #define BURST_UNUSED(x) ((void)(x))
 #define BURST_EMPTY_STRUCT {0}
 #define BURST_WEAK __weak
+#define BURST_STATIC_INLINE static inline
