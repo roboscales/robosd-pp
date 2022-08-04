@@ -27,6 +27,8 @@ namespace robo{
 
 		template<typename T,int n> constexpr T epsilon = std::numeric_limits<T>::epsilon() * n; //n попугаев
 
+		template<typename T> constexpr T deg2rad = pi<T> / 180.;
+		template<typename T> constexpr T rad2deg = T(1.) / deg2rad<T>;
 		/*template<typename T, size_t N> constexpr const std::span<T, N> span(const T(&_arr)[N]) {
 			return  std::span<T, N>((T *) &(_arr[0]),N);
 		}*/
@@ -118,6 +120,7 @@ namespace robo{
 					};
 					T memo[count];
 				};
+				T yaw_offset = T(0);
 
 				constexpr avionic(void) : yaw(T(0)), pith(T(0)), roll(T(0)) {
 				}
@@ -418,7 +421,7 @@ namespace robo{
 			T tmp = -asin(d1);
 			_avc.pith = -tmp;
 			T d2 = tmp - pi<T> / 2.f;
-			if (abs(d2) < pi<T>*0.00000003f) {
+			if (abs(d1) > 0.999 ) {
 				T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
 				//вариант первый
 				T roll1, roll2;
@@ -456,8 +459,8 @@ namespace robo{
 
 			}
 			else {
-				_avc.yaw = (T)atan2(2 * (x * y + w * z), 1 - 2 * (y * y + z * z));
-				_avc.roll = (T)atan2(2 * (w * x + y * z), 1 - 2 * (x * x + y * y));
+				_avc.yaw = (T)atan2(T(2) * (x * y + w * z), T(1) - T(2) * (y * y + z * z));
+				_avc.roll = (T)atan2(T(2) * (w * x + y * z), T(1) - T(2) * (x * x + y * y));
 			}
 			return _avc;
 		}
@@ -633,10 +636,8 @@ namespace robo{
 			} ;
 			T memo[size::total];
 
-			constexpr matrix(bool _init=false) {
-				if (_init) {
-					std::fill_n(memo, size::total, T(0));
-				}
+			constexpr matrix() {
+				std::fill_n(memo, size::total, T(0));
 			}
 			constexpr matrix(const T(&_array)[size::total]) {
 				std::copy_n(_array, size::total, memo);
@@ -645,7 +646,47 @@ namespace robo{
 				std::copy_n(_array, size::total, memo);
 				return *this;
 			}
+			constexpr matrix& operator += (const T(&_array)[size::total]) {
+				const T* src = _array;
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
+					*dst += *src;
+				}
+				return *this;
+			}
+			constexpr matrix& operator -= (const T(&_array)[size::total]) {
+				const T* src = _array;
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
+					*dst -= *src;
+				}
+				return *this;
+			}
 			
+			constexpr matrix& operator += (const matrix & _mx) {
+				const T* src = _mx.memo;
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
+					*dst += *src;
+				}
+				return *this;
+			}
+
+			constexpr matrix& operator -= (const matrix & _mx) {
+				const T* src = _mx.memo;
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
+					*dst -= *src;
+				}
+				return *this;
+			}
+
+
+			constexpr matrix& operator = (const matrix & _mx) {
+				std::copy_n(_mx.memo, size::total, memo);
+				return *this;
+			}
+
 			/*constexpr matrix(const std::initializer_list<T>& _l) {
 				std::copy_n(_array, size::total, memo);
 			}
@@ -689,7 +730,120 @@ namespace robo{
 			}
 			return tmp;
 		}
-		
+
+		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator + (const matrix<T, M, N>& _m1, const matrix<T, M, N>& _m2) {
+			matrix< T, M, N> tmp (_m1);
+			tmp += _m2;
+			return tmp;
+		}
+		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator - (const matrix<T, M, N>& _m1, const matrix<T, M, N>& _m2) {
+			matrix< T, M, N> tmp (_m1);
+			tmp -= _m2;
+			return tmp;
+		}
+
+		template<typename T, size_t M> class vector : public matrix<T, M, 1> {
+			using A =  matrix<T, M, 1>;
+		public:
+			constexpr vector(): A(){
+			}
+			constexpr vector(const T(&_array)[A::size::total]) : A(_array) {
+			}
+			constexpr vector& operator = (const vector& _src) {
+				return (vector&) A::operator = (_src);
+			}
+
+			constexpr T dot(const vector& _mx) const {
+				T res = T(0);
+				const T* src = _mx.memo;
+				const T* dst = A::memo;
+				for (int i = 0; i < A:: size::total; ++i, ++src, ++dst) {
+					res += *dst * *src;
+				}
+				return res;
+			}
+			constexpr T norm(void) const {
+				return sqrt(dot(*this));
+			}
+			constexpr vector eig(void) const {
+				T r = norm();
+				if (r > std::numeric_limits<T>::epsilon()) {
+					return *this / r;
+				}
+				else {
+					return { 0,0,0 };
+				}
+			}
+
+		};
+		template<typename T, size_t M> vector<T, M>  operator + (const vector<T, M>& _m1, const vector<T, M>& _m2) {
+			vector<T, M> tmp (_m1);
+			_m1 += _m2;
+			return tmp;
+		}
+		template<typename T, size_t M> vector<T, M>  operator - (const vector<T, M>& _m1, const vector<T, M>& _m2) {
+			vector<T, M> tmp (_m1);
+			_m1 -= _m2;
+			return tmp;
+		}
+
+		template<typename T> class vector3 : public vector<T, 3> {
+			using A = vector<T, 3>;
+		public:
+			T& x = A::memo[0];
+			T& y = A::memo[1];
+			T& z = A::memo[2];
+
+			constexpr vector3& operator = (const quaternion<T>& _src) {
+				std::copy_n(_src.memo + 1, A::size::total, A::memo);
+				return *this;
+			}
+
+			constexpr vector3(void) : A() {}
+			constexpr vector3(const T(&_array)[A::size::total]) : A(_array) {}
+			constexpr vector3(const quaternion<T>& _src) : A() {
+				std::copy_n(_src.memo + 1, A::size::total, A::memo);
+			}
+
+			constexpr vector3& operator = (const vector3& _src) {
+				return (vector3&) A::operator = (_src);
+			}
+			constexpr vector3(T _x, T _y, T _z) : A() {
+				x = _x;
+				y = _y;
+				z = _z;
+			}
+
+			constexpr  operator quaternion<T>() {
+				quaternion<T> tmp;
+				std::copy_n(A::memo, A::size::total, tmp.memo + 1);
+				return tmp;
+			}
+
+			constexpr vector3 back_transform(const quaternion<T>& _q, const quaternion<T>& _iq, const quaternion<T>& _offs) {
+				quaternion<T> tmp = *this;
+				return _offs + _q*tmp*_iq;
+			}
+
+			constexpr vector3 forward_transform(const quaternion<T>& _q, const quaternion<T>& _iq, const quaternion<T>& _offs) {
+				quaternion<T> tmp = (*this-_offs);
+				return _iq * tmp * _q;
+			}
+
+		};
+
+		template<typename T> vector3<T> operator + (const vector3<T>& _m1, const vector3<T>& _m2) {
+			vector3<T> tmp (_m1);
+			tmp += _m2;
+			return tmp;
+		}
+
+		template<typename T> vector3<T> operator - (const vector3<T>& _m1, const vector3<T>& _m2) {
+			vector3<T> tmp(_m1);
+			tmp -= _m2;
+			return tmp;
+		}
+
 		template<typename T> struct joint {
 			using quaternion = ::robo::kinematiks::quaternion<T>;			
 			class series;
@@ -726,14 +880,14 @@ namespace robo{
 				void update_forvard(actuator* _prev) {
 					actuator* next = ref_.next_ptr();
 					if (_prev != nullptr) {
-						base.orient = _prev->base.orient;
-						base.position = _prev->base.position;
+						base.orient = _prev->base.orient;						
+						base.orient *= local.orient;
 						base.position = _prev->base.position + _prev->base.orient * local.position * _prev->base.iorient;
 					}
 					else {
 						base.position = local.position;
+						base.orient = local.orient;
 					}
-					base.orient *= local.orient;
 					base.orient *= supply.orient;
 					base.iorient = !base.orient;
 					if (next) {
