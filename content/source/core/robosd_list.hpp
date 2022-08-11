@@ -285,10 +285,10 @@ namespace robo {
 		protected:
 			bool  sort_ = true;
 		public:
-			bool sort(void) { return sort_; }
+			bool sort(void) const { return sort_; }
 			typedef pair<T, K, sorted<T, K>, false > ref;
-			ref* first(void) { return (ref*)base<T>::first; }; /**первая ячейка. */
-			ref* last(void) { return (ref*)base<T>::last; }; /**последняя ячейка. */
+			ref* first(void) const { return (ref*)base<T>::first; }; /**первая ячейка. */
+			ref* last(void) const { return (ref*)base<T>::last; }; /**последняя ячейка. */
 			void inc_key(const K& _delta) {
 				for (ref* _ref = first(); _ref; _ref = _ref->next()) {
 					K key = _ref->key();
@@ -309,9 +309,9 @@ namespace robo {
 		public:
 			bool sort(void) { return true; }
 			typedef pair<T, K, unique<T, K>, true > ref;
-			ref* first(void) { return (ref*)base<T>::first; }; /**первая ячейка. */
-			ref* last(void) { return (ref*)base<T>::last; };  /**последняя ячейка. */
-			ref* at(const K& _key) {
+			ref* first(void) const { return (ref*)base<T>::first; }; /**первая ячейка. */
+			ref* last(void) const { return (ref*)base<T>::last; };  /**последняя ячейка. */
+			ref* at(const K& _key) const {
 				for (ref* _ref = first(); _ref; _ref = _ref->next()) {
 					if (_ref->key() == _key) {
 						return  _ref;
@@ -320,7 +320,7 @@ namespace robo {
 				return nullptr;
 			}
 
-			T* find(const K& _key) {
+			T* find(const K& _key) const {
 				ref* r = at(_key);
 				if (r) return &(r->owner());
 				return nullptr;

@@ -65,6 +65,8 @@ namespace robo {
 				state_s state;
 				statuses status;
 			};
+			struct config_s {
+			};
 		}
 	}
 }

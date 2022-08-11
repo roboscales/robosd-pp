@@ -9,10 +9,10 @@ namespace robo{
 		
 		template<typename T> constexpr void rangle_sut(T & _values) {
 			while (_values > pi<T>) {
-				_values = -2 * pi<T>;
+				_values -= (2 * pi<T>);
 			}
 			while (_values < -pi<T>) {
-				_values += 2 * pi<T>;
+				_values += (2 * pi<T>);
 			}			
 		}
 
@@ -243,7 +243,7 @@ namespace robo{
 				z = _w * _src.z + _x * _src.y - _y * _src.x + _z * _src.w;   // z component
 				return *this;
 			}
-			constexpr quaternion operator ! () {
+			constexpr quaternion inv (void) {
 				quaternion tmp(*this,true);
 				return tmp;
 			}
@@ -259,11 +259,104 @@ namespace robo{
 				z -= _src.z;
 				return *this;
 			}
-			
+			static void to(avionic& _avc,T w, T x, T y, T z) {
+				/*T w = _src[0];
+				T x = _src[1];
+				T y = _src[2];
+				T z = _src[3];*/
+				T d1 = 2. * (x * z - w * y);
+				if (d1 > 1.) {
+					d1 = 1. - std::numeric_limits<T>::epsilon();
+				}
+				if (d1 < -1.) {
+					d1 = -1. + std::numeric_limits<T>::epsilon();
+				}
+				T tmp = -asin(d1);
+				_avc.pith = -tmp;
+				T d2 = tmp - pi<T> / 2.f;
+				if (abs(d1) > 0.999) {
+					T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
+					//вариант первый
+					T roll1, roll2;
+					if (tmp < 0) {
+						roll1 = YR - _avc.yaw;
+					}
+					else {
+						roll1 = _avc.yaw - YR;
+					}
+					//вариант второй YAW+PITCH > pi
+					if (YR > 0) {
+						YR = YR - 2 * pi<T>;
+					}
+					else {
+						YR = YR + 2. * pi<T>;
+					}
+
+					if (tmp < 0) {
+						roll2 = YR - _avc.yaw;
+					}
+					else {
+						roll2 = _avc.yaw - YR;
+					}
+
+					T df1 = roll1 - _avc.roll;
+
+					T df2 = roll2 - _avc.roll;
+
+					if (abs(df2) > abs(df1)) {
+						_avc.roll = (T)roll1;
+					}
+					else {
+						_avc.roll = (T)roll2;
+					}
+
+				}
+				else {
+					_avc.yaw = (T)atan2(T(2) * (x * y + w * z), T(1) - T(2) * (y * y + z * z));
+					_avc.roll = (T)atan2(T(2) * (w * x + y * z), T(1) - T(2) * (x * x + y * y));
+				}
+			}
 			void to(avionic& _avc) {
+				to(_avc, w, x, y, z);
 			}
 			double norm(void) {
 				return sqrt( w*w + x*x + y*y +z*z );			
+			}
+			T compare(const quaternion<T>& _src) {
+				quaternion<T> tmp(_src,true);
+				tmp *= *this;
+				/*/static quaternion<T> zero(0., 1., 0., 0.);
+				const T* p1 = tmp.memo;
+				const T* p2 = zero.memo;
+				T err = T(0);
+				for (int i = 0; i < count; ++i, ++p1,++p2) {
+					T tmp = *p1-*p2;
+					tmp = tmp * tmp;
+					err += tmp;
+				}
+				return sqrt(err / (int)count);*/
+				if (abs(tmp.w - 1.0) < 0.000001 /*epsilon<T, 10>*/) {
+					const T* p1 = tmp.memo+1;
+					T err = T(0);
+					for (int i = 0; i < count-1; ++i, ++p1) {
+						T tmp = *p1;
+						tmp = tmp * tmp;
+						err += tmp;
+					}
+					return sqrt(err/3);
+				}
+				return tmp.w;
+			}
+			T diff(const quaternion<T>& _src) {
+				const T* p1 = _src.memo;
+				const T* p2 = memo;
+				T err = T(0);
+				for (int i = 0; i < count; ++i, ++p1, ++p2) {
+					T tmp = *p1 - *p2;
+					tmp = tmp * tmp;
+					err += tmp;
+				}
+				return sqrt(err / (int)count);
 			}
 		};
 
@@ -281,6 +374,7 @@ namespace robo{
 			quaternion<T> tmp(_src1);
 			return tmp -= _src2;
 		}
+
 
 		enum class op { set, inc };
 		
@@ -411,57 +505,7 @@ namespace robo{
 			T x = _src[1];
 			T y = _src[2];
 			T z = _src[3];
-			T d1 = 2. * (x * z - w * y);
-			if (d1 > 1.) {
-				d1 = 1. - std::numeric_limits<T>::epsilon();
-			}
-			if (d1 < -1.) {
-				d1 = -1. + std::numeric_limits<T>::epsilon();
-			}
-			T tmp = -asin(d1);
-			_avc.pith = -tmp;
-			T d2 = tmp - pi<T> / 2.f;
-			if (abs(d1) > 0.999 ) {
-				T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
-				//вариант первый
-				T roll1, roll2;
-				if (tmp < 0) {
-					roll1 = YR - _avc.yaw;
-				}
-				else {
-					roll1 = _avc.yaw - YR;
-				}
-				//вариант второй YAW+PITCH > pi
-				if (YR > 0) {
-					YR = YR - 2 * pi<T>;
-				}
-				else {
-					YR = YR + 2. * pi<T>;
-				}
-
-				if (tmp < 0) {
-					roll2 = YR - _avc.yaw;
-				}
-				else {
-					roll2 = _avc.yaw - YR;
-				}
-
-				T df1 = roll1 - _avc.roll;
-
-				T df2 = roll2 - _avc.roll;
-
-				if (abs(df2) > abs(df1)) {
-					_avc.roll = (T)roll1;
-				}
-				else {
-					_avc.roll = (T)roll2;
-				}
-
-			}
-			else {
-				_avc.yaw = (T)atan2(T(2) * (x * y + w * z), T(1) - T(2) * (y * y + z * z));
-				_avc.roll = (T)atan2(T(2) * (w * x + y * z), T(1) - T(2) * (x * x + y * y));
-			}
+			quaternion<T>::to(_avc, w, x, y, z);
 			return _avc;
 		}
 
@@ -662,12 +706,28 @@ namespace robo{
 				}
 				return *this;
 			}
-			
+		
+
 			constexpr matrix& operator += (const matrix & _mx) {
 				const T* src = _mx.memo;
 				T* dst = memo;
 				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
 					*dst += *src;
+				}
+				return *this;
+			}
+
+			constexpr matrix& operator /= (const T& _r) {
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++dst) {
+					*dst /= _r;
+				}
+				return *this;
+			}
+			constexpr matrix& operator *= (const T& _r) {
+				T* dst = memo;
+				for (int i = 0; i < size::total; ++i, ++dst) {
+					*dst *= _r;
 				}
 				return *this;
 			}
@@ -741,6 +801,16 @@ namespace robo{
 			tmp -= _m2;
 			return tmp;
 		}
+		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator / (const matrix<T, M, N>& _m1, const T & _r) {
+			matrix< T, M, N> tmp(_m1);
+			tmp /= _r;
+			return tmp;
+		}
+		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator * (const matrix<T, M, N>& _m1, const T& _r) {
+			matrix< T, M, N> tmp(_m1);
+			tmp *= _r;
+			return tmp;
+		}
 
 		template<typename T, size_t M> class vector : public matrix<T, M, 1> {
 			using A =  matrix<T, M, 1>;
@@ -749,10 +819,13 @@ namespace robo{
 			}
 			constexpr vector(const T(&_array)[A::size::total]) : A(_array) {
 			}
+			constexpr vector(const A & _a) : A(_a) {}
 			constexpr vector& operator = (const vector& _src) {
 				return (vector&) A::operator = (_src);
 			}
-
+			constexpr vector& operator = (const A & _src) {
+				return (vector&)A::operator = (_src);
+			}
 			constexpr T dot(const vector& _mx) const {
 				T res = T(0);
 				const T* src = _mx.memo;
@@ -762,16 +835,16 @@ namespace robo{
 				}
 				return res;
 			}
-			constexpr T norm(void) const {
+			constexpr T length(void) const {
 				return sqrt(dot(*this));
 			}
-			constexpr vector eig(void) const {
-				T r = norm();
+			constexpr vector direction(void) const {
+				T r = length();
 				if (r > std::numeric_limits<T>::epsilon()) {
 					return *this / r;
 				}
 				else {
-					return { 0,0,0 };
+					return vector({ 0,0,0 });
 				}
 			}
 
@@ -807,6 +880,9 @@ namespace robo{
 
 			constexpr vector3& operator = (const vector3& _src) {
 				return (vector3&) A::operator = (_src);
+			}
+			constexpr vector3& operator = (const vector<T,3>& _src) {
+				return (vector3&)A::operator = (_src);
 			}
 			constexpr vector3(T _x, T _y, T _z) : A() {
 				x = _x;
@@ -844,19 +920,37 @@ namespace robo{
 			return tmp;
 		}
 
+		template<typename T> vector3<T> operator ^ (const vector3<T>& a, const vector3<T>& b) {
+			//i(ay bz - azby) - j(axbz - azbx) + k(axby - aybx)
+			return  vector3({a.y*b.z -a.z*b.y, -a.x*b.z+a.z*b.x, a.x*b.y-a.y*b.x});
+		}
+
 		template<typename T> struct joint {
 			using quaternion = ::robo::kinematiks::quaternion<T>;			
 			class series;
 
 			class actuator {
+				T delta_ = 0.0;
+				T actual_ =0.0;
+				T min_ = 0.0;
+				T max_ = 0.0;
+				T offset_ = 0.0;
 			protected:
-				virtual void do_move(double _data) = 0;
-				//virtual void do_inc(float _data) = 0;
+				virtual void do_move(T _data) = 0;
 			public:
 				typedef ::robo::list::unique<actuator, int> list;
 				typedef list::ref ref;
+				enum class types {
+					none
+					, line
+					, cicle_infinite
+					, multirotated
+					, cicle_signed
+					, cicle_unsigned
+				};
 			private:
 				ref ref_;
+				types type_ = types::none;
 				//void update_back_(actuator* _prev) {}
 
 			public:
@@ -870,12 +964,101 @@ namespace robo{
 				point local;
 				point supply;
 				point base;
+				
+				T get(T& _delta) const {
+					return get(actual_, _delta);
+				}
 
-				actuator(int _index, series& _series) : ref_(*this, _index) {
+				T get(T _src, T & _delta) const {
+					_src += offset_;
+					_delta = _src - actual_;
+					switch (type_) {
+					case types::none:
+					case types::line:
+					return  _src;
+					case types::cicle_infinite:
+					case types::multirotated:
+					{
+						while (_delta > pi<T>) {
+							_delta = _delta - T(2) *pi<T>;
+						}
+						while (_delta < - pi<T>) {
+							_delta = _delta + T(2) * pi<T>;
+						}
+						T ret = actual_ + _delta;
+						if (ret > max_) {
+							ret -= (T(2) *pi<T>);
+						}
+						if (ret < min_) {
+							ret += (T(2) * pi<T>);
+						}
+						return ret;
+					}
+
+					case types::cicle_signed:
+					{	
+						while (_src > pi<T>) {
+							_src -= T(2) * pi<T>;
+						}
+						while (_src < -pi<T>) {
+							_src += T(2) * pi<T>;
+						}
+						return _src;
+					}
+					case types::cicle_unsigned:
+					{
+						while (_src >= T(2) *pi<T>) {
+							_src -= T(2) * pi<T>;
+						}
+						while (_src < T(0)) {
+							_src += T(2) * pi<T>;
+						}
+						return _src;
+					}
+					}
+					return T(0);
+
+				}
+				bool check(T _val, T & _delta) const {
+					T tmp = get(_val, _delta);
+					switch (type_) {
+					case types::none:
+					case types::cicle_infinite:
+					return true;
+					default:
+					return ((tmp >= min_ - 0.00000000000008) && (tmp <= max_+0.00000000000008));
+					}
+				}
+
+				T score(double _val) const {
+					T tmp = get(_val);
+					switch (type_) {
+					case types::none:
+					case types::cicle_infinite:
+					return T(1);
+					default:
+					if ((tmp >= min_) && (tmp <= max_)) {
+						T s = (tmp - min_) / (max_ - min_);
+						return T(1) - T(1) / (T(1) + exp( T(40) * s * (T(1) - s) - T(5)));
+					}
+					else {
+						return T(0);
+					}
+					}
+				}
+				
+				void begin( T _actual_dg, T _min_dg, T _max_dg, T _offset_dg) {
+					min_ = _min_dg *deg2rad<T>;
+					max_ = _max_dg * deg2rad<T>;
+					offset_ = _offset_dg * deg2rad<T>;
+					move(_actual_dg * deg2rad<T>);
+				}
+				actuator(int _index, series& _series, types _type) : ref_(*this, _index) {
 					ref_.attach_to(_series.actuators);
 					local.orient.w = 1;
 					supply.orient.w = 1;
 					base.orient.w = 1;
+					type_ = _type;
 				}
 				void update_forvard(actuator* _prev) {
 					actuator* next = ref_.next_ptr();
@@ -889,7 +1072,7 @@ namespace robo{
 						base.orient = local.orient;
 					}
 					base.orient *= supply.orient;
-					base.iorient = !base.orient;
+					base.iorient = base.orient.inv();
 					if (next) {
 						next->update_forvard(this);
 					}
@@ -907,19 +1090,20 @@ namespace robo{
 					tmp *= base.orient;
 					return tmp;
 				}
-				virtual void move(double _data) {
-					do_move(_data);
+				void move(T _position_dg) {
+					actual_ = _position_dg  * grad2rad<T> - offset_;
+					do_move(actual_);
 				}
 			};
 
 			class yaw : public actuator {
 			protected:
-				virtual void do_move(double _data) {
+				virtual void do_move(T _data) {
 					actuator::supply.orient.w = cos(_data / 2);
 					actuator::supply.orient.z = sin(_data / 2);
 				}
 			public:
-				yaw(int _index, series& _series) : actuator(_index, _series) {}
+				yaw(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
 			};
 
 			class pitch : public actuator {
@@ -929,7 +1113,7 @@ namespace robo{
 					actuator::supply.orient.y = sin(_data / 2);
 				}
 			public:
-				pitch(int _index, series& _series) : actuator(_index, _series) {}
+				pitch(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
 			};
 
 			class roll : public actuator {
@@ -939,7 +1123,7 @@ namespace robo{
 					actuator::supply.orient.x = sin(_data / 2);
 				}
 			public:
-				roll(int _index, series& _series) : actuator(_index, _series) {}
+				roll(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
 			};
 
 			class series {
@@ -954,6 +1138,8 @@ namespace robo{
 						r->owner().update_forvard(nullptr);
 					}
 				}
+
+
 
 				/*template<typename C, unsigned N> void move(const C& _src) {
 					ROBO_APP_ASSERT(N == actuators_.count);

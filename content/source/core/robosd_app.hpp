@@ -126,8 +126,8 @@ namespace robo {
 			};
 			cstr current_path(void);
 			cstr defaults_path(void);
-//			const node* owner_ptr(void) { return owner_; }
 		public:			
+			//const node* owner_ptr(void) { return owner_; }
 			bool load(void);
 			void clean(void);
 			cstr name(void) { return name_; }

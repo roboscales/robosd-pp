@@ -291,6 +291,7 @@ namespace robo {
 			typedef common::devagent::statuses statuses;
 			typedef common::devagent::action_s action_s;
 			typedef common::devagent::feedback_s feedback_s;
+			typedef common::devagent::config_s config_s;
 			template <typename F> typename F::feedback_s & feedback(void) {
 				return reinterpret_cast <typename F::feedback_s&>(feedback_);
 			}
@@ -467,19 +468,25 @@ namespace robo {
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
-			template <typename A> const A & action_cast(void) {
+			typedef typename D::config_s config_s;
+			template <typename A> const A& action_cast(void) {
 				return reinterpret_cast <const A&>(front_.action);
+			}
+			config_s & config(void) {
+				return front_.config;
 			}
 		private:
 			struct front_s {
 				const action_s& action;
 				action_s& goal;
 				feedback_s& feedback;
+				config_s & config;
 				front_s(
 					const action_s& _action
 					, action_s& _goal
 					, feedback_s& _feedback
-				) : action(_action), goal(_goal), feedback(_feedback) {}
+					,config_s& config
+				) : action(_action), goal(_goal), feedback(_feedback), config(config) {}
 			} front_;
 			action_s goal_;
 			feedback_s feedback_;
@@ -496,9 +503,9 @@ namespace robo {
 				front_.goal = goal_;
 			}
 		public:
-			devagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback)				
+			devagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config)
 				: D(_name, _boardagent, goal_, feedback_)
-				, front_(_action, _goal, _feedback)
+				, front_(_action, _goal, _feedback,_config)
 				, ::robo::frontend::shared(
 					(void*)(&_action)
 					, (void*)((uint8_t*)(&_action) + sizeof(action_s) / sizeof(uint8_t))
@@ -510,13 +517,14 @@ namespace robo {
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
+			typedef typename D::config_s config_s;
 			typedef typename D::content_s content_s;
 			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content) :
-				devagent_b<D>(_name, _boardagent, _content->action, _content->goal, _content->feedback)	{}
+				devagent_b<D>(_name, _boardagent, _content->action, _content->goal, _content->feedback, _content->config)	{}
 			devagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
-				 devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback){}
-			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback ) :
-				devagent_b<D>(_name, _boardagent, _action, _goal, _feedback){}
+				 devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config){}
+			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback, config_s & _config) :
+				devagent_b<D>(_name, _boardagent, _action, _goal, _feedback, _config){}
 		};
 
 		class servo : public  robo::app::node {

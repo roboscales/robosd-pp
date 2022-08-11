@@ -15,7 +15,7 @@ namespace mexo {
 		namespace dev {
 			struct mode { enum { idle = 0/*, fault = 0x255*/ }; };
 			struct action_s 
-			{
+			{				
 				#ifdef ROBO_APP_MEXO_SERVO_SIDE
 				robo::common::devagent::action_s agent;
 				#endif
