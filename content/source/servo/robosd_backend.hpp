@@ -163,7 +163,7 @@ namespace robo {
 			typedef  ::robo::list::sorted<devagent, int> bus_index;
 			typedef  bus_index::ref bus_ref;
 			
-			class stream : public app::node {
+			class ROBO_EXPORT stream : public app::node {
 			public:
 
 				enum class query_result {
@@ -544,9 +544,9 @@ namespace robo {
 			boardagent(cstr _name, servo& _servo) :app::node(_name, &_servo) {};
 		};
 
-		class vartable : public devagent::stream, public frontend::vartable {
+		class ROBO_EXPORT vartable : public devagent::stream, public frontend::vartable {
 		public:
-			class ivar : public frontend::vartable::ivar {
+			class ROBO_EXPORT ivar : public frontend::vartable::ivar {
 				friend class vartable;
 				typedef ::robo::list::unsorted<ivar> queue;
 				typedef queue::ref ref;
@@ -561,7 +561,7 @@ namespace robo {
 			public:
 				vartable& vt(void) { return (vartable&)frontend::vartable::ivar::vt(); }
 
-				class answer : public performer {
+				class ROBO_EXPORT answer : public performer {
 				protected:
 					virtual  void  operator ()(void) {
 						(*this)((ivar *)var, result);
@@ -584,12 +584,12 @@ namespace robo {
 			};
 
 
-			template<  typename T> class var_t : public frontend::vartable::var_t< ivar, T> {
+			template<  typename T> class ROBO_EXPORT var_t : public frontend::vartable::var_t< ivar, T> {
 				typedef frontend::vartable::var_t< ivar, T> C;
 			public:
 				typedef frontend::vartable::ivar::performer performer;
 			protected:
-				struct iactual {
+				struct ROBO_EXPORT iactual {
 					T& local;
 					T& remote;
 					iactual(T& _local, T& _remote) : local(_local), remote(_remote) {}
@@ -701,7 +701,7 @@ namespace robo {
 
 			};
 
-			template< typename T> class var : public  var_t<T> {
+			template< typename T> class ROBO_EXPORT var : public  var_t<T> {
 			private:
 				struct {
 					T local;
@@ -718,7 +718,7 @@ namespace robo {
 					: var_t<T>(_vartable, _record, front_.local, front_.remote, actual_.local, actual_.remote) {};
 			};
 
-			template < typename T> class  fabric_t: public robo::frontend::vartable::fabric {
+			template < typename T> class  ROBO_EXPORT fabric_t: public robo::frontend::vartable::fabric {
 			public:
 				fabric_t(cstr _type_name) : robo::frontend::vartable::fabric(_type_name) {}
 				virtual robo::frontend::vartable::ivar* create(robo::frontend::vartable& _vartable, const  robo::frontend::vartable::record& _record) {

@@ -17,16 +17,9 @@ namespace robo{
 			int used_ = 0;
 			Out(*run_)(context *, In...) = nullptr;
 		public:
-			#if ROBO_MEMORY_HEAP_ENABLED == 1
-			ROBO_REDECLARE_NEW 
-			#endif
 
 			~context(void){
-				#if ROBO_MEMORY_HEAP_ENABLED == 1
-				robo_mem_free((robo_mem_t) p_);
-				#else
 				delete[] p_;
-				#endif
 			}
 			const void * p(void){ return p_; }
 			context * use(void){

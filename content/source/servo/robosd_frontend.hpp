@@ -346,10 +346,10 @@ namespace robo {
 
 
 		#if ROBO_APP_MODULE_ENABLED  == 1
-		class vartable :public app::node {
+		class ROBO_EXPORT vartable :public app::node {
 		public:
 
-			struct record {
+			struct ROBO_EXPORT record {
 				cstr name;
 				cstr type;
 				uint16_t address;
@@ -357,7 +357,7 @@ namespace robo {
 			};
 
 
-			class ivar {
+			class ROBO_EXPORT ivar {
 				const record& instance_;
 				vartable& vartable_;
 				bool paranoic_put_;
@@ -484,9 +484,9 @@ namespace robo {
 			};
 
 
-			template< class B, typename T> class var_t : public  B {
+			template< class B, typename T> class ROBO_EXPORT var_t : public  B {
 			protected:
-				struct ifront {
+				struct ROBO_EXPORT ifront {
 					T& local;
 					T& remote;
 					ifront(T& _local, T& _remote) : local(_local), remote(_remote) {}
@@ -533,7 +533,7 @@ namespace robo {
 			};
 
 
-			class fabric {
+			class ROBO_EXPORT fabric {
 			public:
 				typedef ::robo::list::unique<fabric, int> map;
 				typedef map::ref ref;
@@ -565,7 +565,7 @@ namespace robo {
 
 		#endif
 
-		class servo : public robo::app::node {
+		class ROBO_EXPORT servo : public robo::app::node {
 		public:
 			servo(robo::cstr _name, robo::app::module& _module)
 				: robo::app::node(_name, &_module) {}
@@ -573,7 +573,7 @@ namespace robo {
 
 	}
 	//todo 
-	class quest :  protected signal::performer {
+	class ROBO_EXPORT quest :  protected signal::performer {
 	public:
 		enum class result { refuse, success, cancel, broke };
 		enum class reaction { normal, terminate };

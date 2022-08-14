@@ -61,11 +61,10 @@
 #include <stdarg.h>
 #endif
 
-#include <stdint.h>
-
-
 void* operator new(size_t size);
 void operator delete(void* ptr);
+
+#include <stdint.h>
 
 namespace robo {
 	typedef ROBO_TYPE_RANDOM random_t;
@@ -253,10 +252,6 @@ namespace robo {
 #endif
 
 
-#ifndef ROBO_MEMORY_HEAP_ENABLED
-#define ROBO_MEMORY_HEAP_ENABLED 0
-#endif 
-
 #define ROBO_APP_TYPE_NONE 0
 #define ROBO_APP_TYPE_DUMMY 1
 #define ROBO_APP_TYPE_NATIVE 2
@@ -269,3 +264,4 @@ namespace robo {
 #define ROBO_APP_TYPE_SPECIFIC 9
 
 #endif
+

@@ -268,9 +268,9 @@ namespace robo {
 				size_t out_total = 0;
 				size_t in_size = in_msg ? in_msg->size() : 0;
 				size_t out_max_size = max_size();
-				const uint8_t* in_data = in_msg->data();
 				size_t in_space = remote_.space();
 				if (in_size) {
+					const uint8_t* in_data = in_msg->data();
 					size_t in_data_size = in_size - 1;
 					uint8_t cmd = *in_data;
 					if (cmd == 0xBB) {

@@ -335,7 +335,7 @@ namespace robo{
 					err += tmp;
 				}
 				return sqrt(err / (int)count);*/
-				if (abs(tmp.w - 1.0) < 0.000001 /*epsilon<T, 10>*/) {
+//				if (abs(tmp.w - 1.0) < 0.000001 /*epsilon<T, 10>*/) {
 					const T* p1 = tmp.memo+1;
 					T err = T(0);
 					for (int i = 0; i < count-1; ++i, ++p1) {
@@ -343,9 +343,9 @@ namespace robo{
 						tmp = tmp * tmp;
 						err += tmp;
 					}
-					return sqrt(err/3);
-				}
-				return tmp.w;
+					return sqrt(err/3)* tmp.w;
+	//			}
+		//		return tmp.w;
 			}
 			T diff(const quaternion<T>& _src) {
 				const T* p1 = _src.memo;
@@ -557,6 +557,7 @@ namespace robo{
 			target_t& operator = (const target_t& _src) {
 				*(P*)this = (const P&)_src;
 				*(A*)this = (const A&)_src;
+				return *this;
 			}
 
 			// тогда, когда нагрузка не имеет векторных жанных
@@ -1053,6 +1054,11 @@ namespace robo{
 					offset_ = _offset_dg * deg2rad<T>;
 					move(_actual_dg * deg2rad<T>);
 				}
+				void assign( const actuator & _src) {
+					min_ = _src.min_;
+					max_ = _src.max_;
+					offset_ = _src.offset_;					
+				}
 				actuator(int _index, series& _series, types _type) : ref_(*this, _index) {
 					ref_.attach_to(_series.actuators);
 					local.orient.w = 1;
@@ -1153,6 +1159,13 @@ namespace robo{
 					const double* src = &_src.first();
 					for (;r; r = r->next(), ++src) {
 						r->owner().move(src);
+					}
+				}
+				void assign(const series& _src_robot) {
+					typename actuator::ref* d = actuators.first();
+					typename actuator::ref* s = _src_robot.actuators.first();
+					for (; d; d = d->next(), s = s->next()) {
+						d->owner().assign( s->owner() );
 					}
 				}
 			};

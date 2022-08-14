@@ -1,15 +1,19 @@
 #include <thread>
 #include <iostream>
+#include <chrono>
 #include "im/edev/edev.hpp"
 #include "core/robosd_system.hpp"
 
-#include <chrono>
 #if ROBO_UNICODE_ENABLED ==1
 int wmain(int _argc, robo::cstr _argv[]) 
 #else
 int main(int _argc, robo::cstr _argv[]) 
 #endif
 {
+	//uint8_t* a = new  uint8_t[10];
+	//delete[] a;
+
+	
 	robo::cstr emu_ini;
 
 	if (_argc>1){
@@ -22,8 +26,10 @@ int main(int _argc, robo::cstr _argv[])
 	typedef std::chrono::high_resolution_clock Time;
 	typedef std::chrono::duration<double> fsec;
 	auto t0 = Time::now();
-
-	ROBO_JAMPN( robo::system::consol::begin([&](robo::system::consol::event /**/) {terminated = true; }), crash);
+	uint8_t* a = new  uint8_t[10];
+	delete[] a;
+	
+	ROBO_JAMPN( robo::system::consol::begin([&](robo::system::consol::event _ev) {terminated = true; }), crash);
 	ROBO_JAMPN(robo::edev::agent::begin(emu_ini), crash);
 	//robo::system::env::begin();
 	{

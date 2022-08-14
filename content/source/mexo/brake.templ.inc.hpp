@@ -53,9 +53,9 @@ public:
 	private:
 	
 	void brake_force(void) {
-		const config_s& config = ps_t::template config_cast<config_s>();
-		present_s& present = ps_t::template present_cast<present_s>();
-		action_s& action = ps_t::template action_cast<action_s>();
+		const config_s& config = ps_t::template config<dev_t>();
+		present_s& present = ps_t::template present<dev_t>();
+		action_s& action = ps_t::template action<dev_t>();
 
 		switch(config.power_mode){
 		case power_mode::dummy:
@@ -78,8 +78,8 @@ public:
 	}
 
 	void brake_normal(void) {
-		const config_s& config = ps_t::template config_cast<config_s>();
-		present_s& present = ps_t::template present_cast<present_s>();
+		const config_s& config = ps_t::template config<dev_t>();
+		present_s& present = ps_t::template present<dev_t>();
 
 		switch (config.power_mode) {
 //		case power_mode::configure:
@@ -100,7 +100,7 @@ public:
 
 	void brake_set(void) {
 //		present_s& present = ps_t::present_cast<present_s>();
-		action_s& action = ps_t::template action_cast<action_s>();
+		action_s& action = ps_t::template action<dev_t>();
 
 		action.dev.mode = mode::idle;
 	}
@@ -108,8 +108,8 @@ public:
 	void poll_(void) {
 		#if ROBO_APP_ENV_ENABLED ==1
 		::robo::time_us_t now_us_ = ::robo::system::env::time_us();
-		present_s& present = ps_t::template present_cast<present_s>();
-		const config_s& config = ps_t::template config_cast<config_s>();
+		present_s& present = ps_t::template present<dev_t>();
+		const config_s& config = ps_t::template config<dev_t>();
 
 		switch (present.status) {
 		case status_t::fixed:
@@ -160,8 +160,8 @@ public:
 	#endif
 public:
 	
-	dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
-		: ps_t(_hardwaresys, _name, _action, _config.ps, _present.ps)
+	dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s & _action, feedback_s& _feedback, config_s& _config, present_s& _present, int _slot_index)
+		: ps_t(_hardwaresys, _name, _action, _feedback , _config.ps, _present.ps)
 		, itf(_present.command, _present.status)
 		#if BRAKE_CURRENT_MODE_ENABLED == 1 || 	BRAKE_VOLTAGE_MODE_ENABLED==1 
 		, poller_(_slot_index,*this,&dev_t::poll_)
@@ -189,8 +189,8 @@ protected:
 	#if ROBO_APP_MEXO_VAR_ENABLED == 1
 	void do_create_vars(void) {
 		ps_t::do_create_vars();
-		const config_s& config = ps_t::template config_cast<config_s>();
-		present_s& present = ps_t::template present_cast<present_s>();
+		const config_s& config = ps_t::template config<dev_t>();
+		present_s& present = ps_t::template present<dev_t>();
 		if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::tuning) {
 			::mexo::var::record::create(::mexo::var::uint32, config.timeout.relax_us, RT("tm.relax_us"), key(), vars);
 			::mexo::var::record::create(::mexo::var::uint32, config.timeout.force_us, RT("tm.force_us"), key(), vars);

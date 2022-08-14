@@ -58,4 +58,6 @@
 #include "mexo/lm.templ.settings.inc.hpp"
 #endif
 
+, POWER_SUPPLY_PREFIX(INVERCE)
+
 }

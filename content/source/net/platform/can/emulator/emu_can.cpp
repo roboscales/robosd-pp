@@ -169,8 +169,8 @@ namespace robo {
 				void test_on_receive__(ican& /*_can*/, uint16_t /*_id*/, const uint8_t*/*_msg*/, uint8_t/*_size*/) {
 					receive_count++;
 				}
-				delegat::smember<agent, void, ican&, uint16_t, const uint8_t*, uint8_t >on_receive_;
-				delegat::smember<agent, void, ican&, ican::event > on_event_;
+				delegat::owned_fabric<void, ican&, uint16_t, const uint8_t*, uint8_t >::member<agent> on_receive_;
+				delegat::owned_fabric<void, ican&, ican::event >::member<agent> on_event_;
 			protected:
 				virtual void do_background_run(double _time) {
 					if (_time >= busyTime_) {
@@ -319,8 +319,8 @@ namespace robo {
 				}
 			public:
 				agent(void)
-					: on_event_(this, &agent::test_on_event__)
-					, on_receive_(this, &agent::test_on_receive__) {}
+					: on_event_(*this, &agent::test_on_event__)
+					, on_receive_(*this, &agent::test_on_receive__) {}
 				~agent() {}
 				virtual void set_local_ini(cstr _ini) { system::ini::begin(_ini); }
 			} agent_;

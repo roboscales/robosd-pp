@@ -128,7 +128,7 @@ namespace PMSM_TEMPLATE_NAME {
 		int old_mode_id_ = mode::idle;
 		void inverter_controller_run(void) {
 			
-			present_s& present = actuator_t::template present_cast<present_s>();
+			present_s& present = actuator_t::template present<dev_t>();
 			
 			if (old_mode_id_ != present.actuator.ps.dev.mode) {
 				switch (present.actuator.ps.dev.mode) {
@@ -221,7 +221,7 @@ namespace PMSM_TEMPLATE_NAME {
 
 		#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
 		void synchro_voltage_mode_start(void) {
-		present_s& present = actuator_t:: template present_cast<present_s>();
+		present_s& present = actuator_t:: template present<dev_t>();
 			actuator_t::hardwaresys.power_supply_block.set_input(&present.actuator.ps.voltage_deseired);
 			actuator_t::hardwaresys.reconfig();
 			actuator_t::on();
@@ -234,8 +234,8 @@ namespace PMSM_TEMPLATE_NAME {
 			actuator_t::hardwaresys.power_supply_block.set_input(nullptr);
 		}
 		virtual void synchro_voltage_mode_applay_action(void) {
-			const action_s& action = actuator_t::template action_cast<action_s>();
-			present_s& present = actuator_t::template present_cast<present_s>();
+			const action_s& action = actuator_t::template action<dev_t>();
+			present_s& present = actuator_t::template present<dev_t>();
 			present.actuator.ps.voltage_deseired = action.actuator.ps.voltage;
 			present.freq_req = action.freq;
 			present.angle_req = action.angle;
@@ -267,7 +267,7 @@ namespace PMSM_TEMPLATE_NAME {
 	protected:
 		#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
 		void synchro_current_mode_start(void) {
-			present_s& present = actuator_t::template present_cast<present_s>();
+			present_s& present = actuator_t::template present<dev_t>();
 
 			actuator_t::hardwaresys.power_supply_block.set_input(&present.actuator.ps.voltage_required);
 			actuator_t::current_regulator.set_output(&present.actuator.ps.voltage_required);
@@ -302,9 +302,9 @@ namespace PMSM_TEMPLATE_NAME {
 		}
 
 		virtual void synchro_current_mode_action(void) {
-			const action_s& action = actuator_t::template action_cast<action_s>();
-			const config_s& config = actuator_t::template config_cast<config_s>();
-			present_s& present =  actuator_t::template present_cast<present_s>();
+			const action_s& action = actuator_t::template action<dev_t>();
+			const config_s& config = actuator_t::template config<dev_t>();
+			present_s& present =  actuator_t::template present<dev_t>();
 			present.actuator.ps.current_deseired = 0;
 
 
@@ -357,14 +357,14 @@ namespace PMSM_TEMPLATE_NAME {
 
 			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1 || PMSM_SYNC_CURRENT_MODE_ENABLED ==1
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& action = action_cast<action_s>();
-				::mexo::var::record::create(types::var::long_signal, action.angle, RT("act.angle"), key(), vars);
-				::mexo::var::record::create(types::var::long_signal, action.freq, RT("act.freq"), key(), vars);
-				::mexo::var::record::create(types::var::signal, action.lateral.voltage, RT("act.lat.v"), key(), vars);
-				::mexo::var::record::create(types::var::signal, action.lateral.voltage, RT("act.lat.c"), key(), vars);
-				const present_s& present = present<dev_t>();
-				::mexo::var::record::create(types::var::long_signal, present.angle_req, RT("angle_req"), key(), vars);
-				::mexo::var::record::create(types::var::long_signal, present.freq_req, RT("freq_req"), key(), vars);
+				const action_s& act = action<dev_t>();
+				::mexo::var::record::create(types::var::long_signal, act.angle, RT("act.angle"), key(), vars);
+				::mexo::var::record::create(types::var::long_signal, act.freq, RT("act.freq"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.v"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.c"), key(), vars);
+				const present_s& prsnt = present<dev_t>();
+				::mexo::var::record::create(types::var::long_signal, prsnt.angle_req, RT("angle_req"), key(), vars);
+				::mexo::var::record::create(types::var::long_signal, prsnt.freq_req, RT("freq_req"), key(), vars);
 			}
 			#endif
 		}
@@ -372,8 +372,8 @@ namespace PMSM_TEMPLATE_NAME {
 		
 	public:
 
-		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, config_s& _config, present_s& _present, int _slot_index)
-			: actuator_t(_hardwaresys, _name, _action.actuator, _config.actuator, _present.actuator, _slot_index)
+		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, feedback_s& _feedback, config_s& _config, present_s& _present, int _slot_index)
+			: actuator_t(_hardwaresys, _name, _action.actuator, _feedback.actuator, _config.actuator, _present.actuator, _slot_index)
 			, inverter_controller(::mexo::machine::slot::kind::backend ,*this, &dev_t::inverter_controller_run)
 			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
 			, synchro_voltage_mode_(mode::sync_voltage,*this)

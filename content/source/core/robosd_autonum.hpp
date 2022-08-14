@@ -104,13 +104,13 @@ namespace robo {
 
 
 
-			template <typename B, typename R, typename ... Args> class fabric {
+			template <typename B, typename R, typename ... Args> class ROBO_EXPORT fabric {
 				//friend class simple;
 				//friend class uni;
 				//friend class lambda;
 
 			public:
-				class ref : public B, public receicledbin::ref {
+				class ROBO_EXPORT ref : public B, public receicledbin::ref {
 				protected:
 					template <typename ... xArgs> ref(xArgs ... xargs)
 						: B(xargs...)
