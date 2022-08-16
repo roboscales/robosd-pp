@@ -292,6 +292,7 @@ namespace mexo {
 		virtual void do_update_feedback(void);
 	public:
 		void update_feedback(void) {
+			#if ROBO_APP_SYSTEM_ENABLED  == 1
 			if (::robo::system::env::is_backend()) {
 				do_update_feedback();
 			}
@@ -300,6 +301,9 @@ namespace mexo {
 				wait_feedback_ = true;
 				while (wait_feedback_ == true) ::system::env::sleep();
 			}
+			#else
+				do_update_feedback();
+			#endif
 		}
 		class mode : public node {
 			friend class dev;
