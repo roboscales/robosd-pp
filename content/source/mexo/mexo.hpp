@@ -22,12 +22,17 @@
 #define ROBO_APP_MEXO_DEBUG_TP1_ENABLED 0
 #endif
 
+#ifndef ROBO_APP_MEXO_EXTERNAL_CONFIGURE_NEED
+#define ROBO_APP_MEXO_EXTERNAL_CONFIGURE_NEED 0
+#endif
+
 using namespace robo;
 namespace mexo {
 	
 	struct tp_verb {
 		enum { frontend = 1, backend = 2, priority = 3, loop = 4 };
 	};
+	
 	
 	#if ROBO_APP_MEXO_DEBUG_TP1_ENABLED == 1
 	class tp_driver {
@@ -266,6 +271,8 @@ namespace mexo {
 			uint8_t mode;
 			bool action_actual;
 			uint8_t error;
+			//robo::time_us_t wachdog_us;
+			//bool wachdog_enabled;
 			//template<typename T> operator T& () { return reinterpret_cast<T&>(*this)}
 		};
 		struct config_s {

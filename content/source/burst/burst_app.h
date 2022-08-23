@@ -11,6 +11,9 @@ extern "C"
 #ifndef burst_alarm
 #define burst_alarm(x)  if(!(x)) burst_hw_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE);
 #endif
+#ifndef burst_crash
+#define burst_crash()  burst_hw_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE);
+#endif
 
 void burst_hw_crash(const char * _file, const char * _function, int _line);
 

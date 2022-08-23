@@ -421,6 +421,9 @@ namespace mexo {
 		, config_(_config) {
 		mexo::machine::slot::delegat::attach(backend_ref_, mexo::machine::slot::kind::backend, nullptr);
 		present_.mode = front::dev::mode::idle;
+		#if ROBO_APP_MEXO_EXTERNAL_CONFIGURE_NEED == 1
+		present_.error = front::dev::error::startup;
+		#endif
 	}
 
 	void dev::switch_to(int _mode_id) {
@@ -458,7 +461,12 @@ namespace mexo {
 		ROBO_APP_ASSERT(is_backend__);
 		if (action_.mode != present_.mode) {
 			guard__;
-			switch_to(action_.mode);
+			if( present_.error != front::dev::error::none ){
+				action_.mode = front::dev::mode::idle;
+				switch_to(front::dev::mode::idle);
+			} else{
+				switch_to(action_.mode);
+			}
 		}
 		if (present_.action_actual) {
 			guard__;

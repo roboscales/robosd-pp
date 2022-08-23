@@ -86,7 +86,12 @@ void burst_backend_loop(void);
 void burst_frontend_loop(void);
 
 typedef enum  { burst_true = 1, burst_false = 0 } burst_bool_t;
-typedef enum  { burst_complete = 1, burst_panic = 0, burst_fault = 2 } burst_run_t;
+typedef enum  { burst_backend = 1, burst_frontend = 0 } burst_thread_t;
+typedef enum  { burst_complete = 1, burst_panic = 0, burst_fault = 3, burst_continue =2 } burst_run_t;
+
+burst_thread_t burst_thread(void);
+
+typedef unsigned burst_size_t;
 
 #if defined(__cplusplus)
 }

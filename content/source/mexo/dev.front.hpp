@@ -13,7 +13,8 @@
 namespace mexo {
 	namespace front {
 		namespace dev {
-			struct mode { enum { idle = 0/*, fault = 0x255*/ }; };
+			struct mode { enum { idle = 0 }; };
+			struct error { enum { none = 0, startup='S', lost='L' }; };
 			struct action_s 
 			{				
 				#ifdef ROBO_APP_MEXO_SERVO_SIDE

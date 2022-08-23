@@ -38,11 +38,15 @@ namespace robo {
 					rbref rbref_;
 					void release_(void) {
 						if (isfrontend_) {
+							#if ROBO_SYSTEM_ENABLED
 							system::guard g__;
+							#endif
 							rbref_.attach_to(frontend_core_().rbin);
 						}
 						else {
+							#if ROBO_SYSTEM_ENABLED
 							system::guard g__;
+							#endif
 							rbref_.attach_to(backend_core_().rbin);
 						}
 					}
@@ -50,7 +54,9 @@ namespace robo {
 						ref* tmp;
 						while (true) {
 							{
+								#if ROBO_SYSTEM_ENABLED
 								system::guard g__;
+								#endif
 								tmp = _list.pop();
 							}
 							if (tmp) {
@@ -74,8 +80,13 @@ namespace robo {
 						}
 					}
 					ref(void)
-						: isfrontend_(system::env::is_frontend())
-						, rbref_(*this) {
+						: rbref_(*this)
+						#if ROBO_SYSTEM_ENABLED
+						, isfrontend_(system::env::is_frontend())
+						#else
+						, isfrontend_(true)
+						#endif
+						{
 						if (isfrontend_) {
 							frontend_core_().inc();
 						}
@@ -95,14 +106,13 @@ namespace robo {
 				public:
 
 				};
-			private:
-				friend class ::robo::system;
+			public:
+				//#if ROBO_SYSTEM_ENABLED
+				//friend class ::robo::system;
+				//#endif
 				static void frontend_clean(void) { ref::clean_(ref::frontend_core_().rbin); }
 				static void backend_clean(void) { ref::clean_(ref::backend_core_().rbin); }
 			};
-
-
-
 
 			template <typename B, typename R, typename ... Args> class ROBO_EXPORT fabric {
 				//friend class simple;

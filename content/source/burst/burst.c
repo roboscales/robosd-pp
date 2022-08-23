@@ -1,8 +1,11 @@
 #include "burst/burst_app.h"
-
+#if BURST_TIMER_ENABLED == 1
+#include "burst/burst_timer.h"
+#endif
 struct burst_s;
 typedef struct burst_s burst_t;
 typedef burst_t * burst_p;
+
 
 #ifndef BURST_DEV_COUNT
 #define BURST_DEV_COUNT 1
@@ -268,8 +271,17 @@ burst_slot_f burst_slots[BURST_SLOT_COUNT]={
 };
 burst_slot_f * burst_slot = burst_slots;
 burst_slot_f * burst_slots_end = burst_slots+BURST_SLOT_COUNT;
-	
+
+burst_thread_t  burst_thread_ = burst_frontend;
+burst_thread_t burst_thread(void){
+	return burst_thread_;
+}
 void burst_backend_loop(void){
+	burst_alarm(burst_thread_ != burst_frontend)
+	burst_thread_ = burst_backend;
+	#if BURST_TIMER_ENABLED == 1
+	burst_timer_poll();
+	#endif
 	burst_sw_backend_loop();
 	burst_hw_backend_loop();
 	(*burst_slot)();
@@ -281,9 +293,13 @@ void burst_backend_loop(void){
 			burst_dev_backend_loop(p);
 		}
 	}
+	burst_thread_ = burst_frontend;
 }
 
 void burst_frontend_loop(void){
+	#if BURST_TIMER_ENABLED == 1
+	burst_timer_poll();
+	#endif
 	burst_sw_frontend_loop();
 	burst_hw_frontend_loop();
 	{
