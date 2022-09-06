@@ -184,4 +184,23 @@ BURST_STATIC_INLINE burst_signal_t s_mult_floor(burst_signal_t x1, burst_signal_
 #define ONE_DIV_SQRT3           BURST_SIGNAL_T(1.0/EXTENDED_SQRT3)
 #define SQRT3_DIV_2 						BURST_SIGNAL_T(EXTENDED_SQRT3/2)
 
+
+typedef struct {
+	burst_signal_t lo;
+	burst_signal_t hi;
+} burst_range_t;
+typedef burst_range_t * burst_range_p;
+
+typedef enum{burst_satstate_none = 0,burst_satstate_lo=1,burst_satstate_hi=2,burst_satstate_both=3} burst_satstate_t;
+
+typedef struct {
+	burst_range_t in_range;
+	burst_range_t out_range;
+	burst_long_signal_t gain;
+} burst_scaler_t;
+typedef burst_scaler_t * burst_scaler_p;
+
+void burst_scaler_begin(burst_scaler_p,burst_range_p _in_range,burst_range_p _out_range);
+burst_satstate_t burst_scaler_run(burst_scaler_p, burst_signal_t _in, burst_signal_t * _out);
+	
 #endif

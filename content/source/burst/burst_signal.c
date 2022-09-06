@@ -135,3 +135,41 @@ burst_signal_t s_scale_256(burst_signal_t _val, scale_gain_256_t _gain){
 		}
 	}
 }
+
+void burst_scaler_begin(burst_scaler_p _scaler,burst_range_p _in_range,burst_range_p _out_range ){
+	_scaler->in_range.lo = _in_range->lo;
+	_scaler->in_range.hi = _in_range->hi;
+	_scaler->out_range.lo = _out_range->lo;
+	_scaler->out_range.hi = _out_range->hi;
+	burst_long_signal_t tmp = (burst_long_signal_t)_scaler->in_range.hi - _scaler->in_range.lo;
+	if(tmp==0){
+		_scaler->gain = 0;
+	} else {
+		_scaler->gain = (burst_long_signal_t)(_scaler->out_range.hi - _scaler->out_range.lo);
+		_scaler->gain <<= (1+ 15);
+		_scaler->gain += tmp / 2; //округление
+		_scaler->gain /= tmp;
+	}
+}
+
+burst_satstate_t burst_scaler_run(burst_scaler_p _scaler, burst_signal_t _in, burst_signal_t * _out){
+	burst_satstate_t st;
+	if(_scaler->gain == 0){
+		return burst_satstate_both;
+	}
+	if (_in > _scaler->in_range.hi) {
+		_in = _scaler->in_range.hi;
+		st = burst_satstate_hi;
+	} else 	if (_in < _scaler->in_range.lo){
+		_in = _scaler->in_range.lo;
+		st = burst_satstate_lo;
+	} else{
+		st = burst_satstate_none;
+	}
+	
+	burst_long_signal_t tmp =  _scaler->gain * (_in - _scaler->in_range.lo);
+	tmp += (1 << 15);
+	tmp >>= (1 + 15);
+	*_out = (burst_signal_t) ( tmp + _scaler->out_range.lo );
+	return st;
+}
