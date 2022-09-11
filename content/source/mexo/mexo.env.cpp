@@ -569,7 +569,6 @@ namespace mexo{
 	}	
 	#endif
 
-
 	#if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
 	
 	#ifndef ENV_NET_FLOW_PORT_PATH
@@ -701,3 +700,24 @@ namespace mexo{
 	#endif
 	#endif
 }
+
+
+#if ENV_RELAY_PROTO_ENABLED==1
+		//абонент  freemaster
+		#ifndef ENV_RELAY_PROTO_ABONENT_LOCK_US
+		#define ENV_RELAY_PROTO_ABONENT_LOCK_US 100000
+		#endif 
+
+		#ifndef ENV_RELAY_PROTO_ABONENT_SILENS_US
+		#define ENV_RELAY_PROTO_ABONENT_SILENS_US 1000000
+		#endif 
+
+		uint8_t relaye_proto_abonent_marker[3] = { 0xaa,0xaa };
+
+		robo::net::proto::switcher::abonent(
+			abonent_marker
+			2,
+			ENV_RELAY_PROTO_ABONENT_LOCK_US
+			, ENV_RELAY_PROTO_ABONENT_SILENS_US
+		) relaye_proto_abonent;
+#endif

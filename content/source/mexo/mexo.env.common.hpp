@@ -38,9 +38,8 @@
 #define ENV_TERMO_CONNECT_TYPE ENV_TERMO_CONNECT_TYPE_NONE
 #endif
 
-
-#ifndef ENV_TERMO_CONNECT_TYPE
-#define ENV_TERMO_CONNECT_TYPE ENV_TYPE_NONE
+#ifndef ENV_RELAY_PROTO_ENABLED
+#define ENV_RELAY_PROTO_ENABLED 0
 #endif
 
 #ifndef ENV_TERMO_PRINT_TYPE
@@ -73,6 +72,10 @@
 #error ROBO_APP_NET_FLOW_ENABLED will be defined automatically in mexo.env.common.hpp
 #endif
 
+#ifdef ROBO_APP_NET_RELEY_ENABLED
+#error ROBO_APP_NET_RELEY_ENABLED will be defined automatically in mexo.env.common.hpp
+#endif
+
 #if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 #define ROBO_APP_FREEMASTER_SERIAL_ENABLED 1
 #else
@@ -103,5 +106,6 @@
 
 #define FMSTR_REC_TIMEBASE (32768 + ENV_SAMPLE_US)
 
+#define ROBO_APP_NET_RELEY_ENABLED  ENV_RELAY_PROTO_ENABLED
 
 #endif

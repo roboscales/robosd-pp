@@ -10,7 +10,9 @@ namespace ACTUATOR_TEMPLATE_NAME {
 public:
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::action_t<types> action_s;
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::feedback_t<types> feedback_s;
+	#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::profil_t<types> profil_s;
+	#endif
 	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::mode mode;
 
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
@@ -461,6 +463,7 @@ public:
 		#endif
 	}
 	public:
+		#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
 		const profil_s profil(int _mode) {
 			config_s& cf = ps_t::template config< dev_t >();
 			profil_s p;
@@ -498,15 +501,16 @@ public:
 			return p;
 		}
 		#endif
+		#endif
 	protected:
 		virtual void do_update_feedback(void) {
-			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
 			feedback_s& fb = ps_t::template feedback< dev_t >();
+			#if ACTUATOR_MOTOR_POSTITION_MEASSURY_ENABLED == 1
 			present_s& pr = ps_t::template present< dev_t >();
 			config_s& cf = ps_t::template config< dev_t >();
 
 			ps_t::do_update_feedback();
-			if (cf.ps.invers) {
+			if (cf.ps.invers) {				
 				#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED == 1
 				fb.speed = -pr.speed_filter.fb.output;
 				#else
@@ -522,10 +526,6 @@ public:
 				#endif
 				fb.position = ps_t::hardwaresys.motor_enco_block.position_ref();
 			}
-			#else
-			fb.speed = 0;
-			fb.position = 0;
-			fb.crawl_speed = 0;
 			#endif
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
