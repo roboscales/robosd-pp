@@ -9,6 +9,7 @@ extern "C"
 #include "burst_app_tuning.h"
 #include "burst_target.h"
 #include "burst_front.h"
+#include "burst_tp.h"
 
 
 /**
@@ -92,6 +93,22 @@ typedef enum  { burst_complete = 1, burst_panic = 0, burst_fault = 3, burst_cont
 burst_thread_t burst_thread(void);
 
 typedef unsigned burst_size_t;
+
+enum{ VERB_PRIORITRT = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
+
+#ifndef BURST_DEBUG_TP_ENABLED
+#define BURST_DEBUG_TP_ENABLED 0
+#endif
+
+#if BURST_DEBUG_TP_ENABLED == 1
+BURST_TP(burst_tp)
+#define debug_tp_on(n)  burst_tp.on(n)
+#define debug_tp_off(n)  burst_tp.off(n)
+#define debug_set_verb(n)  burst_tp.verb = n
+#else
+#define debug_tp_on(n)
+#define debug_tp_off(n)
+#endif
 
 #if defined(__cplusplus)
 }

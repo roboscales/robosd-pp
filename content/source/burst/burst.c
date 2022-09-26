@@ -1,4 +1,6 @@
 #include "burst/burst_app.h"
+#include "burst/burst_tp.h"
+
 #if BURST_TIMER_ENABLED == 1
 #include "burst/burst_timer.h"
 #endif
@@ -82,11 +84,14 @@ void burst_start(void){
 
 void burst_prioritet_loop(void){
 	burst_dev_ref_p p ;
+	debug_tp_on(VERB_LOOP);
+	debug_tp_on(VERB_PRIORITRT);
 	for( p= burst.devs; p!=burst.devs_end;p++){
 		p->prioritet_loop(p->dev);
 	}
 	burst_sw_prioritet_loop();
 	burst_hw_prioritet_loop();
+	debug_tp_off(VERB_PRIORITRT);
 }
 
 
@@ -95,40 +100,40 @@ void burst_dev_switch_to_idle(burst_dev_ref_p _ref){
 	_ref->present->mode = burst_dev_mode_idle;
 }
 void burst_dev_backend_loop(burst_dev_ref_p _ref){
-		//burst_alarm(is_backend__);
-		burst_dev_action_p action = _ref->action;
-		int action_mode = action->mode;
-		burst_dev_mode_p actual_mode = _ref->actual_mode;
-		if ( action_mode != _ref->present->mode) {
-			if (actual_mode) {
-				actual_mode->stop(_ref->dev);
-			}
+	//burst_alarm(is_backend__);
+	burst_dev_action_p action = _ref->action;
+	int action_mode = action->mode;
+	burst_dev_mode_p actual_mode = _ref->actual_mode;
+	if ( action_mode != _ref->present->mode) {
+		if (actual_mode) {
+			actual_mode->stop(_ref->dev);
+		}
 
-			if (action_mode == burst_dev_mode_idle) {
-				burst_dev_switch_to_idle(_ref);
-			}
-			else {
-				if(action_mode<_ref->mode_count){
-					burst_dev_mode_p m = _ref->modes[action_mode];
-					if (m == 0) {
-						burst_dev_switch_to_idle(_ref);
-					}
-					else {
-						m->start(_ref->dev);
-						m->applay_action(_ref->dev);
-						_ref->actual_mode = m;
-						_ref->present->mode = action_mode;
-					}
-				}else{
+		if (action_mode == burst_dev_mode_idle) {
+			burst_dev_switch_to_idle(_ref);
+		}
+		else {
+			if(action_mode<_ref->mode_count){
+				burst_dev_mode_p m = _ref->modes[action_mode];
+				if (m == 0) {
 					burst_dev_switch_to_idle(_ref);
 				}
-			}
-		} else{
-			if(action->actual){
-				actual_mode->applay_action(_ref->dev);
-				action->actual = 0;
+				else {
+					m->start(_ref->dev);
+					m->applay_action(_ref->dev);
+					_ref->actual_mode = m;
+					_ref->present->mode = action_mode;
+				}
+			}else{
+				burst_dev_switch_to_idle(_ref);
 			}
 		}
+	} else{
+		if(action->actual){
+			actual_mode->applay_action(_ref->dev);
+			action->actual = 0;
+		}
+	}
 }
 
 
@@ -277,6 +282,7 @@ burst_thread_t burst_thread(void){
 	return burst_thread_;
 }
 void burst_backend_loop(void){
+	debug_tp_on(VERB_BACKEND);
 	burst_alarm(burst_thread_ != burst_frontend)
 	burst_thread_ = burst_backend;
 	#if BURST_TIMER_ENABLED == 1
@@ -294,9 +300,12 @@ void burst_backend_loop(void){
 		}
 	}
 	burst_thread_ = burst_frontend;
+	debug_tp_off(VERB_BACKEND);
+	debug_tp_off(VERB_LOOP);
 }
 
 void burst_frontend_loop(void){
+	debug_tp_on(VERB_FRONTEND);
 	#if BURST_TIMER_ENABLED == 1
 	burst_timer_poll();
 	#endif
@@ -309,6 +318,8 @@ void burst_frontend_loop(void){
 				p->frontend_loop(p->dev);
 		}
 	}
+	debug_tp_off(VERB_FRONTEND);
+	debug_tp_off(VERB_LOOP);
 }
 
 #ifdef BURST_WEAK
@@ -434,4 +445,9 @@ BURST_WEAK  void burst_hw_guard_leave(void* _context){
 BURST_WEAK  void burst_hw_guard_lock(void){}
 BURST_WEAK  void burst_hw_guard_unlock(void){}
 
+#endif
+
+	
+#if BURST_DEBUG_TP_ENABLED == 1
+BURST_TP_CREATE(burst_tp)
 #endif

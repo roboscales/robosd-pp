@@ -226,7 +226,7 @@ namespace mexo {
 				BB::execute();
 				present_s& present = handler::present<current_sence>();
 				typename q::signal_t tmp = present.current;
-				present.current = present.adc.values[1] - present.adc.values[0];
+				present.current = present.adc.values[0] - present.adc.values[1];
 				present.delta = present.current - tmp;
 			}
 			virtual void do_handler_adjust(void) {}

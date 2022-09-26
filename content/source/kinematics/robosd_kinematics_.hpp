@@ -396,7 +396,6 @@ namespace robo{
 				enum { orientofs = P::count, posofs = 0 };
 				using std::span<type, count>::span;
 				span(const type(&_arr)[count]) : std::span<type, count>((type*)(&_arr[0]), count) {}
-				span(const std::span<type, count> & _src ) : std::span<type, count>() {}
 				orient_t::span orient() const {
 					return
 						std::span(*this).subspan <orientofs, O::count>();
@@ -561,7 +560,7 @@ namespace robo{
 				return *this;
 			}
 
-			// тогда, когда нагрузка не имеет векторных данных
+			// тогда, когда нагрузка не имеет векторных жанных
 			//конструктор через конвертацию
 			template <class B, typename ... Args > target_t(
 				const B& from
@@ -965,16 +964,17 @@ namespace robo{
 
 				point local;
 				point supply;
-				point base;
-				
+				point base;			
+
 				T get(void) const {
-					return actual_;
+					return  actual_;
 				}
 
-				T getby(T _src) const {
+				T getby(T _src) {
 					T dummy;
-					getby(_src, dummy);
+					return getby(_src, dummy);
 				}
+
 				T getby(T _src, T & _delta) const {
 					_src += offset_;
 					_delta = _src - actual_;
@@ -1023,8 +1023,8 @@ namespace robo{
 					}
 					}
 					return T(0);
-
 				}
+
 				bool check(T _val, T & _delta) const {
 					T tmp = getby(_val, _delta);
 					switch (type_) {
@@ -1037,13 +1037,13 @@ namespace robo{
 				}
 
 				T score(double _val) const {
-					T tmp = get(_val);
+					T tmp = get();
 					switch (type_) {
 					case types::none:
 					case types::cicle_infinite:
 					return T(1);
 					default:
-					if ((tmp >= min_) && (tmp <= max_)) {
+					if ((tmp >= min_ - 0.00000000000008) && (tmp <= max_ + 0.00000000000008))  {
 						T s = (tmp - min_) / (max_ - min_);
 						return T(1) - T(1) / (T(1) + exp( T(40) * s * (T(1) - s) - T(5)));
 					}
@@ -1175,7 +1175,255 @@ namespace robo{
 				}
 			};
 		};
+		template<typename T> struct joint {
+			using quaternion = ::robo::kinematiks::quaternion<T>;			
+			class series;
 
+			class actuator {
+				T delta_ = 0.0;
+				T actual_ =0.0;
+				T min_ = 0.0;
+				T max_ = 0.0;
+				T offset_ = 0.0;
+			protected:
+				virtual void do_move(T _data) = 0;
+			public:
+				typedef ::robo::list::unique<actuator, int> list;
+				typedef list::ref ref;
+				enum class types {
+					none
+					, line
+					, cicle_infinite
+					, multirotated
+					, cicle_signed
+					, cicle_unsigned
+				};
+			private:
+				ref ref_;
+				types type_ = types::none;
+				//void update_back_(actuator* _prev) {}
+
+			public:
+
+				friend class series;
+
+				struct point: public ::robo::kinematiks::point<T>::hamilton {
+					quaternion iorient;
+				};
+
+				point local;
+				point supply;
+				point base;			
+
+				T get(void) const {
+					return  actual_;
+				}
+
+				T getby(T _src) {
+					T dummy;
+					return getby(_src, dummy);
+				}
+
+				T getby(T _src, T & _delta) const {
+					_src += offset_;
+					_delta = _src - actual_;
+					switch (type_) {
+					case types::none:
+					case types::line:
+					return  _src;
+					case types::cicle_infinite:
+					case types::multirotated:
+					{
+						while (_delta > pi<T>) {
+							_delta = _delta - T(2) *pi<T>;
+						}
+						while (_delta < - pi<T>) {
+							_delta = _delta + T(2) * pi<T>;
+						}
+						T ret = actual_ + _delta;
+						if (ret > max_) {
+							ret -= (T(2) *pi<T>);
+						}
+						if (ret < min_) {
+							ret += (T(2) * pi<T>);
+						}
+						return ret;
+					}
+
+					case types::cicle_signed:
+					{	
+						while (_src > pi<T>) {
+							_src -= T(2) * pi<T>;
+						}
+						while (_src < -pi<T>) {
+							_src += T(2) * pi<T>;
+						}
+						return _src;
+					}
+					case types::cicle_unsigned:
+					{
+						while (_src >= T(2) *pi<T>) {
+							_src -= T(2) * pi<T>;
+						}
+						while (_src < T(0)) {
+							_src += T(2) * pi<T>;
+						}
+						return _src;
+					}
+					}
+					return T(0);
+				}
+
+				bool check(T _val, T & _delta) const {
+					T tmp = getby(_val, _delta);
+					switch (type_) {
+					case types::none:
+					case types::cicle_infinite:
+					return true;
+					default:
+					return ((tmp >= min_ - 0.00000000000008) && (tmp <= max_+0.00000000000008));
+					}
+				}
+
+				T score(double _val) const {
+					T tmp = get();
+					switch (type_) {
+					case types::none:
+					case types::cicle_infinite:
+					return T(1);
+					default:
+					if ((tmp >= min_ - 0.00000000000008) && (tmp <= max_ + 0.00000000000008))  {
+						T s = (tmp - min_) / (max_ - min_);
+						return T(1) - T(1) / (T(1) + exp( T(40) * s * (T(1) - s) - T(5)));
+					}
+					else {
+						return T(0);
+					}
+					}
+				}
+				
+				void begin( T _actual_dg, T _min_dg, T _max_dg, T _offset_dg) {
+					min_ = _min_dg *deg2rad<T>;
+					max_ = _max_dg * deg2rad<T>;
+					offset_ = _offset_dg * deg2rad<T>;
+					move(_actual_dg * deg2rad<T>);
+				}
+				void assign( const actuator & _src) {
+					min_ = _src.min_;
+					max_ = _src.max_;
+					offset_ = _src.offset_;					
+				}
+				actuator(int _index, series& _series, types _type) : ref_(*this, _index) {
+					ref_.attach_to(_series.actuators);
+					local.orient.w = 1;
+					supply.orient.w = 1;
+					base.orient.w = 1;
+					type_ = _type;
+				}
+				void update_forvard(actuator* _prev) {
+					actuator* next = ref_.next_ptr();
+					if (_prev != nullptr) {
+						base.orient = _prev->base.orient;						
+						base.orient *= local.orient;
+						base.position = _prev->base.position + _prev->base.orient * local.position * _prev->base.iorient;
+					}
+					else {
+						base.position = local.position;
+						base.orient = local.orient;
+					}
+					base.orient *= supply.orient;
+					base.iorient = base.orient.inv();
+					if (next) {
+						next->update_forvard(this);
+					}
+				}
+				quaternion map_base(const quaternion& _q) {
+					quaternion tmp = base.orient;
+					tmp *= _q;
+					tmp *= base.iorient;
+					tmp += base.position;
+					return tmp;
+				}				
+				quaternion map_target(const quaternion& _q) {
+					quaternion tmp = base.iorient;
+					tmp *= (_q- base.position);
+					tmp *= base.orient;
+					return tmp;
+				}
+				void move(T _position_dg) {
+					actual_ = _position_dg  * grad2rad<T> - offset_;
+					do_move(actual_);
+				}
+			};
+
+			class yaw : public actuator {
+			protected:
+				virtual void do_move(T _data) {
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.z = sin(_data / 2);
+				}
+			public:
+				yaw(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
+			};
+
+			class pitch : public actuator {
+			protected:
+				virtual void do_move(double _data) {
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.y = sin(_data / 2);
+				}
+			public:
+				pitch(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
+			};
+
+			class roll : public actuator {
+			protected:
+				virtual void do_move(double _data) {
+					actuator::supply.orient.w = cos(_data / 2);
+					actuator::supply.orient.x = sin(_data / 2);
+				}
+			public:
+				roll(int _index, series& _series) : actuator(_index, _series, actuator::types::cicle_signed) {}
+			};
+
+			class series {
+				
+				friend class actuator;
+			public:
+				typename actuator::list actuators;
+				series() {}
+				void update_forvard(void) {
+					typename  actuator::ref* r = actuators.first();
+					if (r) {
+						r->owner().update_forvard(nullptr);
+					}
+				}
+
+
+
+				/*template<typename C, unsigned N> void move(const C& _src) {
+					ROBO_APP_ASSERT(N == actuators_.count);
+					for (actuator::ref* r = actuators_.first(), const typename C::feetback fole * src = &_src.first(); r = r->next(), ++src) {
+						r->owner().move(src->position);
+					}
+				}*/
+				template<unsigned N> void move(const std::span<double, N>& _src) {
+					ROBO_APP_ASSERT(N == actuators.count);
+					typename actuator::ref* r = actuators.first();
+					const double* src = &_src.first();
+					for (;r; r = r->next(), ++src) {
+						r->owner().move(src);
+					}
+				}
+				void assign(const series& _src_robot) {
+					typename actuator::ref* d = actuators.first();
+					typename actuator::ref* s = _src_robot.actuators.first();
+					for (; d; d = d->next(), s = s->next()) {
+						d->owner().assign( s->owner() );
+					}
+				}
+			};
+		};
 		/*
 		namespace actuator {
 			class joint {
