@@ -6,7 +6,7 @@ void burst_ps_begin_(burst_ps_p _ps, burst_ps_config_p _config){
 	_ps->config = _config;
 	_ps->status = burst_ps_status_off;
 }
-void burst_ps_poll_(burst_ps_p _ps){
+void burst_ps_run_(burst_ps_p _ps){
 	switch (_ps->status) {
 		case burst_ps_status_unknown:
 			break;
@@ -56,6 +56,6 @@ void burst_ps_dc_begin_(burst_ps_dc_p _dc,burst_ps_dc_config_p _config){
 
 burst_satstate_t burst_ps_dc_do_invert_(burst_ps_dc_p _dc){
 	burst_satstate_t tmp = burst_scaler_run(&(_dc->scaler),*_dc->required,&(_dc->duty) );	
-	//_dc->set(_dc->duty);
+	_dc->set(_dc->duty);
 	return tmp;
 }

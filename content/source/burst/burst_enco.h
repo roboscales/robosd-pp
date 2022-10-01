@@ -41,14 +41,14 @@ typedef struct  {
 			burst_signal_t delta_acc;
 			burst_long_signal_t acc;
 			burst_long_signal_t position;
-			void (* poll)(void);
+			void (* run)(void);
 			void (* begin)(burst_enco_config_p);
 			void (* query)(void);
 			uint32_t (* encode)(void);
 			burst_bool_t (* error)(void);
 } burst_enco_t;
 typedef burst_enco_t * burst_enco_p;
-void burst_enco_poll_(burst_enco_p);
+void burst_enco_run_(burst_enco_p);
 void burst_enco_begin_(burst_enco_p,burst_enco_config_p);
 
 #define BURST_ENCO( S ) BURST_ENCO_( S )
@@ -57,8 +57,8 @@ extern burst_enco_t  S;
 
 #define BURST_ENCO_CREATE( S ) BURST_ENCO_CREATE_( S )
 #define BURST_ENCO_CREATE_( S ) \
-BURST_WEAK  void S##_poll(void){\
-	return burst_enco_poll_(&S);\
+BURST_WEAK  void S##_run(void){\
+	return burst_enco_run_(&S);\
 }\
 BURST_WEAK  void S##_begin(burst_enco_config_p _config){ \
 	burst_enco_begin_(&S,_config); \
@@ -86,7 +86,7 @@ burst_enco_t S ={ \
 		,0 \
 		,0 \
 		,0 \
-		, S##_poll\
+		, S##_run\
 		, S##_begin\
 		, S##_query\
 		, S##_encode\

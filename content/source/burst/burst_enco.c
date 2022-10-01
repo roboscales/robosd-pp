@@ -1,5 +1,5 @@
 #include "burst/burst_enco.h"
-void burst_enco_poll_(burst_enco_p _enco){
+void burst_enco_run_(burst_enco_p _enco){
 	burst_enco_config_p conf = _enco->config;
 	if(conf == 0) return;
 	if (conf->offset.native != _enco->offset.native || conf->offset.position != _enco->offset.position) {
@@ -94,3 +94,4 @@ void burst_enco_begin_(burst_enco_p _enco,burst_enco_config_p _config){
 	_enco->offset.native =		_config->offset.native;
 	_enco->query();
 }
+

@@ -25,7 +25,7 @@ typedef struct {
 	burst_satstate_t satstate;
 	burst_bool_t ( *active)(void);
 	void ( *begin)(burst_ps_config_p);
-	void ( *poll)(void);
+	void ( *run)(void);
 	void ( *boot_begin)(void);
 	burst_bool_t ( *do_boot)(void);
 	void ( *boot_complete)(void);
@@ -38,7 +38,7 @@ typedef burst_ps_t * burst_ps_p;
 
 burst_bool_t burst_ps_active_(burst_ps_p);// { return status_ == status::on; }
 void burst_ps_begin_(burst_ps_p, burst_ps_config_p);// {}
-void burst_ps_poll_(burst_ps_p);// {}
+void burst_ps_run_(burst_ps_p);// {}
 
 
 #define BURST_PS( S ) BURST_PS_( S )
@@ -53,8 +53,8 @@ BURST_WEAK  burst_bool_t S##_active(void){\
 BURST_WEAK  void S##_begin(burst_ps_config_p _config){\
 	burst_ps_begin_(&S,_config);\
 }\
-BURST_WEAK  void S##_execute(void){\
-	return burst_ps_execute_(&S);\
+BURST_WEAK  void S##_run(void){\
+	return burst_ps_run_(&S);\
 }\
 BURST_WEAK  void S##_boot_begin(void){\
 }\
@@ -128,8 +128,8 @@ BURST_WEAK  void S##_ps_begin(burst_ps_config_p _config){ \
 BURST_WEAK  void S##_begin(burst_ps_dc_config_p _config){ \
 	burst_ps_dc_begin_(&S,_config); \
 }\
-BURST_WEAK  void S##_poll(void){\
-	return burst_ps_poll_(&S.ps);\
+BURST_WEAK  void S##_run(void){\
+	return burst_ps_run_(&S.ps);\
 }\
 BURST_WEAK  void S##_boot_begin(void){\
 }\
@@ -158,7 +158,7 @@ burst_ps_dc_t S ={ \
 		, burst_satstate_both \
 		, S##_active \
 		, S##_ps_begin \
-		, S##_poll \
+		, S##_run \
 		, S##_boot_begin \
 		, S##_do_boot \
 		, S##_boot_complete \

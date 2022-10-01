@@ -173,3 +173,4 @@ burst_satstate_t burst_scaler_run(burst_scaler_p _scaler, burst_signal_t _in, bu
 	*_out = (burst_signal_t) ( tmp + _scaler->out_range.lo );
 	return st;
 }
+
