@@ -332,7 +332,7 @@ namespace mexo {
 
 			void execute(void) {
 				present_s& present = handler::present<rotator_t>();
-				const config_s& config = handler::config<config_s>();
+				const config_s& config = handler::config<rotator_t>();
 				unative_t tmp;
 				if (config.inverce) {
 					tmp = std::numeric_limits<unative_t>::max() - A::input;

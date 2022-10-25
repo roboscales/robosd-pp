@@ -112,6 +112,7 @@ void drv8711_begin_(drv8711_p _drv,drv8711_config_p _config){
 }
 void drv8711_status_query_(drv8711_p _drv){
 		_drv->cs_on();
+		_drv->actual.STATUS.NotAvailabled = 1;
 		_drv->put(_drv->actual.STATUS.value);
 }
 burst_bool_t drv8711_status_check_(drv8711_p _drv){

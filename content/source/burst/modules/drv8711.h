@@ -261,7 +261,8 @@ typedef union drv8711_STATUS_s{
 		uint16_t	UNDERVOLTAGE:1;
 		uint16_t 	STALL:1;
 		uint16_t 	STALL_LANCH:1;
-		uint16_t 	Reserved:4;
+		uint16_t 	NotAvailabled:1;
+		uint16_t 	Reserved:3;
 		uint16_t 	address:3;
 		uint16_t 	request:1;
 	};

@@ -50,6 +50,7 @@ public:
 		status_t status;
 	};
 	typedef typename ps_t::action_s action_s;
+	typedef typename ps_t::feedback_s feedback_s;
 	private:
 	
 	void brake_force(void) {
@@ -112,6 +113,8 @@ public:
 		const config_s& config = ps_t::template config<dev_t>();
 
 		switch (present.status) {
+		case status_t::configure:
+			break;
 		case status_t::fixed:
 		if (present.command == command_t::release) {
 			present.status = status_t::releasing;

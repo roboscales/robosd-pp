@@ -486,14 +486,14 @@ public:
 			break;
 			#endif
 			#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
-			case mode::speed_ov_current_cl:
+			case mode::speed_ov_current:
 			#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
 			p.crawl_speed = cf.positioner_ov_current.crawlSpeed;
 			#endif
 			break;
 			#endif
 			#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1
-			case mode::position_ov_current_cl:
+			case mode::position_ov_current:
 			p.crawl_speed = cf.positioner_ov_current.crawlSpeed;
 			break;
 			#endif

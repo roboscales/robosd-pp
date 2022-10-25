@@ -6,7 +6,7 @@
 namespace mexo {	
 	template <typename D> class pinin : public D{
 		public:
-		typedef robo::delegat::base<void> delegat;
+		typedef robo::delegat::ref<void> delegat;
 		private:
 		delegat * on_raise_ = nullptr;
 		enum class state{ set =1,reset = 0} state_ = state::reset;

@@ -3,10 +3,10 @@
 #include "mexo/mexo.hpp"
 #include "mexo/math.hpp"
 
-
 #if ENV_FREEMASTER_CONNECT_TYPE != ENV_FREEMASTER_CONNECT_TYPE_NONE
 #include "freemaster/robosd_fm.hpp"
 #endif
+
 
 #if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
 #include "terminal/robosd_termo.hpp"
@@ -159,8 +159,7 @@ namespace mexo{
 		);	
 		#endif
 
-		#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE
-		
+		#if ENV_TERMO_CONNECT_TYPE != ENV_TERMO_CONNECT_TYPE_NONE		
 		class imexo_cmd : public ::robo::termo::node {
 		public:
 			typedef enum  {
@@ -327,50 +326,50 @@ namespace mexo{
 
 		#if MEXO_SETTINGS_STORE_ENABLE == 1
 
-			static termo_command_t settings =
+		static termo_command_t settings =
+		{
+			{ 0 }
+			, "settings"
+				, "ENV settings commands"
+				, "<CR>"
+				, &mexo_cmd_class
+		};
+
+		static termo_mexo_command_t settings_reset =
+		{
 			{
 				{ 0 }
-				, "settings"
-					, "ENV settings commands"
+				, "reset"
+					, "ENV settings reset"
 					, "<CR>"
 					, &mexo_cmd_class
-			};
+			}
+			, TERMO_MEXO_CMD_SETTINGS_RESET
+		};
 
-			static termo_mexo_command_t settings_reset =
+		static termo_mexo_command_t settings_load =
+		{
 			{
-				{
-					{ 0 }
-					, "reset"
-						, "ENV settings reset"
-						, "<CR>"
-						, &mexo_cmd_class
-				}
-				, TERMO_MEXO_CMD_SETTINGS_RESET
-			};
+				{ 1 }
+				, "load"
+					, "ENV settings load"
+					, "<CR>"
+					, &mexo_cmd_class
+			}
+			, TERMO_MEXO_CMD_SETTINGS_LOAD
+		};
 
-			static termo_mexo_command_t settings_load =
+		static termo_mexo_command_t settings_save =
+		{
 			{
-				{
-					{ 1 }
-					, "load"
-						, "ENV settings load"
-						, "<CR>"
-						, &mexo_cmd_class
-				}
-				, TERMO_MEXO_CMD_SETTINGS_LOAD
-			};
-
-			static termo_mexo_command_t settings_save =
-			{
-				{
-					{ 2 }
-					, "save"
-						, "ENV settings save"
-						, "<CR>"
-						, &mexo_cmd_class
-				}
-				, TERMO_MEXO_CMD_SETTINGS_SAVE
-			};
+				{ 2 }
+				, "save"
+					, "ENV settings save"
+					, "<CR>"
+					, &mexo_cmd_class
+			}
+			, TERMO_MEXO_CMD_SETTINGS_SAVE
+		};
 		#endif
 			
 		#ifndef ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 
@@ -563,12 +562,10 @@ namespace mexo{
 				}
 			}show_records_;
 		}
-
-		
 		#endif
-	}	
-	#endif
-
+		#endif	
+		}
+	}
 	#if ENV_NET_FLOW_TYPE == ENV_NET_FLOW_TYPE_DEFAULT
 	
 	#ifndef ENV_NET_FLOW_PORT_PATH
@@ -699,7 +696,7 @@ namespace mexo{
 	#endif
 	#endif
 	#endif
-}
+
 
 
 #if ENV_RELAY_PROTO_ENABLED==1
