@@ -2,10 +2,10 @@
 #define burst_tp_h
 //#include "burst/burst_signal.h"
 
-typedef enum{ BURST_TP_ON = 1,BURST_TP_OFF = 0} burst_status_t;
+typedef enum{ BURST_TP_ON = 1,BURST_TP_OFF = 0} burst_tp_status_t;
 typedef struct  {
 	int verb;
-	burst_status_t status;
+	burst_tp_status_t status;
 	void (* on)(int);
 	void (* off)(int);
 	void (* toggle)(int);

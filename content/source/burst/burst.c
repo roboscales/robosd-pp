@@ -4,6 +4,9 @@
 #if BURST_TIMER_ENABLED == 1
 #include "burst/burst_timer.h"
 #endif
+#if BURST_BUTTON_ENABLED == 1
+#include "burst/burst_button.h"
+#endif
 struct burst_s;
 typedef struct burst_s burst_t;
 typedef burst_t * burst_p;
@@ -319,7 +322,10 @@ void burst_frontend_loop(void){
 		}
 	}
 	debug_tp_off(VERB_FRONTEND);
-	debug_tp_off(VERB_LOOP);
+	
+	#if BURST_BUTTON_ENABLED == 1
+	burst_btn_poll();
+	#endif
 }
 
 #ifdef BURST_WEAK
