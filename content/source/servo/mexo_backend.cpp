@@ -417,6 +417,24 @@ namespace mexo {
 		void devagent::flow_serial::do_clean(void) {
 			robo::backend::devagent::tunnel::do_clean();
 		}
+		/*
+		class loop :public ::robo::app::module {
+			loop() : ::robo::app::module(RT("backend.loop")) {
+				init(nullptr, &::robo::app::machine::root());
+				load();
+			}
+			static loop instance_;
+		protected:
+			void frontend_loop(void) {
+				::robo::frontend::queue::poll();
+			}
+			void backend_loop(void) {
+				::robo::backend::bus::perform();
+				::robo::backend::queue::poll();
+				::robo::backend::task::machine::execute();
 
+			}
+		};
+		loop loop::instance_;*/
 	}
 }

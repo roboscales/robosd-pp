@@ -1070,6 +1070,31 @@ namespace robo {
 		}
 
 		#endif
+		class loop : public robo::app::module {
+			loop(void)
+				: robo::app::module(RT("backend-loop")) {
+			}
+			static loop instance_;
+
+		protected:
+			virtual void backend_loop(void) {
+				bus::perform();
+				queue::poll();
+				task::machine::execute();				
+			}
+			virtual void frontend_loop(void) {
+				::robo::frontend::queue::poll();				
+			}
+			virtual bool do_start(void) {			
+				return true;
+			}
+			virtual void do_stop(void) {
+			}
+			virtual void do_clean(void) {
+			}
+		public:
+		};
+		loop loop::instance_;
 	}
 }
 

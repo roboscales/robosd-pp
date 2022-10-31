@@ -10,7 +10,11 @@ void burst_positioner_run_(burst_posicioner_p _posicioner){
 	burst_long_signal_t err = *(_posicioner->signal_req) - *(_posicioner->signal);
 	burst_signal_t deadZone = s->deadZone;
 	if (err==0){
-			*(_posicioner->control)=0;
+			if (_posicioner->forceControl) {
+				*(_posicioner->control)= *(_posicioner->forceControl);
+			} else{
+				*(_posicioner->control)= 0;
+			}
 			return;
 	}else{
 			if(err > s->deadZone){

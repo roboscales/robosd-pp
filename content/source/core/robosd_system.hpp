@@ -41,6 +41,10 @@
 #define ROBO_APP_CONSOL_TYPE ROBO_APP_TYPE_NONE
 #endif
 
+#ifndef ROBO_APP_OS_TYPE
+#define ROBO_APP_OS_TYPE ROBO_APP_TYPE_NONE
+#endif
+
 #define ROBO_APP_CONSOL_ENABLED  (ROBO_APP_CONSOL_TYPE != ROBO_APP_TYPE_NONE)
 
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
@@ -48,6 +52,7 @@
 #define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_SHARED_ENABLED (ROBO_APP_SHARED_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_ALLOC_ENABLED (ROBO_APP_ALLOC_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_OS_ENABLED (ROBO_APP_OS_TYPE != ROBO_APP_TYPE_NONE)
 
 #ifndef ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED
 #define ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED 0
@@ -67,7 +72,7 @@ namespace robo {
 		/*!
 		 *  Выделение памяти. Для
 		 */
-	#if ROBO_APP_ALLOC_ENABLED ==1
+#if ROBO_APP_ALLOC_ENABLED ==1
 	public:
 		struct ROBO_EXPORT mem {
 			//статистика
@@ -88,7 +93,7 @@ namespace robo {
 		static mem::stat& get_mem_statistic(void) { guard g__; return instance_().memstat_; }
 	private:
 		mem::stat memstat_;
-	#endif
+#endif
 	public:
 		enum class context { backend, frontend };
 
@@ -102,9 +107,9 @@ namespace robo {
 		private:
 			op op_;
 			op critical_op_;
-			#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
 			context context_;
-			#endif
+#endif
 		public:
 			guard(void);
 			~guard(void);
@@ -114,16 +119,16 @@ namespace robo {
 		static system & instance_(void);
 		enum  class state { enabled = 178, unknown = -178 };
 		state state_ = state::unknown;
-		#if ROBO_APP_ENV_ENABLED == 1
-		#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
+#if ROBO_APP_ENV_ENABLED == 1
+#if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
 		static int lock_count_;
 		static int guest_count_;
-		#endif
+#endif
 
-		#if ROBO_APP_ALLOC_ENABLED == 1
+#if ROBO_APP_ALLOC_ENABLED == 1
 		void* mem_alloc_(size_t _sz);
 		void mem_free_(void* _memo);
-		#endif
+#endif
 		friend class critical;
 		system(void);
 		~system(void);
@@ -169,7 +174,7 @@ namespace robo {
 			~fall(void);
 		};
 
-		#if ROBO_APP_ENV_ENABLED ==1
+#if ROBO_APP_ENV_ENABLED ==1
 		/*!
 		 *  Это специфичные функции для аппаратуры и компилятора
 		 */
@@ -225,8 +230,17 @@ namespace robo {
 			 *  поток обозначает, что он перестал реализовать backend
 			 */
 			static void comeback(void);
+			
+			/*!
+			 *  поток переключает себя в режим realtime
+			 */
+			static void switch_to_realtime(void);
+			/*!
+			 *  поток переключает себя в режим не realtime
+			 */
+			static void switch_to_normal(void);
 
-			#if ROBO_APP_ALLOC_ENABLED ==1
+#if ROBO_APP_ALLOC_ENABLED ==1
 
 			/*!
 			 *  специфическая функция выделения памяти в куче. Работает по разному для backend и frontend
@@ -244,11 +258,11 @@ namespace robo {
 			static void mem_free(void* _memo);
 			static size_t mem_size(void* _memo);
 
-			#endif
+#endif
 
-			#if ROBO_APP_MODULE_ENABLED == 1
+#if ROBO_APP_MODULE_ENABLED == 1
 			static void frontend_loop(void);
-			#endif
+#endif
 
 		public:
 
@@ -270,7 +284,7 @@ namespace robo {
 			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
 			 */
 			static void abort(void);
-			#if ROBO_APP_MODULE_ENABLED == 1
+#if ROBO_APP_MODULE_ENABLED == 1
 
 			/*!
 			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
@@ -289,7 +303,7 @@ namespace robo {
 			static result startup(void);
 			static result shutdown(void);
 			static void backend_loop(void);
-			#endif
+#endif
 			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
 			static time_ms_t time_ms(void);
@@ -297,30 +311,30 @@ namespace robo {
 			static void wakeup(void);
 			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
-			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
-			#if ROBO_UNICODE_ENABLED == 1
+#if ROBO_UNICODE_ENABLED == 1
 			static size_t sprintf(char * _dst, size_t _max_sz, const char *  _format, va_list _args);
-			#endif
-			#endif
-			#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+#endif
+#endif
+#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 			static void print(cstr  _s);
-			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			static void print(robo::log::verb _verb, cstr _format, va_list  _args);
-			#endif
-			#endif
+#endif
+#endif
 		};
-		#endif
+#endif
 
 		static void frontend_loop(void);
 		static void backend_loop(void);
-		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
 		static void printf(cstr _format, ...);		
 		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, ...);
-		#endif
+#endif
 
-		#if ROBO_APP_INI_ENABLED ==1
+#if ROBO_APP_INI_ENABLED ==1
 		struct ROBO_EXPORT ini {
 			static bool begin(cstr _ini);
 			static cstr source(void);
@@ -328,9 +342,9 @@ namespace robo {
 			static bool load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key);
 			static void load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size);
 		};
-		#endif
+#endif
 
-		#if ROBO_APP_LIB_ENABLED ==1
+#if ROBO_APP_LIB_ENABLED ==1
 		struct ROBO_EXPORT lib {
 			static void* proc_get(void* _handle, cstr _proc_name);
 			static bool exists(cstr _lib_name);
@@ -339,9 +353,9 @@ namespace robo {
 			static bool copy(cstr _src, cstr _dst);
 			static bool remove(cstr _lib_name);
 		};
-		#endif
+#endif
 
-		#if ROBO_APP_SHARED_ENABLED ==1
+#if ROBO_APP_SHARED_ENABLED ==1
 		class ROBO_EXPORT shared {
 			friend class guard;
 			void driver_lock(void);
@@ -349,7 +363,7 @@ namespace robo {
 			bool driver_open(cstr _path, size_t _sz);
 			void driver_close(void);
 			class driver;
-			driver* driver_=nullptr;
+			driver* driver_ = nullptr;
 		public:
 			typedef list::unique< shared, int> map;
 			typedef map::ref ref;			
@@ -359,7 +373,8 @@ namespace robo {
 			class guard {
 				shared& owner_;
 			public:
-				guard(shared& _owner) : owner_(_owner) { _owner.driver_lock(); }
+				guard(shared& _owner)
+					: owner_(_owner) { _owner.driver_lock(); }
 				~guard(void) { owner_.driver_unlock(); }
 			};
 			void* memo(void);
@@ -372,21 +387,21 @@ namespace robo {
 			static shared* find(int _id);
 
 		};
-		#endif
+#endif
 
-		#if ROBO_APP_CONSOL_ENABLED == 1
+#if ROBO_APP_CONSOL_ENABLED == 1
 		class ROBO_EXPORT consol {
 		private:
 			static bool driver_begin(void);
 			static void driver_finish(void);
 		public:
-			enum class event {app, keypbrd, other};
+			enum class event { app, keypbrd, other };
 			typedef lambda<void(event)> on_break_f;
 			static void stop(event _ev);
 			static bool begin(const on_break_f & _on_break);
 			static void finish(void);
 		};
-		#endif
+#endif
 	};
 }
 #endif

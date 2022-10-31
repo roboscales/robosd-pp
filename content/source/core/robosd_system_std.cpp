@@ -117,7 +117,7 @@ namespace robo {
 namespace robo {
 	size_t system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
 		#if ROBO_UNICODE_ENABLED == 1
-		//todo косячная функция  - если вся информация не помещается в буфер, то она не выведеться вовсе
+		//todo РєРѕСЃСЏС‡РЅР°СЏ С„СѓРЅРєС†РёСЏ  - РµСЃР»Рё РІСЃСЏ РёРЅС„РѕСЂРјР°С†РёСЏ РЅРµ РїРѕРјРµС‰Р°РµС‚СЃСЏ РІ Р±СѓС„РµСЂ, С‚Рѕ РѕРЅР° РЅРµ РІС‹РІРµРґРµС‚СЊСЃСЏ РІРѕРІСЃРµ
 		int sz = vswprintf(_dst, _max_sz, _format, _args);
 		#else
 		int sz = vsnprintf(_dst, _max_sz, _format, _args);
@@ -185,6 +185,155 @@ namespace robo {
 #endif
 
 
+#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_STD
 
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include "core/robosd_ini.hpp"
+namespace robo {
+	time_us_t current_time_us_ = 0;
+	time_us_t current_time_ms_ = 0;
+	time_us_t period_us_;
+	//LARGE_INTEGER tickCurrent_;
+	double us_per_tick_;
+	//LARGE_INTEGER ticksPerSecond_;
+	//LARGE_INTEGER tickNext_;
+	//DWORD tick_per_period_;
+	time_us_t us_acc_ = 0;
+	int  step_show_period_;
+	std::thread::id backend_thread_id_;
+	std::thread::id dummy_thread_id_;
+	time_us_t last_time_us_ = 0;
+	int step_show_tick_ = 0;
+	
+	std::chrono::steady_clock::time_point begin_ = std::chrono::steady_clock::now();
+	
+	std::mutex critical_;
+	std::mutex guard_;
+#if ROBO_APP_MODULE_ENABLED == 1
 
+	bool system::env::begin(void) {
+		//ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())
+		return true;
+	}
 
+	void system::env::finish(void) {
+	}
+
+	bool system::env::start(void) {
+		time_ms_t ms;
+		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms));
+		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), period_us_));
+		step_show_period_ = 1000 * ms / period_us_;
+		last_time_us_ = realtime_us();
+		return true;
+	}
+
+	void system::env::stop(void) {}
+	result system::env::startup(void) {
+		return result::complete;
+	}
+
+	result system::env::shutdown(void) {
+		return result::complete;
+	}
+
+	void system::env::frontend_loop(void) {}
+	void system::env::backend_loop(void) {
+		us_acc_ += period_us_;
+		while (us_acc_ > 1000) {
+			us_acc_ -= 1000;
+			current_time_ms_++;
+		}
+		current_time_us_ += period_us_;
+
+		if (++step_show_tick_ == step_show_period_) {
+			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
+			step_show_tick_ = 0;
+		}
+	}
+	#endif
+	system::guard::op system::env::critical_enter(void) {
+		critical_.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::critical_leave(void) {
+		critical_.unlock();
+	}
+
+	bool system::env::is_frontend(void) {
+		return backend_thread_id_ != std::this_thread::get_id();
+	}
+
+	bool system::env::is_backend(void) {
+		return backend_thread_id_ == std::this_thread::get_id();
+	}
+
+	system::guard::op system::env::enter(void) {
+		switch_to_realtime();
+		guard_.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::leave(void) {
+		guard_.unlock();
+		switch_to_normal();
+	}
+
+	system::guard::op  system::env::lock(void) {
+		guard_.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::unlock(void) {
+		guard_.unlock();
+	}
+
+	void system::env::fall(void) {
+		time_us_t tm = realtime_us();
+		while (tm - last_time_us_ < period_us_) {
+			std::this_thread::yield(); //?
+			tm = realtime_us();
+		}
+		last_time_us_ = tm;
+		backend_thread_id_ = std::this_thread::get_id();
+	}
+
+	void system::env::comeback(void) {
+		backend_thread_id_ = dummy_thread_id_;
+	}
+
+	void system::env::abort(void) {
+		::abort();
+	}
+
+	time_us_t system::env::time_us(void) {
+		return current_time_us_;
+	}
+
+	time_us_t system::env::realtime_us(void) {
+		std::chrono::steady_clock::time_point now_ = std::chrono::steady_clock::now();
+		return std::chrono::duration_cast<std::chrono::microseconds>(now_ - begin_).count();
+	}
+
+	time_ms_t system::env::time_ms(void) {
+		return current_time_ms_;
+	}
+
+	random_t system::env::rand(random_t _max) {
+		return (random_t)std::rand() % _max;
+	}
+
+	void system::env::wakeup(void) {}
+
+	time_us_t system::env::period_us(void) {
+		return period_us_;
+	}
+
+	void system::env::sleep(void) {
+		std::this_thread::yield();		
+	}
+}
+#endif

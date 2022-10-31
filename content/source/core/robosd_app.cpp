@@ -471,8 +471,8 @@ namespace robo {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->frontend_loop();
 				}
+				frontend::queue::poll();
 			}
-			frontend::queue::poll();
 		}
 
 		void machine::backend_loop_(void) {
@@ -483,7 +483,6 @@ namespace robo {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->backend_loop();
 				}
-				//todo подумать
 				backend::bus::perform();
 			}
 			backend::queue::poll();

@@ -35,7 +35,7 @@ void drv8711_set_default(drv8711_config_p _config){
 void drv8711_phy_read_(drv8711_p _drv ,uint16_t * _reg ){
 	_drv->cs_on();
   _drv->put(* _reg);
-	drv8711_phy_delay_us(57);
+	drv8711_phy_delay_us(100);
 	_drv->get(_reg);
 	_drv->cs_off();
 }
@@ -45,7 +45,7 @@ void drv8711_phy_write_(drv8711_p _drv, uint16_t  _deseired, uint16_t * _actual)
 	do {
 		_drv->cs_on();
 		_drv->put(_deseired);
-		drv8711_phy_delay_us(57);
+		drv8711_phy_delay_us(100);
 		uint16_t dummy;
 		_drv->get(&dummy);
 		_drv->cs_off();

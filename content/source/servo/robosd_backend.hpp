@@ -628,7 +628,7 @@ namespace robo {
 				}
 
 				template <typename ... Args> bool query(Args...arg) {
-					ROBO_LRET(C::query(performer::autonum::fabric(arg...)));
+					ROBO_LRET(C::query(arg...));
 				}
 
 

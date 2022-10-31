@@ -57,7 +57,7 @@ namespace robo {
 		return system::guard::op::skip;
 	}
 
-	void system::env::leave(void ) {
+	void system::env::leave(void) {
 		ROBO_UNUSED(_op);
 	}
 
@@ -133,8 +133,9 @@ namespace robo {
 	}
 	void system::ini::finish(void) {
 	}
-	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
-		return false;
+	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size)
+	{
+		
 	}
 	#endif
 
@@ -156,7 +157,27 @@ namespace robo {
 	}
 
 	#endif
-
+	
+	#if ROBO_APP_OS_TYPE == ROBO_APP_TYPE_DUMMY
+	#if ROBO_APP_ENV_ENABLED ==1
+	void system::env::switch_to_normal(void) {
+		
+	}
+	void system::env::switch_to_realtime(void) {
+	}
+	#endif
+	#endif
+	
+	#if ROBO_APP_CONSOL_ENABLED == 1
+	#if ROBO_APP_CONSOL_TYPE ==  ROBO_APP_TYPE_DUMMY
+	bool system::consol::driver_begin(void) {
+		return true;
+	}
+	void system::consol::driver_finish(void)
+	{
+	}
+	#endif
+	#endif
 }
 
 

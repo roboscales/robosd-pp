@@ -2,6 +2,7 @@
 #include "servo/robosd_backend.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_system.hpp"
+#include <cstring>
 namespace robo {
 	dev_id_t::dev_id_t(
 		uint8_t _servo,

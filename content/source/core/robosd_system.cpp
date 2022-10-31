@@ -145,7 +145,7 @@ namespace robo {
 			union {
 				struct {
 					size prev_offset;
-					size size;
+					size sz;
 				};
 				word header;
 			};
@@ -180,8 +180,8 @@ namespace robo {
 			if (size_ >= next_top) {
 				handler* next_ = reinterpret_cast<handler*>(memo_ + next_top);
 				next_->prev_offset = offset;
-				next_->size = 0;
-				top_->size = (size)_sz;
+				next_->sz = 0;
+				top_->sz = (size)_sz;
 				memo_top_ = next_top;
 				statistic_.useful += _sz;
 				statistic_.used += offset * sizeof(word);
@@ -197,12 +197,12 @@ namespace robo {
 		}
 
 		void release_(handler* _handler) {
-			size offset = offset_(_handler->size);
+			size offset = offset_(_handler->sz);
 
-			statistic_.useful -= _handler->size;
+			statistic_.useful -= _handler->sz;
 			statistic_.used -= offset * sizeof(word);
 
-			_handler->size = 0;
+			_handler->sz = 0;
 		}
 
 		void release(void* _memo) {
@@ -214,14 +214,14 @@ namespace robo {
 			}
 			else {
 				do {
-					if (tmp->size != 0) {
+					if (tmp->sz != 0) {
 						release_(tmp);
 					}
 					top_ = tmp;
 					memo_top_ = (size)(reinterpret_cast<word*>(top_) - memo_);
 					if (memo_top_ == 0) break;
 					tmp = tmp - tmp->prev_offset;
-				} while (tmp->size == 0);
+				} while (tmp->sz == 0);
 			}
 		}
 
@@ -229,7 +229,7 @@ namespace robo {
 			int sz = (int)(reinterpret_cast<word*>(_memo) - memo_);
 			if (sz > 0 && sz < size_) {
 				handler* tmp = (handler*)(((word*)_memo) - 1);
-				return  tmp->size;
+				return  tmp->sz;
 			}
 			else {
 				return 0;
@@ -420,7 +420,7 @@ namespace robo {
 			tmp[sz] = 0;
 		}
 		if (sz > 0) {
-			system::critical с__;
+			system::critical c__;
 			env::print(tmp);
 		}
 		#endif
@@ -441,7 +441,7 @@ namespace robo {
 			string tmp;
 			tmp.format(_format, _args);
 			if (env::is_frontend()) {
-				system::critical с__;
+				system::critical c__;
 				env::print(tmp.c_str());
 			}
 			else {				
@@ -501,6 +501,7 @@ void operator delete(void* ptr) {
 	#endif
 
 }
+
 
 #if ROBO_APP_SHARED_ENABLED ==1
 namespace robo {

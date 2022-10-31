@@ -55,8 +55,6 @@ namespace robo {
 			typedef ::robo::list::sorted <performer, priority> list;
 			typedef list::ref ref;
 			friend class signal;
-			typedef list::ref ref;
-			//typedef ::robo::list::unsorted <performer> recyclingbin;
 		protected:
 			ref ref_;
 			bool once_;
@@ -707,8 +705,8 @@ namespace robo {
 			return create(
 				_owner
 				, _sema
-				, answer_fabric::create(C, _answer)
-				, request_fabric::create(C, _request)
+				, answer_fabric::create(_instance, _answer)
+				, request_fabric::create(_instance, _request)
 			);
 		}
 		virtual ~quest(void) {
