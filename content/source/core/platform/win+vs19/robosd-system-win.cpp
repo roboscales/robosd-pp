@@ -566,10 +566,12 @@ namespace robo {
 			DWORD outMode = 0;
 			stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 			ROBO_LBREAKN_F(stdoutHandle != INVALID_HANDLE_VALUE, "GetStdHandle error %d", GetLastError());
+			#if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_STD
 			ROBO_LBREAKN_F(GetConsoleMode(stdoutHandle, &outMode) == TRUE, "GetConsoleMode error %d", GetLastError());
 			outModeInit = outMode;
 			outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			ROBO_LBREAKN_F(SetConsoleMode(stdoutHandle, outMode) == TRUE, "SetConsoleMode error %d", GetLastError());
+			#endif
 			ROBO_LBREAKN_F(SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE) == TRUE, "SetConsoleCtrlHandler error %d", GetLastError());
 			return true;
 		}

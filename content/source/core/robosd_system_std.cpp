@@ -1,4 +1,5 @@
 #include "core/robosd_system.hpp"
+#include "core/robosd_app.hpp"
 #include <cstdlib>
 #include <cstdio>
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_STD
@@ -209,8 +210,8 @@ namespace robo {
 	
 	std::chrono::steady_clock::time_point begin_ = std::chrono::steady_clock::now();
 	
-	std::mutex critical_;
-	std::mutex guard_;
+	std::recursive_mutex critical_;
+	std::recursive_mutex guard_;
 #if ROBO_APP_MODULE_ENABLED == 1
 
 	bool system::env::begin(void) {
@@ -255,8 +256,7 @@ namespace robo {
 	}
 	#endif
 	system::guard::op system::env::critical_enter(void) {
-		critical_.lock();
-		return system::guard::op::enter;
+		critical_.lock();			
 	}
 
 	void system::env::critical_leave(void) {
@@ -293,7 +293,11 @@ namespace robo {
 
 	void system::env::fall(void) {
 		time_us_t tm = realtime_us();
-		while (tm - last_time_us_ < period_us_) {
+		while ((tm - last_time_us_ < period_us_) 
+#if ROBO_APP_MODULE_ENABLED  == 1		       
+			&& (!robo::app::machine::terminated()) 
+#endif
+		) {
 			std::this_thread::yield(); //?
 			tm = realtime_us();
 		}
@@ -337,3 +341,4 @@ namespace robo {
 	}
 }
 #endif
+

@@ -3,7 +3,7 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
 #include <algorithm>
-
+#include <cstring>
 namespace robo {
 	typedef struct robo_ipa_entry_s{
 	unsigned short offset;
@@ -578,7 +578,7 @@ void  robo_ipa_test(){
 	#define n2  10
 	char s1[n1];
 	char s2[n2];
-	ROBO_ALARMN( robo_ipa_env_init_(&env, tmp, strlen(tmp)) );
+	ROBO_ALARMN( robo_ipa_env_init_(&env, tmp, std::strlen(tmp)) );
 
 	ROBO_ALARMN(robo_ipa_machines_(&env, disp_event));
 	robo_ipa_decode_(&env);

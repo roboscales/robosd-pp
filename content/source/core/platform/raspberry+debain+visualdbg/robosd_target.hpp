@@ -71,4 +71,15 @@ if ( !( x ) ){\
 	robo_errlog(__VA_ARGS__); \
 	goto lbl; \
 }
+
+#define ROBO_BREAK_F(fault,...)  \
+{\
+	robo_errlog(__VA_ARGS__); \
+	return fault; \
+}
+#define ROBO_LBREAK_F(...) ROBO_BREAK_F(false,__VA_ARGS__)
+
 #endif
+
+
+

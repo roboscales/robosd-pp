@@ -111,4 +111,35 @@ namespace robo {
 }
 #endif
 
+#if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_NATIVE	
+#include "core/robosd_ini_parser.h"
+#include <fstream>
+
+namespace robo {
+	cstr g_robo_ini_fn = nullptr;
+	bool system::ini::begin(cstr _ini) {
+		g_robo_ini_fn = _ini;
+		std::FILE* iniFile = std::fopen(_ini, "r");
+		ROBO_LBREAKN_F(iniFile !=nullptr , "error load file %s", _ini)
+		size_t bytesread;
+		char * buf = new char[16000];
+		bytesread = std::fread(&buf[0], sizeof buf[0], 16000, iniFile);
+		robo_ipa_init(ROBO_IPA_NORMAL);
+		robo_ipa_applay(buf, bytesread);
+		delete[] buf;
+		return true;
+	}
+	
+	void system::ini::finish(void) {
+		g_robo_ini_fn = nullptr;
+	}
+	
+	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size)
+	{
+		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
+		_size = robo::robo_ipa_string_get(_section, _key, "", _dst, _max_sz);
+	}
+}
+#endif
+
 

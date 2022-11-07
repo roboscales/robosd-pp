@@ -2,7 +2,7 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_log.hpp"
 #include "core/robosd_ini.hpp"
-//todo подумать
+//todo РїРѕРґСѓРјР°С‚СЊ
 #include "servo/robosd_backend.hpp"
 
 #ifndef ROBO_APP_TRACE_ENABLED

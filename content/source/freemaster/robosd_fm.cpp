@@ -9,7 +9,6 @@ namespace robo {
 
 	freemaster::freemaster(void)
 		: serial_(&net::serial_dummy::instance()) {
-
 	}
 	freemaster::~freemaster(void) {
 
