@@ -144,6 +144,7 @@ namespace robo {
 				}
 				else {
 					if (_ref == first) {
+						ROBO_APP_ASSERT(_ref->next != 0);
 						first = _ref->next;
 						_ref->next->prev = nullptr;
 					}

@@ -1,5 +1,4 @@
 #include "core/robosd_system.hpp"
-#include "core/robosd_app.hpp"
 #include <cstdlib>
 #include <cstdio>
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_STD
@@ -192,6 +191,11 @@ namespace robo {
 #include <mutex>
 #include <chrono>
 #include "core/robosd_ini.hpp"
+
+#if ROBO_APP_MODULE_ENABLED == 1
+#include "core/robosd_app.hpp"
+#endif 
+
 namespace robo {
 	time_us_t current_time_us_ = 0;
 	time_us_t current_time_ms_ = 0;

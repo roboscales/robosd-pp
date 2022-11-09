@@ -137,23 +137,31 @@ namespace robo {
 		return true;
 	}
 
-	#if ROBO_APP_MODULE_ENABLED == 1
+	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 	CRITICAL_SECTION critical_;
 	CRITICAL_SECTION guard_;
+	static volatile struct win_critical {
+		win_critical(void) {
+			init_ = true;
+			InitializeCriticalSection(&critical_);
+			InitializeCriticalSection(&guard_);
+		}
+		~win_critical(void) {
+			init_ = false;
+			DeleteCriticalSection(&critical_);
+			DeleteCriticalSection(&guard_);
+		}
+	} win_critical_;
+	#endif 
+
+	#if ROBO_APP_MODULE_ENABLED == 1
 
 	bool system::env::begin(void) {
-		InitializeCriticalSection(&critical_);
-		InitializeCriticalSection(&guard_);
-		ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())
-		init_ = true;
-		
+		ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())		
 		return true;
 	}
 
 	void system::env::finish(void) {
-		init_ = false;
-		DeleteCriticalSection(&critical_);
-		DeleteCriticalSection(&guard_);
 	}
 
 	bool system::env::start(void) {
@@ -256,48 +264,7 @@ namespace robo {
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-
-	#else
-
-	void* system::env::critical_enter(void) {
-		return nullptr;
-	}
-
-	void system::env::critical_leave(void* _context) {
-		ROBO_UNUSED(_context);
-	}
-	bool g_fall_ = false;
-	bool system::env::is_frontend(void) {
-		return g_fall_==false;
-	}
-
-	bool system::env::is_backend(void) {
-		return g_fall_ == true;
-	}
-
-	void* system::env::enter(void) {
-		return nullptr;
-	}
-
-	void system::env::leave(void* _context) {
-		ROBO_UNUSED(_context);
-	}
-
-	void system::env::lock(void) {
-	}
-
-	void system::env::unlock(void) {
-	}
-	
-	void system::env::fall(void) {
-		g_fall_ = true;
-	}
-
-	void system::env::comeback(void) {
-		g_fall_ = false;
-	}
-
-#endif
+	#endif
 
 	void system::env::abort(void) {
 		::abort();

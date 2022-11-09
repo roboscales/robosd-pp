@@ -104,7 +104,7 @@ namespace robo {
 		}
 		bool agent::begin(cstr _ini) {
 			ROBO_LBREAKN(robo::system::ini::begin(_ini));
-			robo::system::env::begin();
+			//robo::system::env::begin();
 
 			int tmp = 0;
 			string sec;
