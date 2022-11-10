@@ -31,3 +31,5 @@
 #ifndef ROBO_ZEROS_STRUCT
 #define ROBO_ZEROS_STRUCT
 #endif
+
+#define ROBO_WEAK

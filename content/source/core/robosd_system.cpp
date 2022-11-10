@@ -248,6 +248,7 @@ namespace robo {
 			guest_count_++;			
 			context_ = context::frontend;
 			#endif
+			env::switch_to_realtime();
 			op_ = env::enter();
 		}
 		else {
@@ -272,8 +273,10 @@ namespace robo {
 			ROBO_APP_ASSERT(guest_count_ >= 0);
 			#endif
 
-			if (op_ == system::guard::op::enter)
+			if (op_ == system::guard::op::enter) {
 				env::leave();
+				env::switch_to_normal();
+			}
 			if (critical_op_ == system::guard::op::enter) 
 				env::critical_leave();
 		}
@@ -407,10 +410,21 @@ namespace robo {
 	ring_t<ROBO_APP_BACKEND_PRINT_BUFFER_BITS, char_t > print_buffer_;
 	#endif
 
+	bool system::begin(void) {
+		return env::begin();
+	}
+	void system::finish(void) {
+
+	}
+	bool system::start(void) {
+		return env::start();
+	}
+	void system::stop(void) {
+		env::stop();
+	}
+
 	void system::frontend_loop(void) {
-		#if ROBO_APP_MODULE_ENABLED == 1
 		env::frontend_loop();
-		#endif
 		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 		char_t tmp[ROBO_APP_FRONTEND_PRINT_BUFFER_SIZE+1];
 		size_t sz;
@@ -427,12 +441,12 @@ namespace robo {
 		::robo::delegat::autonum::receicledbin::frontend_clean();
 
 	}
+	
 	void system::backend_loop(void) {
-		#if ROBO_APP_MODULE_ENABLED == 1
 		system::env::backend_loop();
-		#endif
 		::robo::delegat::autonum::receicledbin::backend_clean();
 	}
+
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 	void system::printf(cstr _format, va_list _args) {
 		#if ROBO_APP_ENV_ENABLED == 1

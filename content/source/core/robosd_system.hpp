@@ -46,7 +46,6 @@
 #endif
 
 #define ROBO_APP_CONSOL_ENABLED  (ROBO_APP_CONSOL_TYPE != ROBO_APP_TYPE_NONE)
-
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
@@ -123,6 +122,7 @@ namespace robo {
 #if ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED == 1
 		static int lock_count_;
 		static int guest_count_;
+#endif
 #endif
 
 #if ROBO_APP_ALLOC_ENABLED == 1
@@ -240,7 +240,7 @@ namespace robo {
 			 */
 			static void switch_to_normal(void);
 
-#if ROBO_APP_ALLOC_ENABLED ==1
+			#if ROBO_APP_ALLOC_ENABLED ==1
 
 			/*!
 			 *  специфическая функция выделения памяти в куче. Работает по разному для backend и frontend
@@ -258,12 +258,7 @@ namespace robo {
 			static void mem_free(void* _memo);
 			static size_t mem_size(void* _memo);
 
-#endif
-
-#if ROBO_APP_MODULE_ENABLED == 1
-			static void frontend_loop(void);
-#endif
-
+			#endif
 		public:
 
 			/*!
@@ -284,9 +279,10 @@ namespace robo {
 			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
 			 */
 			static void abort(void);
-#if ROBO_APP_MODULE_ENABLED == 1
 
-			/*!
+			private:
+			
+				/*!
 			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
 			 *  Здесь следует проводить инициализацию аппаратуры и специфичного ПО
 			 *
@@ -300,10 +296,13 @@ namespace robo {
 			static void finish(void);
 			static bool start(void);
 			static void stop(void);
+			static void backend_loop(void);
+			static void frontend_loop(void);
+			#if ROBO_APP_MODULE_ENABLED==1
 			static result startup(void);
 			static result shutdown(void);
-			static void backend_loop(void);
-#endif
+			#endif
+			public:
 			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
 			static time_ms_t time_ms(void);
@@ -325,9 +324,18 @@ namespace robo {
 #endif
 		};
 #endif
-
-		static void frontend_loop(void);
+	public:
+		static bool begin(void);
+		static void finish(void);
+		static bool start(void);
+		static void stop(void);
 		static void backend_loop(void);
+		static void frontend_loop(void);
+		#if ROBO_APP_MODULE_ENABLED==1
+		static result startup(void);
+		static result shutdown(void);
+		#endif
+
 #if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
 		static void printf(cstr _format, ...);		
@@ -405,7 +413,7 @@ namespace robo {
 	};
 }
 #endif
-#endif
+
 #if ROBO_APP_SYSTEM_ENABLED == 1
 #define guard__ ::robo::system::guard g__
 #define fall__ ::robo::system::fall f__

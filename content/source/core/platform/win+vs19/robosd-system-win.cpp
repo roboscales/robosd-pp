@@ -154,14 +154,10 @@ namespace robo {
 	} win_critical_;
 	#endif 
 
-	#if ROBO_APP_MODULE_ENABLED == 1
 
 	bool system::env::begin(void) {
-		ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())		
+		switch_to_realtime();
 		return true;
-	}
-
-	void system::env::finish(void) {
 	}
 
 	bool system::env::start(void) {
@@ -175,15 +171,16 @@ namespace robo {
 	}
 
 	void system::env::stop(void) {}
+
+	#if ROBO_APP_MODULE_ENABLED == 1
 	result system::env::startup(void) {
 		return result::complete;
 	}
-
 	result system::env::shutdown(void) {
 		return result::complete;
 	}
+	#endif
 
-	void system::env::frontend_loop(void) {}
 	void system::env::backend_loop(void) {
 		uint32_t tm = realtime_us();
 		us_acc_ += period_us_;
@@ -220,10 +217,17 @@ namespace robo {
 	bool system::env::is_backend(void) {
 		return backend_thread_id_ == std::this_thread::get_id();
 	}
+	#if 0
+	void system::env::switch_to_realtime(void) {
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+	}
 
+	void system::env::switch_to_normal(void) {
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+	}
+	#endif
 	system::guard::op system::env::enter(void) {
 		if (init_) {
-			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 			EnterCriticalSection(&guard_);
 			return system::guard::op::enter;
 		}
@@ -234,7 +238,6 @@ namespace robo {
 
 	void system::env::leave(void) {
 		LeaveCriticalSection(&guard_);
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
 
 	system::guard::op  system::env::lock(void) {
@@ -296,7 +299,7 @@ namespace robo {
 
 	void system::env::sleep(void) {}
 }
-#endif
+
 
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>
