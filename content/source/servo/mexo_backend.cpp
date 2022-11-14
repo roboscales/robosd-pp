@@ -24,7 +24,7 @@ namespace mexo {
 			case state::idle:
 			{
 				//todo включить в таск
-				robo::time_us_t now = robo::system::env::time_us();
+				robo::time_us_t now = robo::system::time_us();
 				if (now - last_ > period_) {
 					last_ = now;
 				}

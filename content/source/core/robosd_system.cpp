@@ -100,7 +100,42 @@ namespace robo {
 #endif
 
 namespace robo {
-	
+	namespace sysclock {
+		time_us_t time_us = 0;
+		time_us_t time_ms = 0;
+		time_us_t period_us = 0;
+		time_us_t us_acc = 0;
+		time_us_t last_time_us = 0;
+		bool terminated = true;;
+		void setup(time_us_t _period_us) {
+			period_us = _period_us;
+			time_us = time_ms = us_acc = last_time_us = 0;
+			terminated = false;
+		}
+		void tick(void) {
+			us_acc += period_us;
+			while (us_acc > 1000) {
+				us_acc -= 1000;
+				time_ms++;
+			}
+			time_us += period_us;
+		}
+
+	}
+
+
+	time_us_t system::clock_period_us(void) {
+		return sysclock::period_us;
+	}
+
+	time_us_t system::time_us(void) {
+		return sysclock::time_us;
+	}
+
+	time_ms_t system::time_ms(void) {
+		return sysclock::time_ms;
+	}
+
 	system& system::instance_(void) {
 		static system instance__;
 		return instance__;
@@ -248,7 +283,7 @@ namespace robo {
 			guest_count_++;			
 			context_ = context::frontend;
 			#endif
-			env::switch_to_realtime();
+			switch_to_realtime_();
 			op_ = env::enter();
 		}
 		else {
@@ -275,7 +310,7 @@ namespace robo {
 
 			if (op_ == system::guard::op::enter) {
 				env::leave();
-				env::switch_to_normal();
+				switch_to_normal_();
 			}
 			if (critical_op_ == system::guard::op::enter) 
 				env::critical_leave();
@@ -325,10 +360,10 @@ namespace robo {
 	#if ROBO_APP_ENV_ENABLED == 1
 
 	system::lazzyboy::lazzyboy(void)
-		: sleep_us_(system::env::time_us()) {}
+		: sleep_us_(system::time_us()) {}
 
 	robo::time_us_t system::lazzyboy::idle_us(void) {
-		return env::time_us() - sleep_us_;
+		return time_us() - sleep_us_;
 	}
 
 	#else
@@ -341,8 +376,21 @@ namespace robo {
 
 	system::lazzyboy::~lazzyboy(void) {}
 
-
+	#ifndef ROBO_APP_QUAZZY_REALTIME_ENABLED
+	#define ROBO_APP_QUAZZY_REALTIME_ENABLED 0
+	#endif
+	 
 	system::fall::fall(void) {
+		#if ROBO_APP_QUAZZY_REALTIME_ENABLED == 1
+		if ( !sysclock::terminated ) {
+			time_us_t tm = env::realtime_us();
+			while ((tm - sysclock::last_time_us < system::clock_period_us())) {
+				env::sleep();
+				tm = env::realtime_us();
+			}
+			sysclock::last_time_us = tm;
+		}
+		#endif
 		#if ROBO_APP_ENV_ENABLED == 1
 		env::fall();
 		#endif
@@ -414,15 +462,25 @@ namespace robo {
 		return env::begin();
 	}
 	void system::finish(void) {
-
+		env::finish();
 	}
-	bool system::start(void) {
-		return env::start();
+	bool system::start(time_us_t _period_us) {
+		ROBO_LBREAKN( env::start(_period_us) );
+		sysclock::setup(_period_us);
+		return true;
 	}
 	void system::stop(void) {
 		env::stop();
 	}
-
+	#if ROBO_APP_MODULE_ENABLED==1
+	result system::startup(void) {
+		return env::startup();
+	}
+	result system::shutdown(void) {
+		return env::shutdown();
+	}
+		
+	#endif
 	void system::frontend_loop(void) {
 		env::frontend_loop();
 		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
@@ -444,6 +502,7 @@ namespace robo {
 	
 	void system::backend_loop(void) {
 		system::env::backend_loop();
+		sysclock::tick();
 		::robo::delegat::autonum::receicledbin::backend_clean();
 	}
 

@@ -261,6 +261,7 @@ namespace robo {
 #define ROBO_APP_TYPE_UBUNTU 6
 #define ROBO_APP_TYPE_ASTRA 7
 #define ROBO_APP_TYPE_SPECIFIC 8
+#define ROBO_APP_TYPE_DUMMY 8
 
 #endif
 

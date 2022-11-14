@@ -5,7 +5,7 @@
 #endif
 
 #ifdef ROBO_APP_DYNAMIC_LIB
-#define ROBO_EXPORT  _declspec(dllexport)
+#define ROBO_EXPORT _declspec(dllexport)
 #else
 #ifdef ROBO_APP_DYNAMIC_APP
 #define ROBO_EXPORT  _declspec(dllexport)

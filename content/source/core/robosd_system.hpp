@@ -178,10 +178,11 @@ namespace robo {
 		/*!
 		 *  Это специфичные функции для аппаратуры и компилятора
 		 */
-		class ROBO_EXPORT  env {
+		class  ROBO_EXPORT env {
 			friend class guard;
 			friend class fall;
 			friend class system;
+
 
 			/*!
 			 *  Заходим в критическую секцию
@@ -230,7 +231,7 @@ namespace robo {
 			 *  поток обозначает, что он перестал реализовать backend
 			 */
 			static void comeback(void);
-			
+			#if ROBO_APP_OS_TYPE != ROBO_APP_TYPE_NONE			
 			/*!
 			 *  поток переключает себя в режим realtime
 			 */
@@ -239,7 +240,7 @@ namespace robo {
 			 *  поток переключает себя в режим не realtime
 			 */
 			static void switch_to_normal(void);
-
+			#endif
 			#if ROBO_APP_ALLOC_ENABLED ==1
 
 			/*!
@@ -249,7 +250,7 @@ namespace robo {
 			 *
 			 *      @return возвращает указатель на выделеную память. Не смогли вызвать - возвращаем null
 			 */
-			static void* mem_alloc(size_t _sz);
+			static void*  mem_alloc(size_t _sz);
 			/*!
 			 *  специфическая функция освобождения памяти в куче
 			 *
@@ -280,9 +281,8 @@ namespace robo {
 			 */
 			static void abort(void);
 
-			private:
-			
-				/*!
+		private:
+			/*!
 			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
 			 *  Здесь следует проводить инициализацию аппаратуры и специфичного ПО
 			 *
@@ -294,7 +294,7 @@ namespace robo {
 			 *  Finishes the env. Завершения работы аппаратуры  и специфичного ПО
 			 */
 			static void finish(void);
-			static bool start(void);
+			static bool start(time_us_t & _period_us);
 			static void stop(void);
 			static void backend_loop(void);
 			static void frontend_loop(void);
@@ -303,12 +303,9 @@ namespace robo {
 			static result shutdown(void);
 			#endif
 			public:
-			static time_us_t time_us(void);
 			static time_us_t realtime_us(void);
-			static time_ms_t time_ms(void);
 			static random_t rand(random_t _max);
 			static void wakeup(void);
-			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
 #if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
@@ -325,12 +322,17 @@ namespace robo {
 		};
 #endif
 	public:
+		static time_us_t clock_period_us(void);
+		static time_us_t time_us(void);
+		static time_ms_t time_ms(void);
+
 		static bool begin(void);
 		static void finish(void);
-		static bool start(void);
+		static bool start(time_us_t _period_us =0);
 		static void stop(void);
 		static void backend_loop(void);
 		static void frontend_loop(void);
+
 		#if ROBO_APP_MODULE_ENABLED==1
 		static result startup(void);
 		static result shutdown(void);
@@ -432,4 +434,11 @@ namespace robo {
 #define is_backend__ true
 #define critical__
 #endif
+#endif
+#if ROBO_APP_OS_TYPE == ROBO_APP_TYPE_NONE
+#define switch_to_realtime_()
+#define switch_to_normal_()
+#else
+#define switch_to_realtime_() env::switch_to_realtime()
+#define switch_to_normal_() env::switch_to_normal()
 #endif

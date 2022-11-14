@@ -34,3 +34,4 @@
 
 #include <stdint.h>
 
+#define ROBO_APP_QUAZZY_REALTIME_ENABLED 1

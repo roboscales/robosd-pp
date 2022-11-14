@@ -98,7 +98,7 @@ namespace robo{
 				incom_packet_ = _incom_packet;
 				if (state_ == state::idle){
 					state_ = state::send;
-					wd_begin_ms_ = system::env::time_ms();
+					wd_begin_ms_ = system::time_ms();
 					wd_enabled = true;
 					wd_delay_ms_ = phys::wd_us(outcom_packet_);
 					phys::send(outcom_packet_);						
@@ -116,7 +116,7 @@ namespace robo{
 					switch (state_){
 					case state::send:
 						if(incom_packet_ !=nullptr){
-							wd_begin_ms_ = system::env::time_ms();
+							wd_begin_ms_ = system::time_ms();
 							state_ = state::receive;
 							wd_delay_ms_ = phys::wd_us(incom_packet_);
 							phys::receive(incom_packet_);
@@ -159,7 +159,7 @@ namespace robo{
 			
 			void poll(void){
 				if(wd_enabled){
-					if( system::env::time_ms() - wd_begin_ms_ > wd_delay_ms_ ){
+					if( system::time_ms() - wd_begin_ms_ > wd_delay_ms_ ){
 						refuse();
 					}
 				}

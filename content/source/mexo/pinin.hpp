@@ -27,7 +27,7 @@ namespace mexo {
 			on_raise_ = _on_raise;
 		}
 		void raise(void){
-			robo::time_us_t us = robo::system::env::time_us();
+			robo::time_us_t us = robo::system::time_us();
 			if( us - last_us_ >= period_us_ ){
 				if(on_raise_){
 					 (*on_raise_)();
@@ -40,9 +40,9 @@ namespace mexo {
 				if(state_ ==  state::reset){
 					state_ =  state::set;
 					raise();
-					pushdown_us_ = ::robo::system::env::time_us();
+					pushdown_us_ = ::robo::system::time_us();
 				}else{
-					pressed_us_=::robo::system::env::time_us()-pushdown_us_;
+					pressed_us_=::robo::system::time_us()-pushdown_us_;
 				}
 			} else {
 				if(state_ ==  state::set){
