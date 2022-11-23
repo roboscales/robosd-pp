@@ -938,6 +938,12 @@ namespace robo {
 			system::guard g__;
 			ROBO_LBREAKN_F(!ref_.attached(), "var '%s' is busy and rwef is used ", name());
 			ref_.attach_to(vt().queue_);
+			robo_detaillog(2,
+			               robo::log::mask::disabled,
+			               "\t\t\t>>>var request [%d]:  %s/%s\n",
+			               (int)st(),vt().own_agent().display_alias(),
+			               name());
+
 			return true;
 		}
 
@@ -1008,7 +1014,13 @@ namespace robo {
 				switch (proto_.confirm(_tran, current_)) {
 				case proto::result::success:
 					current_ = nullptr;
-					tmp->confirm();
+					robo_detaillog(2,
+				               robo::log::mask::disabled,
+				               "\t\t\t<<<< var confirm [%d]:  %s/%s\n",
+								(int)tmp->st(),
+								own_agent().display_alias(),
+				               tmp->name());
+			        tmp->confirm();
 					break;
 				case proto::result::repeat:
 					break;

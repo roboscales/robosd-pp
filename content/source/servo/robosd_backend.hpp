@@ -243,7 +243,7 @@ namespace robo {
 					event on_complete;
 					event on_panic;
 				} events;
-				const uint8_t * raw() { return data_; } //to do осмыслить
+				const uint8_t * raw() { return data_; } //to do РѕСЃРјС‹СЃР»РёС‚СЊ
 				size_t size() { return size_; }
 				time_us_t period_us=0;
 				datamap(cstr _name, devagent& _agent, priority _priority, uint8_t * _data, uint8_t* _buffer, size_t _size, robo_tran_command_id_t _dev_command);
@@ -299,6 +299,7 @@ namespace robo {
 				return reinterpret_cast <typename A::action_s& > (goal_);
 			}
 
+		
 		private:
 			boardagent& boardagent_;
 			dev_id_t dev_id_;
@@ -375,23 +376,23 @@ namespace robo {
 			}
 			#endif*/
 		public:
-			//статистика  трафика
+			//СЃС‚Р°С‚РёСЃС‚РёРєР°  С‚СЂР°С„РёРєР°
 			itrafic trafic;
 			
-			//идентификатор устройства
+			//РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СѓСЃС‚СЂРѕР№СЃС‚РІР°
 			const dev_id_t& dev_id(void) { return dev_id_; };
 
-			//функция для диспетчера, который опрашивает агент что и когда посылать
+			//С„СѓРЅРєС†РёСЏ РґР»СЏ РґРёСЃРїРµС‚С‡РµСЂР°, РєРѕС‚РѕСЂС‹Р№ РѕРїСЂР°С€РёРІР°РµС‚ Р°РіРµРЅС‚ С‡С‚Рѕ Рё РєРѕРіРґР° РїРѕСЃС‹Р»Р°С‚СЊ
 			stream::query_result query(stream::msg* _msg);
 
-			//функция для диспетчера, определяющая запись в таблице маршрутизации
+			//С„СѓРЅРєС†РёСЏ РґР»СЏ РґРёСЃРїРµС‚С‡РµСЂР°, РѕРїСЂРµРґРµР»СЏСЋС‰Р°СЏ Р·Р°РїРёСЃСЊ РІ С‚Р°Р±Р»РёС†Рµ РјР°СЂС€СЂСѓС‚РёР·Р°С†РёРё
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 
 			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
-			//тенкущий (вычисляемый) статус
+			//С‚РµРЅРєСѓС‰РёР№ (РІС‹С‡РёСЃР»СЏРµРјС‹Р№) СЃС‚Р°С‚СѓСЃ
 			statuses actual_status(commands _command);
-			//тенкущая команда
+			//С‚РµРЅРєСѓС‰Р°СЏ РєРѕРјР°РЅРґР°
 			commands actual_command(void) { return goal_.command; };
 			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };

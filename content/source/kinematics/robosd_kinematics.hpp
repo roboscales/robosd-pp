@@ -1,10 +1,10 @@
 #ifndef rovosd_kinematiks_hpp
 #define rovosd_kinematiks_hpp
-#include <span>
 #include <cmath>
 #include "core/robosd_common.hpp"
 #include "core/robosd_list.hpp"
-namespace robo{
+#include "core/robosd_span.hpp"
+namespace robo {
 	namespace kinematiks {
 		
 		template<typename T> constexpr void rangle_sut(T & _values) {
@@ -25,33 +25,33 @@ namespace robo{
 			rangle_sut(_values);
 		}
 
-		template<typename T,int n> constexpr T epsilon = std::numeric_limits<T>::epsilon() * n; //n попугаев
+		template<typename T,int n> constexpr T epsilon = ::std::numeric_limits<T>::epsilon() * n; //n РїРѕРїСѓРіР°РµРІ
 
 		template<typename T> constexpr T deg2rad = pi<T> / 180.;
 		template<typename T> constexpr T rad2deg = T(1.) / deg2rad<T>;
-		/*template<typename T, size_t N> constexpr const std::span<T, N> span(const T(&_arr)[N]) {
-			return  std::span<T, N>((T *) &(_arr[0]),N);
+		/*template<typename T, size_t N> constexpr const ::robo::span<T, N> span(const T(&_arr)[N]) {
+			return  ::robo::span<T, N>((T *) &(_arr[0]),N);
 		}*/
 		
 		/*template<typename T, size_t N> struct rshp {
 			const T(&arr_)[N];
 			constexpr rshp(T(&_arr)[N]) : arr_(_arr) {}
-			template<size_t O, size_t M> constexpr const std::span<T, M>  at () {
-				return  std::span<T, M>((T*)&(arr_[O]), M);
+			template<size_t O, size_t M> constexpr const ::robo::span<T, M>  at () {
+				return  ::robo::span<T, M>((T*)&(arr_[O]), M);
 			}			
 		};*/
 
 		namespace  axis {
-			template<typename T, class S> struct orient_span_t : public std::span<T, S::count> {
-				constexpr orient_span_t(const S& _s) : std::span<T, S::count>((T*)&_s.memo[0], S::count) {}
+			template<typename T, class S> struct orient_span_t : public robo::span<T, S::count> {
+				constexpr orient_span_t(const S& _s) : robo::span<T, S::count>((T*)&_s.memo[0]) {}
 				template< class F > constexpr  orient_span_t(const F & _src) :
-					std::span<T, S::count>(_src.subspan < F::orientofs, S::count > ()) {
+					robo::span<T, S::count>( _src.data()+ F::orientofs) {
 				}
 			};
-			template<typename T, class S> struct position_span_t : public std::span<T, S::count> {
-				constexpr position_span_t(const S& _s) : std::span<T, S::count>((T*)&_s.memo[0], S::count) {}
+			template<typename T, class S> struct position_span_t : public ::robo::span<T, S::count> {
+				constexpr position_span_t(const S& _s) : ::robo::span<T, S::count>((T*)&_s.memo[0]) {}
 				template< class F > constexpr  position_span_t(const F& _src) :
-					std::span<T, S::count>(_src.subspan < F::posofs, S::count >()) {}
+					::robo::span<T, S::count>(_src.data() + F::posofs ) {}
 			};
 			template<typename T> struct euclid {
 				enum { count = 3 };
@@ -105,9 +105,9 @@ namespace robo{
 			};
 			template<typename T>struct avionic {
 				enum { count = 3 };
-				/*struct span : public std::span<T, count> {
+				/*struct span : public ::robo::span<T, count> {
 					template<class F> constexpr  span(const F& _src, size_t _offset) :
-						std::span<T, count>(&_src[_offset], count) {}
+						::robo::span<T, count>(&_src[_offset], count) {}
 				};
 				*/
 				typedef orient_span_t<T, avionic> span;
@@ -125,7 +125,7 @@ namespace robo{
 				constexpr avionic(void) : yaw(T(0)), pith(T(0)), roll(T(0)) {
 				}
 				constexpr avionic(const span & _src) {
-					std::copy_n(_src.begin(), count, memo);
+					::std::copy_n(_src.begin(), count, memo);
 				}
 
 				constexpr avionic( T _yaw, T _pith, T _roll) : yaw(_yaw), pith(_pith), roll(_roll) {
@@ -164,7 +164,7 @@ namespace robo{
 		
 		template<typename T> struct quaternion {
 			enum { count = 4 };
-			typedef  std::span<T, count> span  ;
+			typedef  ::robo::span<T, count> span  ;
 			union {
 				struct {
 					T w;
@@ -177,13 +177,13 @@ namespace robo{
 			
 			using avionic = typename  axis::avionic<T>;
 			constexpr quaternion(void) {
-				std::fill_n(memo,count,0.f);
+				::std::fill_n(memo,count,0.f);
 			}
 			//constexpr quaternion(const span& _src) {
-				//std::copy_n(_src.begin(), count, memo);
+				//::std::copy_n(_src.begin(), count, memo);
 			//}
 			constexpr quaternion (const quaternion& _src) {
-				std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.memo, count, memo);
 			}
 			quaternion(const avionic& _src) {
 				from(_src);
@@ -196,7 +196,7 @@ namespace robo{
 					z = -_src.z;
 				}
 				else {
-					std::copy_n(_src.memo, count, memo);
+					::std::copy_n(_src.memo, count, memo);
 				}
 			}
 			constexpr quaternion(
@@ -222,13 +222,13 @@ namespace robo{
 				z = _z;
 			}
 			constexpr quaternion& operator = (const quaternion& _src) {
-				std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.memo, count, memo);
 				return *this;
 			}
 
 
 			quaternion& operator = (const avionic& _src) {
-				//todo говнокод
+				//todo РіРѕРІРЅРѕРєРѕРґ
 				*this << axis::orient_span_t<T, avionic>(_src);
 				return *this;
 			}
@@ -266,17 +266,17 @@ namespace robo{
 				T z = _src[3];*/
 				T d1 = 2. * (x * z - w * y);
 				if (d1 > 1.) {
-					d1 = 1. - std::numeric_limits<T>::epsilon();
+					d1 = 1. - ::std::numeric_limits<T>::epsilon();
 				}
 				if (d1 < -1.) {
-					d1 = -1. + std::numeric_limits<T>::epsilon();
+					d1 = -1. + ::std::numeric_limits<T>::epsilon();
 				}
 				T tmp = -asin(d1);
 				_avc.pith = -tmp;
 				T d2 = tmp - pi<T> / 2.f;
 				if (abs(d1) > 0.999) {
 					T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
-					//вариант первый
+					//РІР°СЂРёР°РЅС‚ РїРµСЂРІС‹Р№
 					T roll1, roll2;
 					if (tmp < 0) {
 						roll1 = YR - _avc.yaw;
@@ -284,7 +284,7 @@ namespace robo{
 					else {
 						roll1 = _avc.yaw - YR;
 					}
-					//вариант второй YAW+PITCH > pi
+					//РІР°СЂРёР°РЅС‚ РІС‚РѕСЂРѕР№ YAW+PITCH > pi
 					if (YR > 0) {
 						YR = YR - 2 * pi<T>;
 					}
@@ -390,38 +390,39 @@ namespace robo{
 				};
 				T memo[count];
 			};
-			struct span : public std::span<type, count> {
+			struct span : public ::robo::span<type, count> {
 				typedef P position_t;
 				typedef O orient_t;
 				enum { orientofs = P::count, posofs = 0 };
-				using std::span<type, count>::span;
-				span(const type(&_arr)[count]) : std::span<type, count>((type*)(&_arr[0]), count) {}
-				span(const std::span<type, count> & _src ) : std::span<type, count>() {}
-				orient_t::span orient() const {
+				//using ::robo::span<type, count>::span;
+				span(const type(&_arr)[count]) : ::robo::span<type, count>((type*)(&_arr[0])) {}
+				span(const ::robo::span<type, count> & _src ) : ::robo::span<type, count>(_src) {}
+				span(const span& _src) : ::robo::span<type, count>(_src.data()) {}
+				typename orient_t::span orient() const {
 					return
-						std::span(*this).subspan <orientofs, O::count>();
+						typename orient_t::span( ::robo::span<type, count>::data() + orientofs);
 				}
-				position_t::span position() const {
-					return 
-						std::span(*this).subspan<posofs, P::count>();
+				typename position_t::span position() const {
+					return
+						typename position_t::span(::robo::span<type, count>::data() + posofs);
 				}
 			};
 			
 			point_t(void) {
-				std::fill_n(memo, count, 0.f);
+				::std::fill_n(memo, count, 0.f);
 			}
 			point_t ( const span& _src ){
-				std::copy_n(_src.data(), count, memo);
+				::std::copy_n(_src.data(), count, memo);
 			}
 			point_t(const point_t & _src) {
-				std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.memo, count, memo);
 			}
 			point_t& operator = ( const span& _src ) {
-				std::copy_n(_src.data(), count, memo);
+				::std::copy_n(_src.data(), count, memo);
 				return *this;
 			}
 			point_t& operator = (const point_t& _src) {
-				std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.memo, count, memo);
 				return *this;
 			}
 
@@ -438,7 +439,7 @@ namespace robo{
 				};
 			};
 
-			template<class Q> point_t(const typename Q &  _from, const typename Q::span& _span) {				
+			template<typename Q> point_t(const Q &  _from, const typename Q::span& _span) {				
 				Q:: template to<point_t>::set(_span, *this);
 			}
 			template<class Q> point_t& operator = (const Q& _src) {
@@ -474,12 +475,12 @@ namespace robo{
 			T Pd2 = -_src[1] / 2.;
 			T Rd2 = _src[2] / 2.;
 
-			T  csR = std::cos(Rd2);
-			T  snR = std::sin(Rd2);
-			T  csP = std::cos(Pd2);
-			T  snP = std::sin(Pd2);
-			T  csY = std::cos(Yd2);
-			T  snY = std::sin(Yd2);
+			T  csR = ::std::cos(Rd2);
+			T  snR = ::std::sin(Rd2);
+			T  csP = ::std::cos(Pd2);
+			T  snP = ::std::sin(Pd2);
+			T  csY = ::std::cos(Yd2);
+			T  snY = ::std::sin(Yd2);
 			_dst.w = csR * csP * csY + snR * snP * snY;
 			_dst.x = snR * csP * csY - csR * snP * snY;
 			_dst.y = csR * snP * csY + snR * csP * snY;
@@ -515,12 +516,12 @@ namespace robo{
 			typedef point_t< T, typename axis::euclid<T>, typename axis::avionic<T> > absolute;
 			typedef point_t< T, typename axis::cilinder<T>, typename axis::avionic<T> > cilinder;
 			typedef point_t< T, typename axis::sphere<T>, typename axis::avionic<T> > sphere;
-			typedef point_t< T, typename quaternion<T>, quaternion<T> > hamilton;
+			typedef point_t< T, quaternion<T>, quaternion<T> > hamilton;
 
 			template <class P> static void convert(const P & _src, hamilton& _dst, op _op) {
 				if (_op == op::set) {
-					_dst.position <<  P::position_t::span(_src);
-					_dst.orient <<  P::orient_t::span(_src);
+					_dst.position <<  typename P::position_t::span(_src);
+					_dst.orient << typename  P::orient_t::span(_src);
 				}
 			}
 			template <class P> static void convert(const typename hamilton::span& _src, P & _dst, op _op) {
@@ -549,7 +550,7 @@ namespace robo{
 			using T = typename A::type;
 			//operator point& () { return (const point&)*this; };
 			
-			//по умолчанию
+			//РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
 			target_t() : P(), A() {}
 
 			target_t(const target_t& _src)
@@ -561,112 +562,112 @@ namespace robo{
 				return *this;
 			}
 
-			// тогда, когда нагрузка не имеет векторных данных
-			//конструктор через конвертацию
+			// С‚РѕРіРґР°, РєРѕРіРґР° РЅР°РіСЂСѓР·РєР° РЅРµ РёРјРµРµС‚ РІРµРєС‚РѕСЂРЅС‹С… РґР°РЅРЅС‹С…
+			//РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ С‡РµСЂРµР· РєРѕРЅРІРµСЂС‚Р°С†РёСЋ
 			template <class B, typename ... Args > target_t(
 				const B& from
-				, const std::span<T, B::count>  _span
+				, const ::robo::span<T, B::count>  _span
 				, Args ...args
 			)
 				: P(args...)
 				, A(from, B::span(_span.data(), B::count)) {}
 
-			//конструктор без конвертации
+			//РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Р±РµР· РєРѕРЅРІРµСЂС‚Р°С†РёРё
 			template <typename ... Args > target_t(
-				const std::span<T, A::count>  _span
+				const ::robo::span<T, A::count>  _span
 				, Args ...args
 			)
 				: P( args...)
 				, A(A::span(_span.data(), A::count)) {}
 
-			//установить новые данные без коныертации
+			//СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ Р±РµР· РєРѕРЅС‹РµСЂС‚Р°С†РёРё
 			template <typename ... Args > void applay(
-				const std::span<T,A::count>  _span
+				const ::robo::span<T,A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				A::applay(A::span(_span.data(), A::count));
 			}
 
-			//установить новые данные с конвертацией
+			//СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ СЃ РєРѕРЅРІРµСЂС‚Р°С†РёРµР№
 			template <class B, typename ... Args > void applay(
 				const B& from
-				, const std::span<T, B::count>  _span
+				, const ::robo::span<T, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
-				A::applay(from, B::span(_span.data(), B::count));
+				A::applay(from, _span);
 			}
 
-			//установить новые данные с конвертацией из чуждого буфера
+			//СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ СЃ РєРѕРЅРІРµСЂС‚Р°С†РёРµР№ РёР· С‡СѓР¶РґРѕРіРѕ Р±СѓС„РµСЂР°
 			template <typename T2, class B, typename ... Args > void applay(
 				const B& from
-				, const std::span<T2, B::count>  _span
+				, const ::robo::span<T2, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				T buf[B::count];
-				std::copy_n(_span.data(), B::count, buf);
+				::std::copy_n(_span.data(), B::count, buf);
 				A::applay(from, B::span(buf, B::count));
 			}
 
-			//установить новые данные без конвертации из чуждого буфера
+			//СѓСЃС‚Р°РЅРѕРІРёС‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ Р±РµР· РєРѕРЅРІРµСЂС‚Р°С†РёРё РёР· С‡СѓР¶РґРѕРіРѕ Р±СѓС„РµСЂР°
 			template <typename T2, typename ... Args > void applay(
-				const std::span<T, A::count>  _span
+				const ::robo::span<T, A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				T buf[A::count];
-				std::copy_n(_span.data(), A::count, buf);
+				::std::copy_n(_span.data(), A::count, buf);
 				A::applay(A::span(buf, A::count));
 			}
 
-			//Инкрментировать данные с конвертацией
+			//РРЅРєСЂРјРµРЅС‚РёСЂРѕРІР°С‚СЊ РґР°РЅРЅС‹Рµ СЃ РєРѕРЅРІРµСЂС‚Р°С†РёРµР№
 			template <class B, typename ... Args > void inc(
 				const B& from
-				, const std::span<T, B::count>  _span
+				, const ::robo::span<T, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				A::inc(from, B::span(_span.data(), B::count));
 			}
 
-			//Инкрментировать данные без конвертации
+			//РРЅРєСЂРјРµРЅС‚РёСЂРѕРІР°С‚СЊ РґР°РЅРЅС‹Рµ Р±РµР· РєРѕРЅРІРµСЂС‚Р°С†РёРё
 			template <typename ... Args > void inc(
-				const std::span<T, A::count>  _span
+				const ::robo::span<T, A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				A::inc(A::span(_span.data(), A::count));
 			}
 
-			//Инкрментировать новые данные с конвертацией из чуждого буфера
+			//РРЅРєСЂРјРµРЅС‚РёСЂРѕРІР°С‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ СЃ РєРѕРЅРІРµСЂС‚Р°С†РёРµР№ РёР· С‡СѓР¶РґРѕРіРѕ Р±СѓС„РµСЂР°
 			template <typename T2, class B, typename ... Args > void inc(
 				const B& from
-				, const std::span<T2, B::count>  _span
+				, const ::robo::span<T2, B::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				T buf[B::count];
-				std::copy_n(_span.data(), B::count, buf);
+				::std::copy_n(_span.data(), B::count, buf);
 				A::inc(from, B::span(buf, B::count));
 			}
 
-			//Инкрментировать новые данные без конвертации из чуждого буфера
+			//РРЅРєСЂРјРµРЅС‚РёСЂРѕРІР°С‚СЊ РЅРѕРІС‹Рµ РґР°РЅРЅС‹Рµ Р±РµР· РєРѕРЅРІРµСЂС‚Р°С†РёРё РёР· С‡СѓР¶РґРѕРіРѕ Р±СѓС„РµСЂР°
 			template <typename T2, typename ... Args > void inc(
-				const std::span<T, A::count>  _span
+				const ::robo::span<T, A::count>  _span
 				, Args ...args
 			) {
 				P::applay(args...);
 				T buf[A::count];
-				std::copy_n(_span.data(), A::count, buf);
+				::std::copy_n(_span.data(), A::count, buf);
 				A::inc(A::span(buf, A::count));
 			}
 
 		};
 
 		template <typename T> T signt(T val) {
-			if ( abs(val) < std::numeric_limits<T>::epsilon()  ) return T(0);
+			if ( abs(val) < ::std::numeric_limits<T>::epsilon()  ) return T(0);
 			return (T(0) < val) ? -T(1) : T(1);
 		}
 
@@ -683,13 +684,13 @@ namespace robo{
 			T memo[size::total];
 
 			constexpr matrix() {
-				std::fill_n(memo, size::total, T(0));
+				::std::fill_n(memo, size::total, T(0));
 			}
 			constexpr matrix(const T(&_array)[size::total]) {
-				std::copy_n(_array, size::total, memo);
+				::std::copy_n(_array, size::total, memo);
 			}
 			constexpr matrix & operator = (const T(&_array)[size::total]) {
-				std::copy_n(_array, size::total, memo);
+				::std::copy_n(_array, size::total, memo);
 				return *this;
 			}
 			constexpr matrix& operator += (const T(&_array)[size::total]) {
@@ -745,15 +746,15 @@ namespace robo{
 
 
 			constexpr matrix& operator = (const matrix & _mx) {
-				std::copy_n(_mx.memo, size::total, memo);
+				::std::copy_n(_mx.memo, size::total, memo);
 				return *this;
 			}
 
-			/*constexpr matrix(const std::initializer_list<T>& _l) {
-				std::copy_n(_array, size::total, memo);
+			/*constexpr matrix(const ::std::initializer_list<T>& _l) {
+				::std::copy_n(_array, size::total, memo);
 			}
-			constexpr matrix& operator = (const std::initializer_list<T>& _l) {
-				std::copy_n(_l, size::total, memo);
+			constexpr matrix& operator = (const ::std::initializer_list<T>& _l) {
+				::std::copy_n(_l, size::total, memo);
 				return *this;
 			}*/
 		};
@@ -842,7 +843,7 @@ namespace robo{
 			}
 			constexpr vector direction(void) const {
 				T r = length();
-				if (r > std::numeric_limits<T>::epsilon()) {
+				if (r > ::std::numeric_limits<T>::epsilon()) {
 					return *this / r;
 				}
 				else {
@@ -870,14 +871,14 @@ namespace robo{
 			T& z = A::memo[2];
 
 			constexpr vector3& operator = (const quaternion<T>& _src) {
-				std::copy_n(_src.memo + 1, A::size::total, A::memo);
+				::std::copy_n(_src.memo + 1, A::size::total, A::memo);
 				return *this;
 			}
 
 			constexpr vector3(void) : A() {}
 			constexpr vector3(const T(&_array)[A::size::total]) : A(_array) {}
 			constexpr vector3(const quaternion<T>& _src) : A() {
-				std::copy_n(_src.memo + 1, A::size::total, A::memo);
+				::std::copy_n(_src.memo + 1, A::size::total, A::memo);
 			}
 
 			constexpr vector3& operator = (const vector3& _src) {
@@ -894,7 +895,7 @@ namespace robo{
 
 			constexpr  operator quaternion<T>() {
 				quaternion<T> tmp;
-				std::copy_n(A::memo, A::size::total, tmp.memo + 1);
+				::std::copy_n(A::memo, A::size::total, tmp.memo + 1);
 				return tmp;
 			}
 
@@ -941,7 +942,7 @@ namespace robo{
 				virtual void do_move(T _data) = 0;
 			public:
 				typedef ::robo::list::unique<actuator, int> list;
-				typedef list::ref ref;
+				typedef typename list::ref ref;
 				enum class types {
 					none
 					, line
@@ -1158,7 +1159,7 @@ namespace robo{
 						r->owner().move(src->position);
 					}
 				}*/
-				template<unsigned N> void move(const std::span<double, N>& _src) {
+				template<unsigned N> void move(const ::robo::span<double, N>& _src) {
 					ROBO_APP_ASSERT(N == actuators.count);
 					typename actuator::ref* r = actuators.first();
 					const double* src = &_src.first();
@@ -1199,7 +1200,7 @@ namespace robo{
 				quartenion deform;
 				quartenion deform;
 
-				//to do подумать
+				//to do РїРѕРґСѓРјР°С‚СЊ
 				//point::hamilton local;
 				//quartenion local = Qo;
 				

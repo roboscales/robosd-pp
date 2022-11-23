@@ -385,7 +385,9 @@ namespace robo {
 		if ( !sysclock::terminated ) {
 			time_us_t tm = env::realtime_us();
 			while ((tm - sysclock::last_time_us < system::clock_period_us())) {
-				env::sleep();
+				if (!sysclock::terminated) {
+					env::sleep();
+				}
 				tm = env::realtime_us();
 			}
 			sysclock::last_time_us = tm;
