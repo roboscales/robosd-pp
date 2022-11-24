@@ -177,7 +177,7 @@ namespace mexo {
 		int slot_index_;
 		static slots& slots_(void);
 		void begin_(void);
-		void start_(void);
+		void start_(time_us_t _period_us);
 		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		void priority_loop_(void);
 		#endif
@@ -189,7 +189,10 @@ namespace mexo {
 		machine(void);
 		~machine(void);
 		static void begin(void) { instance_.begin_(); }
-		static void start(void) { instance_.start_(); }
+		static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		#ifdef ROBO_APP_MEXO_SAMPLE_US
+		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+		#endif		
 		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
 		static void priority_loop(void) { instance_.priority_loop_(); }
 		#endif

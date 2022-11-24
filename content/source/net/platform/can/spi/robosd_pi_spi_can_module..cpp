@@ -16,8 +16,16 @@ namespace MODULE_NAME {
 			int channel_;
 			int cs_;
 			int bitrate_;
+			spi2can::packet dummy_;
+			spi2can::packet packet_;
+			enum{idle_id = 0x7FF};
 		public:
-			port(void){				
+			port(void){	
+				std::fill_n(dummy_.memo, sizeof(dummy_.memo),0);
+				dummy_.state = 0x0;					
+				dummy_.id = idle_id;
+				dummy_.len = 0;
+				dummy_.crc = robo::crc7_by_table(dummy_.memo, spi2can::packet::total_sz - 1);
 			}			
 			virtual ~port(void)
 			{
@@ -34,38 +42,57 @@ namespace MODULE_NAME {
 			virtual void close(void)
 			{
 			}
-			virtual bool send(uint32_t _id, const uint8_t* _buf, uint8_t  _len)
+			void exchange(void)
 			{
 				digitalWrite(cs_, LOW);			
 				digitalWrite(cs_, LOW);
-				spi2can::packet packet;
-				packet.id = _id;
-				packet.len = _len;
-				std::copy_n(_buf, _len, packet.data);
-				if (_len < spi2can::packet::data_sz)
-					std::fill_n(packet.data + _len, spi2can::packet::data_sz - _len, 0);
-				packet.crc = robo::crc7_by_table(packet.memo, spi2can::packet::total_sz - 1);												
-				wiringPiSPIDataRW(channel_, const_cast<uint8_t *>(_buf), _len);				
-				uint8_t crc = robo::crc7_by_table(packet.memo, spi2can::packet::total_sz - 1);
-				if (packet.crc != 92) {	
-					static volatile int x = 0;
+				if (packet_.id == idle_id)
+				{
+					std::copy_n(dummy_.memo,					            
+					spi2can::packet::total_sz,
+					packet_.memo);
+				}
+				wiringPiSPIDataRW(channel_, const_cast<uint8_t *>(packet_.memo), spi2can::packet::total_sz);				
+				uint8_t crc = robo::crc7_by_table(packet_.memo, spi2can::packet::total_sz - 1);
+				if (packet_.crc != 92) {	
+					static int x = 0;
 					x++;
 				}
-				if (packet.crc == crc) {
+				if (packet_.crc == crc) {
 					if (on_receive)
-						(*(on_receive))(*this, packet.id, packet.memo, packet.len);		
+						(*(on_receive))(*this, packet_.id, packet_.data, packet_.len);		
 				}
 				else {
 					static int err = 0;
 					err++;
 				}
 				
-				digitalWrite(cs_, HIGH);			
+				digitalWrite(cs_, HIGH);	
+				packet_.id = idle_id;
+			}
+			virtual bool send(uint32_t _id, const uint8_t* _buf, uint8_t  _len)
+			{
+				
+				packet_.id = _id;
+				packet_.len = _len;
+				packet_.state = 0x1;
+				std::copy_n(_buf, _len, packet_.data);
+				if (_len < spi2can::packet::data_sz)
+					std::fill_n(packet_.data + _len, spi2can::packet::data_sz - _len, 0);
+				packet_.crc = robo::crc7_by_table(packet_.memo, spi2can::packet::total_sz - 1);												
+				//exchange(packet);
 				return true;
 			}
-			virtual bool ready(void) {}
+			virtual bool ready(void) { return packet_.id == idle_id; ; }
 			virtual void reset(void) {}
-			virtual void poll(void) {}
+			virtual void poll(void) {
+				static ::robo::time_us_t  tm = 0;
+				::robo::time_us_t now = ::robo::system::time_us();
+				if (now - tm > 200) {
+					exchange();
+					tm = now;
+				}
+			}
 		};
 
 		
@@ -86,7 +113,7 @@ namespace MODULE_NAME {
 						incomm_->len = _len;
 						std::copy_n(_data, _len, incomm_->values);
 						incomm_ = nullptr;
-						confirm();
+						confirm();															
 					}
 				}
 			}
@@ -98,11 +125,8 @@ namespace MODULE_NAME {
 		}
 		void send(const robo::net::can_flow_bus::packet* _outcomm) {
 			if (can_.ready()) {
-				if (can_.send(_outcomm->id.value, _outcomm->values, _outcomm->len)) {
-					outcomm_ = _outcomm;
-					//confirm();
-				}
-				else {
+				outcomm_ = _outcomm;
+				if ( ! can_.send(_outcomm->id.value, _outcomm->values, _outcomm->len)) {
 					refuse();
 				}
 			}

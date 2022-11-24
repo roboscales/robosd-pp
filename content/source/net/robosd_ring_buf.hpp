@@ -16,9 +16,9 @@ private:
 
 	DATA_T _data[SIZE];
 	// количество чтений
-	volatile unsigned _readCount;
+	unsigned _readCount;
 	// количество записей
-	volatile unsigned _writeCount;
+	unsigned _writeCount;
 	// маска для индексов
 	static const unsigned _mask = SIZE - 1;
 	static const unsigned _masksz = (1 << (BITS + 1)) - 1;

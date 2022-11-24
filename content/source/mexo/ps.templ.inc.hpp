@@ -184,7 +184,7 @@ protected:
 				feedback< dev_t >().current = -hardwaresys.current_sence_block.current_delta_ref();
 				#endif
 				#else
-				feedback< dev_t >().current = 0;
+				//feedback< dev_t >().current = 0;
 				#endif
 			}
 			else {
@@ -196,7 +196,7 @@ protected:
 				feedback< dev_t >().current = hardwaresys.current_sence_block.current_delta_ref();
 				#endif
 				#else
-				feedback< dev_t >().current = 0;
+				//feedback< dev_t >().current = 0;
 				#endif
 			}
 		}

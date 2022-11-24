@@ -20,6 +20,9 @@ namespace robo{
             virtual ~udp(void);
             virtual bool begin(cstr _alis);
             virtual void finish(void);
+	        bool set_outcom_address(cstr _outcom_address = nullptr);
+        protected:
+	        virtual bool do_applay_outcom_address(void) {return true;}
         };
 
     }

@@ -408,8 +408,8 @@ namespace robo {
 				performer * performer_ = nullptr;
 				int repeat_count_ = 3;
 				int repeat_current_max_ = 3;
-			protected:
 			public:
+				status st(){ return status_; }
 				bool post_a(cstr _s, performer* _answer = nullptr) {
 					ROBO_LBREAKN(applay(_s));
 					ROBO_LBREAKN(post_a(_answer));

@@ -19,6 +19,7 @@ namespace robo {
 					channel_ = -1;
 					ROBO_JAMPN(ini::load(name_, RT("bitrate_presc"), bitrate_), error);
 					ROBO_JAMPN(ini::load(name_, RT("channel"), channel_), error);
+					ROBO_JAMPN(ini::load(name_, RT("extended"), extended_), error);
 
 					ROBO_JAMPN_F(channel_< port::chan_count, error, "Failed to open channel %d  (is greater than the allowed value)", channel_);
 					ROBO_JAMPN_F(ports_[channel_]==nullptr, error, "Failed to open channel %d  (allready used)", channel_);
@@ -43,7 +44,14 @@ namespace robo {
 				}
 				bool port::send(uint32_t _id, const uint8_t* _buf, uint8_t  _len) {
 					tCanMsgStruct tmp = {};					
-					tmp.m_dwID = _id;
+					if(extended_){
+						tmp.m_dwID = _id & 0x1FFFFFFF;
+						tmp.m_bFF = USBCAN_MSG_FF_EXT;
+					}
+					else {
+						tmp.m_dwID = _id & 0x7FF;
+						tmp.m_bFF = USBCAN_MSG_FF_STD;
+					}
 					tmp.m_bDLC = _len;
 					std::copy_n(_buf,_len,tmp.m_bData);
 					ROBO_LRET( UCanWriteMsg(channel_, &tmp, 1) == TRUE );

@@ -361,7 +361,7 @@ namespace PMSM_TEMPLATE_NAME {
 				::mexo::var::record::create(types::var::long_signal, act.angle, RT("act.angle"), key(), vars);
 				::mexo::var::record::create(types::var::long_signal, act.freq, RT("act.freq"), key(), vars);
 				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.v"), key(), vars);
-				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.c"), key(), vars);
+				::mexo::var::record::create(types::var::signal, act.lateral.current, RT("act.lat.c"), key(), vars);
 				const present_s& prsnt = present<dev_t>();
 				::mexo::var::record::create(types::var::long_signal, prsnt.angle_req, RT("angle_req"), key(), vars);
 				::mexo::var::record::create(types::var::long_signal, prsnt.freq_req, RT("freq_req"), key(), vars);

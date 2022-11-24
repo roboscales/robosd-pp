@@ -421,7 +421,7 @@ namespace robo {
 			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::begin(log::verb::detail_7, log::mask::disabled);
 			#endif
-			ROBO_LBREAKN(system::env::begin());
+			ROBO_LBREAKN(system::begin());
 
 			robo_infolog("load from %s ", _ini);
 			ROBO_LBREAKN(system::ini::begin(_ini));
@@ -500,7 +500,7 @@ namespace robo {
 			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			log::finish();
 			#endif
-			system::env::finish();
+			system::finish();
 			#if APP_TRACE_ENABLED == 1
 			trace::finish();
 			#endif
@@ -550,7 +550,7 @@ namespace robo {
 		bool machine::start_(void) {
 
 			ROBO_LBREAKN_F(actual_state() > state::clean, "application is aborted!");
-			ROBO_LBREAKN_F(system::env::start(), "application is aborted");
+			ROBO_LBREAKN_F(system::start(), "application is aborted");
 			req_state_ = req_state::start;
 			return true;
 		}
@@ -573,7 +573,7 @@ namespace robo {
 		}
 
 		result machine::do_shutdown(void) {
-			system::env::stop();
+			system::stop();
 			return result::complete;
 		}
 
@@ -584,7 +584,7 @@ namespace robo {
 				delete _module;
 			}
 			req_state_ = req_state::stop;
-			system::env::finish();
+			system::finish();
 		}
 		#endif
 

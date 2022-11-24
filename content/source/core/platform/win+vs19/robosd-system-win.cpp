@@ -109,96 +109,80 @@ namespace robo {
 
 #include <windows.h>
 namespace robo {
-	time_us_t current_time_us_;
-	time_us_t current_time_ms_;
-	time_us_t period_us_;
 	LARGE_INTEGER tickCurrent_;
 	double us_per_tick_;
 	LARGE_INTEGER ticksPerSecond_;
 	LARGE_INTEGER tickNext_;
 	DWORD tick_per_period_;
-	time_us_t us_acc_ = 0;
 	DWORD  step_show_period_;
 	std::thread::id backend_thread_id_;
 	std::thread::id dummy_thread_id_;
 	time_us_t last_time_us_ = 0;
 	DWORD step_show_tick_ = 0;
 	bool init_ = false;
-	bool timer_setup_(void) {
-		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), period_us_));
-		QueryPerformanceFrequency(&ticksPerSecond_);
-		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * period_us_ * ticksPerSecond_.QuadPart);
-		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
-		QueryPerformanceCounter(&tickCurrent_);
-		tickNext_.QuadPart = tickCurrent_.QuadPart + period_us_;
-		current_time_us_ = 0;
-		current_time_ms_ = 0;
-		us_acc_ = 0;
-		return true;
-	}
 
 	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 	CRITICAL_SECTION critical_;
 	CRITICAL_SECTION guard_;
-	static volatile struct win_critical {
-		win_critical(void) {
-			init_ = true;
-			InitializeCriticalSection(&critical_);
-			InitializeCriticalSection(&guard_);
-		}
-		~win_critical(void) {
-			init_ = false;
-			DeleteCriticalSection(&critical_);
-			DeleteCriticalSection(&guard_);
-		}
-	} win_critical_;
 	#endif 
 
-	#if ROBO_APP_MODULE_ENABLED == 1
-
 	bool system::env::begin(void) {
-		ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())		
+		init_ = true;
+		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
+		InitializeCriticalSection(&critical_);
+		InitializeCriticalSection(&guard_);
+		#endif 
+		switch_to_realtime_();
 		return true;
 	}
-
 	void system::env::finish(void) {
+		switch_to_normal_();
+		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
+		DeleteCriticalSection(&critical_);
+		DeleteCriticalSection(&guard_);
+		#endif
+		init_ = false;
 	}
+	//todo костыль
+	bool system_realtime_disabled_ = false;
+	bool system::env::start(time_us_t & _period_us) {
+		if (_period_us == 0) {
+			system_realtime_disabled_ = true;
+			ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), _period_us));
+		}
+		QueryPerformanceFrequency(&ticksPerSecond_);
+		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * _period_us * ticksPerSecond_.QuadPart);
+		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
+		QueryPerformanceCounter(&tickCurrent_);
+		tickNext_.QuadPart = tickCurrent_.QuadPart + _period_us;
 
-	bool system::env::start(void) {
-		ROBO_LBREAKN(timer_setup_());
+		ROBO_LBREAKN_F(_period_us > 0, "clock period is zero!");
 		time_ms_t ms;
-		ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms));
-		step_show_period_ = 1000 * ms / period_us_;
+		::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms);
+		step_show_period_ = 1000 * ms / _period_us;
 		last_time_us_ = realtime_us();
-
 		return true;
 	}
 
 	void system::env::stop(void) {}
+
+	#if ROBO_APP_MODULE_ENABLED == 1
 	result system::env::startup(void) {
 		return result::complete;
 	}
-
 	result system::env::shutdown(void) {
 		return result::complete;
 	}
+	#endif
 
-	void system::env::frontend_loop(void) {}
 	void system::env::backend_loop(void) {
-		uint32_t tm = realtime_us();
-		us_acc_ += period_us_;
-		while (us_acc_ > 1000) {
-			us_acc_ -= 1000;
-			current_time_ms_++;
-		}
-		current_time_us_ += period_us_;
-
 		if (++step_show_tick_ == step_show_period_) {
 			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
 			step_show_tick_ = 0;
 		}
 
 	}
+	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 	system::guard::op system::env::critical_enter(void) {
 		if (init_) {
 			EnterCriticalSection(&critical_);
@@ -213,17 +197,8 @@ namespace robo {
 		LeaveCriticalSection(&critical_);
 	}
 
-	bool system::env::is_frontend(void) {
-		return backend_thread_id_ != std::this_thread::get_id();
-	}
-
-	bool system::env::is_backend(void) {
-		return backend_thread_id_ == std::this_thread::get_id();
-	}
-
 	system::guard::op system::env::enter(void) {
 		if (init_) {
-			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 			EnterCriticalSection(&guard_);
 			return system::guard::op::enter;
 		}
@@ -234,7 +209,6 @@ namespace robo {
 
 	void system::env::leave(void) {
 		LeaveCriticalSection(&guard_);
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
 	}
 
 	system::guard::op  system::env::lock(void) {
@@ -248,30 +222,27 @@ namespace robo {
 	}
 
 	void system::env::unlock(void) {
-			LeaveCriticalSection(&guard_);
+		LeaveCriticalSection(&guard_);
+	}
+	#endif
+
+	bool system::env::is_frontend(void) {
+		return backend_thread_id_ != std::this_thread::get_id();
 	}
 
+	bool system::env::is_backend(void) {
+		return backend_thread_id_ == std::this_thread::get_id();
+	}
 	void system::env::fall(void) {
-		time_us_t tm = realtime_us();
-		while (tm - last_time_us_ < period_us_) {
-			Sleep(0); //?
-			tm = realtime_us();
-		}
-		last_time_us_ = tm;
 		backend_thread_id_ = std::this_thread::get_id();
 	}
 
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-	#endif
 
 	void system::env::abort(void) {
 		::abort();
-	}
-
-	time_us_t system::env::time_us(void) {
-		return current_time_us_;
 	}
 
 	time_us_t system::env::realtime_us(void) {
@@ -280,23 +251,28 @@ namespace robo {
 		return (time_us_t)(us);
 	}
 
-	time_ms_t system::env::time_ms(void) {
-		return current_time_ms_;
-	}
-
 	random_t system::env::rand(random_t _max) {
 		return (random_t)std::rand() % _max;
 	}
 
 	void system::env::wakeup(void) {}
 
-	time_us_t system::env::period_us(void) {
-		return 0;
+	void system::env::sleep(void) {
+		Sleep(0);
+	}
+	#if ROBO_APP_OS_TYPE == ROBO_APP_TYPE_WIN
+	void system::env::switch_to_realtime(void) {
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 	}
 
-	void system::env::sleep(void) {}
+	void system::env::switch_to_normal(void) {
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+	}	
+	#endif
 }
 #endif
+
+
 
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>

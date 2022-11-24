@@ -46,7 +46,6 @@
 #endif
 
 #define ROBO_APP_CONSOL_ENABLED  (ROBO_APP_CONSOL_TYPE != ROBO_APP_TYPE_NONE)
-
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_LIB_ENABLED  (ROBO_APP_LIB_TYPE != ROBO_APP_TYPE_NONE)
@@ -124,6 +123,7 @@ namespace robo {
 		static int lock_count_;
 		static int guest_count_;
 #endif
+#endif
 
 #if ROBO_APP_ALLOC_ENABLED == 1
 		void* mem_alloc_(size_t _sz);
@@ -178,10 +178,11 @@ namespace robo {
 		/*!
 		 *  Это специфичные функции для аппаратуры и компилятора
 		 */
-		class ROBO_EXPORT  env {
+		class  ROBO_EXPORT env {
 			friend class guard;
 			friend class fall;
 			friend class system;
+
 
 			/*!
 			 *  Заходим в критическую секцию
@@ -230,7 +231,7 @@ namespace robo {
 			 *  поток обозначает, что он перестал реализовать backend
 			 */
 			static void comeback(void);
-			
+			#if ROBO_APP_OS_TYPE != ROBO_APP_TYPE_NONE			
 			/*!
 			 *  поток переключает себя в режим realtime
 			 */
@@ -239,8 +240,8 @@ namespace robo {
 			 *  поток переключает себя в режим не realtime
 			 */
 			static void switch_to_normal(void);
-
-#if ROBO_APP_ALLOC_ENABLED ==1
+			#endif
+			#if ROBO_APP_ALLOC_ENABLED ==1
 
 			/*!
 			 *  специфическая функция выделения памяти в куче. Работает по разному для backend и frontend
@@ -249,7 +250,7 @@ namespace robo {
 			 *
 			 *      @return возвращает указатель на выделеную память. Не смогли вызвать - возвращаем null
 			 */
-			static void* mem_alloc(size_t _sz);
+			static void*  mem_alloc(size_t _sz);
 			/*!
 			 *  специфическая функция освобождения памяти в куче
 			 *
@@ -258,12 +259,7 @@ namespace robo {
 			static void mem_free(void* _memo);
 			static size_t mem_size(void* _memo);
 
-#endif
-
-#if ROBO_APP_MODULE_ENABLED == 1
-			static void frontend_loop(void);
-#endif
-
+			#endif
 		public:
 
 			/*!
@@ -284,8 +280,8 @@ namespace robo {
 			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
 			 */
 			static void abort(void);
-#if ROBO_APP_MODULE_ENABLED == 1
 
+		private:
 			/*!
 			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
 			 *  Здесь следует проводить инициализацию аппаратуры и специфичного ПО
@@ -298,18 +294,18 @@ namespace robo {
 			 *  Finishes the env. Завершения работы аппаратуры  и специфичного ПО
 			 */
 			static void finish(void);
-			static bool start(void);
+			static bool start(time_us_t & _period_us);
 			static void stop(void);
+			static void backend_loop(void);
+			static void frontend_loop(void);
+			#if ROBO_APP_MODULE_ENABLED==1
 			static result startup(void);
 			static result shutdown(void);
-			static void backend_loop(void);
-#endif
-			static time_us_t time_us(void);
+			#endif
+			public:
 			static time_us_t realtime_us(void);
-			static time_ms_t time_ms(void);
 			static random_t rand(random_t _max);
 			static void wakeup(void);
-			static time_us_t period_us(void);
 			static void sleep(void); //вернуть контекст
 #if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
@@ -325,9 +321,23 @@ namespace robo {
 #endif
 		};
 #endif
+	public:
+		static time_us_t clock_period_us(void);
+		static time_us_t time_us(void);
+		static time_ms_t time_ms(void);
 
-		static void frontend_loop(void);
+		static bool begin(void);
+		static void finish(void);
+		static bool start(time_us_t _period_us =0);
+		static void stop(void);
 		static void backend_loop(void);
+		static void frontend_loop(void);
+
+		#if ROBO_APP_MODULE_ENABLED==1
+		static result startup(void);
+		static result shutdown(void);
+		#endif
+
 #if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 		static void printf(cstr _format, va_list _args);
 		static void printf(cstr _format, ...);		
@@ -405,7 +415,7 @@ namespace robo {
 	};
 }
 #endif
-#endif
+
 #if ROBO_APP_SYSTEM_ENABLED == 1
 #define guard__ ::robo::system::guard g__
 #define fall__ ::robo::system::fall f__
@@ -424,4 +434,11 @@ namespace robo {
 #define is_backend__ true
 #define critical__
 #endif
+#endif
+#if ROBO_APP_OS_TYPE == ROBO_APP_TYPE_NONE
+#define switch_to_realtime_()
+#define switch_to_normal_()
+#else
+#define switch_to_realtime_() env::switch_to_realtime()
+#define switch_to_normal_() env::switch_to_normal()
 #endif

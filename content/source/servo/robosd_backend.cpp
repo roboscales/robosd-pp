@@ -41,11 +41,11 @@ namespace robo {
 		}
 
 		bool queue::wait_(time_ms_t _timeout) {
-			time_ms_t ms = system::env::time_ms();
+			time_ms_t ms = system::time_ms();
 			do {
 				if (ready()) return true;
 				system::env::sleep();
-			} while (system::env::time_ms() - ms < _timeout);
+			} while (system::time_ms() - ms < _timeout);
 			return false;
 		}
 
@@ -186,7 +186,7 @@ namespace robo {
 		}
 
 		void task::machine::execute_() {
-			time = system::env::time_us();
+			time = system::time_us();
 			int _period = time - time_prev;
 			time_prev = time;
 
@@ -345,7 +345,7 @@ namespace robo {
 
 		devagent::stream::query_result devagent::query(devagent::stream::msg* _msg) {
 			if (exchabge_enabled()) {
-				time_us_t tm = system::env::time_us();
+				time_us_t tm = system::time_us();
 				if (boardagent_.request_pause_us_ < tm - boardagent_.last_request_us_) {
 					stream::query_result ret;
 					for (stream::ref* _ref = streams_.last(); _ref; _ref = _ref->prev()) {
@@ -373,7 +373,7 @@ namespace robo {
 		bool bus::request_(void) {
 			{
 				system::guard g__;
-				request_begin_us_ = robo::system::env::time_us();
+				request_begin_us_ = robo::system::time_us();
 				timeout_us_ = default_timeout_us_;
 				post();
 				return true;
@@ -480,7 +480,7 @@ namespace robo {
 		}
 
 		void bus::perform_(void) {
-			time_us_t now = system::env::time_us();
+			time_us_t now = system::time_us();
 			switch (message_.tran.status) {
 			case	ROBO_TRAN_EXECUTE:
 			case	ROBO_TRAN_EXECUTE_START:
@@ -938,6 +938,12 @@ namespace robo {
 			system::guard g__;
 			ROBO_LBREAKN_F(!ref_.attached(), "var '%s' is busy and rwef is used ", name());
 			ref_.attach_to(vt().queue_);
+			robo_detaillog(2,
+			               robo::log::mask::disabled,
+			               "\t\t\t>>>var request [%d]:  %s/%s\n",
+			               (int)st(),vt().own_agent().display_alias(),
+			               name());
+
 			return true;
 		}
 
@@ -1008,7 +1014,13 @@ namespace robo {
 				switch (proto_.confirm(_tran, current_)) {
 				case proto::result::success:
 					current_ = nullptr;
-					tmp->confirm();
+					robo_detaillog(2,
+				               robo::log::mask::disabled,
+				               "\t\t\t<<<< var confirm [%d]:  %s/%s\n",
+								(int)tmp->st(),
+								own_agent().display_alias(),
+				               tmp->name());
+			        tmp->confirm();
 					break;
 				case proto::result::repeat:
 					break;

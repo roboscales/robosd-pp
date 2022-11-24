@@ -322,7 +322,7 @@ namespace mexo {
 			quest* startup_var_query_quest(quest* _owner, robo::cstr _sect, int* _counter, quest* _sema = nullptr) {
 
 				//todo
-				//список строк заканивается двумя нулями
+				//СЃРїРёСЃРѕРє СЃС‚СЂРѕРє Р·Р°РєР°РЅРёРІР°РµС‚СЃСЏ РґРІСѓРјСЏ РЅСѓР»СЏРјРё
 				quest* q = ::robo::quest::create(
 					_owner
 					, _sema
@@ -455,7 +455,7 @@ namespace mexo {
 								break;
 							}else {
 								status_ = status::specific;
-								run_();// todo говнокод
+								run_();// todo РіРѕРІРЅРѕРєРѕРґ
 							}
 							break;
 						case result::fault:
@@ -571,7 +571,7 @@ namespace mexo {
 			quest* post_startup_vars(quest* _owner, robo::cstr _sect, quest* _sema = nullptr) {
 
 				//todo
-				//список строк заканивается двумя нулями
+				//СЃРїРёСЃРѕРє СЃС‚СЂРѕРє Р·Р°РєР°РЅРёРІР°РµС‚СЃСЏ РґРІСѓРјСЏ РЅСѓР»СЏРјРё
 				quest* end_load = ::robo::quest::create(
 					_owner
 					, nullptr
@@ -654,7 +654,7 @@ namespace mexo {
 			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback)
 				:robo::backend::devagent(_name, _boardagent, _goal.agent, _feedback.agent)
 				, echo_(*this)
-				, vars(*this, varproto, varindex::priority::normal, nullptr, 0) {
+				, vars(*this, varproto, varindex::priority::hi, nullptr, 0) {
 
 			}
 		};

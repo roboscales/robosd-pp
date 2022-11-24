@@ -17,9 +17,9 @@ namespace robo{
 
 		DATA_T _data[SIZE];
 		// количество чтений
-		volatile size_t _readCount;
+		size_t _readCount;
 		// количество записей
-		volatile size_t _writeCount;
+		size_t _writeCount;
 		// маска для индексов
 		static const size_t _mask = SIZE - 1;
 		static const size_t _masksz = (1 << (BITS + 1)) - 1;
@@ -103,9 +103,9 @@ namespace robo{
 		// память под буфер
 		STRUCT_T _data[SIZE];
 		// количество чтений
-		volatile size_t _readCount;
+		size_t _readCount;
 		// количество записей
-		volatile size_t _writeCount;
+		size_t _writeCount;
 		// маска для индексов
 		static const size_t _mask = SIZE - 1;
 		static const size_t _masksz = (1 << (BITS + 1)) - 1;

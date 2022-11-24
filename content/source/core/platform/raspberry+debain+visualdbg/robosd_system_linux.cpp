@@ -68,16 +68,19 @@ namespace robo {
 #include <errno.h>
 #include <string.h>
 namespace robo {	
-	void robo_consol_break__(int s) {
+	extern "C" void robo_consol_break__(int s) {
 		system::consol::stop(system::consol::event::keypbrd);	
 	}	
 
 	bool system::consol::driver_begin(void) {
+		
 		struct sigaction act = { };
 		act.sa_handler = robo_consol_break__;
 		sigemptyset(&act.sa_mask);                                                             
 		sigaddset(&act.sa_mask, SIGINT); 
 		ROBO_LBREAKN_F(sigaction(SIGINT, &act, 0) == 0, "sigaction error %d: %s", errno, strerror(errno));
+		
+		//ROBO_LBREAKN_F(signal(SIGINT, robo_consol_break__) == 0, "sigaction error %d: %s", errno, strerror(errno));
 		return true;
 	}
 	
@@ -111,7 +114,31 @@ namespace robo {
 
 	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size) {
 		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
-		_size = ini_gets(_section, _key, "", _dst, _max_sz, g_robo_ini_fn);		
+		if(_key == nullptr)
+		{
+			int ix = 0;
+			while (_max_sz>1)
+			{
+				int cnt = ini_getkey(_section, ix, _dst, _max_sz, g_robo_ini_fn);
+				if (cnt)
+				{
+					_dst[cnt] = 0;
+					ix++;
+					cnt++;
+					_dst += cnt;
+					_size += cnt;
+					_max_sz -= cnt;					
+				}
+				else
+				{
+					break;
+				}
+			}
+
+		} else
+		{
+			_size = ini_gets(_section, _key, "", _dst, _max_sz, g_robo_ini_fn);		
+		}
 	}
 }
 #endif

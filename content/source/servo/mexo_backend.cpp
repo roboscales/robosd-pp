@@ -23,8 +23,8 @@ namespace mexo {
 			switch (state_) {
 			case state::idle:
 			{
-				//todo âêëþ÷èòü â òàñê
-				robo::time_us_t now = robo::system::env::time_us();
+				//todo Ð²ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒ Ð² Ñ‚Ð°ÑÐº
+				robo::time_us_t now = robo::system::time_us();
 				if (now - last_ > period_) {
 					last_ = now;
 				}
@@ -271,7 +271,7 @@ namespace mexo {
 				return result::success;
 			}
 			robo_errlog("error proto series (%s)", _desc->name());
-			reset();
+			reset(); 
 			return result::fail;
 		}
 		devagent::proto::result devagent::proto::confirm_desc(const robo_tran_t& _tran, varindex::descriptor* _desc) {
@@ -313,7 +313,7 @@ namespace mexo {
 		};
 
 		devagent::stream::query_result devagent::flow_serial::query(robo_tran_t& _tran) {
-			//todo ïîäóìàòü
+			//todo Ð¿Ð¾Ð´ÑƒÐ¼Ð°Ñ‚ÑŒ
 			_tran.header.command = _tran.header.command = mexo::front::dev::flow_command_ix::serial_1;
 			switch (state_) {
 			case state::none:
@@ -347,7 +347,7 @@ namespace mexo {
 						}
 						remote_in_space_ -= put_count;
 						_tran.size_actual = put_count + 1;
-						//ïîøåë íà ïðèíöèï îñòàâèë òàê 0xBB
+						//Ð¿Ð¾ÑˆÐµÐ» Ð½Ð° Ð¿Ñ€Ð¸Ð½Ñ†Ð¸Ð¿ Ð¾ÑÑ‚Ð°Ð²Ð¸Ð» Ñ‚Ð°Ðº 0xBB
 						_tran.data[0] = 0xBB;
 						if (port_->get(_tran.data + 1, put_count) > 0) {
 							_tran.request = ROBO_TRAN_REQUEST_PUT;

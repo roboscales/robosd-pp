@@ -20,6 +20,7 @@ namespace mexo {
 
 	}
 	void machine::begin_(void) {
+		system::begin();
 		slots_ref_.begin.execute();
 		ROBO_APP_ASSERT(::mexo::node::begin());
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
@@ -29,7 +30,8 @@ namespace mexo {
 		node::create_vars();
 		#endif
 	}
-	void machine::start_(void) {
+	void machine::start_(time_us_t _period_us) {
+		system::start(_period_us);
 		slots_ref_.start.execute();
 	}
 	#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
@@ -45,6 +47,7 @@ namespace mexo {
 	void machine::backend_loop_(void) {
 		tp.on(tp_verb::backend);
 		fall__;
+		system::backend_loop();
 		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE != 1
 		slots_ref_.priority.execute();
 		#endif
@@ -63,6 +66,7 @@ namespace mexo {
 	}
 	void machine::frontend_loop_(void) {
 		tp.on(tp_verb::frontend);
+		system::frontend_loop();
 		slots_ref_.frontend.execute();
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::frontend_poll();
@@ -627,8 +631,15 @@ namespace mexo {
 void mexo_begin(void) {
 	mexo::machine::begin();
 }
-void mexo_start(void) {
-	mexo::machine::start();
+
+#ifdef ROBO_APP_MEXO_SAMPLE_US
+void mexo_start( void ) {
+	mexo::machine::start(ROBO_APP_MEXO_SAMPLE_US);
+}
+#endif
+
+void mexo_start_ps(unsigned int _period_us) {
+	mexo::machine::start(_period_us);
 }
 void mexo_priority_loop(void) {
 	mexo::machine::priority_loop();

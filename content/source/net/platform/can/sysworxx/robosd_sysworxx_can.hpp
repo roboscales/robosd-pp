@@ -12,6 +12,7 @@ namespace robo {
 					int bitrate_;
 					int channel_;
 					string name_;
+					bool extended_;
 					bool open_(void);
 					bool open__(void);
 					enum { chan_count = 4 };

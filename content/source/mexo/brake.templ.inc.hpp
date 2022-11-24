@@ -108,7 +108,7 @@ public:
 	::robo::time_us_t last_us_ = 0;
 	void poll_(void) {
 		#if ROBO_APP_ENV_ENABLED ==1
-		::robo::time_us_t now_us_ = ::robo::system::env::time_us();
+		::robo::time_us_t now_us_ = ::robo::system::time_us();
 		present_s& present = ps_t::template present<dev_t>();
 		const config_s& config = ps_t::template config<dev_t>();
 
