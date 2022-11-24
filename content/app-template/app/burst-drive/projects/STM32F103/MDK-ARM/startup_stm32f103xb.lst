@@ -475,7 +475,7 @@ ARM Macro Assembler    Page 8
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=burst-drive\startup_stm32f103xb.d -oburst-drive\startup_stm32f103x
-b.o -I.\RTE\_burst-drive -IE:\Keil_v5\Packs\ARM\CMSIS\5.8.0\CMSIS\Core\Include 
+b.o -I.\RTE\_burst-drive -IE:\Keil_v5\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include 
 -IE:\Keil_v5\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include --predefine="__UVISI
 ON_VERSION SETA 536" --predefine="_RTE_ SETA 1" --predefine="STM32F10X_MD SETA 
 1" --predefine="_RTE_ SETA 1" --list=startup_stm32f103xb.lst startup_stm32f103x
