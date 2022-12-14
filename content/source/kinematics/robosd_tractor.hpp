@@ -1,11 +1,16 @@
-#ifndef rovosd_kinematiks_hpp
-#define rovosd_kinematiks_hpp
+#ifndef rovosd_tractor_hpp
+#define rovosd_tractor_hpp
 #include <cmath>
 #include "core/robosd_common.hpp"
 #include "core/robosd_list.hpp"
 #include "core/robosd_span.hpp"
+
+/*#ifndef ROBO_TRACTOR_ASSERT
+#define ROBO_TRACTOR_ASSERT(x,f) 
+#endif*/
+
 namespace robo {
-	namespace kinematiks {
+	namespace tractor {
 		
 		template<typename T> constexpr void rangle_sut(T & _values) {
 			while (_values > pi<T>) {
@@ -28,30 +33,357 @@ namespace robo {
 		template<typename T,int n> constexpr T epsilon = ::std::numeric_limits<T>::epsilon() * n; //n попугаев
 
 		template<typename T> constexpr T deg2rad = pi<T> / 180.;
-		template<typename T> constexpr T rad2deg = T(1.) / deg2rad<T>;
-		/*template<typename T, size_t N> constexpr const ::robo::span<T, N> span(const T(&_arr)[N]) {
-			return  ::robo::span<T, N>((T *) &(_arr[0]),N);
-		}*/
 		
-		/*template<typename T, size_t N> struct rshp {
-			const T(&arr_)[N];
-			constexpr rshp(T(&_arr)[N]) : arr_(_arr) {}
-			template<size_t O, size_t M> constexpr const ::robo::span<T, M>  at () {
-				return  ::robo::span<T, M>((T*)&(arr_[O]), M);
-			}			
-		};*/
+		template<typename T> constexpr T rad2deg = T(1.) / deg2rad<T>;
+		
+		template <typename T> T constexpr  sign(T val) {
+			if (::abs(val) < ::std::numeric_limits<T>::epsilon()) return T(0);
+			return (T(0) < val) ? -T(1) : T(1);
+		}
+
+		template <typename T> T constexpr abs(T val) {
+			if (T(0) == val) return 0;
+			if (val < T(0)) return -val;
+			return val;
+		}
+
+		template< typename  T, typename  S> class numbers_t: public S {
+		public:
+			
+
+			constexpr numbers_t(void): S() {
+				::std::fill_n(S::memo, S::size, T(0));
+			}
+
+			constexpr numbers_t(const numbers_t & _src) : S() {
+				ROBO_APP_ASSERT(S::size == _src.size);
+				::std::copy_n(_src.memo, S::size, S::memo);
+			}
+
+			constexpr numbers_t(const std::initializer_list<T> _src) : S() {
+				ROBO_APP_ASSERT(S::size == _src.size());
+				::std::copy_n(_src.begin(), S::size, S::memo);
+			}
+			constexpr numbers_t(const T (&_src)[S::size] ) : S() {
+				::std::copy_n(_src, S::size, S::memo);
+			}
+			template <typename A> constexpr numbers_t(const A& _src) : S() {
+				ROBO_APP_ASSERT(S::size == _src.size);
+				::std::copy_n(_src.memo, S::size, S::memo);
+			} 
+
+			template <typename A, typename B> constexpr numbers_t(const A& a,const B& b) : S() {
+				*this = a*b;
+			}
+
+			constexpr numbers_t& operator = (const numbers_t & _src) {
+				ROBO_APP_ASSERT(S::size == _src.size);
+				::std::copy_n(_src.memo, S::size, S::memo);
+				return *this;
+			}
+			
+			template <typename A> constexpr numbers_t& operator = (const A& _src) {
+				ROBO_APP_ASSERT(S::size == _src.size);
+				::std::copy_n(_src.memo, S::size, S::memo);
+				return *this;
+			}
+
+			template <typename A> constexpr numbers_t& operator += (const A& _src) {
+				const T* src = _src.memo;
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
+					*dst += *src;
+				}
+				return *this;
+			}
+
+			template <typename A> constexpr numbers_t& operator -= (const A& _src) {
+				const T* src = _src.memo;
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
+					*dst -= *src;
+				}
+				return *this;
+			}
+
+			template <typename A> constexpr numbers_t& operator *= (const A& _src) {
+				const T* src = _src.memo;
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
+					*dst *= *src;
+				}
+				return *this;
+			}
+
+			template <typename A> constexpr numbers_t& operator /= (const A& _src) {
+				const T* src = _src.memo;
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
+					*dst /= *src;
+				}
+				return *this;
+			}
+
+			constexpr numbers_t& operator *= (const T & _t ) {
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++dst) {
+					*dst *= _t;
+				}
+				return *this;
+			}
+
+			constexpr numbers_t& operator /= (const T& _t) {
+				T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++dst) {
+					*dst /= _t;
+				}
+				return *this;
+			}
+
+			template <typename A> constexpr T dot(const A& _src) const {
+				T res = T(0);
+				const T* src = _src.memo;
+				const T* dst = S::memo;
+				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
+					res += *dst * *src;
+				}
+				return res;
+			}
+			constexpr T length(void) const {
+				return sqrt(dot(*this));
+			}
+			
+			constexpr void zeros(void) {
+				::std::fill_n(S::memo, S::size, T(0));
+			}
+
+			constexpr numbers_t norma(void) const {
+				T r = length();
+				if (r > ::std::numeric_limits<T>::epsilon()) {
+					return *this / r;
+				}
+				else {
+					return numbers_t();
+				}
+			}
+
+			template <typename A>   constexpr void normalize(const A& _src) const {
+				T r = _src.length();
+				if (r > ::std::numeric_limits<T>::epsilon()) {
+					_src /= r;
+				}
+				else {
+					_src.zeros();
+				}
+			}
+			
+			//operator const span<typename S::element_t, N> & () const { return span<typename  S::element_t, N>(S::memo, N); }
+		};
+		
+		template<typename T, typename C> constexpr numbers_t<T,C> operator* (const numbers_t<T,C>& _src1, const T& _t) {
+			numbers_t tmp(_src1);
+			return tmp *= _t;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const T& _t) {
+			numbers_t tmp(_src1);
+			return tmp *= _t;
+		}
+		template<typename T, typename C> constexpr numbers_t<T,C> operator* (const T& _t , const numbers_t<T,C>& _src1 ) {
+			numbers_t tmp(_src1);
+			return tmp *= _t;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const T& _t, const numbers_t<T,C>& _src1) {
+			numbers_t tmp(_src1);
+			return tmp *= _t;
+		}
+		
+		template<typename T, typename C> constexpr numbers_t<T,C> operator + (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp += _src2;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator - (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp -= _src2;
+		}
+		template<typename T, typename C> constexpr numbers_t<T,C> operator * (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp *= _src2;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp /= _src2;
+		}
+		template<typename T, typename C> constexpr numbers_t<T,C> operator + (const numbers_t<T,C>& _src1, const span<T, C::size> & _src2) {
+			numbers_t tmp(_src1);
+			return tmp += _src2;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator - (const numbers_t<T,C>& _src1, const span<T, C::size>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp -= _src2;
+		}
+		template<typename T, typename C> constexpr numbers_t<T,C> operator * (const numbers_t<T,C>& _src1, const span<T, C::size>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp *= _src2;
+		}
+		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const span<T, C::size>& _src2) {
+			numbers_t tmp(_src1);
+			return tmp /= _src2;
+		}
+
+
+		template<typename T, size_t M, size_t K, size_t N>
+		void matrix_mult(const T * A, const T * B, T * C) {
+			for (int i = 0; i < M; ++i) {
+				T* c = C + i * N;
+				for (int j = 0; j < N; ++j)
+					c[j] = 0;
+				for (int k = 0; k < K; ++k) {
+					const T* b = B + k * N;
+					T a = A[i * K + k];
+					for (int j = 0; j < N; ++j)
+						c[j] += a * b[j];
+				}
+			}
+		}
+				
+
+		
+		template<typename T, size_t M, size_t N> struct matrix_s{
+			enum { nrows = M, ncols = N, size=M*N};
+			union {
+				T memo[size];
+				T rows[nrows][ncols];
+			};
+		};
+		template<class T, size_t M, size_t N> using matrix_t = numbers_t <T, matrix_s<T, M, N>>;
+
+		template<typename T, size_t M, size_t K, size_t N> matrix_t<T, M, N>  operator * (
+			const matrix_t<T, M, K>& A
+			, const matrix_t<T, K, N>& B
+			) {
+			matrix_t<T, M, N> C;
+			matrix_mult<T,M,K,N>(A.memo, B.memo, C.memo);
+			return C;
+		}
+
+
+		template<typename T> struct vector3_s {
+		public:
+			enum { size = 3 };
+			union {
+				T memo[size];
+				struct {
+					T x;
+					T y;
+					T z;
+				};
+			};
+		};
+		template<class T>	using vector3_t = numbers_t <T, vector3_s<T> >;
+
+		template<typename T, size_t M> matrix_t<T, M, 1>  operator * (const matrix_t<T, M, 3> & A, const vector3_s<T> & B) {
+			matrix_t<T, M, 1> C;
+			matrix_mult<T, M, 3, 1>(A.memo, B.memo, C.memo);
+			return C;
+		}
+
+
+		template<typename T> vector3_t<T> operator * (const vector3_s<T> & a, const vector3_s<T> & b) {
+			return  numbers_t < vector3_s<T>>({ a.y * b.z - a.z * b.y, -a.x * b.z + a.z * b.x, a.x * b.y - a.y * b.x });
+		}
+
+		template<typename T, size_t N> class eye : public matrix_t<T, N, N> {
+		private:
+			typedef matrix_s<T, N, N> A;
+		public:
+			constexpr eye(void) : A() {
+				for (int i = 0; i < A::size::row; ++i)
+					A::memo[i * A::ncols + i] = T(1);
+			}
+		};
+		
+		template<typename T> class quaternion_s {
+		public:
+			enum {size = 4};
+			union {
+				T memo[size];
+				struct {
+					T w;
+					T x;
+					T y;
+					T z;
+				};
+				using rotmatrix_t = matrix_t<T, 3, 3>;
+				rotmatrix_t A;
+				/*void rotate(void) {
+					T x2 = x * x;
+					T y2 = y * y;
+					T z2 = z * z;
+					T xw = x * w;
+					T xy = x * y;
+					T xz = x * z;
+					
+					T yw = x * w;
+					T yz = x * z;
+
+					T zw = z * w;
+
+					T* p = A.memo;
+					*p++ = 1 -2 * (y2 + z2);	*p++ = 2 * (xy - zw);		*p++ = 2 * (yw + xz);
+					*p++ = 2 * (xy + zw);		*p++ = 1 - 2 * (x2 + z2);	*p++ = 2 * (yz - xw);
+					*p++ = 2 * (xz - yw);	    *p++ = 2 * (xw + yz);		*p++ = 1 - 2 * (x2 + y2);
+				}*/
+			};
+		};
+		template<class T> using quaternion_t = numbers_t <T, quaternion_s<T> >;
+
+		template<typename T> quaternion_t<T> operator * (const quaternion_t<T>& a, const quaternion_t<T>& b) {
+			return quaternion_t<T>{
+					a.w* b.w - a.x * b.x - a.y * b.y - a.z * b.z
+					, a.w* b.x + a.x * b.w + a.y * b.z - a.z * b.y
+					, a.w* b.y + a.y * b.w - a.x * b.z + a.z * b.x
+					, a.w* b.z + a.x * b.y - a.y * b.x + a.z * b.w
+			};
+		}
+
+		template<typename T> vector3_t<T> operator * (const quaternion_t<T>& a, const vector3_t<T>& b) {
+			T x2 = x * x;
+			T y2 = y * y;
+			T z2 = z * z;
+			T xw = x * w;
+			T xy = x * y;
+			T xz = x * z;
+
+			T yw = x * w;
+			T yz = x * z;
+
+			T zw = z * w;
+
+			return vector3_t<T>{
+				bx* aw ^ 2 + 2 * bz * aw * ay - 2 * by * aw * az + bx * ax ^ 2 + 2 * by * ax * ay + 2 * bz * ax * az - bx * ay ^ 2 - bx * az ^ 2
+			};
+		}
+
+
+		/*		template<typename T, size_t M> quaternion_t<T>  operator * (const quaternion_t<T>& A, const quaternion_t<T>& B) {
+			quaternion_t<T> C =A;
+			mult<T, M, 3, 1>(A.begin(), B.begin(), C.data());
+			return C;
+		}*/
+
+/*
 
 		namespace  axis {
 			template<typename T, class S> struct orient_span_t : public robo::span<T, S::count> {
-				constexpr orient_span_t(const S& _s) : robo::span<T, S::count>((T*)&_s.memo[0]) {}
+				constexpr orient_span_t(const S& _s) : robo::span<T, S::count>((T*)&_s.pmemo[0]) {}
 				template< class F > constexpr  orient_span_t(const F & _src) :
-					robo::span<T, S::count>( _src.memo+ F::orientofs) {
+					robo::span<T, S::count>( _src.data()+ F::orientofs) {
 				}
 			};
 			template<typename T, class S> struct position_span_t : public ::robo::span<T, S::count> {
-				constexpr position_span_t(const S& _s) : ::robo::span<T, S::count>((T*)&_s.memo[0]) {}
+				constexpr position_span_t(const S& _s) : ::robo::span<T, S::count>((T*)&_s.pmemo[0]) {}
 				template< class F > constexpr  position_span_t(const F& _src) :
-					::robo::span<T, S::count>(_src.memo + F::posofs ) {}
+					::robo::span<T, S::count>(_src.data() + F::posofs ) {}
 			};
 			template<typename T> struct euclid {
 				enum { count = 3 };
@@ -62,7 +394,7 @@ namespace robo {
 						T y;
 						T z;
 					};
-					T memo[count];
+					T pmemo[count];
 				};
 			};
 			template<typename T> struct cilinder {
@@ -74,7 +406,7 @@ namespace robo {
 						T height;
 						T yaw;
 					};
-					T memo[count];
+					T pmemo[count];
 				};
 			};
 
@@ -87,7 +419,7 @@ namespace robo {
 						T yaw;
 						T pitch;
 					};
-					T memo[count];
+					T pmemo[count];
 				};
 			};
 
@@ -100,16 +432,11 @@ namespace robo {
 						T nutation;
 						T rotation;
 					};
-					T memo[count];
+					T pmemo[count];
 				};
 			};
 			template<typename T>struct avionic {
 				enum { count = 3 };
-				/*struct span : public ::robo::span<T, count> {
-					template<class F> constexpr  span(const F& _src, size_t _offset) :
-						::robo::span<T, count>(&_src[_offset], count) {}
-				};
-				*/
 				typedef orient_span_t<T, avionic> span;
 
 				union {
@@ -118,14 +445,14 @@ namespace robo {
 						T pith;
 						T roll;
 					};
-					T memo[count];
+					T pmemo[count];
 				};
 				T yaw_offset = T(0);
 
 				constexpr avionic(void) : yaw(T(0)), pith(T(0)), roll(T(0)) {
 				}
 				constexpr avionic(const span & _src) {
-					::std::copy_n(_src.begin(), count, memo);
+					::std::copy_n(_src.begin(), count, pmemo);
 				}
 
 				constexpr avionic( T _yaw, T _pith, T _roll) : yaw(_yaw), pith(_pith), roll(_roll) {
@@ -152,14 +479,6 @@ namespace robo {
 
 			};
 
-			/*avionic operator + (const avionic& _src1, const avionic& _src2) {
-				avionic tmp(_src1);
-				return tmp += _src2;
-			}
-			avionic operator - (const avionic& _src1, const avionic& _src2) {
-				avionic tmp(_src1);
-				return tmp -= _src2;
-			}*/
 		};
 		
 		template<typename T> struct quaternion {
@@ -172,18 +491,18 @@ namespace robo {
 					T y;
 					T z;
 				};
-				T memo[count];
+				T pmemo[count];
 			};
 			
 			using avionic = typename  axis::avionic<T>;
 			constexpr quaternion(void) {
-				::std::fill_n(memo,count,0.f);
+				::std::fill_n(pmemo,count,0.f);
 			}
 			//constexpr quaternion(const span& _src) {
-				//::std::copy_n(_src.begin(), count, memo);
+				//::std::copy_n(_src.begin(), count, pmemo);
 			//}
 			constexpr quaternion (const quaternion& _src) {
-				::std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.pmemo, count, pmemo);
 			}
 			quaternion(const avionic& _src) {
 				from(_src);
@@ -196,7 +515,7 @@ namespace robo {
 					z = -_src.z;
 				}
 				else {
-					::std::copy_n(_src.memo, count, memo);
+					::std::copy_n(_src.pmemo, count, pmemo);
 				}
 			}
 			constexpr quaternion(
@@ -209,14 +528,7 @@ namespace robo {
 				y = _y;
 				z = _z;
 			}
-			/*constexpr quaternion(
-				const vector3 & _src
-			) {
-				w = T(0);
-				x = _src._x;
-				y = _src._y;
-				z = _src._z;
-			}*/
+
 			constexpr quaternion(
 				T _w,
 				T _x,
@@ -229,7 +541,7 @@ namespace robo {
 				z = _z;
 			}
 			constexpr quaternion& operator = (const quaternion& _src) {
-				::std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.pmemo, count, pmemo);
 				return *this;
 			}
 
@@ -267,10 +579,6 @@ namespace robo {
 				return *this;
 			}
 			static void to(avionic& _avc,T w, T x, T y, T z) {
-				/*T w = _src[0];
-				T x = _src[1];
-				T y = _src[2];
-				T z = _src[3];*/
 				T d1 = 2. * (x * z - w * y);
 				if (d1 > 1.) {
 					d1 = 1. - ::std::numeric_limits<T>::epsilon();
@@ -332,18 +640,8 @@ namespace robo {
 			T compare(const quaternion<T>& _src) {
 				quaternion<T> tmp(_src,true);
 				tmp *= *this;
-				/*/static quaternion<T> zero(0., 1., 0., 0.);
-				const T* p1 = tmp.memo;
-				const T* p2 = zero.memo;
-				T err = T(0);
-				for (int i = 0; i < count; ++i, ++p1,++p2) {
-					T tmp = *p1-*p2;
-					tmp = tmp * tmp;
-					err += tmp;
-				}
-				return sqrt(err / (int)count);*/
-//				if (abs(tmp.w - 1.0) < 0.000001 /*epsilon<T, 10>*/) {
-					const T* p1 = tmp.memo+1;
+//				if (abs(tmp.w - 1.0) < 0.000001 ) {
+					const T* p1 = tmp.pmemo+1;
 					T err = T(0);
 					for (int i = 0; i < count-1; ++i, ++p1) {
 						T tmp = *p1;
@@ -355,8 +653,8 @@ namespace robo {
 		//		return tmp.w;
 			}
 			T diff(const quaternion<T>& _src) {
-				const T* p1 = _src.memo;
-				const T* p2 = memo;
+				const T* p1 = _src.pmemo;
+				const T* p2 = pmemo;
 				T err = T(0);
 				for (int i = 0; i < count; ++i, ++p1, ++p2) {
 					T tmp = *p1 - *p2;
@@ -395,7 +693,7 @@ namespace robo {
 					offset_t offset;
 					orient_t orient;
 				};
-				T memo[count];
+				T pmemo[count];
 			};
 			struct span : public ::robo::span<type, count> {
 				typedef P offset_t;
@@ -404,32 +702,32 @@ namespace robo {
 				//using ::robo::span<type, count>::span;
 				span(const type(&_arr)[count]) : ::robo::span<type, count>((type*)(&_arr[0])) {}
 				span(const ::robo::span<type, count> & _src ) : ::robo::span<type, count>(_src) {}
-				span(const span& _src) : ::robo::span<type, count>(_src.memo) {}
+				span(const span& _src) : ::robo::span<type, count>(_src.data()) {}
 				typename orient_t::span orient() const {
 					return
-						typename orient_t::span( ::robo::span<type, count>::memo + orientofs);
+						typename orient_t::span( ::robo::span<type, count>::data() + orientofs);
 				}
 				typename offset_t::span position() const {
 					return
-						typename offset_t::span(::robo::span<type, count>::memo + posofs);
+						typename offset_t::span(::robo::span<type, count>::data() + posofs);
 				}
 			};
 			
 			point_t(void) {
-				::std::fill_n(memo, count, 0.f);
+				::std::fill_n(pmemo, count, 0.f);
 			}
 			point_t ( const span& _src ){
-				::std::copy_n(_src.data(), count, memo);
+				::std::copy_n(_src.data(), count, pmemo);
 			}
 			point_t(const point_t & _src) {
-				::std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.pmemo, count, pmemo);
 			}
 			point_t& operator = ( const span& _src ) {
-				::std::copy_n(_src.data(), count, memo);
+				::std::copy_n(_src.data(), count, pmemo);
 				return *this;
 			}
 			point_t& operator = (const point_t& _src) {
-				::std::copy_n(_src.memo, count, memo);
+				::std::copy_n(_src.pmemo, count, pmemo);
 				return *this;
 			}
 
@@ -451,19 +749,19 @@ namespace robo {
 			}
 			template<class Q> point_t& operator = (const Q& _src) {
 				typedef typename Q::from from;
-				from:: template to<point_t>::set(typename from::span(_src.memo), *this);
+				from:: template to<point_t>::set(typename from::span(_src.pmemo), *this);
 				return *this;
 			}
 			template<class Q> point_t(const Q& _src) {
 				typedef typename Q::from from;
-				from:: template to<point_t>::set(  typename from::span(_src.memo) , *this);
+				from:: template to<point_t>::set(  typename from::span(_src.pmemo) , *this);
 			}
 			template<class Q> void applay(const Q& _src, const typename Q::span& _span) {				
 				Q:: template to<point_t>::set(_span, *this);
 			}
 			template<class Q> void applay(const Q& _src) {
 				typedef typename Q::from from;
-				from:: template to<point_t>::set(typename from::span(_src.memo), *this);
+				from:: template to<point_t>::set(typename from::span(_src.pmemo), *this);
 			}
 			void applay(const span & _src) {
 				*this = _src;
@@ -472,7 +770,7 @@ namespace robo {
 				Q:: template to<point_t>::inc(_span, *this);
 			}
 			void inc(const span& _src) {
-				const type* s = _src.data(), * d = memo;
+				const type* s = _src.data(), * d = pmemo;
 				for (int i = 0; i < count; ++s, ++d) *d += *s;
 			}
 		};
@@ -538,14 +836,7 @@ namespace robo {
 				}
 			}
 		};
-		/*template <class P> hamilton& operator  <<(hamilton& _dstconst, P& _src) {
-			_dst.position << P::offset_t::span(_src);
-			_dst.orient << P::orient_t::span(_src);
-		}
-		template <class P>  P& operator << (P& _dst, const typename hamilton::span& _src, ) {
-			_dst.position << _src.position();
-			_dst.orient << _src.orient();
-		}*/
+
 
 		template<typename T, class P, class O> template <class Q> void point_t<T,P,O>::from::to<Q>::doit(const span& _span, Q& _dst, op _op) {			
 			point<T>::convert(_span, _dst, _op);
@@ -673,270 +964,8 @@ namespace robo {
 
 		};
 
-		template <typename T> T signt(T val) {
-			if ( abs(val) < ::std::numeric_limits<T>::epsilon()  ) return T(0);
-			return (T(0) < val) ? -T(1) : T(1);
-		}
-
-		template <typename T> T abst(T val) {
-			if (T(0) == val) return 0;
-			if (val < T(0)) return -val;
-			return val;
-		}
-		
-		template<typename T, size_t M, size_t N> struct matrix  {
-			struct size {
-				enum { row = M, col = N, total=N*M};
-			} ;
-			T memo[size::total];
-
-			constexpr matrix() {
-				::std::fill_n(memo, size::total, T(0));
-			}
-			constexpr matrix(const T(&_array)[size::total]) {
-				::std::copy_n(_array, size::total, memo);
-			}
-			constexpr matrix & operator = (const T(&_array)[size::total]) {
-				::std::copy_n(_array, size::total, memo);
-				return *this;
-			}
-			constexpr matrix& operator += (const T(&_array)[size::total]) {
-				const T* src = _array;
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
-					*dst += *src;
-				}
-				return *this;
-			}
-			constexpr matrix& operator -= (const T(&_array)[size::total]) {
-				const T* src = _array;
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
-					*dst -= *src;
-				}
-				return *this;
-			}
 		
 
-			constexpr matrix& operator += (const matrix & _mx) {
-				const T* src = _mx.memo;
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
-					*dst += *src;
-				}
-				return *this;
-			}
-
-			constexpr matrix& operator /= (const T& _r) {
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++dst) {
-					*dst /= _r;
-				}
-				return *this;
-			}
-			constexpr matrix& operator *= (const T& _r) {
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++dst) {
-					*dst *= _r;
-				}
-				return *this;
-			}
-
-			constexpr matrix& operator -= (const matrix & _mx) {
-				const T* src = _mx.memo;
-				T* dst = memo;
-				for (int i = 0; i < size::total; ++i, ++src, ++dst) {
-					*dst -= *src;
-				}
-				return *this;
-			}
-
-
-			constexpr matrix& operator = (const matrix & _mx) {
-				::std::copy_n(_mx.memo, size::total, memo);
-				return *this;
-			}
-
-			/*constexpr matrix(const ::std::initializer_list<T>& _l) {
-				::std::copy_n(_array, size::total, memo);
-			}
-			constexpr matrix& operator = (const ::std::initializer_list<T>& _l) {
-				::std::copy_n(_l, size::total, memo);
-				return *this;
-			}*/
-		};
-		
-		template<typename T, size_t M, size_t N> class eye: public matrix<T,M,N> {
-		private:
-			typedef matrix<T, M, N> A;
-		public:
-			constexpr eye(void): A() {
-				for (int i = 0; i < A::size::row; ++i)
-					for (int j = 0; j < A::size::col; ++j)
-						if (i == j) {
-							A::memo[i * A::size::col + j] = T(1);
-						}
-						else {
-							A::memo[i * A::size::col + j] = T(0);
-						}				
-			}
-		};
-
-		template<typename T, size_t M, size_t K, size_t N> matrix< T, M, N>  operator * (const matrix<T, M, K>& _m1, const matrix<T, K, N>& _m2) {
-			matrix< T, M, N> tmp;
-			const T* A =&_m1.memo[0];
-			const T* B =& _m2.memo[0];
-			T* C = &tmp.memo[0];
-			for (int i = 0; i < M; ++i) {
-				T* c = C + i * N;
-				for (int j = 0; j < N; ++j)
-					c[j] = 0;
-				for (int k = 0; k < K; ++k) {
-					const T* b = B + k * N;
-					T a = A[i * K + k];
-					for (int j = 0; j < N; ++j)
-						c[j] += a * b[j];
-				}
-			}
-			return tmp;
-		}
-
-		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator + (const matrix<T, M, N>& _m1, const matrix<T, M, N>& _m2) {
-			matrix< T, M, N> tmp (_m1);
-			tmp += _m2;
-			return tmp;
-		}
-		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator - (const matrix<T, M, N>& _m1, const matrix<T, M, N>& _m2) {
-			matrix< T, M, N> tmp (_m1);
-			tmp -= _m2;
-			return tmp;
-		}
-		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator / (const matrix<T, M, N>& _m1, const T & _r) {
-			matrix< T, M, N> tmp(_m1);
-			tmp /= _r;
-			return tmp;
-		}
-		template<typename T, size_t M, size_t N> matrix< T, M, N>  operator * (const matrix<T, M, N>& _m1, const T& _r) {
-			matrix< T, M, N> tmp(_m1);
-			tmp *= _r;
-			return tmp;
-		}
-
-		template<typename T, size_t M> class vector : public matrix<T, M, 1> {
-			using A =  matrix<T, M, 1>;
-		public:
-			constexpr vector(): A(){
-			}
-			constexpr vector(const T(&_array)[A::size::total]) : A(_array) {
-			}
-			constexpr vector(const A & _a) : A(_a) {}
-			constexpr vector& operator = (const vector& _src) {
-				return (vector&) A::operator = (_src);
-			}
-			constexpr vector& operator = (const A & _src) {
-				return (vector&)A::operator = (_src);
-			}
-			constexpr vector& operator = (const T(&_array)[A::size::total]) {
-				return (vector&)A::operator = (_array);
-			}
-			constexpr T dot(const vector& _mx) const {
-				T res = T(0);
-				const T* src = _mx.memo;
-				const T* dst = A::memo;
-				for (int i = 0; i < A:: size::total; ++i, ++src, ++dst) {
-					res += *dst * *src;
-				}
-				return res;
-			}
-			constexpr T length(void) const {
-				return sqrt(dot(*this));
-			}
-			constexpr vector direction(void) const {
-				T r = length();
-				if (r > ::std::numeric_limits<T>::epsilon()) {
-					return *this / r;
-				}
-				else {
-					return vector({ 0,0,0 });
-				}
-			}
-
-		};
-		template<typename T, size_t M> vector<T, M>  operator + (const vector<T, M>& _m1, const vector<T, M>& _m2) {
-			vector<T, M> tmp (_m1);
-			_m1 += _m2;
-			return tmp;
-		}
-		template<typename T, size_t M> vector<T, M>  operator - (const vector<T, M>& _m1, const vector<T, M>& _m2) {
-			vector<T, M> tmp (_m1);
-			_m1 -= _m2;
-			return tmp;
-		}
-
-		template<typename T> class vector3 : public vector<T, 3> {
-			using A = vector<T, 3>;
-		public:
-			const T& x() const { return  A::memo[0]; }
-			const T& y() const { return  A::memo[1]; }
-			const T& z() const  { return A::memo[2]; }
-
-			constexpr vector3& operator = (const quaternion<T>& _src) {
-				::std::copy_n(_src.memo + 1, A::size::total, A::memo);
-				return *this;
-			}
-
-			constexpr vector3(void) : A() {}
-			constexpr vector3(const T(&_array)[A::size::total]) : A(_array) {}
-			constexpr vector3(const quaternion<T>& _src) : A() {
-				::std::copy_n(_src.memo + 1, A::size::total, A::memo);
-			}
-
-			constexpr vector3& operator = (const vector3& _src) {
-				return (vector3&) A::operator = (_src);
-			}
-			constexpr vector3& operator = (const T(&_array)[A::size::total]) {
-				return (vector3&)A::operator = (_array);
-			}
-			constexpr vector3(T _x, T _y, T _z) : A() {
-				A::memo[0] = _x;
-				A::memo[1] = _y;
-				A::memo[2] = _z;
-			}
-
-			constexpr  operator quaternion<T>() {
-				quaternion<T> tmp;
-				::std::copy_n(A::memo, A::size::total, tmp.memo + 1);
-				return tmp;
-			}
-
-			constexpr vector3 back_transform(const quaternion<T>& _q, const quaternion<T>& _iq, const quaternion<T>& _offs) {
-				quaternion<T> tmp = *this;
-				return _offs + _q*tmp*_iq;
-			}
-
-			constexpr vector3 forward_transform(const quaternion<T>& _q, const quaternion<T>& _iq, const quaternion<T>& _offs) {
-				quaternion<T> tmp = (*this-_offs);
-				return _iq * tmp * _q;
-			}
-
-		};
-
-		template<typename T> vector3<T> operator + (const vector3<T>& _m1, const vector3<T>& _m2) {
-			vector3<T> tmp (_m1);
-			tmp += _m2;
-			return tmp;
-		}
-
-		template<typename T> vector3<T> operator - (const vector3<T>& _m1, const vector3<T>& _m2) {
-			vector3<T> tmp(_m1);
-			tmp -= _m2;
-			return tmp;
-		}
-
-		template<typename T> vector3<T> operator ^ (const vector3<T>& a, const vector3<T>& b) {
-			//i(ay bz - azby) - j(axbz - azbx) + k(axby - aybx)
-			return  vector3(a.y()*b.z() -a.z() *b.y(), -a.x() *b.z() +a.z() *b.x(), a.x() *b.y() -a.y() *b.x() );
-		}
 
 		template<typename T> struct joint {
 			using quaternion = ::robo::kinematiks::quaternion<T>;			
@@ -1233,14 +1262,6 @@ namespace robo {
 					}
 				}
 
-
-
-				/*template<typename C, unsigned N> void move(const C& _src) {
-					ROBO_APP_ASSERT(N == actuators_.count);
-					for (actuator::ref* r = actuators_.first(), const typename C::feetback fole * src = &_src.first(); r = r->next(), ++src) {
-						r->owner().move(src->position);
-					}
-				}*/
 				template<unsigned N> void move(const ::robo::span<double, N>& _src) {
 					ROBO_APP_ASSERT(N == actuators.count);
 					typename actuator::ref* r = actuators.first();
@@ -1258,93 +1279,9 @@ namespace robo {
 				}
 			};
 		};
-
-		/*
-		namespace actuator {
-			class joint {
-			protected:
-				virtual void do_move(float _data) = 0;
-				virtual void do_inc(float _data) = 0;
-				virtual void do_calc_forward(void) = 0;
-				virtual void do_calc_back(void) = 0;
-			public:
-				constexpr static inline const eye<float, 4, 4> I;
-				constexpr static inline const matrix<float, 4, 1> Ro = matrix<float, 4, 1>({ 0,0,0,1 });
-				constexpr static inline const matrix<float, 1, 4> Qo = matrix<float, 1, 4>({ 0,0,0,1 });
-				typedef matrix<float, 4, 4> A;
-				typedef matrix<float, 4, 1> R;
-				using Q = quaternion;
-				struct {
-					Q q;
-					R  r = Ro;
-				} offset;
-
-				quartenion deform;
-				quartenion deform;
-
-				//to do подумать
-				//point::hamilton local;
-				//quartenion local = Qo;
-				
-				A ilocal = I;
-				A local=I;
-				A back = I;
-				A iback = I;
-				A forward = I;
-				A iforward = I;
-				void move(float _data) { do_move(_data); }
-				void inc(float _data) { do_inc(_data); };
-			};
-			class yaw :public joint
-			{
-			protected:
-				virtual void do_move(float _data) {
-
-				}
-				virtual void do_inc(float _data) {}
-				virtual void do_calc_forward(void) {}
-				virtual void do_calc_back(void) {}
-			};
-		}*/
-		/*
-		template<typename T, size_t M, size_t N> constexpr static matrix<T,M,N>  sign(const matrix<T, M, N> & _m) {
-			matrix< T, M, N> tmp;
-			return tmp;
-		}
-		template<typename T, size_t M, size_t N> constexpr static matrix<T, M, N>  abs(const matrix<T, M, N>& _m) {
-			matrix< T, M, N> tmp;
-			return tmp;
-		}
-
-
-		arma::fvec& abs(const arma::fvec& _src, arma::fvec& _dst);
-
-		arma::fvec& add(arma::fvec& _dst, const float* _src, const float _scale);
-
-		arma::fvec& sum(arma::fvec& _dst, const arma::fvec& _p1, const float* _p2, float _scale);
-
-		float scale_score(const arma::fvec& _src, const arma::fvec& _max);
-
-		float normalize(arma::fvec& _dst, const arma::fvec& _src, const arma::fvec& _max);
-
-		bool check_lim(const arma::fvec& _src, const arma::fvec& _lim);
-
-		float angle_satt(float _angle);
-
-		void angle_sat(arma::fvec& _angles);
-
-		float angle_sattg(float _angle);
-
-		void angle_satg(arma::fvec& _angles);
-
-		float angle_deltat(float _angle1, float _angle2);
-
-		void angle_delta(const arma::fvec& _p1, const  arma::fvec& _p2, arma::fvec& _dst);
-
-		float angle_deltatg(float _angle1, float _angle2);
-
-		void angle_deltag(const arma::fvec& _p1, const  arma::fvec& _p2, arma::fvec& _dst);
 		*/
+		
+
 	};
 }
 #endif

@@ -104,12 +104,9 @@ typedef  uint32_t burst_ulong_signal_t;
 #ifndef BURST_DATA_TYPE
 #define BURST_DATA_TYPE uint8_t
 #endif
-#ifndef BURST_DATA_SIZE_TYPE
-#define BURST_DATA_SIZE_TYPE unsigned int
-#endif
+
 typedef BURST_DATA_TYPE burst_data_t;
 typedef burst_data_t * burst_data_p;
-typedef  BURST_DATA_SIZE_TYPE  burst_size_t;
 typedef  burst_size_t *   burst_size_p;
 
 

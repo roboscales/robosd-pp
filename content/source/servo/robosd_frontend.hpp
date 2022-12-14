@@ -358,7 +358,7 @@ namespace robo {
 			class ROBO_EXPORT ivar {
 				const record& instance_;
 				vartable& vartable_;
-				bool paranoic_put_;
+				bool paranoic_put_ = true;
 			public:
 				
 				/////////////////////////////////////////////////////
@@ -409,6 +409,7 @@ namespace robo {
 				int repeat_count_ = 3;
 				int repeat_current_max_ = 3;
 			public:
+				const performer *  prf() { return performer_;}
 				status st(){ return status_; }
 				bool post_a(cstr _s, performer* _answer = nullptr) {
 					ROBO_LBREAKN(applay(_s));
@@ -430,6 +431,7 @@ namespace robo {
 				bool is_busy(void) { return !is_ready(); }
 				bool is_paranoic_put(void) { return paranoic_put_;  }
 				void set_paranoic_put(bool _paranoic_put) { paranoic_put_ = _paranoic_put; }
+				virtual bool put_complete(void) =0;
 
 				typedef ::robo::list::unique<ivar, int> map;
 				typedef map::ref map_ref;
@@ -449,6 +451,8 @@ namespace robo {
 					return true;
 				}
 
+				void confirm_(void);
+				void refuse_(void);
 			protected:
 
 				void reset_delegat(void);

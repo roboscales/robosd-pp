@@ -1,6 +1,6 @@
 #include "burst/burst_timer.h"
-#if BURST_TIMER_ENABLED == 1
 #include "burst/burst_app.h"
+#if BURST_TIMER_ENABLED == 1
 
 #ifndef BURST_TIMER_BACKEHD_IX_SIZE
 #define BURST_TIMER_BACKEHD_IX_SIZE 3

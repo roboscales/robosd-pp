@@ -182,49 +182,7 @@ namespace robo {
 		}
 
 	}
-	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
-	system::guard::op system::env::critical_enter(void) {
-		if (init_) {
-			EnterCriticalSection(&critical_);
-			return system::guard::op::enter;
-		}
-		else {
-			return system::guard::op::skip;
-		}
-	}
-
-	void system::env::critical_leave(void) {
-		LeaveCriticalSection(&critical_);
-	}
-
-	system::guard::op system::env::enter(void) {
-		if (init_) {
-			EnterCriticalSection(&guard_);
-			return system::guard::op::enter;
-		}
-		else {
-			return system::guard::op::skip;
-		}
-	}
-
-	void system::env::leave(void) {
-		LeaveCriticalSection(&guard_);
-	}
-
-	system::guard::op  system::env::lock(void) {
-		if (init_) {
-			EnterCriticalSection(&guard_);
-			return system::guard::op::enter;
-		}
-		else {
-			return system::guard::op::skip;
-		}
-	}
-
-	void system::env::unlock(void) {
-		LeaveCriticalSection(&guard_);
-	}
-	#endif
+	
 
 	bool system::env::is_frontend(void) {
 		return backend_thread_id_ != std::this_thread::get_id();
@@ -272,7 +230,51 @@ namespace robo {
 }
 #endif
 
+#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
+namespace robo {
+system::guard::op system::env::critical_enter(void) {
+	if (init_) {
+		EnterCriticalSection(&critical_);
+		return system::guard::op::enter;
+}
+	else {
+		return system::guard::op::skip;
+	}
+	}
 
+void system::env::critical_leave(void) {
+	LeaveCriticalSection(&critical_);
+}
+
+system::guard::op system::env::enter(void) {
+	if (init_) {
+		EnterCriticalSection(&guard_);
+		return system::guard::op::enter;
+	}
+	else {
+		return system::guard::op::skip;
+	}
+}
+
+void system::env::leave(void) {
+	LeaveCriticalSection(&guard_);
+}
+
+system::guard::op  system::env::lock(void) {
+	if (init_) {
+		EnterCriticalSection(&guard_);
+		return system::guard::op::enter;
+	}
+	else {
+		return system::guard::op::skip;
+	}
+}
+
+void system::env::unlock(void) {
+	LeaveCriticalSection(&guard_);
+}
+}
+#endif
 
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>

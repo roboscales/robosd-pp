@@ -333,6 +333,7 @@ void burst_frontend_loop(void){
 	#endif
 }
 
+
 #ifdef BURST_WEAK
 
 BURST_WEAK void burst_sw_begin(void){}
@@ -431,10 +432,12 @@ BURST_WEAK  void burst_sw_slot_15(void){}
 BURST_WEAK  void burst_hw_slot_15(void){}
 #endif
 
-BURST_WEAK  void burst_hw_crash(const char * _file, const char * _function, int _line){
+BURST_WEAK  void burst_sw_on_crash(const char * _file, const char * _function, int _line){
 	BURST_UNUSED(_file);
 	BURST_UNUSED(_function);
 	BURST_UNUSED(_line);
+}
+BURST_WEAK  void burst_hw_on_crash(void){
 }
 BURST_WEAK  void burst_hw_fall(void){}
 BURST_WEAK  void burst_hw_comeback(void){}

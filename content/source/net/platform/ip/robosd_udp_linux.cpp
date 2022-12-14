@@ -64,50 +64,6 @@ namespace linux {
     {
 	}
 
-    void udp::close_(void) {
-        close(socket_);
-        socket_ = -1;
-        //receive_state_ = receive_state::none ;
-
-    }
-
-    bool udp::open_(void) {
-        socket_ = socket(AF_INET, SOCK_DGRAM, 0);
-
-	    ROBO_LBREAKN_F(socket_ > 0, "could not create  incom UDP socket for port: %d", incom_port());
-
-        if (bind(socket_, (struct sockaddr*)&incom_, sizeof(incom_)) != 0)
-        {
-            close_();
-            ROBO_LBREAK_F("could not bind incom  UDP socket with port:  %d", incom_port());
-        }
-
-	    // first: set up a SIGIO signal handler by use of the signal call()
-		//std_signal::attach(SIGIO, &io_handler_);
-
-		// second: set the process id or process group id that is to receive
-		// notification of pending input to its own process id or process 
-		// group id
-		
-		if(fcntl(socket_, F_SETOWN, getpid()) < 0) {
-			ROBO_BREAK_F("error fcntl(socket_, F_SETOWN, getpid()) ");
-		}
-
-		// third: allow receipt of asynchronous I/O signals
-		if(fcntl(socket_, F_SETFL, FASYNC) < 0) {
-			ROBO_BREAK_F("error fcntl(socket_, F_SETFL, FASYNC)");
-		}
-		
-		struct timeval read_timeout;
-		read_timeout.tv_sec = 0;
-		read_timeout.tv_usec = 0;
-		setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
-
-	    //receive_state_ = receive_state::ready;
-        
-	    return true;
-    }
-	
     bool udp::try_receive(unsigned int _receive_tm) {
 	    struct sockaddr_in remaddr;
 	    socklen_t addrlen = sizeof(remaddr);
@@ -116,45 +72,6 @@ namespace linux {
 		    receive(receive_buf_, recvlen);	        
 	    }
 	    return true;
-/*	int rc;
-        switch(receive_state_){
-        case receive_state::none:
-            ROBO_LBREAKN( open_() );
-
-        case receive_state::ready:
-        case receive_state::wait:
-            try_counter_++;
-            rc = WSAWaitForMultipleEvents(1, &overlapped_.hEvent, TRUE, _receive_tm, TRUE);
-            switch(rc){
-            case WSA_WAIT_EVENT_0:
-                receive_state_ = receive_state::ready ;
-                break;
-            case WSA_WAIT_TIMEOUT:
-                if (_receive_tm != 0 && try_counter_ > 100) {
-                    try_counter_ = 0;
-                    receive_state_ = receive_state::ready;
-                }
-                return false;
-            default:
-                close_();
-                ROBO_LBREAK();
-            }
-
-            rc = WSAGetOverlappedResult(socket_, &overlapped_, &bytes_recv_,
-                                    FALSE, &flags_);
-            receive_state_ = receive_state::ready;
-            if(rc == TRUE){
-                if(bytes_recv_>0){
-                    receive(receive_buf_,bytes_recv_);
-                    return true;
-                } else {
-                    return false;
-                }
-            }else{
-                return false;
-            }
-        }
-        return false;*/
 	}
 
 
@@ -210,43 +127,21 @@ namespace linux {
 		// notification of pending input to its own process id or process 
 		// group id
 		
-		if (fcntl(socket_, F_SETOWN, getpid()) < 0) {
-			ROBO_BREAK_F("error fcntl(socket_, F_SETOWN, getpid()) ");
-		}
+		//if (fcntl(socket_, F_SETOWN, getpid()) < 0) {
+			//ROBO_BREAK_F("error fcntl(socket_, F_SETOWN, getpid()) ");
+		//}
 
 		// third: allow receipt of asynchronous I/O signals
-		if (fcntl(socket_, F_SETFL, FASYNC) < 0) {
-			ROBO_BREAK_F("error fcntl(socket_, F_SETFL, FASYNC)");
-		}
+		//if (fcntl(socket_, F_SETFL, FASYNC) < 0) {
+			//ROBO_BREAK_F("error fcntl(socket_, F_SETFL, FASYNC)");
+		//}
 		
 		struct timeval read_timeout;
 		read_timeout.tv_sec = 0;
 		read_timeout.tv_usec = 10;
 		setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
 		
-		/*
-        std::fill_n((uint8_t *)&incom_, sizeof(incom_) ,0);
 		
-        incom_.sin_addr.s_addr = htonl(INADDR_ANY);//inet_addr(outcom_addr_.c_str());
-        incom_.sin_port = htons(incom_port());
-        incom_.sin_family = AF_INET;
-		
-		struct hostent        *he;
-        network().ascii([&he](const char* _s) { he = gethostbyname(_s); });
-
-        ROBO_LBREAKN_F(he!=NULL, "could not resolve  outcom host:  %s", network().c_str());
-
-		memset(&outcom_addr__, 0, sizeof(outcom_addr__)); 
-      
-		// Filling server information 
-		outcom_addr__.sin_family = AF_INET; 
-        outcom_addr__.sin_port = htons(outcom_port());
-		memcpy(&outcom_addr__.sin_addr, he->h_addr_list[0], he->h_length);
-
-        // Create an event handle and setup the overlapped structure.
-        event_ = WSACreateEvent();
-        ROBO_LBREAKN(event_ != NULL);
-        */
         return true;
 	}
 		

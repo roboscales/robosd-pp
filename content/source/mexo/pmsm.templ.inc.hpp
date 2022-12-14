@@ -8,9 +8,9 @@ namespace PMSM_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t: public PMSM_ACTUATOR_TEMPLATE_SUB_NAME:: dev_t<types,hardwaresys_t> {
 
 	public:
-		typedef ::mexo::front::PMSM_TEMPLATE_NAME::action_t<types> action_s;
-		typedef ::mexo::front::PMSM_TEMPLATE_NAME::feedback_t<types> feedback_s;
-		typedef ::mexo::front::PMSM_TEMPLATE_NAME::mode mode;
+		typedef front::action_t<types> action_s;
+		typedef front::feedback_t<types> feedback_s;
+		typedef front::mode mode;
 
 		typedef PMSM_ACTUATOR_TEMPLATE_SUB_NAME::dev_t<types, hardwaresys_t> actuator_t;
 

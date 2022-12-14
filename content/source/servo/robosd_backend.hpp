@@ -396,7 +396,8 @@ namespace robo {
 			commands actual_command(void) { return goal_.command; };
 			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
-
+			virtual void on_configute_complete(void) {};
+			virtual void on_configute_refuse(void) {};
 			::robo::quest* quest_configure(::robo::quest* _owner,::robo::quest* _sema=nullptr) {
 				return ::robo::quest::create(
 					_owner
@@ -405,11 +406,13 @@ namespace robo {
 						if (r == robo::quest::result::success) {
 							robo_infolog("====================================================================================\n\t\tquest: %s configure success finished\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::ready;
+							on_configute_complete();
 							return robo::quest::reaction::normal;
 						}
 						else {
 							robo_errlog("====================================================================================\n\t\tquest: %s configure terminated\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::disabled;
+							on_configute_refuse();
 							return robo::quest::reaction::terminate;
 						}
 						}
@@ -465,7 +468,7 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D > class devagent_b : public D, public ::robo::frontend::shared {
+		template<class D> class devagent_b : public D, public ::robo::frontend::shared {
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
@@ -520,12 +523,12 @@ namespace robo {
 			typedef typename D::feedback_s feedback_s;
 			typedef typename D::config_s config_s;
 			typedef typename D::content_s content_s;
-			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content) :
-				devagent_b<D>(_name, _boardagent, _content->action, _content->goal, _content->feedback, _content->config)	{}
 			devagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
-				 devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config){}
-			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback, config_s & _config) :
-				devagent_b<D>(_name, _boardagent, _action, _goal, _feedback, _config){}
+				devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config) {}
+			/*			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content, Args ... _args) :
+				devagent_b<D, Args...>(_name, _boardagent, _content->action, _content->goal, _content->feedback, _content->config, _args ...)	{}
+			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback, config_s & _config, Args ... _args) :
+				devagent_b<D, Args...>(_name, _boardagent, _action, _goal, _feedback, _config, _args ...){}*/
 		};
 
 		class servo : public  robo::app::node {
@@ -538,11 +541,16 @@ namespace robo {
 			friend class devagent;
 			time_us_t request_pause_us_ = 0;
 			time_us_t last_request_us_ = 0;
+			servo& servo_;
 		protected:
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			boardagent(cstr _name, servo& _servo) :app::node(_name, &_servo) {};
+			servo& owner(void) { return servo_;  };
+			boardagent(cstr _name, servo& _servo) 
+				: app::node(_name, &_servo) 
+				, servo_(_servo)
+			{};
 		};
 
 		class ROBO_EXPORT vartable : public devagent::stream, public frontend::vartable {
@@ -556,6 +564,7 @@ namespace robo {
 			protected:
 				ivar(frontend::vartable& _vartable, const record& _instance);
 				virtual bool rerquest(void);
+
 			public:
 				virtual bool encode(uint8_t* _dst) = 0;
 				virtual bool decode(uint8_t* _dst) = 0;
@@ -595,7 +604,6 @@ namespace robo {
 					T& remote;
 					iactual(T& _local, T& _remote) : local(_local), remote(_remote) {}
 				} actual;
-			public:
 				virtual bool applay(cstr _s) {
 					if (is_frontend__) {
 						return string::to_number(_s, C::front.local);
@@ -604,6 +612,12 @@ namespace robo {
 						return string::to_number(_s, actual.local);
 					}
 				}
+			public:
+				virtual bool put_complete(void) {
+					return actual.remote == actual.local;
+				}
+
+
 
 				/*bool post(performer* _performer) {
 					ROBO_LRET(C::post(_performer));
@@ -849,8 +863,8 @@ namespace robo {
 
 				result try_post(const T& _value) {
 					if (converter_) {
-						B::actual.local = _value;
 						if (fabs(B::actual.remote - _value) > converter_->eps()) {
+							B::actual.local = _value;
 							ROBO_RET(B::post(), result::resume, result::panic);
 						}
 						else {
@@ -858,14 +872,22 @@ namespace robo {
 						}
 					}
 					else {
-						return B::try_post(_value);;
+						if (B::actual.remote != _value)
+						{
+							B::actual.local = _value;
+							ROBO_RET(B::post(), result::resume, result::panic);
+						}
+						else
+						{
+							return result::complete;							
+						}
 					}
 				}
 
 				result try_post(const T& _value, performer* _performer) {
 					if (converter_) {
-						B::actual.local = _value;
 						if (fabs(B::actual.remote - _value) > converter_->eps()) {
+							B::actual.local = _value;
 							ROBO_RET(B::post(_performer), result::resume, result::panic);
 						}
 						else {

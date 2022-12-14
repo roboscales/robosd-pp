@@ -223,6 +223,14 @@ namespace robo {
 			system::guard g__;
 			ROBO_ALARMN_F(map_ref_.attach_to(vartable_.vars), "eroor attach var '%s' to map ", instance_.name);
 		}
+		void vartable::ivar::confirm_(void)
+		{
+			if (performer_) performer_->confirm(this);
+		}
+		void vartable::ivar::refuse_(void)
+		{
+			if (performer_) performer_->refuse(this);	
+		}
 
 		void vartable::ivar::confirm(void) {
 			switch (status_) {
@@ -231,18 +239,35 @@ namespace robo {
 			finish_hook();
 			if (paranoic_put_) {
 				query_();
+				return;
 			}
 			else {
-				if (performer_) performer_->confirm(this);
+				confirm_();
 			}
 			break;
 			case status::get:
 			status_ = status::ready;
 			finish_hook();
-			if (performer_) performer_->confirm(this) ;
+			/*if (paranoic_put_)
+			{
+				if (put_complete() )
+				{					
+					confirm_();
+				}
+				else
+				{
+					refuse_();										
+				}				
+			}
+			else
+			{
+				confirm_();
+			}*/
+			confirm_();
 			break;
 			default:
-			ROBO_ALARM_F("error state for var '%s'", name());
+				refuse_();
+				ROBO_ALARM_F("error state for var '%s'", name());
 			}
 			reset_delegat();
 		}

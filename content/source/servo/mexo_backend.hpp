@@ -367,11 +367,11 @@ namespace mexo {
 				}
 				enum class result { fault, complete, next};
 				
-				auto lambda_() {
+				auto post_confirm_() {
 					return
 						[this](varindex::ivar* _var, bool _result) {
 						if (_result) {
-							robo_detaillog(6, robo::log::mask::disabled, "\t\t\t%s/%s=%s post complete ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
+							robo_detaillog(6, robo::log::mask::disabled, "\t\t\tquest %s/%s=%s post complete ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
 							if (counter_ > 0) {
 								begin_ch_ = current_ch_ + 1;
 								current_ch_++;
@@ -380,22 +380,23 @@ namespace mexo {
 							this->run_();
 						}
 						else {
-							robo_errlog("\t\t\t%s/%s=%s post complete ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
+							robo_errlog("\t\t\tquest  %s/%s=%s post refuse ", this->devagent_.display_alias(), _var->name(), this->value_.c_str());
 							this->refuse_();
 						}
 					};
 					
 				}
 				result  post_var_(varindex::ivar* _var, ::robo::cstr _value) {
+					_var->set_paranoic_put(true);
+					robo_detaillog(6, robo::log::mask::disabled, "\t\t\tquest %s/%s=%s - start to posting", devagent_.display_alias(), _var->name(), _value);
 					return
 						_var->post(
-							_value
-							, lambda_()
+							_value,
+						post_confirm_()
 					) ? result::next : result::fault;
 
 				}
 				result  post_var_(::robo::cstr _var, ::robo::cstr _value) {
-					robo_detaillog(6, robo::log::mask::disabled, "\t\t\t%s/%s=%s - start to posting", devagent_.display_alias(), _var, _value);
 					varindex::ivar* v = dynamic_cast<varindex::ivar*>(devagent_.vars.find_var(_var));
 					if (v) {
 						return post_var_(v, _value);
@@ -661,6 +662,7 @@ namespace mexo {
 		class servo : public robo::backend::servo {
 			robo::backend::router defrout;
 		public:
+			virtual ::robo::quest* config_finish_quest() { return nullptr; };
 			servo(robo::cstr _name, robo::app::module& _module)
 				: robo::backend::servo(_name, _module), defrout(RT("defrout"), _module) {}
 		};

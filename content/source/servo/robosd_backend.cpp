@@ -940,9 +940,11 @@ namespace robo {
 			ref_.attach_to(vt().queue_);
 			robo_detaillog(2,
 			               robo::log::mask::disabled,
-			               "\t\t\t>>>var request [%d]:  %s/%s\n",
+			               "\t\t\t>>>var request [%d]:  %s/%s {{%p}}\n",
 			               (int)st(),vt().own_agent().display_alias(),
-			               name());
+			               name(), 
+							prf()
+							);
 
 			return true;
 		}
@@ -1016,10 +1018,12 @@ namespace robo {
 					current_ = nullptr;
 					robo_detaillog(2,
 				               robo::log::mask::disabled,
-				               "\t\t\t<<<< var confirm [%d]:  %s/%s\n",
+								"\t\t\t<<<< var confirm [%d]:  %s/%s {{%p}}\n",
 								(int)tmp->st(),
 								own_agent().display_alias(),
-				               tmp->name());
+				               tmp->name(),
+					               tmp->prf()
+					               );
 			        tmp->confirm();
 					break;
 				case proto::result::repeat:

@@ -15,8 +15,8 @@ namespace BRAKE_TEMPLATE_NAME {
 public:
 	
 	typedef BRAKE_PS_TEMPLATE_NAME :: dev_t<types,hardwaresys_t> ps_t;
-	typedef ::mexo::front::BRAKE_TEMPLATE_NAME::power_mode power_mode;
-	typedef ::mexo::front::BRAKE_PS_TEMPLATE_NAME::mode mode;
+	typedef front::power_mode power_mode;
+	typedef BRAKE_PS_TEMPLATE_NAME::front::mode mode;
 	typedef typename types::signal_t signal_t;
 	struct config_s {
 		typename ps_t::config_s ps;

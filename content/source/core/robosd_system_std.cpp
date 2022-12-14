@@ -188,7 +188,6 @@ namespace robo {
 #if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_STD
 
 #include <thread>
-#include <mutex>
 #include <chrono>
 #include "core/robosd_ini.hpp"
 
@@ -207,8 +206,6 @@ namespace robo {
 	
 	std::chrono::steady_clock::time_point begin_ = std::chrono::steady_clock::now();
 	
-	std::recursive_mutex critical_;
-	std::recursive_mutex guard_;
 #if ROBO_APP_MODULE_ENABLED == 1
 
 	bool system::env::begin(void) {
@@ -249,14 +246,7 @@ namespace robo {
 		}
 	}
 	#endif
-	system::guard::op system::env::critical_enter(void) {
-		critical_.lock();	
-		return system::guard::op::enter;
-	}
 
-	void system::env::critical_leave(void) {
-		critical_.unlock();
-	}
 
 	bool system::env::is_frontend(void) {
 		return backend_thread_id_ != std::this_thread::get_id();
@@ -266,25 +256,6 @@ namespace robo {
 		return backend_thread_id_ == std::this_thread::get_id();
 	}
 
-	system::guard::op system::env::enter(void) {
-		switch_to_realtime_();
-		guard_.lock();
-		return system::guard::op::enter;
-	}
-
-	void system::env::leave(void) {
-		guard_.unlock();
-		switch_to_normal_();
-	}
-
-	system::guard::op  system::env::lock(void) {
-		guard_.lock();
-		return system::guard::op::enter;
-	}
-
-	void system::env::unlock(void) {
-		guard_.unlock();
-	}
 
 	void system::env::fall(void) {
 		backend_thread_id_ = std::this_thread::get_id();
@@ -311,6 +282,49 @@ namespace robo {
 
 	void system::env::sleep(void) {
 		std::this_thread::yield();		
+	}
+}
+#endif
+
+#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_STD
+#include <mutex>
+namespace robo {
+	class ec {
+	public:
+		std::recursive_mutex critical;
+		std::recursive_mutex guard;
+		static ec & instance() {
+			static ec  ec_;
+			return ec_;
+		}
+	};
+	system::guard::op system::env::critical_enter(void) {
+		ec::instance().critical.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::critical_leave(void) {
+		ec::instance().critical.unlock();
+	}
+
+	system::guard::op system::env::enter(void) {
+		switch_to_realtime_();
+		ec::instance().guard.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::leave(void) {
+		ec::instance().guard.unlock();
+		switch_to_normal_();
+	}
+
+	system::guard::op  system::env::lock(void) {
+		ec::instance().guard.lock();
+		return system::guard::op::enter;
+	}
+
+	void system::env::unlock(void) {
+		ec::instance().guard.unlock();
 	}
 }
 #endif

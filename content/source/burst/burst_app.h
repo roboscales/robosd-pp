@@ -8,14 +8,6 @@ extern "C"
 
 #include "burst/burst.h"
 
-#ifndef burst_alarm
-#define burst_alarm(x)  if(!(x)) burst_hw_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE);
-#endif
-#ifndef burst_crash
-#define burst_crash()  burst_hw_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE);
-#endif
-
-void burst_hw_crash(const char * _file, const char * _function, int _line);
 
 void burst_hw_fall(void);
 void burst_hw_comeback(void);
@@ -34,12 +26,14 @@ void burst_sw_start(void);
 void burst_sw_prioritet_loop(void);
 void burst_sw_backend_loop(void);
 void burst_sw_frontend_loop(void);
+void burst_sw_panic(void);
 
 void burst_hw_begin(void);
 void burst_hw_start(void);
 void burst_hw_prioritet_loop(void);
 void burst_hw_backend_loop(void);
 void burst_hw_frontend_loop(void);
+void burst_hw_panic(void);
 
 #ifndef BURST_SLOT_COUNT
 #define BURST_SLOT_COUNT 4

@@ -8,9 +8,9 @@ namespace PS_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t : public ::mexo::ps::dev {
 	public:
 		hardwaresys_t& hardwaresys;
-		typedef ::mexo::front::PS_TEMPLATE_NAME::action_t<types> action_s;
-		typedef ::mexo::front::PS_TEMPLATE_NAME::feedback_t<types> feedback_s;
-		typedef ::mexo::front::PS_TEMPLATE_NAME::mode mode;
+		typedef front::action_t<types> action_s;
+		typedef front::feedback_t<types> feedback_s;
+		typedef front::mode mode;
 
 		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
 		typedef ::mexo::controller_task_t <

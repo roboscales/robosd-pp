@@ -8,12 +8,12 @@ namespace ACTUATOR_TEMPLATE_NAME {
 	template <typename types, typename hardwaresys_t>  class dev_t: public   ACTUATOR_PS_TEMPLATE_NAME::dev_t<types, hardwaresys_t> {
 	int slot_index_;
 public:
-	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::action_t<types> action_s;
-	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::feedback_t<types> feedback_s;
+	typedef front::action_t<types> action_s;
+	typedef front::feedback_t<types> feedback_s;
 	#if ACTUATOR_PREFIX(MOTOR_POSTITION_MEASSURY_ENABLED)
-	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::profil_t<types> profil_s;
+	typedef front::profil_t<types> profil_s;
 	#endif
-	typedef ::mexo::front::ACTUATOR_TEMPLATE_NAME::mode mode;
+	typedef front::mode mode;
 
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 || \

@@ -25,7 +25,7 @@ namespace robo {
 	}
 
 
-	string::string(const string& _src) : value_(new base_string_(*(_src.value_))) {}
+	string::string(const string& _src) : value_(_src.value_==nullptr? new base_string_():new base_string_(*(_src.value_))) {}
 	
 
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE

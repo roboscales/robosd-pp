@@ -25,9 +25,6 @@ namespace linux {
 	        
 	    
 		//enum class  receive_state { none, ready,  wait } receive_state_ = receive_state::none;
-
-	    bool open_(void);
-        void close_(void);
     protected:
         //inline const SOCKET & remote(void ){ return socket_; }
         //int receive_tm = 0;

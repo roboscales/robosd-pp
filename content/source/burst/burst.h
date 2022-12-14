@@ -86,13 +86,29 @@ void burst_prioritet_loop(void);
 void burst_backend_loop(void);
 void burst_frontend_loop(void);
 
+void burst_hw_on_crash(void);
+void burst_sw_on_crash(const char * _file, const char * _function, int _line);
+
+
+#ifndef burst_crash
+#define burst_crash()  { burst_hw_on_crash(); burst_sw_on_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE); }
+#endif
+
+#ifndef burst_alarm
+#define burst_alarm(x)  if(!(x)){ burst_crash(); };
+#endif
+
 typedef enum  { burst_true = 1, burst_false = 0 } burst_bool_t;
 typedef enum  { burst_backend = 1, burst_frontend = 0 } burst_thread_t;
 typedef enum  { burst_complete = 1, burst_panic = 0, burst_fault = 3, burst_continue =2 } burst_run_t;
 
 burst_thread_t burst_thread(void);
 
-typedef unsigned burst_size_t;
+#ifndef BURST_DATA_SIZE_TYPE
+#define BURST_DATA_SIZE_TYPE unsigned int
+#endif
+typedef  BURST_DATA_SIZE_TYPE  burst_size_t;
+
 
 enum{ VERB_PRIORITRT = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
 
@@ -108,6 +124,7 @@ BURST_TP(burst_tp)
 #else
 #define debug_tp_on(n)
 #define debug_tp_off(n)
+#define debug_set_verb(n) 
 #endif
 
 #if defined(__cplusplus)

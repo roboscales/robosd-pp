@@ -108,8 +108,7 @@ namespace robo {
 
 							actuator.position = electro.position / p;
 							actuator.speed = electro.speed / p;
-							actuator.position = electro.position / p;
-							actuator.speed = electro.speed / p;
+;
 						}
 						else {
 							float idm = voltage.dq.d / Rs;
