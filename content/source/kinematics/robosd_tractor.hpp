@@ -313,9 +313,9 @@ namespace robo {
 					T y;
 					T z;
 				};
-				using rotmatrix_t = matrix_t<T, 3, 3>;
+				/*using rotmatrix_t = matrix_t<T, 3, 3>;
 				rotmatrix_t A;
-				/*void rotate(void) {
+				void rotate(void) {
 					T x2 = x * x;
 					T y2 = y * y;
 					T z2 = z * z;
@@ -347,7 +347,7 @@ namespace robo {
 		}
 
 		template<typename T> vector3_t<T> operator * (const quaternion_t<T>& a, const vector3_t<T>& b) {
-			T x2 = x * x;
+			/*T x2 = x * x;
 			T y2 = y * y;
 			T z2 = z * z;
 			T xw = x * w;
@@ -358,10 +358,11 @@ namespace robo {
 			T yz = x * z;
 
 			T zw = z * w;
-
+			
 			return vector3_t<T>{
 				bx* aw ^ 2 + 2 * bz * aw * ay - 2 * by * aw * az + bx * ax ^ 2 + 2 * by * ax * ay + 2 * bz * ax * az - bx * ay ^ 2 - bx * az ^ 2
-			};
+			};*/
+			return vector3_t<T>{0, 0, 0};
 		}
 
 
