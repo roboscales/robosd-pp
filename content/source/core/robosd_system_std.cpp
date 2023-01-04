@@ -206,7 +206,6 @@ namespace robo {
 	
 	std::chrono::steady_clock::time_point begin_ = std::chrono::steady_clock::now();
 	
-#if ROBO_APP_MODULE_ENABLED == 1
 
 	bool system::env::begin(void) {
 		//ROBO_LBREAKN_F( SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) , "Failed to enter runtime mode (%d)", GetLastError())
@@ -215,7 +214,17 @@ namespace robo {
 
 	void system::env::finish(void) {
 	}
+	void system::env::frontend_loop(void) {}
+	void system::env::backend_loop(void) {
+#if ROBO_APP_MODULE_ENABLED == 1
+		if (++step_show_tick_ == step_show_period_) {
+			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
+			step_show_tick_ = 0;
+		}
+#endif
+	}
 	
+#if ROBO_APP_MODULE_ENABLED == 1
 	//todo костыль
 	bool system::env::start(time_us_t & _period_us) {
 		if (_period_us == 0) {
@@ -238,13 +247,6 @@ namespace robo {
 		return result::complete;
 	}
 
-	void system::env::frontend_loop(void) {}
-	void system::env::backend_loop(void) {
-		if (++step_show_tick_ == step_show_period_) {
-			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
-			step_show_tick_ = 0;
-		}
-	}
 	#endif
 
 
