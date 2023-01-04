@@ -28,5 +28,9 @@ uint8_t crc8_by_table(uint8_t * _pdata, size_t _len);
 uint8_t crc7_by_table(uint8_t * _pdata, size_t _len);
 #endif
 
+#if ROBO_APP_CRC16_MODBUS_BY_TABLE_ENABLED == 1
+uint16_t crc16_modbus_by_table(uint8_t * _pdata, size_t _len );
+#endif
+	
 #endif
 }

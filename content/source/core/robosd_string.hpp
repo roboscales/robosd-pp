@@ -12,11 +12,10 @@
 
 namespace robo {
 
-	class ROBO_EXPORT string
-	{
+	class ROBO_EXPORT string {
 	private:
 		class base_string_;
-		base_string_ * value_ = nullptr;
+		base_string_* value_ = nullptr;
 		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
 		virtual ~string(void);
@@ -38,6 +37,11 @@ namespace robo {
 		bool load(cstr _first_section, cstr _second_section, cstr _key);
 		bool tryload(cstr _section, cstr _key);
 		bool tryload(cstr _first_section, cstr _second_section, cstr _key);
+
+		bool operator == (const string& _s);
+		bool operator == (cstr _s);
+		bool operator != (const string& _s) { return !(*this == _s); }
+		bool operator != (cstr _s) { return !(*this == _s); }
 
 		bool load(delegat::ref<bool, uint8_t*, size_t >& _converter);
 		size_t length(void) const;

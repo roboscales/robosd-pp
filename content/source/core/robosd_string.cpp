@@ -41,7 +41,24 @@ namespace robo {
 		va_end(args);
 	}
 	#endif
-		
+	
+
+	bool string::operator == (const string& _s) {
+		#if ROBO_UNICODE_ENABLED == 1
+		return std::wcscmp(c_str(), _s.c_str()) == 0;
+		#else
+		return std::strcmp(c_str(), _s.c_str()) == 0;
+		#endif
+	}
+	bool string::operator == (cstr _s) {
+		#if ROBO_UNICODE_ENABLED == 1
+		return std::wcscmp(c_str(), _s) == 0;
+		#else
+		return std::strcmp(c_str(), _s) == 0;
+		#endif
+	}
+
+
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 
 	bool string::sprintf_backend_(stream_s & _s, cstr _format, va_list _args){
@@ -175,6 +192,7 @@ namespace robo {
 		}		
 	}
 	
+
 	bool string::tryload(cstr _first_section, cstr _second_section, cstr _key) {
 		if (!tryload(_first_section, _key)) {
 			return tryload(_second_section, _key);
