@@ -271,7 +271,7 @@ namespace robo {
 			}
 
 			/** текущее значение ключа  */
-			const K& key(void) { return key_; }
+			const K& key(void) const { return key_; }
 
 			pair(T& _owner, const K& _key) : base_ref<T>(_owner), key_(_key) {};
 			pair* prev(void) { return (pair*)base_ref<T>::prev; }

@@ -1095,6 +1095,7 @@ namespace robo {
 						position.base.orient = _prev->position.base.orient;
 						position.base.orient *= position.local.orient;
 						position.base.offset = _prev->position.base.offset + _prev->position.base.orient * position.local.offset * _prev->position.base.iorient;
+
 					}
 					else {
 						position.base.offset = position.local.offset;

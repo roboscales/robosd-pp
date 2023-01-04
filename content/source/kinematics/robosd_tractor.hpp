@@ -4,6 +4,8 @@
 #include "core/robosd_common.hpp"
 #include "core/robosd_list.hpp"
 #include "core/robosd_span.hpp"
+#include "core/robosd_tree.hpp"
+#include "core/robosd_ini.hpp"
 
 /*#ifndef ROBO_TRACTOR_ASSERT
 #define ROBO_TRACTOR_ASSERT(x,f) 
@@ -47,6 +49,7 @@ namespace robo {
 			return val;
 		}
 
+
 		template< typename  T, typename  S> class numbers_t: public S {
 		public:
 			
@@ -89,6 +92,7 @@ namespace robo {
 			}
 
 			template <typename A> constexpr numbers_t& operator += (const A& _src) {
+				ROBO_APP_ASSERT(S::size == _src.size);
 				const T* src = _src.memo;
 				T* dst = S::memo;
 				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
@@ -98,6 +102,7 @@ namespace robo {
 			}
 
 			template <typename A> constexpr numbers_t& operator -= (const A& _src) {
+				ROBO_APP_ASSERT(S::size == _src.size);
 				const T* src = _src.memo;
 				T* dst = S::memo;
 				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
@@ -106,23 +111,7 @@ namespace robo {
 				return *this;
 			}
 
-			template <typename A> constexpr numbers_t& operator *= (const A& _src) {
-				const T* src = _src.memo;
-				T* dst = S::memo;
-				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
-					*dst *= *src;
-				}
-				return *this;
-			}
-
-			template <typename A> constexpr numbers_t& operator /= (const A& _src) {
-				const T* src = _src.memo;
-				T* dst = S::memo;
-				for (size_t i = 0; i < S::size; ++i, ++src, ++dst) {
-					*dst /= *src;
-				}
-				return *this;
-			}
+			
 
 			constexpr numbers_t& operator *= (const T & _t ) {
 				T* dst = S::memo;
@@ -141,6 +130,7 @@ namespace robo {
 			}
 
 			template <typename A> constexpr T dot(const A& _src) const {
+				ROBO_APP_ASSERT(S::size == _src.size);
 				T res = T(0);
 				const T* src = _src.memo;
 				const T* dst = S::memo;
@@ -167,16 +157,31 @@ namespace robo {
 				}
 			}
 
-			template <typename A>   constexpr void normalize(const A& _src) const {
-				T r = _src.length();
+			constexpr void normalize()  {
+				T r = length();
 				if (r > ::std::numeric_limits<T>::epsilon()) {
-					_src /= r;
+					*this /= r;
 				}
 				else {
-					_src.zeros();
+					zeros();
 				}
 			}
-			
+
+			template<typename T, typename C> numbers_t<T, C> operator *= (const numbers_t<T, C>& _src1) {
+				numbers_t<T, C> tmp = *this * _src1;
+				*this = tmp;
+				return *this;
+			}
+			template<typename T, typename C> numbers_t<T, C> operator /= (const numbers_t<T, C>& _src1) {
+				numbers_t<T, C> tmp = *this / _src1;
+				*this = tmp;
+				return *this;
+			}
+
+			bool load_raw(cstr _path, cstr key) {
+				ROBO_LRET(ini::load_arr(_path, key, S::memo, S::size));
+			}
+
 			//operator const span<typename S::element_t, N> & () const { return span<typename  S::element_t, N>(S::memo, N); }
 		};
 		
@@ -201,18 +206,20 @@ namespace robo {
 			numbers_t tmp(_src1);
 			return tmp += _src2;
 		}
-		template<typename T, typename C>constexpr numbers_t<T,C> operator - (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+		template<typename T, typename C> constexpr numbers_t<T,C> operator - (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
 			numbers_t tmp(_src1);
 			return tmp -= _src2;
 		}
-		template<typename T, typename C> constexpr numbers_t<T,C> operator * (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+		
+		/*template<typename T, typename C> constexpr numbers_t<T, C> operator * (const numbers_t<T, C>& _src1, const numbers_t<T, C>& _src2) {
 			numbers_t tmp(_src1);
 			return tmp *= _src2;
 		}
-		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
+		template<typename T, typename C> constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
 			numbers_t tmp(_src1);
 			return tmp /= _src2;
-		}
+		}*/
+		
 		template<typename T, typename C> constexpr numbers_t<T,C> operator + (const numbers_t<T,C>& _src1, const span<T, C::size> & _src2) {
 			numbers_t tmp(_src1);
 			return tmp += _src2;
@@ -221,6 +228,7 @@ namespace robo {
 			numbers_t tmp(_src1);
 			return tmp -= _src2;
 		}
+		/*
 		template<typename T, typename C> constexpr numbers_t<T,C> operator * (const numbers_t<T,C>& _src1, const span<T, C::size>& _src2) {
 			numbers_t tmp(_src1);
 			return tmp *= _src2;
@@ -229,7 +237,7 @@ namespace robo {
 			numbers_t tmp(_src1);
 			return tmp /= _src2;
 		}
-
+		*/
 
 		template<typename T, size_t M, size_t K, size_t N>
 		void matrix_mult(const T * A, const T * B, T * C) {
@@ -253,7 +261,7 @@ namespace robo {
 			union {
 				T memo[size];
 				T rows[nrows][ncols];
-			};
+			};			
 		};
 		template<class T, size_t M, size_t N> using matrix_t = numbers_t <T, matrix_s<T, M, N>>;
 
@@ -278,6 +286,12 @@ namespace robo {
 					T z;
 				};
 			};
+			void mult(const vector3_s& b) {
+				x = y * b.z - z * b.y;
+				y = -x * b.z + z * b.x;
+				z = x * b.y - y * b.x;
+			}
+
 		};
 		template<class T>	using vector3_t = numbers_t <T, vector3_s<T> >;
 
@@ -287,10 +301,6 @@ namespace robo {
 			return C;
 		}
 
-
-		template<typename T> vector3_t<T> operator * (const vector3_s<T> & a, const vector3_s<T> & b) {
-			return  numbers_t < vector3_s<T>>({ a.y * b.z - a.z * b.y, -a.x * b.z + a.z * b.x, a.x * b.y - a.y * b.x });
-		}
 
 		template<typename T, size_t N> class eye : public matrix_t<T, N, N> {
 		private:
@@ -313,58 +323,492 @@ namespace robo {
 					T y;
 					T z;
 				};
-				/*using rotmatrix_t = matrix_t<T, 3, 3>;
-				rotmatrix_t A;
-				void rotate(void) {
-					T x2 = x * x;
-					T y2 = y * y;
-					T z2 = z * z;
-					T xw = x * w;
-					T xy = x * y;
-					T xz = x * z;
-					
-					T yw = x * w;
-					T yz = x * z;
-
-					T zw = z * w;
-
-					T* p = A.memo;
-					*p++ = 1 -2 * (y2 + z2);	*p++ = 2 * (xy - zw);		*p++ = 2 * (yw + xz);
-					*p++ = 2 * (xy + zw);		*p++ = 1 - 2 * (x2 + z2);	*p++ = 2 * (yz - xw);
-					*p++ = 2 * (xz - yw);	    *p++ = 2 * (xw + yz);		*p++ = 1 - 2 * (x2 + y2);
-				}*/
 			};
+			using rotmatrix_t = matrix_t<T, 3, 3>;
+			rotmatrix_t A;
+			rotmatrix_t IA;
+			void rotate(void) {
+				T x2 = x * x;
+				T y2 = y * y;
+				T z2 = z * z;
+				T xw = x * w;
+				T xy = x * y;
+				T xz = x * z;
+
+				T yw = y * w;
+				T yz = y * z;
+
+				T zw = z * w;
+
+				T* p = A.memo;
+				*p++ = 1 -2 * (y2 + z2);	*p++ = 2 * (xy - zw);		*p++ = 2 * (yw + xz);
+				*p++ = 2 * (xy + zw);		*p++ = 1 - 2 * (x2 + z2);	*p++ = 2 * (yz - xw);
+				*p++ = 2 * (xz - yw);	    *p++ = 2 * (xw + yz);		*p++ = 1 - 2 * (x2 + y2);
+				p = IA.memo;
+				*p++ = 1 - 2 * (y2 + z2);	*p++ = 2 * (xy + zw);		*p++ = 2 * ( xz - yw );
+				*p++ = 2 * (xy - zw);		*p++ = 1 - 2 * (x2 + z2);	*p++ = 2 * (yz + xw);
+				*p++ = 2 * (xz + yw);	    *p++ = 2 * (yz - xw);		*p++ = 1 - 2 * (x2 + y2);
+			}
+			void mult(const quaternion_s& a, const quaternion_s & b) {
+				w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+				x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
+				y = a.w * b.y + a.y * b.w - a.x * b.z + a.z * b.x;
+				z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
+			}
+			void div(const quaternion_s& a, const quaternion_s& b) {
+				w = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z;
+				x = -a.w * b.x + a.x * b.w - a.y * b.z + a.z * b.y;
+				y = -a.w * b.y + a.y * b.w + a.x * b.z - a.z * b.x;
+				z = -a.w * b.z - a.x * b.y + a.y * b.x + a.z * b.w;
+			}
+			bool load(cstr _path, cstr key) {
+				T tmp[size];
+				ROBO_LBREAKN(ini::load_arr(_path, key, tmp, size));
+				T f = tmp[0] * grad2rad<T>;
+				w = cos(f / 2);
+				vector3_t<T> n{tmp[1],tmp[2] ,tmp[3] };
+				n.normalize();
+				n *= sin(f / 2);
+				x = n.x;
+				y = n.y;
+				z = n.z;
+				rotate();
+				return true;
+			}
+
 		};
 		template<class T> using quaternion_t = numbers_t <T, quaternion_s<T> >;
 
-		template<typename T> quaternion_t<T> operator * (const quaternion_t<T>& a, const quaternion_t<T>& b) {
-			return quaternion_t<T>{
-					a.w* b.w - a.x * b.x - a.y * b.y - a.z * b.z
-					, a.w* b.x + a.x * b.w + a.y * b.z - a.z * b.y
-					, a.w* b.y + a.y * b.w - a.x * b.z + a.z * b.x
-					, a.w* b.z + a.x * b.y - a.y * b.x + a.z * b.w
-			};
+		template<typename T> constexpr quaternion_t <T> operator * (const quaternion_t <T> & _src1, const quaternion_t <T> & _src2) {
+			quaternion_t <T> tmp;
+			tmp.mult(_src1, _src2);
+			tmp.normalize();
+			return tmp;
+		}
+		template<typename T> constexpr quaternion_t <T> operator / (const quaternion_t <T>& _src1, const quaternion_t <T>& _src2) {
+			quaternion_t <T> tmp;
+			tmp.div(_src1, _src2);
+			tmp.normalize();
+			return tmp;
 		}
 
 		template<typename T> vector3_t<T> operator * (const quaternion_t<T>& a, const vector3_t<T>& b) {
-			/*T x2 = x * x;
-			T y2 = y * y;
-			T z2 = z * z;
-			T xw = x * w;
-			T xy = x * y;
-			T xz = x * z;
-
-			T yw = x * w;
-			T yz = x * z;
-
-			T zw = z * w;
-			
-			return vector3_t<T>{
-				bx* aw ^ 2 + 2 * bz * aw * ay - 2 * by * aw * az + bx * ax ^ 2 + 2 * by * ax * ay + 2 * bz * ax * az - bx * ay ^ 2 - bx * az ^ 2
-			};*/
-			return vector3_t<T>{0, 0, 0};
+			return a.A*b;
+		}
+		template<typename T> vector3_t<T> operator / (const vector3_t<T>& b, const quaternion_t<T>& a) {
+			return a.IA * b;
 		}
 
+		template<typename T> class axis_t {
+		public:
+			quaternion_t <T> L;
+			vector3_t<T> r;
+			constexpr axis_t() :L{ 1,0,0,0 }, r{0,0,0} {}
+			constexpr axis_t(const axis_t& _src)
+				: L(_src.L)
+				, r(_src.r) {
+				L.rotate();
+			}
+			constexpr axis_t(const quaternion_t <T>& _L)
+				: L(_L){
+				L.rotate();
+			}
+			constexpr axis_t(const vector3_t<T>& _r)
+				: r(_r) {
+				L.rotate();
+			}
+			constexpr axis_t(const quaternion_t <T>& _L, const vector3_t<T>& _r)
+				: L(_L), r(_r) {
+				L.rotate();
+			}
+
+			constexpr axis_t(const std::initializer_list<T> _src)
+			{
+				ROBO_APP_ASSERT(7 == _src.size());
+				L = span<T,4>(_src.begin());
+				r = span<T,3>(_src.begin()+4);
+				L.rotate();
+			}
+			constexpr axis_t(const T(&_src)[7]){
+				L = span<T,4>(_src);
+				r = span<T,3>(_src+ 4);
+				L.rotate();
+			}
+			template <typename A> constexpr axis_t(const A& _src) {
+				ROBO_APP_ASSERT(7 == _src.size);
+				L = span<T,4>(_src.memo);
+				r = span<T,3>(_src.memo + 4);
+				L.rotate();
+			}
+
+			constexpr axis_t& operator = (const axis_t& _src) {
+				L = _src.L;
+				r = _src.r;
+				L.rotate();
+				return *this;
+			}
+
+			template <typename A> constexpr axis_t& operator = (const A& _src) {
+				ROBO_APP_ASSERT(7 == _src.size);
+				L = span(_src.memo, 4);
+				r = span(_src.memo + 4, 3);
+				L.rotate();
+				return *this;
+			}
+			void load(cstr _path) {
+				L.load(_path);
+				r.load(_path);
+			}
+
+		};
+
+		template<typename T> axis_t<T> operator * (const axis_t<T>& a, const axis_t<T>& b) {
+			axis_t<T> c;
+			c.L = a.L * b.L;
+			c.r = a.r + a.L * b.r;
+			c.L.rotate();
+			return c;
+		}
+
+		template<typename T> axis_t<T> operator / (const axis_t<T>& c, const axis_t<T>& b) {
+			axis_t<T> a;
+			a.L = c.L / b.L;
+			a.L.rotate();
+			a.r = c.r - a.L * b.r;
+			return a;
+		}
+
+		template<typename T> axis_t<T> operator - (const axis_t<T>& a, const axis_t<T>& b) {
+			axis_t<T> tmp;
+			tmp.L = a.L / b.L;
+			tmp.r = a.r - b.r / b.L;
+			tmp.L.rotate();
+			return tmp;
+		}
+
+		template<typename T> vector3_t<T> operator * (const axis_t<T>& a, const vector3_t<T>& b) {
+			return ((a.L * b)+ a.r);
+		}
+		template<typename T> vector3_t<T> operator / (const vector3_t<T>& b, const axis_t<T>& a) {
+			return  (b - a.r) / a.L;
+		}
+		template<typename T> struct scene_t {
+			using axis = axis_t<T>;
+			using vector3 = vector3_t<T>;
+			class series;
+			class body;
+			class actuator;
+			class joint;
+			class point;
+			class robot;
+
+			class point : public tree::item {
+				friend class joint;
+				friend class body;
+				friend class actuator;
+			public:
+				typedef ::robo::list::unsorted<point> list;
+				typedef typename list::ref ref;
+			private:
+				point * remote_ = nullptr;
+				ref ref_;
+				void assign_(point& _src) {
+					local = _src.local;
+				}
+			public:
+				body& body_ref() { return tree::item:: template branch<body>(); };
+				axis local;
+				axis base;
+				vector3 torque;
+				vector3 force;
+				point(cstr _name, body& _body);
+			protected:
+				bool manual_arrange = false;
+				virtual bool do_load(cstr _path) {
+					if ( name != string(RT("ct")) ) {
+						ROBO_LBREAKN(local.L.load(_path, RT("local.L")));
+						ROBO_LBREAKN(local.r.load_raw(_path, RT("local.r")));
+					}
+					return true;
+				}
+			};
+
+			class joint : public tree::item {
+				friend class point;
+				friend class body;
+			public:
+				typedef ::robo::list::unsorted<joint> list;
+				typedef typename list::ref ref;
+			private:
+				point& from_;
+				point& to_;
+				ref ref_;
+				void assign_(joint& _src) {
+					deform = _src.deform;
+					ddeform = _src.ddeform;
+					guk_line = _src.guk_line;
+					desep_line = _src.desep_line;
+					guk_cicle = _src.guk_cicle;
+					desep_cicle = _src.desep_cicle;
+				}
+			public:
+				body& body_ref() { return from_. tree::item:: template owner<body>(); };
+				axis deform;
+				axis ddeform;
+				vector3 guk_line;
+				vector3 desep_line;
+				vector3 guk_cicle;
+				vector3 desep_cicle;
+				joint(point& _from, point& _to);
+				~joint(void);
+			protected:
+				virtual bool do_load(cstr _path) {
+					ROBO_LBREAKN(guk_line.load_raw(_path, RT("guk_line")));
+					ROBO_LBREAKN(desep_line.load_raw(_path, RT("desep_line")));
+					ROBO_LBREAKN(guk_cicle.load_raw(_path, RT("guk_cicle")));
+					ROBO_LBREAKN(desep_cicle.load_raw(_path, RT("desep_cicle")));
+					return true;
+				}
+			};
+
+			class body : public tree::item {
+				friend class actuator;
+				friend class point;
+				friend class joint;
+				friend class link;
+				friend class series;
+			public:
+				typedef ::robo::list::unsorted<body> list;
+				typedef typename list::ref ref;
+			private:
+				point::list points_;
+				joint::list joints_;
+				ref ref_;
+				void arrange_(void) {
+					for (typename point::list::ref  * r = points_.first()->next(); r; r = r->next()) {
+						point& pt = r->owner();
+						if (!pt.manual_arrange) {
+							pt.base = ct.base * pt.local;
+						}
+					}
+				}
+				void assign_(body & _src) {
+					
+					{
+						typename point::list::ref* d = points_.first();
+						typename point::list::ref* s = _src.points_.first();
+						for (; d; d = d->next(), s = s->next()) {
+							d->owner().assign_(s->owner());
+						}
+					}
+					
+					{
+						typename joint::list::ref* d = joints_.first();
+						typename joint::list::ref* s = _src.joints_.first();
+						for (; d; d = d->next(), s = s->next()) {
+							d->owner().assign_(s->owner());
+						}
+					}
+					mass = _src.mass;
+					inertion = _src.inertion;
+				}
+			public:
+				series& series_ref() { return tree::item:: template branch<series>(); };
+				point ct;
+				T mass = T(1);
+				vector3 inertion = {T(1),T(1) ,T(1) };
+				body(cstr _name, series& _series);
+			};
+
+			class actuator: public point {
+				friend class body;
+				friend class series;
+			public:
+				typedef ::robo::list::unsorted<actuator> list;
+				typedef typename list::ref ref;
+			private:
+				ref ref_;
+				axis position_;
+				void arrange_(void) {
+					point::base = point::body_ref().ct.base * point::local;
+					axis S = point::base * position_;
+					point * rm = point::remote_;
+					S = S / rm->local;
+					rm->body_ref().ct.base = S;
+				}
+				void assign_(const actuator& _src) {
+					position_ = _src.position_;
+				}
+			public:
+				void rotate_rd(T _angle) {
+					position_.L.w = cos(_angle / 2);
+					position_.L.z = sin(_angle / 2);
+					position_.L.rotate();
+				}
+				void rotate_gr(T _angle) {
+					_angle *= grad2rad<T>;
+					position_.L.w = cos(_angle / 2);
+					position_.L.z = sin(_angle / 2);
+					position_.L.rotate();
+				}
+				actuator(cstr _name, body & _body);
+			};
+			
+			class series : public tree::item {
+				friend class robot;
+				friend class body;
+				friend class actuator;
+			public:
+				typedef ::robo::list::unsorted<series> list;
+				robot& robot_ref() { return tree::item:: template branch<robot>(); };
+
+			private:
+				robot& robot_;
+				actuator::list actuators_;
+				body::list bodies_;
+				list::ref ref_;
+				void arrange_(void) {
+					for (typename actuator::list::ref* r = actuators_.first(); r; r = r->next()) {
+						r->owner().arrange_();
+					}
+					for (typename body::list::ref* r = bodies_.first(); r; r = r->next()) {
+						r->owner().arrange_();
+					}
+				}
+				void assign_( series & _src) {
+					{
+						typename actuator::list::ref* d = actuators_.first();
+						typename actuator::list::ref* s = _src.actuators_.first();
+						for (; d; d = d->next(), s = s->next()) {
+							d->owner().assign_(s->owner());
+						}
+					}
+					{
+						typename body::list::ref* d = bodies_.first();
+						typename body::list::ref* s = _src.bodies_.first();
+						for (; d; d = d->next(), s = s->next()) {
+							d->owner().assign_(s->owner());
+						}
+					}
+				}
+			public:
+				series(cstr _name, robot& _owner);
+			};
+
+			
+			class robot: public tree::item {
+				friend class series;
+			public:
+			private:
+				series::list series_;
+			public:
+				robot(cstr _name) : tree::item(_name,nullptr) {}
+				void arrange(void) {
+					for (typename series::list::ref* r = series_.first() ; r; r = r->next()) {
+						r->owner().arrange_();
+					}
+				}
+				robot& assign ( robot& _robot) {
+					typename series::list::ref* d = series_.first();
+					typename series::list::ref* s = _robot.series_.first();
+					for (; d; d = d->next(),s = s->next() ) {
+						d->owner().assign_(s->owner());
+					}
+					arrange();
+					return *this;
+				}
+			};
+
+			class link: public body{
+			public:
+				point * J;
+				actuator A;
+				joint* JA;
+			public:
+				link(cstr _name, link & _prev)
+					: body(_name,_prev.series_ref())
+					, A(RT("A"),*this)
+				{
+					J = new point(RT("J"), *this);
+					JA = new joint(*J, _prev.A);
+				}
+				link(cstr _name, series & _series)
+					:  body(_name, _series)
+					, A(RT("A"), *this) {
+					J = nullptr;
+					JA = nullptr;
+				}
+				~link(void) {
+					if (J) delete J;
+					if (JA) delete JA;
+				}
+			};
+			class payload : public body {
+			public:
+				point A;
+				point B;
+				joint AJ;
+			public:
+				payload(cstr _name, link& _prev)
+					: body(_name, _prev.series_ref())
+					, A(RT("A"), *this)
+					, B(RT("B"), *this) 
+					, AJ(A, _prev.A) {
+				}
+			};
+
+		};
+
+		template<typename T> scene_t<T>::point::point(cstr _name, scene_t<T>::body& _body)
+			: tree::item(_name, &_body)
+			, ref_(*this)
+			{
+			ref_.attach_to(body_ref().points_);
+		}
+
+
+		template<typename T> scene_t<T>::joint::joint(point& _from, point& _to)
+			: tree::item( string(RT("%s-%s.%s")
+								, _from.name.c_str()
+								, _to.body_ref().name.c_str()
+								, _to.name.c_str()
+			), & _from.body_ref())
+			, ref_(*this )
+			, from_(_from)
+			, to_(_to) {
+			from_.remote_ = &to_;
+			to_.remote_ = &from_;
+			ref_.attach_to(_from.body_ref().joints_);
+		}
+		template<typename T> scene_t<T>::joint::~joint(void) {
+			from_.remote_ = nullptr;
+			to_.remote_ = nullptr;
+		}
+
+		
+		template<typename T> scene_t<T>::body::body(cstr _name, series& _series)
+			: tree::item(_name, &_series)
+			, ref_(*this)
+			, ct(RT("ct"), *this) {
+			ref_.attach_to(series_ref().bodies_);
+			ct.manual_arrange = true;;
+		}
+
+		template<typename T> scene_t<T>::actuator::actuator(cstr _name, body& _body)
+			: point(_name, _body)
+			, ref_(*this)
+		{
+			point::manual_arrange = true;
+			ref_.attach_to(_body.series_ref().actuators_);
+		};
+
+		template<typename T> scene_t<T>::series::series(cstr _name, robot& _robot)
+			: tree::item(_name, &_robot)
+			, robot_(_robot)
+			, ref_(*this)
+		{
+			ref_.attach_to(robot_ref().series_);
+		}
 
 		/*		template<typename T, size_t M> quaternion_t<T>  operator * (const quaternion_t<T>& A, const quaternion_t<T>& B) {
 			quaternion_t<T> C =A;

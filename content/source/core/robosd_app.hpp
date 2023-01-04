@@ -154,7 +154,10 @@ namespace robo {
 				}
 				
 			};
-
+			template <typename T> T& owner_ref(void) {
+				ROBO_APP_ASSERT( dynamic_cast< T * > (owner_)  != nullptr);
+				return *(T*)owner_;
+			}
 			node(void);
 			virtual ~node(void);
 
