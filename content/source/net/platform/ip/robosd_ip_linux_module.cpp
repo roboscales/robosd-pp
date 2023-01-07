@@ -7,7 +7,7 @@
 namespace MODULE_NAME{
 	class module : public robo::app::module {
 		module(void): robo::app::module(MODULE_NAME_STR) {}
-		linux::udp_poll ** udps_ = nullptr;
+		linuxx::udp_poll ** udps_ = nullptr;
 		int udps_count_ = 0;
 	protected:
 		virtual void backend_loop(void) {			
@@ -18,8 +18,8 @@ namespace MODULE_NAME{
 			ROBO_LBREAKN(robo::app::module::do_load());
 			ROBO_LBREAKN(robo::ini::load(current_path(), RT("udp_count"), udps_count_));
 			if (udps_count_ > 0) {
-				udps_ = new linux::udp_poll * [udps_count_];
-				linux::udp_poll** b = udps_;
+				udps_ = new linuxx::udp_poll * [udps_count_];
+				linuxx::udp_poll** b = udps_;
 				for (int i = 0; i < udps_count_; ++i, ++b) {
 					(*b) = nullptr;
 				}
@@ -28,7 +28,7 @@ namespace MODULE_NAME{
 
 				for (int i = 0; i < udps_count_; ++i, ++b) {
 					robo::string name(RT("udp-%d"), i + 1);
-					(*b) = new linux::udp_poll(false);
+					(*b) = new linuxx::udp_poll(false);
 					ROBO_LBREAKN((*b) != nullptr);					
 					ROBO_LBREAKN( (*b)->begin(name) );
 				}
@@ -36,21 +36,21 @@ namespace MODULE_NAME{
 			return true; 
 		}
 		virtual bool do_start(void) {
-			linux::udp_poll** b = udps_;
+			linuxx::udp_poll** b = udps_;
 			for (int i = 0; i < udps_count_; ++i, ++b) {
 				(*b)->start();
 			}
 			return true;
 		}
 		virtual void do_stop(void) {
-			linux::udp_poll** b = udps_;
+			linuxx::udp_poll** b = udps_;
 			for (int i = 0; i < udps_count_; ++i, ++b) {
 				(*b)->stop();
 			}
 		}
 		virtual void do_clean(void) {
 			if (udps_ != nullptr) {
-				linux::udp_poll** b = udps_;
+				linuxx::udp_poll** b = udps_;
 				for (int i = 0; i < udps_count_; ++i, ++b) {
 					if ((*b)!=nullptr) delete (*b);
 				}

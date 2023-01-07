@@ -8,7 +8,9 @@
 //#include <sys/socket.h>
 //#include <arpa/inet.h>
 #include <netdb.h>
-namespace linux {
+
+
+namespace linuxx {
     class ROBO_EXPORT  udp :public ::robo::net::udp {
     private:
 	    uint8_t *  receive_buf_ = nullptr;
@@ -39,6 +41,7 @@ namespace linux {
         udp(void);
         virtual bool begin(::robo::cstr _alias);
         virtual void finish(void);
+        bool begin();
     };
 
 

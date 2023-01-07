@@ -11,7 +11,7 @@
 #include <map>
 #include <algorithm>
 
-namespace linux {	
+namespace linuxx {	
 	/*
 	class std_signal {
 	public:
@@ -77,7 +77,7 @@ namespace linux {
 
 	
     bool udp::do_post( const uint8_t * _data, size_t _size){
-	    
+	    outcom_addr__.sin_port = htons(outcom_port()); 
 	    ROBO_LBREAKN_F( sendto(socket_,
 	                    _data,
 	                    _size,  
@@ -144,7 +144,40 @@ namespace linux {
 		
         return true;
 	}
+	bool udp::begin()
+	{
+        receive_buf_size_ = 4096;
+        if(receive_buf_size_>0) receive_buf_ = new uint8_t [receive_buf_size_];
+        ROBO_LBREAKN(receive_buf_!=nullptr);		
 		
+		struct sockaddr_in  incom;
+		
+		incom =  { };
+		
+		incom.sin_addr.s_addr =  htonl(INADDR_ANY); //inet_addr(outcom_addr_.c_str()); 
+		incom.sin_port = htons(incom_port()); 
+		incom.sin_family = AF_INET; 
+		
+		socket_ = socket(AF_INET, SOCK_DGRAM, 0);         
+		if (socket_ == -1) {
+			ROBO_LBREAK_F("could not create  incom UDP socket for port: %d", incom_port());
+		}
+		
+		if (bind(socket_, (struct sockaddr*)&incom, sizeof(incom)) != 0) {
+			close(socket_);
+			socket_ = -1;
+			ROBO_LBREAK_F("could not bind incom  UDP socket with port:  %d", incom_port());
+		}
+		
+		struct timeval read_timeout;
+		read_timeout.tv_sec = 0;
+		read_timeout.tv_usec = 10;
+		setsockopt(socket_, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
+		
+		
+        return true;
+	}
+	
     void udp::finish(void) {
 		if (socket_ != -1) {
 			close(socket_);
