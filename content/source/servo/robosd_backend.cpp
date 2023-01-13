@@ -506,7 +506,7 @@ namespace robo {
 				{
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
+				//		ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
 					}
 					else {
 						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object 'unknown'", display_alias(), request_begin_us_);
