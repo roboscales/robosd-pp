@@ -143,12 +143,15 @@ namespace robo {
 			constexpr T length(void) const {
 				return sqrt(dot(*this));
 			}
-			
+			constexpr T norma(void) const {
+				return sqrt(dot(*this)/ T(S::size) );
+			}
+
 			constexpr void zeros(void) {
 				::std::fill_n(S::memo, S::size, T(0));
 			}
 
-			constexpr numbers_t norma(void) const {
+			constexpr numbers_t dir(void) const {
 				T r = length();
 				if (r > ::std::numeric_limits<T>::epsilon()) {
 					return *this / r;
@@ -168,12 +171,12 @@ namespace robo {
 				}
 			}
 
-			template<typename T, typename C> numbers_t<T, C> operator *= (const numbers_t<T, C>& _src1) {
-				numbers_t<T, C> tmp = *this * _src1;
+			template<typename T1, typename C> numbers_t<T, C> operator *= (const numbers_t<T1, C>& _src1) {
+				numbers_t<T1, C> tmp = *this * _src1;
 				*this = tmp;
 				return *this;
 			}
-			template<typename T, typename C> numbers_t<T, C> operator /= (const numbers_t<T, C>& _src1) {
+			template<typename T1, typename C> numbers_t<T, C> operator /= (const numbers_t<T1, C>& _src1) {
 				numbers_t<T, C> tmp = *this / _src1;
 				*this = tmp;
 				return *this;
@@ -352,7 +355,7 @@ namespace robo {
 			bool load(cstr _path, cstr key) {
 				T tmp[size];
 				ROBO_LBREAKN(ini::load_arr(_path, key, tmp, size));
-				T f = tmp[0] * grad2rad<T>;
+				T f = tmp[0] * deg2rad<T>;
 				w = cos(f / 2);
 				vector3_t<T> n{tmp[1],tmp[2] ,tmp[3] };
 				n.normalize();
@@ -418,6 +421,100 @@ namespace robo {
 			return a.IA() * b;
 		}
 
+		template<typename T> class avionic_s {
+		public:
+			enum { size = 3 };
+			union {
+				T memo[size];
+				struct {
+					T yaw;
+					T pitch;
+					T roll;
+				};
+			};
+		};
+		template<class T> using avionic_t = numbers_t <T, avionic_s<T> >;
+
+		template<typename T> avionic_t<T> & operator >> (const quaternion_t<T>& _quat, avionic_t<T>& _avc) {
+			auto w = _quat.w;
+			auto x = _quat.x;
+			auto y = _quat.y;
+			auto z = _quat.z;
+
+			T d1 = 2. * (x * z - w * y);
+			if (d1 > 1.) {
+				d1 = 1. - ::std::numeric_limits<T>::epsilon();
+			}
+			if (d1 < -1.) {
+				d1 = -1. + ::std::numeric_limits<T>::epsilon();
+			}
+			T tmp = -asin(d1);
+			_avc.pith = -tmp;
+			T d2 = tmp - pi<T> / 2.f;
+			if (abs(d1) > 0.999) {
+				T YR = atan2(-2 * (x * y - w * z), 1 - 2 * (x * x + z * z));
+				//вариант первый
+				T roll1, roll2;
+				if (tmp < 0) {
+					roll1 = YR - _avc.yaw;
+				}
+				else {
+					roll1 = _avc.yaw - YR;
+				}
+				//вариант второй YAW+PITCH > pi
+				if (YR > 0) {
+					YR = YR - 2 * pi<T>;
+				}
+				else {
+					YR = YR + 2. * pi<T>;
+				}
+
+				if (tmp < 0) {
+					roll2 = YR - _avc.yaw;
+				}
+				else {
+					roll2 = _avc.yaw - YR;
+				}
+
+				T df1 = roll1 - _avc.roll;
+
+				T df2 = roll2 - _avc.roll;
+
+				if (abs(df2) > abs(df1)) {
+					_avc.roll = (T)roll1;
+				}
+				else {
+					_avc.roll = (T)roll2;
+				}
+
+			}
+			else {
+				_avc.yaw = (T)atan2(T(2) * (x * y + w * z), T(1) - T(2) * (y * y + z * z));
+				_avc.roll = (T)atan2(T(2) * (w * x + y * z), T(1) - T(2) * (x * x + y * y));
+			}
+			return _avc;
+		}
+		template<typename T> quaternion_t<T> &  operator >> (const avionic_t<T>& _avc, quaternion_t<T>& _quat) 
+		{
+			T Yd2 = _avc.yaw / T(2.);
+			T Pd2 = -_avc.pitch / T(2.);
+			T Rd2 = _avc.roll / T(2.);
+
+			T  csR = ::std::cos(Rd2);
+			T  snR = ::std::sin(Rd2);
+			T  csP = ::std::cos(Pd2);
+			T  snP = ::std::sin(Pd2);
+			T  csY = ::std::cos(Yd2);
+			T  snY = ::std::sin(Yd2);
+			_quat.w = csR * csP * csY + snR * snP * snY;
+			_quat.x = snR * csP * csY - csR * snP * snY;
+			_quat.y = csR * snP * csY + snR * csP * snY;
+			_quat.z = csR * csP * snY - snR * snP * csY;
+			return _quat;
+		}
+		
+		
+		
 		template<typename T> class quat_axis_t {
 		public:
 			quaternion_t <T> L;
@@ -656,7 +753,7 @@ namespace robo {
 					position_.L.rotate();
 				}
 				void rotate_gr(T _angle) {
-					_angle *= grad2rad<T>;
+					_angle *= deg2rad<T>;
 					position_.L.w = cos(_angle / 2);
 					position_.L.z = sin(_angle / 2);
 					position_.L.rotate();
@@ -905,7 +1002,82 @@ namespace robo {
 			vector3_t<T> tmp;
 			return tmp;
 		}*/
+		template<typename T>  avionic_t<T>& operator >> (const matrix3x3_t<T>& _transform, avionic_t<T>& _avc) {
+			//[cos(P) * cos(Y), -cos(R) * sin(Y) - cos(Y) * sin(P) * sin(R), sin(R) * sin(Y) - cos(R) * cos(Y) * sin(P)]
+			//[cos(P) * sin(Y), cos(R) * cos(Y) - sin(P) * sin(R) * sin(Y), -cos(Y) * sin(R) - cos(R) * sin(P) * sin(Y)]
+			//[sin(P), cos(P) * sin(R), cos(P) * cos(R)]
+			 T d1 = _transform.zx;
+			if (d1 > T(1.) ) {
+				d1 = T(1.) - ::std::numeric_limits<T>::epsilon();
+			}
+			if (d1 < -T(1.)) {
+				d1 = -T(1.) + ::std::numeric_limits<T>::epsilon();
+			}
+			T tmp = asin(d1);
+			_avc.pitch = tmp;
 
+			if (abs(d1) > 0.9999) {
+				T YR;
+				YR = atan2(-_transform.yz, _transform.yy);
+				//вариант первый
+				T roll1, roll2;
+				if (tmp > 0) {
+					//YR = R + Y  R = YR - Y;
+					roll1 = YR - _avc.yaw;
+				}
+				else {
+					//YR = R - Y  R = YR + Y;
+					roll1 = YR+ _avc.yaw;
+				}
+				//вариант второй YAW+PITCH > pi
+				if (YR > 0) {
+					YR = YR - T(2) * pi<T>;
+				}
+				else {
+					YR = YR + T(2) * pi<T>;
+				}
+
+				if (tmp > 0) {
+					roll2 = YR - _avc.yaw;
+				}
+				else {
+					roll2 = YR + _avc.yaw;
+				}
+
+				T df1 = roll1 - _avc.roll;
+
+				T df2 = roll2 - _avc.roll;
+
+				if (abs(df2) > abs(df1)) {
+					_avc.roll = roll1;
+				}
+				else {
+					_avc.roll = roll2;
+				}
+
+			}
+			else {
+				_avc.yaw = atan2(_transform.yx, _transform.xx );
+				_avc.roll = atan2(_transform.zy, _transform.zz);
+			}
+			return _avc;
+		};
+
+		template<typename T> matrix3x3_t<T>& operator >> (const avionic_t<T>& _avc, matrix3x3_t<T>& _transform) {
+			auto Y = _avc.yaw;
+			auto P = _avc.pitch;
+			auto R = _avc.roll;
+			_transform.xx = cos(P) * cos(Y);
+			_transform.xy = -cos(R) * sin(Y) - cos(Y) * sin(P) * sin(R);
+			_transform.xz = sin(R) * sin(Y) - cos(R) * cos(Y) * sin(P);
+			_transform.yx = cos(P) * sin(Y);
+			_transform.yy = cos(R) * cos(Y) - sin(P) * sin(R) * sin(Y);
+			_transform.yz = -cos(Y) * sin(R) - cos(R) * sin(P) * sin(Y);
+			_transform.zx = sin(P);
+			_transform.zy = cos(P) * sin(R);
+			_transform.zz = cos(P) * cos(R);
+			return _transform;
+		}
 
 
 		template<typename T> class matrix_axis_t {
@@ -924,7 +1096,8 @@ namespace robo {
 				}
 				return itransform_;
 			}
-			constexpr matrix_axis_t() :transform_(eye<T, 3>()), offset{ 0,0,0 } {}
+			constexpr matrix_axis_t() :transform_(eye<T, 3>()), offset{ 0,0,0 } {
+			}
 			constexpr matrix_axis_t(const matrix_axis_t& _src)
 				: transform_(_src.transform_)
 				, offset(_src.offset) {}
@@ -935,10 +1108,11 @@ namespace robo {
 			constexpr matrix_axis_t(const matrix& _L, const vector3_t<T>& _r)
 				: transform_(_L), offset(_r) {}
 
-			constexpr matrix_axis_t(quaternion_t<T>& _q, const vector3_t<T>& _r)
-				: transform_(_q.A()), offset(_r) {}
-			constexpr matrix_axis_t(quaternion_t<T>& _q)
-				: transform_(_q.A()) {}
+			constexpr matrix_axis_t(const quaternion_t<T>& _q)
+				: transform_(quaternion_t<T>(_q).A()) {}
+
+			constexpr matrix_axis_t(const quaternion_t<T>& _q, const vector3_t<T>& _r)
+				: transform_(quaternion_t<T>(_q).A()), offset(_r) {}
 
 			constexpr matrix_axis_t(const std::initializer_list<T> _src) {
 				ROBO_APP_ASSERT(7 == _src.size());
@@ -978,6 +1152,7 @@ namespace robo {
 				inverted_exists_ = false; 
 				dirrect_exists_ = false;
 			}
+
 		private:
 			bool inverted_exists_ = false;
 			bool dirrect_exists_ = false;
@@ -1024,10 +1199,10 @@ namespace robo {
 		}
 		template<typename T> class kinematic_t {
 		public:
-			const T pi = ::robo::pi<T>;
-			const T deg2rad = ::robo::kinematiks::deg2rad<T>;
-			const T rad2deg = ::robo::kinematiks::rad2deg<T>;
-			const T epsilon = ::robo::kinematiks::epsilon<T, 10>;
+			static inline const T pi = ::robo::pi<T>;
+			static inline const T deg2rad = ::robo::deg2rad<T>;
+			static inline const T rad2deg = ::robo::rad2deg<T>;
+			static inline const T epsilon = ::std::numeric_limits<T>::epsilon()*10;
 
 
 			class series_s;
@@ -1047,39 +1222,67 @@ namespace robo {
 				series_s & series_;
 				link_s* prev_;
 				link_s* next_;
-				T actual_;
-				T min_;
-				T max_;
+				T actual_ = 0;
+				T min_ = 0;
+				T max_ = 0;
 				types type_;
+				void attach_(void) {
+					if (series_.last_ != nullptr) {
+						prev_ = series_.last_;
+						prev_->next_ = this;
+					}
+					else {
+						series_.first_ = this;
+					}
+					series_.last_ = this;
+					series_.count_++;
+
+				}			
 			public:
-				void arrange(void) {
+				void update_forvard(void) {
 					if (prev_ != nullptr) {
-						base = base->prev_->base * local;
+						base = prev_-> base * local;
+					}
+					else {
+						base = local;
 					}
 				}
 				matrix_axis_t<T> native;
 				matrix_axis_t<T> local;
 				matrix_axis_t<T> base;
 
-				virtual void do_move(const T& _dest) = 0;
-				void attach(void);
+				virtual void do_move(const T& _dest) { };
+
 				
 				link_s(const matrix_axis_t<T>& _s, series_s & _series, types _type)
 				: series_(_series)
 				, next_(nullptr) 
+				, type_(_type)
 				{
-					native = _s;
-					local = native;
+					local = native = _s;
+					do_move(actual_);
 					base = local;
-					attach();
+					attach_();
 				}
-
-				void assign(const link_s & _src) {
+				const link_s* cnext(void) const {
+					return next_;
+				}
+				const link_s* cprev(void) const {
+					return prev_;
+				}
+				link_s* next(void) {
+					return next_;
+				}
+				link_s* prev(void) {
+					return prev_;
+				}
+				virtual void assign(const link_s & _src) {
 					native = _src.native;
-					local = native;
-					base = local;
+					local = _src.local;
+					base = _src.base;
 					min_ = _src.min_;
 					max_ = _src.max_;
+					actual_ = _src.actual_;
 				}
 
 				T get(void) const {
@@ -1172,11 +1375,11 @@ namespace robo {
 				void begin(T _actual_dg, T _min_dg, T _max_dg) {
 					min_ = _min_dg * deg2rad;
 					max_ = _max_dg * deg2rad;
-					move_dg(_actual_dg);
+					move_deg(_actual_dg);
 				}
 
-				void move_dg(T _dg) {
-					actual_ = _dg * grad2rad;
+				void move_deg(T _dg) {
+					actual_ = _dg * deg2rad;
 					do_move(actual_);
 				}
 				void move_nat(T _nat) {
@@ -1185,23 +1388,22 @@ namespace robo {
 				}
 				
 			};
-			
-
-			
 
 			class yaw_s : public link_s {
 			public:
 				virtual void do_move(const T& _dest) {
 					T cs = cos(_dest);
 					T sn = sin(_dest);
-					link_s::local.xx = link_s::native.xx * cs + link_s::native.xy * sn;
-					link_s::local.xy = link_s::native.xy * cs - link_s::native.xx * sn;
+					auto& m = link_s::local.transform();
+					const auto& n = link_s::native.transform();
+					m.xx = n.xx * cs + n.xy * sn;
+					m.xy = n.xy * cs - n.xx * sn;
 
-					link_s::local.yx = link_s::native.yx * cs + link_s::native.yy * sn;
-					link_s::local.yy = link_s::native.yy * cs - link_s::native.yx * sn;
+					m.yx = n.yx * cs + n.yy * sn;
+					m.yy = n.yy * cs - n.yx * sn;
 
-					link_s::local.zx = link_s::native.zx * cs + link_s::native.zy * sn;
-					link_s::local.zy = link_s::native.zy * cs - link_s::native.zx * sn;
+					m.zx = n.zx * cs + n.zy * sn;
+					m.zy = n.zy * cs - n.zx * sn;
 				}
 				yaw_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type):link_s(_s, _series, _type){}
 			};
@@ -1211,14 +1413,16 @@ namespace robo {
 				virtual void do_move(const T& _dest) {
 					T cs = cos(_dest);
 					T sn = sin(_dest);
-					link_s::local.xx = link_s::native.xx * cs - link_s::native.xz * sn;
-					link_s::local.xz = link_s::native.xz * cs + link_s::native.xx * sn;
+					auto& m = link_s::local.transform();
+					const auto& n = link_s::native.transform();
+					m.xx = n.xx * cs - n.xz * sn;
+					m.xz = n.xz * cs + n.xx * sn;
 
-					link_s::local.yx = link_s::native.yx * cs - link_s::native.yz * sn;
-					link_s::local.yz = link_s::native.yz * cs + link_s::native.yx * sn;
+					m.yx = n.yx * cs - n.yz * sn;
+					m.yz = n.yz * cs + n.yx * sn;
 
-					link_s::local.zx = link_s::native.zx * cs - link_s::native.zz * sn;
-					link_s::local.zz = link_s::native.zz * cs + link_s::native.zx * sn;
+					m.zx = n.zx * cs - n.zz * sn;
+					m.zz = n.zz * cs + n.zx * sn;
 				}
 				pitch_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type) :link_s(_s, _series, _type) {}
 			};
@@ -1228,14 +1432,16 @@ namespace robo {
 				virtual void do_move(const T& _dest) {
 					T cs = cos(_dest);
 					T sn = sin(_dest);
-					link_s::local.xy = link_s::native.xy * cs + link_s::native.xz * sn;
-					link_s::local.xz = link_s::native.xz * cs - link_s::native.xy * sn;
+					auto& m = link_s::local.transform();
+					const auto& n = link_s::native.transform();
+					m.xy = n.xy * cs + n.xz * sn;
+					m.xz = n.xz * cs - n.xy * sn;
 
-					link_s::local.yy = link_s::native.yy * cs + link_s::native.yz * sn;
-					link_s::local.yz = link_s::native.yz * cs - link_s::native.yy * sn;
+					m.yy = n.yy * cs + n.yz * sn;
+					m.yz = n.yz * cs - n.yy * sn;
 
-					link_s::local.zy = link_s::native.zy * cs + link_s::native.zz * sn;
-					link_s::local.zz = link_s::native.zz * cs - link_s::native.zy * sn;
+					m.zy = n.zy * cs + n.zz * sn;
+					m.zz = n.zz * cs - n.zy * sn;
 				}
 				roll_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type) :link_s(_s, _series, _type) {}
 			};
@@ -1246,16 +1452,32 @@ namespace robo {
 				link_s* last_ = nullptr;
 				int count_ = 0;
 			public:
-				const link_s* first(void) {
+				const link_s* cfirst(void)  const {
 					return first_;
 				} 
-				const link_s* last(void) {
+				const link_s* clast(void) const  {
 					return last_;
 				}
 
-				void arrange(void) {
+				link_s* first(void) {
+					return first_;
+				}
+				link_s* last(void) {
+					return last_;
+				}
+
+				void update_forvard(void) {
 					for (link_s* l = first_   ; l; l = l->next_ ) {
-						l->arrange();
+						l->update_forvard();
+					}
+				}
+				void assign(const series_s & _series) {
+					const link_s* _s = _series.first_;
+					link_s* _d = first_;
+					while ( (_s!=nullptr)  &&  (_d != nullptr) ) {
+						_d->assign(*_s);
+						_d = _d->next_;
+						_s = _s->next_;
 					}
 				}
 			protected:
@@ -1265,7 +1487,7 @@ namespace robo {
 							l->move_nat(*_arr++);
 							_count--;
 						}
-						l->arrange();
+						l->update_forvard();
 					}
 				}
 				void move_deg(const T* _arr, int _count) {
@@ -1274,28 +1496,17 @@ namespace robo {
 							l->move_deg(*_arr++);
 							_count--;
 						}
-						l->arrange();
+						l->update_forvard();
 					}
 				}
 			};
 
 			template<class S, typename ... Args > class payload_t : public link_s, public S {
 			public:
-				virtual void move(const T& _dest) {}
-				payload_t(const matrix_axis_t<T>& _s, series_s & _series, Args ... args) :link_s(_s, _series), S(args) {}
+				virtual void do_move(const T& _dest) {}
+				payload_t(const matrix_axis_t<T>& _s, series_s & _series, Args... args) :link_s(_s, _series, link_s::types::none), S(args...) {}
 			};
 		};
-		template<typename T> void kinematic_t<T>::link_s::attach(void) {
-			if (series_.last_ != nullptr) {
-				prev_ = series_.last_;
-				prev_->next_ = this;
-			}
-			else {
-				series_.first_ = this;
-			}
-			series_.last_ = this;
-			series_.count_++;
-		}
 	};
 }
 #endif

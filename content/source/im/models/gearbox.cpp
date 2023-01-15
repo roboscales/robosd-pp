@@ -123,18 +123,18 @@ namespace robo{
 						return true;
 					}
 					void nonline::do_reconfig(void) {
-						driver.tension_max = driver.config.tension_max * grad2rad<float>;
+						driver.tension_max = driver.config.tension_max * deg2rad<float>;
 						if (driver.tension_max > 1e-6) {
 							driver.hook_gain = driver.config.torque_max / driver.tension_max;
 						}
 						else {
 							driver.hook_gain = 0;
 						}
-						driver.dead_zone = driver.config.dead_zone * grad2rad<float>;
+						driver.dead_zone = driver.config.dead_zone * deg2rad<float>;
 						if (supply.enabled == 1) {
-							supply.max = supply.config.max * grad2rad<float>;
-							supply.min = supply.config.min * grad2rad<float>;
-							supply.tension_max = supply.config.tension_max * grad2rad<float>;
+							supply.max = supply.config.max * deg2rad<float>;
+							supply.min = supply.config.min * deg2rad<float>;
+							supply.tension_max = supply.config.tension_max * deg2rad<float>;
 							supply.gain = supply.config.torque_max / supply.tension_max;
 						}
 
@@ -143,7 +143,7 @@ namespace robo{
 					friction::friction(agent& _agent, cstr _name) : nonline(_agent,_name) {}
 					void friction::do_reconfig(void) {
 						nonline::do_reconfig();
-						base.crawl_speed = base.crawl_speed_grad * grad2rad<float> * driver.gear_ratio;
+						base.crawl_speed = base.crawl_speed_grad * deg2rad<float> * driver.gear_ratio;
 					}
 
 					bool friction::do_load(cstr _specific_sect, cstr _common_sect) {
