@@ -3,6 +3,8 @@
 
 #if ROBO_UNICODE_ENABLED == 1
 #include <codecvt>
+#else
+#include <cstring>
 #endif
 
 namespace robo {

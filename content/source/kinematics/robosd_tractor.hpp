@@ -60,7 +60,7 @@ namespace robo {
 			}
 
 			constexpr numbers_t(const numbers_t & _src) : S() {
-				ROBO_APP_ASSERT(S::size == _src.size);
+				ROBO_APP_ASSERT((int)S::size == (int)_src.size);
 				::std::copy_n(_src.memo, S::size, S::memo);
 			}
 
@@ -72,7 +72,7 @@ namespace robo {
 				::std::copy_n(_src, S::size, S::memo);
 			}
 			template <typename A> constexpr numbers_t(const A& _src) : S() {
-				ROBO_APP_ASSERT(S::size == _src.size);
+				ROBO_APP_ASSERT((int)S::size == (int)_src.size);
 				::std::copy_n(_src.memo, S::size, S::memo);
 			} 
 
@@ -291,9 +291,12 @@ namespace robo {
 				};
 			};
 			void mult(const vector3_s& b) {
-				x = y * b.z - z * b.y;
-				y = -x * b.z + z * b.x;
-				z = x * b.y - y * b.x;
+				auto ax = x;
+				auto ay = y;
+				auto az = z;
+				x = ay*b.z-az*b.y;
+				y = az * b.x -ax*b.z;
+				z = ax*b.y-ay*b.x;
 			}
 
 		};
@@ -659,7 +662,7 @@ namespace robo {
 					desep_cicle = _src.desep_cicle;
 				}
 			public:
-				body& body_ref() { return from_. tree::item:: template owner<body>(); };
+				body& body_ref() { return from_. tree::item:: template branch<body>(); };
 				axis deform;
 				axis ddeform;
 				vector3 guk_line;
@@ -688,8 +691,8 @@ namespace robo {
 				typedef ::robo::list::unsorted<body> list;
 				typedef typename list::ref ref;
 			private:
-				point::list points_;
-				joint::list joints_;
+				typename point::list points_;
+				typename joint::list joints_;
 				ref ref_;
 				void arrange_(void) {
 					for (typename point::list::ref  * r = points_.first()->next(); r; r = r->next()) {
@@ -771,9 +774,9 @@ namespace robo {
 
 			private:
 				robot& robot_;
-				actuator::list actuators_;
-				body::list bodies_;
-				list::ref ref_;
+				typename actuator::list actuators_;
+				typename body::list bodies_;
+				typename list::ref ref_;
 				void arrange_(void) {
 					for (typename actuator::list::ref* r = actuators_.first(); r; r = r->next()) {
 						r->owner().arrange_();
@@ -807,7 +810,7 @@ namespace robo {
 				friend class series;
 			public:
 			private:
-				series::list series_;
+				typename series::list series_;
 			public:
 				robot(cstr _name) : tree::item(_name,nullptr) {}
 				void arrange(void) {
@@ -1405,7 +1408,7 @@ namespace robo {
 					m.zx = n.zx * cs + n.zy * sn;
 					m.zy = n.zy * cs - n.zx * sn;
 				}
-				yaw_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type):link_s(_s, _series, _type){}
+				yaw_s(const matrix_axis_t<T>& _s, series_s& _series, typename link_s::types _type):link_s(_s, _series, _type){}
 			};
 
 			class pitch_s : public link_s {
@@ -1424,7 +1427,7 @@ namespace robo {
 					m.zx = n.zx * cs - n.zz * sn;
 					m.zz = n.zz * cs + n.zx * sn;
 				}
-				pitch_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type) :link_s(_s, _series, _type) {}
+				pitch_s(const matrix_axis_t<T>& _s, series_s& _series, typename link_s::types _type) :link_s(_s, _series, _type) {}
 			};
 
 			class roll_s : public link_s {
@@ -1443,7 +1446,7 @@ namespace robo {
 					m.zy = n.zy * cs + n.zz * sn;
 					m.zz = n.zz * cs - n.zy * sn;
 				}
-				roll_s(const matrix_axis_t<T>& _s, series_s& _series, link_s::types _type) :link_s(_s, _series, _type) {}
+				roll_s(const matrix_axis_t<T>& _s, series_s& _series, typename link_s::types _type) :link_s(_s, _series, _type) {}
 			};
 			
 			class series_s {

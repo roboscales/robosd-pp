@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <algorithm>
+#include <thread>
 
 namespace linuxx {	
 	/*

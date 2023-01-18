@@ -74,7 +74,7 @@ namespace robo {
 
 
 	ROBO_WEAK time_us_t system::env::realtime_us(void) {
-		return 0;
+		return system::time_us();
 	}
 
 	ROBO_WEAK random_t system::env::rand(random_t _max) {
