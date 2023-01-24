@@ -357,14 +357,16 @@ namespace PMSM_TEMPLATE_NAME {
 
 			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1 || PMSM_SYNC_CURRENT_MODE_ENABLED ==1
 			if (::mexo::var::machine::actual_mode() >= ::mexo::var::machine::mode::action) {
-				const action_s& act = action<dev_t>();
-				::mexo::var::record::create(types::var::long_signal, act.angle, RT("act.angle"), key(), vars);
-				::mexo::var::record::create(types::var::long_signal, act.freq, RT("act.freq"), key(), vars);
-				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.v"), key(), vars);
-				::mexo::var::record::create(types::var::signal, act.lateral.current, RT("act.lat.c"), key(), vars);
-				const present_s& prsnt = present<dev_t>();
-				::mexo::var::record::create(types::var::long_signal, prsnt.angle_req, RT("angle_req"), key(), vars);
-				::mexo::var::record::create(types::var::long_signal, prsnt.freq_req, RT("freq_req"), key(), vars);
+				const action_s& act =  actuator_t::template action<dev_t>();
+			::mexo::var::record::create(types::var::long_signal, act.angle, RT("act.angle"), actuator_t::key(), actuator_t::vars);
+				::mexo::var::record::create(types::var::long_signal, act.freq, RT("act.freq"), actuator_t::key(), actuator_t::vars);
+				::mexo::var::record::create(types::var::signal, act.lateral.voltage, RT("act.lat.v"), actuator_t::key(), actuator_t::vars);
+				#if PMSM_SYNC_CURRENT_MODE_ENABLED ==1
+				::mexo::var::record::create(types::var::signal, act.lateral.current, RT("act.lat.c"), actuator_t::key(), actuator_t::vars);
+				#endif
+				const present_s& prsnt = actuator_t::template present<dev_t>();
+				::mexo::var::record::create(types::var::long_signal, prsnt.angle_req, RT("angle_req"), actuator_t::key(), actuator_t::vars);
+				::mexo::var::record::create(types::var::long_signal, prsnt.freq_req, RT("freq_req"), actuator_t::key(), actuator_t::vars);
 			}
 			#endif
 		}

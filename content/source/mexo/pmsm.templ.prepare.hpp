@@ -66,7 +66,6 @@
 		#undef PMSM_SYNC_CURRENT_MODE_ENABLED
 		#undef PMSM_SYNC_VOLTAGE_MODE_ENABLED
 	#else
-		#undef PMSM_SYNC_CURRENT_MODE_ENABLED
 		#error  invalid prepare mode
 	#endif
 #endif
