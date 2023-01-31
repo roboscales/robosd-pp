@@ -1,5 +1,10 @@
+#define _CRT_SECURE_NO_DEPRECATE
 #include "core/robosd_system_native.hpp"
 #include "core/robosd_system.hpp"
+#if ROBO_UNICODE_ENABLED == 1
+#include <codecvt>
+#endif
+
 #if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_NATIVE
 namespace robo {
 	namespace native {
@@ -112,6 +117,10 @@ namespace robo {
 #endif
 
 #if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_NATIVE	
+
+#if ROBO_UNICODE_ENABLED == 1
+#error native ini lib  and unicode.....
+#endif
 #include "core/robosd_ini_parser.h"
 #include <fstream>
 
@@ -119,11 +128,21 @@ namespace robo {
 	cstr g_robo_ini_fn = nullptr;
 	bool system::ini::begin(cstr _ini) {
 		g_robo_ini_fn = _ini;
+		#if   ROBO_UNICODE_ENABLED == 1
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+		std::string utf8_string = convert.to_bytes(_ini);
+		const char* p = utf8_string.c_str();
+		std::FILE* iniFile = fopen(p, "r");
+		#else
 		std::FILE* iniFile = std::fopen(_ini, "r");
+		#endif
 		ROBO_LBREAKN_F(iniFile !=nullptr , "error load file %s", _ini)
 		size_t bytesread;
-		char * buf = new char[16000];
-		bytesread = std::fread(&buf[0], sizeof buf[0], 16000, iniFile);
+		#ifndef  ROBO_ASPP_INI_NATIVE_BUF_SIZE
+		#define ROBO_ASPP_INI_NATIVE_BUF_SIZE 64000
+		#endif
+		char * buf = new char[ROBO_ASPP_INI_NATIVE_BUF_SIZE];
+		bytesread = std::fread(&buf[0], sizeof buf[0], ROBO_ASPP_INI_NATIVE_BUF_SIZE, iniFile);
 		robo_ipa_init(ROBO_IPA_NORMAL);
 		robo_ipa_applay(buf, bytesread);
 		delete[] buf;
@@ -137,9 +156,16 @@ namespace robo {
 	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size)
 	{
 		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
-		_size = robo::robo_ipa_string_get(_section, _key, "", _dst, _max_sz);
+		_size = robo::robo_ipa_string_get(_section, _key, RT(""), _dst, _max_sz);
+	}
+
+	cstr system::ini::source(void) {
+		return g_robo_ini_fn;
 	}
 }
 #endif
 
 
+#if ROBO_APP_INI_TYPE == ROBO_APP_TYPE_NATIVE	
+#include "core/robosd_ini_parser.cpp"
+#endif

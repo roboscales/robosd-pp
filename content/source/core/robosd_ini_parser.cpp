@@ -264,8 +264,8 @@ bool robo_ipa_env_new_sect_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 	{
 		robo_ipa_section_p p = _env->sections + _env->sections_ix;
 		_env->sections_ix++;
-		p->name.offset = _begin;
-		p->name.len = _end-_begin +1;
+		p->name.offset = (unsigned short)_begin;
+		p->name.len = (unsigned short)(_end-_begin +1);
 		_env->current_section = p;
 		return true;
 	}
@@ -280,8 +280,8 @@ bool robo_ipa_env_new_cell_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 	}
 	{
 		robo_ipa_cell_p p = _env->cells + _env->cells_ix;
-		p->name.offset = _begin;
-		p->name.len = _end - _begin + 1;
+		p->name.offset = (unsigned short)_begin;
+		p->name.len = (unsigned short)(_end - _begin + 1);
 		if (_env->current_section->count == 0 )
 			_env->current_section->fiRTt_cell = _env->cells_ix;
 		_env->current_section->count++;
@@ -304,8 +304,8 @@ bool robo_ipa_env_update_cell_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 		size_t n;
 		uint8_t * p = _env->data + _begin;
 		size_t tb=0;
-		_env->current_cell->value.offset = _begin;
-		_env->current_cell->value.len = _end - _begin + 1;
+		_env->current_cell->value.offset = (unsigned short)_begin;
+		_env->current_cell->value.len = (unsigned short)(_end - _begin + 1);
 
 		int st = 0;
 		for (n = 0; n < N; n++, p++){
@@ -326,8 +326,8 @@ bool robo_ipa_env_update_cell_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 			case 1:
 				switch (*p){
 				case '"':
-					_env->current_cell->value.offset += tb;
-					_env->current_cell->value.len = n - tb;
+					_env->current_cell->value.offset += (unsigned short)tb;
+					_env->current_cell->value.len = (unsigned short)(n - tb);
 					n = N;
 					st = 0;
 					break;
@@ -339,8 +339,8 @@ bool robo_ipa_env_update_cell_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 				switch (*p){
 				case ' ':
 				case ';':
-					_env->current_cell->value.offset += tb;
-					_env->current_cell->value.len = n - tb;
+					_env->current_cell->value.offset += (unsigned short)tb;
+					_env->current_cell->value.len = (unsigned short)(n - tb);
 					n = N;
 					st = 0;
 					break;
@@ -350,14 +350,14 @@ bool robo_ipa_env_update_cell_(robo_ipa_env_p _env, size_t _begin, size_t _end){
 			}		
 		}
 		if (st != 0){
-			_env->current_cell->value.offset += tb;
-			_env->current_cell->value.len = n - tb;
+			_env->current_cell->value.offset += (unsigned short)tb;
+			_env->current_cell->value.len = (unsigned short)(n - tb);
 		}
 
 		{
-			char section[255];
-			char key[255];
-			char value[255];
+			char_t section[255];
+			char_t key[255];
+			char_t value[255];
 			robo_ipa_str_get(_env, &(_env->current_section->name), section, 50);
 			robo_ipa_str_get(_env, &(_env->current_cell->name), key, 50);
 			robo_ipa_str_get(_env, &(_env->current_cell->value), value, 50);
@@ -385,10 +385,12 @@ void robo_ipa_fill_event(robo_ipa_env_p _env, int _event, size_t _begin, size_t 
 bool robo_ipa_decode_(robo_ipa_env_p _env){
 	ROBO_LBREAKN(robo_ipa_machines_(_env, robo_ipa_calc_event));
 	if (_env->cells_count > 0){
-		_env->cells = new  robo_ipa_cell_t[_env->cells_count];
+		_env->cells = new  robo_ipa_cell_t[_env->cells_count];	
+		std::fill_n((uint8_t *)_env->cells, _env->cells_count*sizeof(robo_ipa_cell_t),0);
 	}
 	if (_env->sections_count > 0){
 		_env->sections = new robo_ipa_section_t [_env->sections_count];
+		std::fill_n((uint8_t*)_env->sections, _env->sections_count * sizeof(robo_ipa_section_t), 0);
 	}
 	ROBO_LRET(robo_ipa_machines_(_env, robo_ipa_fill_event));
 }
@@ -444,7 +446,6 @@ bool  robo_ipa_applay(const char *  _data, size_t _size){
 		ROBO_LRET(robo_ipa_env_deinit_(&old_));
 	}
 	else{
-		bool res;
 		robo::system::guard g__;
 		ROBO_LRET( robo_ipa_applay_(_data,_size) );
 	}
@@ -524,28 +525,59 @@ robo_ipa_cell_p  robo_ipa_cell_get_(robo_ipa_env_p _env, robo_ipa_section_p _sec
 
 
 size_t robo_ipa_get_(robo_ipa_env_p _env, cstr  _section, cstr _key, cstr _default, char_t * _dst, size_t _size){
-	if (_size > 0){
-		robo_ipa_section_p  s = robo_ipa_section_get_(_env, _section);
-		if (s){
-			robo_ipa_cell_p  c = robo_ipa_cell_get_(_env, s, _key);
-			if (c){
-				return robo_ipa_str_get(_env, &(c->value), _dst, _size);
+	if (_dst == nullptr || _size < 2) return 0;
+	if (_key != nullptr) {
+		if (_size > 0) {
+			robo_ipa_section_p  s = robo_ipa_section_get_(_env, _section);
+			if (s) {
+				robo_ipa_cell_p  c = robo_ipa_cell_get_(_env, s, _key);
+				if (c) {
+					return robo_ipa_str_get(_env, &(c->value), _dst, _size);
+				}
+			}
+			if (_default) {
+				size_t n = _size - 1;
+				const char_t* dst = _default;
+				while (n-- && *dst) {
+					*_dst++ = *dst++;
+				}
+				*_dst = 0;
 			}
 		}
-		if (_default){
-			size_t n = _size-1;
-			const char_t *  dst = _default;
-			while (n-- && *dst){
-				*_dst++ = *dst++;
+	}
+	else {
+		robo_ipa_section_p  s = robo_ipa_section_get_(_env, _section);
+		if (s) {
+
+			char_t* dst = _dst;
+			size_t space = _size - 1;
+			size_t total = 0;
+			robo_ipa_cell_p c = _env->cells + s->fiRTt_cell;
+			size_t m = s->count;
+			while (m--) {
+				const char_t* name = (const char_t*)_env->data + c->name.offset;
+				size_t n = c->name.len;
+				if (n + 1 > space) {
+					_dst[0] = 0;
+					return 0;
+				}
+				space -= (n + 1);
+				total += (n + 1);
+				while (n-- && *name) {
+					*_dst++ = *name++;
+				}
+				*_dst++ = 0;
+				c++;
 			}
 			*_dst = 0;
+			return total;
 		}
 	}
 	return 0;
 }
 
 bool  robo_ipa_test_event_(cstr _section, cstr _key, void * _instance){
-	char value[50];
+	char_t value[50];
 	robo_ipa_get_((robo_ipa_env_p)_instance, _section, _key, RT(""), value, 50);
 	robo_infolog("[%s] %s = %s", _section, _key, value);
 	return true;
@@ -576,8 +608,8 @@ void  robo_ipa_test(){
 	robo_ipa_env_t env;
 	#define n1  100
 	#define n2  10
-	char s1[n1];
-	char s2[n2];
+	char_t s1[n1];
+	char_t s2[n2];
 	ROBO_ALARMN( robo_ipa_env_init_(&env, tmp, std::strlen(tmp)) );
 
 	ROBO_ALARMN(robo_ipa_machines_(&env, disp_event));

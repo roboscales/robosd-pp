@@ -30,14 +30,14 @@ namespace PMSM_TEMPLATE_NAME {
 		#if LAT_CURRENT_FILTER_ENABLED==1 || LAT_CURRENT_DIFF_ENABLED==1
 		typedef ::mexo::function_task_t <
 			::mexo::filter<types>
-			, ::mexo::prioritet_subsystem
+			, ::mexo::realtime_subsystem
 		>  lat_filter_b;
 		#endif 
 
 		#if LAT_CURRENT_FAST_FILTER_ENABLED==1
 		typedef ::mexo::function_block_t <
 			::mexo::fast_filter<types>
-			, ::mexo::prioritet_subsystem
+			, ::mexo::realtime_subsystem
 		>lat_fast_filter_b;
 		#endif 
 
@@ -386,13 +386,13 @@ namespace PMSM_TEMPLATE_NAME {
 			#endif
 			#endif
 			#if LAT_CURRENT_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
+			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
 			#endif
 			#if LAT_CURRENT_FAST_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.prioritet_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
+			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
 			#endif
 			#if LAT_CURRENT_DIFF_FILTER_ENABLED==1
-			, lat_current_diff_filter(RT("lc_dif_f"), &actuator_t::hardwaresys.prioritet_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, actuator_t::hardwaresys.current_sence_block.lat_current_delta_ref())
+			, lat_current_diff_filter(RT("lc_dif_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, actuator_t::hardwaresys.current_sence_block.lat_current_delta_ref())
 			#endif
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
 			, lat_current_regulator(

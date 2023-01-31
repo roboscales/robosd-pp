@@ -8,7 +8,7 @@
 namespace robo{
 	namespace termo{
 		class core{
-			friend class command;
+			friend class command; 
 			friend class itf;
 			node root_cmd_;
 			char input_buffers_[ROBOSD_TERMINAL_HISTORY_DEPTH][ROBOSD_TERMINAL_BUFFER_SIZE + 1];

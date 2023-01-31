@@ -1,0 +1,119 @@
+syms wm om tt C b 
+acel = (wm*om*cos(om*tt)* exp(-om*tt*b));
+speed= simplify( int(acel,tt,0 ,tt) );
+pretty(speed)
+angle= simplify( int(speed,tt,0 ,tt) );
+pretty(angle)
+close all
+clear all;
+nxx=14000;
+J = 0.85*10e-7;
+M = 19.8*1e-3 * 2;
+acc = M/J;
+wm=nxx*pi/30;
+% acc=wm*om*cos(om*t);
+om=acc/wm;
+
+T=0.00005;
+tn=2*pi/om*2;
+N=round(tn/T);
+tt=(0:T:N*T)';
+N=length(tt);
+% acel = wm*om*cos(om*tt);
+% speed = wm*sin(om*tt);
+% angle = wm*(1-cos(om*tt))/om-pi/6;
+b=0.3;
+acel = (wm*om*cos(om*tt).* exp(-om*tt*b)) ;
+speed= (wm*exp(-b*om*tt).*(sin(om*tt) - b*cos(om*tt) + b*exp(b*om*tt)))/(b^2 + 1)+ wm/15;
+angle= (wm*exp(-b*om*tt).*(b*tt.*exp(b*om*tt) + b^3*tt.*exp(b*om*tt)))/(b^2 + 1)^2 - (wm*exp(-b*om*tt).*(cos(om*tt) - exp(b*om*tt) + b^2*exp(b*om*tt) + 2*b*sin(om*tt) - b^2*cos(om*tt)))/(om*(b^2 + 1)^2) + wm/15*tt;
+
+
+hall = ceil(angle/(pi/3));
+dangle=hall*pi/3;
+evt=[];
+evd=[];
+t=0;
+k=0;
+pos0=0;
+
+dhall=[0; hall(2:N,1)-hall(1:N-1,1) ];
+h0=0;
+K=20;
+P=round(16*40/K);
+M=floor(N/P);
+hall2=zeros(M,1);
+dhall2=zeros(M,1);
+dhall32=zeros(M,1);
+dhalld=zeros(M,1);
+dhalldf=zeros(M,1);
+dhalldf_prev=0;
+ddhall=zeros(M,1);
+tt2=(1:M)*P*T;
+x=(1:K)';
+xx = [ ones(K,1) x x.*x]; 
+pos=zeros(K,1);
+pxx=pinv(xx);
+pixx32 = round(pxx*32767*256);
+prev=0;
+for m=1:M
+    n=m*P+1;
+%     h0=hall(n);
+%     df = hall(n)-hall((m-1)*100+1);
+    dhalld(m) = hall(n)-prev;
+    dhalldf_prev = dhalldf_prev*(31/32)+ (hall(n)-prev);
+    dhalldf(m) = dhalldf_prev/32;
+    prev = hall(n);
+    x0=pos(2);
+    pos = [pos(2:K); hall(n) ];
+    pos2 = pos-x0;
+    b=pxx*pos2;
+    b2=pixx32*pos2;
+    t0=K*2;
+    hall2(m) =x0 +b(1)+b(2)*t0 +b(3)*t0^2/2;
+    dhall2(m) =b(2)+b(3)*t0 ;
+    dhall32(m) = (b2(2)/256+b2(3)/256*t0)/32767;
+    ddhall(m) = b(3);
+end
+
+figure 
+subplot(3,1,1)
+plot(tt,acel);
+subplot(3,1,2)
+hold on
+plot(tt,speed);
+% plot(tt,aad);
+hold off
+subplot(3,1,3)
+hold on
+plot(tt,angle);
+plot(tt,dangle);
+stairs(tt2,hall2*pi/3,'r');
+hold off
+ix=1:1000;
+figure
+subplot(3,1,1)
+hold on
+plot(tt,dhall);
+title('сигнал с датчика- приращение pp/такт')
+hold off
+subplot(3,1,2)
+hold on
+plot(tt,speed,'k','LineWidth',2);
+plot(tt2,dhalld*pi/3/(T*P),'LineWidth',2);
+plot(tt2,dhalldf*pi/3/(T*P),'LineWidth',2);
+title('дедовский способ- через первую разницу, потом фильтр')
+legend({'реальная','нефильтрованная', 'фильтрованная'})
+hold off
+subplot(3,1,3)
+hold on
+plot(tt,speed,'k','LineWidth',2);
+plot(tt2,dhall2*pi/3/(T*P),'r','LineWidth',2);
+% plot(tt2,dhall32*pi/3/(T*P),'b','LineWidth',2);
+legend({'реальная','измеренная'})
+title('способ имени Юсупова- задержка 0 ')
+hold off
+figure;
+hold on
+plot(tt,acel,'k','LineWidth',2);
+plot(tt2,ddhall*pi/3/(T*P)/(T*P)*2)
+hold off

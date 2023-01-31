@@ -44,14 +44,14 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_DIFF_ENABLED==1
 		typedef ::mexo::function_task_t <
 			::mexo::filter<types>
-			, ::mexo::prioritet_subsystem
+			, ::mexo::realtime_subsystem
 		>  filter_b;
 		#endif 
 
 		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
 		typedef ::mexo::function_block_t <
 			::mexo::fast_filter<types>
-			, ::mexo::prioritet_subsystem
+			, ::mexo::realtime_subsystem
 		>fast_filter_b;
 		#endif 
 

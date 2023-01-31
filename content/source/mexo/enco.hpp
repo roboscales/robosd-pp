@@ -379,7 +379,185 @@ namespace mexo {
 
 		};
 
-	
+		template <
+			typename q
+			, typename position_t
+			, typename speed_t
+			, typename D
+		> class hall_t
+			: public handler, public D {
+		public:
+			using angle_t = typename q::signal_t;
+			struct config_s {
+				handler::config_s	sb;
+				struct {
+					struct {
+						angle_t native;
+						angle_t dynamic;
+					} angle;
+					position_t position;
+				} offset;
+				bool inv;
+			};
+			angle_t angle_offset_prev = (angle_t)0;
+			position_t position_offset_prev = (position_t)0;
+
+			static constexpr int8_t sectors[8] = {
+				-1 //{ 0, 0, 0 }
+				, 4//{ 1, 0, 0 }
+				, 0//{ 0, 1, 0 }
+				, 5 //{ 1, 1, 0 }
+				, 2 //{ 0, 0, 1 }
+				, 3 //{ 1, 0, 1 }
+				, 1 //{ 0, 1, 1 }
+				, -1 //{1, 1, 1}
+			};
+
+			angle_t  angles[6] = {
+				angle_t(0)
+				, angle_t(q::pi/3.)
+				, angle_t(2*q::pi /3.)
+				, angle_t(q::pi)
+				, angle_t(-2 * q::pi / 3.)
+				, angle_t(- q::pi / 3.)
+			};
+			struct present_s {
+				handler::present_s	sb;
+				struct {
+					unsigned fault;
+					unsigned total;
+				} counter;
+				uint8_t pins[3];
+				int8_t sector;
+				angle_t raw;
+				angle_t angle;
+				int8_t delta;
+				position_t position;
+				speed_t delta_acc;
+			};
+		private:
+			int8_t true_diff_ = 0;
+			int8_t sector_prev_ = -1;
+			int index_ = -1;			
+			static constexpr int8_t diffs_[6] = {
+				0, 1, 2, 3, -2, -1
+			};
+			position_t offset_position_prev_;
+		protected:
+			virtual void do_handler_adjust(void) {}
+
+			void execute(void) {
+				present_s& prsnt = present<hall_t>();
+				const config_s& conf = config<hall_t>();
+				if (conf.offset.position != offset_position_prev_) {
+					do_handler_reconfig();
+					return;
+				}
+				prsnt.counter.total++;
+				D::read(prsnt.pins);
+				index_ = prsnt.pins[0] + (prsnt.pins[1] <<1) + (prsnt.pins[2] <<2);
+				if (index_ >= 0) {
+					prsnt.sector = sectors[index_];
+					if(prsnt.sector>=0){
+						prsnt.delta = (int8_t)prsnt.sector - (int8_t)sector_prev_;
+						sector_prev_ = prsnt.sector;
+						if (prsnt.delta >= 0) {
+							prsnt.delta = diffs_[prsnt.delta];
+						}
+						else {
+							prsnt.delta = diffs_[6 + prsnt.delta];
+						}
+						if (prsnt.delta == 3) {
+							if (true_diff_ < 0) {
+								prsnt.delta = -3;
+							}
+						} else {
+							true_diff_ = prsnt.delta;
+						}
+						if (conf.inv) {
+							prsnt.delta = -prsnt.delta;
+							prsnt.raw = -angles[prsnt.sector];
+						}
+						else {
+							prsnt.raw = angles[prsnt.sector];
+						}
+						prsnt.delta_acc += prsnt.delta;
+						prsnt.angle = prsnt.raw + conf.offset.angle.native;
+						if (D::dir() > 0) {
+							prsnt.angle += conf.offset.angle.dynamic;
+						}
+						else if ( D::dir()  < 0) {
+							prsnt.angle += conf.offset.angle.dynamic;
+						}
+						prsnt.position += prsnt.delta;
+						return;
+					}
+				}
+				prsnt.counter.fault++;
+				//to do так делать нельзя, та как накапливается ошибка!
+				prsnt.delta = 0;
+				prsnt.delta_acc = 0;
+			}
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+				handler::do_handler_create_vars(_vars, _master_key);
+				present_s& prsnt = present<hall_t>();
+				::mexo::var::types pos_tp;
+				switch (sizeof(position_t)) {
+				case 1:
+				pos_tp = ::mexo::var::int8;
+				break;
+				case 2:
+				pos_tp = ::mexo::var::int16;
+				break;
+				case 4:
+				pos_tp = ::mexo::var::int32;
+				break;
+				case 8:
+				pos_tp = ::mexo::var::int64;
+				break;
+				default:
+				pos_tp = ::mexo::var::int8;
+				}
+
+				if (var::machine::actual_mode() >= var::machine::mode::full) {
+					//todo govnocod
+					var::record::create(q::var::signal, prsnt.raw, RT("raw"), _master_key, _vars);
+					var::record::create(q::var::signal, prsnt.angle, RT("angle"), _master_key, _vars);
+					var::record::create(::mexo::var::uint32, prsnt.counter.fault, RT("cnt.fault"), _master_key, _vars);
+					var::record::create(::mexo::var::uint32, prsnt.counter.total, RT("cnt.tot"), _master_key, _vars);
+					var::record::create(q::var::signal, prsnt.delta, RT("delta"), _master_key, _vars);
+					var::record::create(q::var::signal, prsnt.delta_acc, RT("delta_acc"), _master_key, _vars);
+					var::record::create(pos_tp, prsnt.position, RT("po"), _master_key, _vars);
+				}
+
+				if (var::machine::actual_mode() >= var::machine::mode::tuning) {
+					const config_s& cfg = config<hall_t>();
+					var::record::create(q::var::signal, cfg.offset.angle.native , RT("native_offset"), _master_key, _vars);
+					var::record::create(q::var::signal, cfg.offset.angle.dynamic , RT("dynam_offset"), _master_key, _vars);
+					var::record::create(pos_tp, cfg.offset.position, RT("position_offset"), _master_key, _vars);
+					var::record::create(::mexo::var::uint8, cfg.inv, RT("inverce"), _master_key, _vars);
+				}
+			}
+			#endif
+
+			virtual bool do_handler_reconfig(void) {
+				present_s& prsnt = present<hall_t>();
+				const config_s& conf = config<hall_t>();
+				prsnt.counter = {};
+				prsnt.position = conf.offset.position;
+				prsnt.delta_acc = speed_t(0);
+
+				return true;
+			}
+		public:
+			hall_t(const config_s& _config, present_s& _present)
+				: handler(_config.sb, _present.sb) {}
+			const angle_t& delta_ref(void) { return  present<hall_t>().native.delta; }
+			speed_t& delta_acc_ref(void) { return  present<hall_t>().delta_acc; }
+			const position_t& position_ref(void) { return  present<hall_t>().position; }
+		};
+
 	}
 }
 #endif

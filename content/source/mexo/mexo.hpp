@@ -580,15 +580,15 @@ namespace mexo {
 		}
 	};
 
-	class prioritet_subsystem : public prioritet_task, public subsystem {
+	class realtime_subsystem : public prioritet_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
-		prioritet_subsystem(cstr  _name, node* _owner) : prioritet_task(_name, false, _owner) {};
-		prioritet_subsystem(cstr  _name, prioritet_subsystem* _prev) : prioritet_task(_name, false, _prev) {};
+		realtime_subsystem(cstr  _name, node* _owner) : prioritet_task(_name, false, _owner) {};
+		realtime_subsystem(cstr  _name, realtime_subsystem* _prev) : prioritet_task(_name, false, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::run(); };
-		prioritet_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
-		prioritet_subsystem(cstr  _name, bool _autostart, prioritet_subsystem* _prev) : prioritet_task(_name, _autostart, _prev) {};
+		realtime_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
+		realtime_subsystem(cstr  _name, bool _autostart, realtime_subsystem* _prev) : prioritet_task(_name, _autostart, _prev) {};
 	};
 
 	class backend_subsystem : public backend_task, public subsystem {

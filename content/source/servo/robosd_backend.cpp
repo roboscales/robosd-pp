@@ -592,7 +592,7 @@ namespace robo {
 									break;
 								}
 								case wait::begin:
-								if (*c == '"') {
+								if (*c == '"' || *c == '\'') {
 									wt = wait::end;
 									break;
 								}
@@ -600,7 +600,7 @@ namespace robo {
 									ROBO_LBREAK_F("error load key from array  for  router '%s'", display_alias())
 								}
 								case wait::end:
-									if (*c == '"') {
+									if (*c == '"' || *c == '\'') {
 										int bus_id = robo::hash(vs+1, c - 1, 0);
 										ROBO_LBREAKN_F(find<bus>(bus_id) != nullptr, "bus is't found by string '%s' for  router '%s'", vs, display_alias());
 										int tmp[4];
