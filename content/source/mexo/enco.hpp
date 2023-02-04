@@ -47,8 +47,6 @@ namespace mexo {
 				doutput_t delta_acc;
 			};
 		protected:
-			virtual void do_handler_adjust(void) {
-			}
 
 			void execute(void) {				
 				present_s& prsnt = present<abs_machine>();
@@ -358,7 +356,7 @@ namespace mexo {
 				on();
 				return true;
 			}
-			virtual void do_handler_adjust(void) {
+			void do_handler_adjust(void) {
 				handler::present<rotator_t>().fb.output.rotate(q::scale_l(A::input));
 			}
 		public:
@@ -444,8 +442,6 @@ namespace mexo {
 			};
 			position_t offset_position_prev_;
 		protected:
-			virtual void do_handler_adjust(void) {}
-
 			void execute(void) {
 				present_s& prsnt = present<hall_t>();
 				const config_s& conf = config<hall_t>();

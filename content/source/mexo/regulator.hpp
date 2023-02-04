@@ -249,7 +249,7 @@ namespace mexo {
 				present.cb.satstate.actual = A::master_satstate;
 			}
 		}
-		virtual void do_handler_adjust(void) {
+		void do_handler_adjust(void) {
 			r_hi_.do_handler_adjust();
 			r_low_.do_handler_adjust();
 			handler::present<limmiter>().control_des = 0;

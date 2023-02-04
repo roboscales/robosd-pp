@@ -565,9 +565,6 @@ namespace mexo {
 			A::update_satstate();
 		}
 		
-		virtual void do_handler_adjust(void) {
-			//
-		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
 		virtual void do_handler_create_vars(var::record::list & _vars, int _master_key) {
 			A::do_handler_create_vars(_vars,_master_key);
@@ -677,7 +674,7 @@ namespace mexo {
 			A::update_satstate();
 		}
 
-		virtual void do_handler_adjust(void) {
+		void do_handler_adjust(void) {
 			//const config_s& config = config_cast<config_s>();
 			present_s& present = handler::present<ramp>();
 			*A::output = 0;
@@ -737,7 +734,9 @@ namespace mexo {
 			gain = (1 << config.shift) - 1;
 			return true;
 		}
-		virtual void do_handler_adjust(void) { handler::present<fast_filter>().fb.output = 0; }
+		void do_handler_adjust(void) {
+			handler::present<fast_filter>().fb.output = 0; 
+		}
 
 	public:
 		fast_filter(const config_s& _config
@@ -813,7 +812,7 @@ namespace mexo {
 			return true;
 		};
 		
-		virtual void do_handler_adjust(void) {
+		void do_handler_adjust(void) {
 			//const config_s& config = template config_cast<config_s>();
 			present_s& present = handler::present<filter>();
 			present.fb.output = 0;

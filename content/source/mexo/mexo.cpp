@@ -34,12 +34,12 @@ namespace mexo {
 		system::start(_period_us);
 		slots_ref_.start.execute();
 	}
-	#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
-	void machine::priority_loop_(void) {
+	#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
+	void machine::realtime_loop_(void) {
 		tp.on(tp_verb::loop);
 		tp.on(tp_verb::priority);
 		fall__;
-		slots_ref_.priority.execute();
+		slots_ref_.realtime.execute();
 		tp.off(tp_verb::priority);
 	}
 	#endif
@@ -47,10 +47,10 @@ namespace mexo {
 	void machine::backend_loop_(void) {
 		tp.on(tp_verb::backend);
 		fall__;
-		system::backend_loop();
-		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE != 1
-		slots_ref_.priority.execute();
+		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE != 1
+		slots_ref_.realtime.execute();
 		#endif
+		system::backend_loop();
 		slots_ref_.periodic[slot_index_].execute();
 		slots_ref_.control.execute();
 		slots_ref_.backend.execute();
@@ -88,8 +88,8 @@ namespace mexo {
 		case slot::kind::start:
 		return start;
 		
-		case slot::kind::priority:
-		return priority;
+		case slot::kind::realtime:
+		return realtime;
 		
 		case slot::kind::control:
 		return control;
@@ -111,7 +111,7 @@ namespace mexo {
 	void  machine::slots::free(void) {
 		begin.free();
 		start.free();
-		priority.free();
+		realtime.free();
 		control.free();
 		backend.free();
 		frontend.free();
@@ -641,8 +641,8 @@ void mexo_start( void ) {
 void mexo_start_ps(unsigned int _period_us) {
 	mexo::machine::start(_period_us);
 }
-void mexo_priority_loop(void) {
-	mexo::machine::priority_loop();
+void mexo_realtime_loop(void) {
+	mexo::machine::realtime_loop();
 }
 void mexo_backend_loop(void) {
 	mexo::machine::backend_loop();

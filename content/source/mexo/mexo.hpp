@@ -13,8 +13,8 @@
 #define ROBO_APP_MEXO_SLOT_COUNT 16
 #endif
 
-#ifndef ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE
-#define ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE 1
+#ifndef ROBO_APP_MEXO_REALTIME_SLOT_ENABLE
+#define ROBO_APP_MEXO_REALTIME_SLOT_ENABLE 1
 #endif
 
 
@@ -57,7 +57,7 @@ namespace mexo {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, priority, control, backend, frontend, raise_fault };
+			enum class kind { begin = slot_count, start, realtime, control, backend, frontend, raise_fault };
 			class delegat : public ::robo::delegat::ref<void> {
 			public:
 				typedef list::unsorted<delegat> list;
@@ -160,7 +160,7 @@ namespace mexo {
 			friend class machine;
 			slot begin;
 			slot start;
-			slot priority;
+			slot realtime;
 			slot control;
 			slot backend;
 			slot frontend;
@@ -178,8 +178,8 @@ namespace mexo {
 		static slots& slots_(void);
 		void begin_(void);
 		void start_(time_us_t _period_us);
-		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
-		void priority_loop_(void);
+		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
+		void realtime_loop_(void);
 		#endif
 		void backend_loop_(void);
 		void frontend_loop_(void);
@@ -193,8 +193,8 @@ namespace mexo {
 		#ifdef ROBO_APP_MEXO_SAMPLE_US
 		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
 		#endif		
-		#if ROBO_APP_MEXO_PRIORITY_SLOT_ENABLE == 1
-		static void priority_loop(void) { instance_.priority_loop_(); }
+		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
+		static void realtime_loop(void) { instance_.realtime_loop_(); }
 		#endif
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
@@ -390,18 +390,18 @@ namespace mexo {
 		void stop(void);
 	};
 
-	class prioritet_task : public task {
+	class realtime_task : public task {
 		machine::slot::delegat::ref ref_;
 	protected:
 		virtual void do_start(delegat* _prev = nullptr) {
-			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::priority, _prev);
+			guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::realtime, _prev);
 		};
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
-		prioritet_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
-		prioritet_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
+		realtime_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
+		realtime_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
-		prioritet_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
-		prioritet_task(cstr  _name, bool _autostart, prioritet_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
+		realtime_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
+		realtime_task(cstr  _name, bool _autostart, realtime_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
 
 
@@ -411,10 +411,10 @@ namespace mexo {
 		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::control, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
 		control_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
-		control_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
+		control_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		control_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
-		control_task(cstr  _name, bool _autostart, prioritet_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
+		control_task(cstr  _name, bool _autostart, realtime_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
 
 	class backend_task : public task {
@@ -423,7 +423,7 @@ namespace mexo {
 		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::backend, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
 		backend_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
-		backend_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
+		backend_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		backend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 		backend_task(cstr  _name, bool _autostart, backend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
@@ -435,7 +435,7 @@ namespace mexo {
 		virtual void do_start(delegat* _prev = nullptr) { guard__; machine::slot::delegat::attach(ref_, machine::slot::kind::frontend, _prev); };
 		virtual void do_stop(void) { guard__; ref_.dettach(); };
 		frontend_task(cstr  _name, node* _owner ) : task(_name, false, _owner), ref_(*this) {};
-		frontend_task(cstr  _name, prioritet_task* _prev) : task(_name, false, _prev), ref_(*this) {};
+		frontend_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
 		frontend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 		frontend_task(cstr  _name, bool _autostart, frontend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
@@ -573,22 +573,22 @@ namespace mexo {
 		friend class subsystem_handler;
 		virtual node* owned_node(void) = 0;
 		subsystem_handler::list handlers;
-		void run(void) {
+		void execute(void) {
 			for (subsystem_handler::ref* r = handlers.first(); r; r = r->next()) {
 				(r->owner())();
 			}
 		}
 	};
 
-	class realtime_subsystem : public prioritet_task, public subsystem {
+	class realtime_subsystem : public realtime_task, public subsystem {
 	protected:
 		virtual node* owned_node(void) { return this; };
-		realtime_subsystem(cstr  _name, node* _owner) : prioritet_task(_name, false, _owner) {};
-		realtime_subsystem(cstr  _name, realtime_subsystem* _prev) : prioritet_task(_name, false, _prev) {};
+		realtime_subsystem(cstr  _name, node* _owner) : realtime_task(_name, false, _owner) {};
+		realtime_subsystem(cstr  _name, realtime_subsystem* _prev) : realtime_task(_name, false, _prev) {};
 	public:
-		virtual void operator ()(void) { subsystem::run(); };
-		realtime_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : prioritet_task(_name, _autostart, _owner) {};
-		realtime_subsystem(cstr  _name, bool _autostart, realtime_subsystem* _prev) : prioritet_task(_name, _autostart, _prev) {};
+		virtual void operator ()(void) { subsystem::execute(); };
+		realtime_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : realtime_task(_name, _autostart, _owner) {};
+		realtime_subsystem(cstr  _name, bool _autostart, realtime_subsystem* _prev) : realtime_task(_name, _autostart, _prev) {};
 	};
 
 	class backend_subsystem : public backend_task, public subsystem {
@@ -597,7 +597,7 @@ namespace mexo {
 		backend_subsystem(cstr  _name, node* _owner) : backend_task(_name, false, _owner) {};
 		backend_subsystem(cstr  _name, backend_subsystem* _prev) : backend_task(_name, false, _prev) {};
 	public:
-		virtual void operator ()(void) { subsystem::run(); };
+		virtual void operator ()(void) { subsystem::execute(); };
 		backend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : backend_task(_name, _autostart, _owner) {};
 		backend_subsystem(cstr  _name, bool _autostart, backend_subsystem* _prev) : backend_task(_name, _autostart, _prev) {};
 	};
@@ -608,7 +608,7 @@ namespace mexo {
 		control_subsystem(cstr  _name, node* _owner) : control_task(_name, false, _owner) {};
 		control_subsystem(cstr  _name, control_subsystem* _prev) : control_task(_name, false, _prev) {};
 	public:
-		virtual void operator ()(void) { subsystem::run(); };
+		virtual void operator ()(void) { subsystem::execute(); };
 		control_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : control_task(_name, _autostart, _owner) {};
 		control_subsystem(cstr  _name, bool _autostart, control_subsystem* _prev) : control_task(_name, _autostart, _prev) {};
 	};
@@ -619,7 +619,7 @@ namespace mexo {
 		frontend_subsystem(cstr  _name, node* _owner) : frontend_task(_name, false, _owner) {};
 		frontend_subsystem(cstr  _name, frontend_subsystem* _prev) : frontend_task(_name, false, _prev) {};
 	public:
-		virtual void operator ()(void) { subsystem::run(); };
+		virtual void operator ()(void) { subsystem::execute(); };
 		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : frontend_task(_name, _autostart, _owner) {};
 		frontend_subsystem(cstr  _name, bool _autostart, frontend_subsystem* _prev) : frontend_task(_name, _autostart, _prev) {};
 	};
@@ -630,7 +630,7 @@ namespace mexo {
 		periodic_subsystem(cstr  _name, node* _owner = nullptr) : periodic_task(_name, _owner) {};
 		periodic_subsystem(cstr  _name, periodic_subsystem * _prev) : periodic_task(_name, _prev) {};
 	public:
-		virtual void operator ()(void) { subsystem::run(); };
+		virtual void operator ()(void) { subsystem::execute(); };
 
 		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, node* _owner = nullptr) : periodic_task(_name, _autostart, _index, _owner) {};
 		periodic_subsystem(cstr  _name, bool _autostart, std::initializer_list<int> _index, periodic_subsystem* _prev) : periodic_task(_name, _autostart, _index, _prev) {};
@@ -652,6 +652,8 @@ namespace mexo {
 		virtual bool do_reconfig(void) {
 			ROBO_LBREAKN(T::do_reconfig());
 			ROBO_LBREAKN(R::do_handler_reconfig());
+			R::do_handler_adjust();
+
 			return true;
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
@@ -686,10 +688,11 @@ namespace mexo {
 		const config_s& config_;
 		present_s& present_;
 	protected:
-		virtual bool do_handler_reconfig(void) { return true; };
-		virtual void do_handler_adjust(void) {};
+		//заглушки для необязатедльных функций
+		bool do_handler_reconfig(void) { return true; };
+		void do_handler_adjust(void) {};
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
-		virtual void do_handler_create_vars(var::record::list&/* _vars*/, int /*_master_key*/) {};
+		void do_handler_create_vars(var::record::list&/* _vars*/, int /*_master_key*/) {};
 		#endif
 	public:
 		template <typename P>  const  typename P::config_s& config(void) { return reinterpret_cast <const  typename P::config_s&>(config_); }
@@ -814,7 +817,6 @@ namespace mexo {
 		virtual bool do_handler_reconfig(void) {
 			ROBO_LBREAKN(handler::do_handler_reconfig());
 			ROBO_LBREAKN(range.low <= range.hi);
-			do_handler_adjust();
 			return true;
 		}
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
@@ -1034,13 +1036,9 @@ namespace mexo {
 		}
 
 	protected:
-		virtual bool do_handler_reconfig(void) {
-			ROBO_LBREAKN(handler::do_handler_reconfig());
-			do_handler_adjust();
-			return true;
-		}
+
 		#if ROBO_APP_MEXO_VAR_ENABLED == 1
-		virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
+		void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 			if (var::machine::actual_mode() == var::machine::mode::full) {
 				var::record::create(var::const_uint8, present<finall_controller_handler>().actual_satstate, RT("ss"), _master_key, _vars);
 			}

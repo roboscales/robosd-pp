@@ -49,7 +49,6 @@ namespace mexo {
 				reset_();
 			}
 		protected:
-			virtual void do_handler_adjust(void) {}
 
 			void execute(void) {
 				present_s& prsnt = present<machine>();
@@ -187,7 +186,6 @@ namespace mexo {
 				}
 				D::query();
 			}
-			virtual void do_handler_adjust(void) {}
 
 			virtual bool do_handler_reconfig(void) {
 				reset();
@@ -229,7 +227,6 @@ namespace mexo {
 				present.current = present.adc.values[0] - present.adc.values[1];
 				present.delta = present.current - tmp;
 			}
-			virtual void do_handler_adjust(void) {}
 		};
 
 		template < typename q, typename D  > class current_abc_sence : public machine<q, D> {
@@ -292,7 +289,6 @@ namespace mexo {
 				present.delta.lateral = present.current.lateral - tmp.lateral;
 
 			}
-			virtual void do_handler_adjust(void) {}
 			#if ROBO_APP_MEXO_VAR_ENABLED == 1
 			virtual void do_handler_create_vars(var::record::list& _vars, int _master_key) {
 				BB::do_handler_create_vars(_vars, _master_key);
