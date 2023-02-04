@@ -52,7 +52,7 @@ namespace mexo {
 		#endif
 		system::backend_loop();
 		slots_ref_.periodic[slot_index_].execute();
-		slots_ref_.control.execute();
+		//slots_ref_.control.execute();
 		slots_ref_.backend.execute();
 		slot_index_++;
 		if (slot_index_ == slot_count) {
@@ -91,8 +91,8 @@ namespace mexo {
 		case slot::kind::realtime:
 		return realtime;
 		
-		case slot::kind::control:
-		return control;
+		//case slot::kind::control:
+		//return control;
 
 		case slot::kind::backend:
 		return backend;
@@ -112,7 +112,7 @@ namespace mexo {
 		begin.free();
 		start.free();
 		realtime.free();
-		control.free();
+		//control.free();
 		backend.free();
 		frontend.free();
 		raise_fault.free();
@@ -399,6 +399,13 @@ namespace mexo {
 		}
 		else {
 			subsystem_ = nullptr;
+		}
+	}
+
+	void subsystem_handler::move_to_back(void) {
+		if (subsystem_->handlers.count() > 1) {
+			ref_.dettach();
+			ref_.attach_after(subsystem_->handlers ,&(subsystem_->handlers.last()->owner()));
 		}
 	}
 	subsystem_handler::subsystem_handler(cstr  _name, subsystem_handler* _prev)

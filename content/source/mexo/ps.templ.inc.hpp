@@ -12,46 +12,17 @@ namespace PS_TEMPLATE_NAME {
 		typedef front::feedback_t<types> feedback_s;
 		typedef front::mode mode;
 
-		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-		typedef ::mexo::controller_task_t <
-			::mexo::ramp<types>
-			, ::mexo::control_task
-		> voltage_regulator_b;
-		voltage_regulator_b voltage_regulator;
-		#endif
-
-		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
-		typedef ::mexo::controller_task_t <
-			::mexo::quazzy_adapt<types>
-			, ::mexo::control_task
-			, const typename types::signal_t&
-			, const typename types::signal_t&
-		> current_regulator_b;
-		current_regulator_b current_regulator;
-		#endif
-
-		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
-		typedef ::mexo::controller_task_t <
-			::mexo::limmiter<types>
-			, ::mexo::control_task
-			, const typename types::signal_t&
-			, const typename types::signal_t&
-			, const ::mexo::range_s<typename types::signal_t>&
-		> current_limmiter_b;
-		current_limmiter_b current_limmiter;
-		#endif
-
 		#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_DIFF_ENABLED==1
 		typedef ::mexo::function_task_t <
 			::mexo::filter<types>
-			, ::mexo::realtime_subsystem
+			, ::mexo::backend_task
 		>  filter_b;
 		#endif 
 
 		#if POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
 		typedef ::mexo::function_block_t <
 			::mexo::fast_filter<types>
-			, ::mexo::realtime_subsystem
+			, ::mexo::backend_task
 		>fast_filter_b;
 		#endif 
 
@@ -66,6 +37,37 @@ namespace PS_TEMPLATE_NAME {
 		#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED == 1
 		filter_b current_diff_filter;
 		#endif 
+
+		#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
+		typedef ::mexo::controller_task_t <
+			::mexo::ramp<types>
+			, ::mexo::backend_task
+		> voltage_regulator_b;
+		voltage_regulator_b voltage_regulator;
+		#endif
+
+		#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
+		typedef ::mexo::controller_task_t <
+			::mexo::quazzy_adapt<types>
+			, ::mexo::backend_task
+			, const typename types::signal_t&
+			, const typename types::signal_t&
+		> current_regulator_b;
+		current_regulator_b current_regulator;
+		#endif
+
+		#if POWER_SUPPLY_CURRENT_LIMMITER_ENABLED == 1
+		typedef ::mexo::controller_task_t <
+			::mexo::limmiter<types>
+			, ::mexo::backend_task
+			, const typename types::signal_t&
+			, const typename types::signal_t&
+			, const ::mexo::range_s<typename types::signal_t>&
+		> current_limmiter_b;
+		current_limmiter_b current_limmiter;
+		#endif
+
+		
 
 
 		struct config_s {
@@ -395,10 +397,6 @@ protected:
 		dev_t(hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, feedback_s& _feedback, config_s& _config, present_s& _present)
 			: ::mexo::ps::dev(_name, _action.dev, _feedback.dev, _present.dev, _config.dev, _hardwaresys.power_supply_block )
 			, hardwaresys(_hardwaresys)
-			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
-			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())
-			, voltage_mode(mode::voltage, *this) 
-			#endif
 
 			#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1
 			, current_filter(RT("c_f"), &_hardwaresys.current_sence_block, _config.current_filter, _present.current_filter, hardwaresys.current_sence_block.current_ref())
@@ -409,6 +407,12 @@ protected:
 			#if POWER_SUPPLY_CURRENT_DIFF_FILTER_ENABLED==1
 			, current_diff_filter(RT("c_dif_f"), &_hardwaresys.current_sence_block, _config.current_diff_filter, _present.current_diff_filter, hardwaresys.current_sence_block.current_delta_ref())
 			#endif
+
+			#if POWER_SUPPLY_VOLTAGE_REGULATOR_ENABLED == 1
+			, voltage_regulator(RT("v_re"), this, _config.voltage_regulator, _present.voltage_regulator, hardwaresys.power_supply_block.pwm_voltage_limits(), hardwaresys.power_supply_block.actual_satstate())
+			, voltage_mode(mode::voltage, *this) 
+			#endif
+
 			#if POWER_SUPPLY_CURRENT_REGULATOR_ENABLED == 1
 			, current_regulator(
 				RT("c_re")
@@ -439,8 +443,6 @@ protected:
 				#include "mexo/ps.templ.settings.inc.hpp"
 				;
 		}
-	
-
 	};
 }
 

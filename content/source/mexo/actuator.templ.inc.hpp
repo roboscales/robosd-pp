@@ -14,6 +14,14 @@ public:
 	typedef front::profil_t<types> profil_s;
 	#endif
 	typedef front::mode mode;
+	
+	#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED==1
+	typedef ::mexo::function_block_t <
+		::mexo::filter<types, true>
+		, ::mexo::periodic_subsystem
+	>  speed_filter_b;
+	speed_filter_b speed_filter;
+	#endif 
 
 	#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 || \
@@ -31,14 +39,6 @@ public:
 	#if ACTUATOR_SPEED_OV_VOLTAGE_CL_MODE_ENABLED == 1 
 	motion_b motion_ov_voltage_cl;
 	#endif
-		
-	#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED==1
-	typedef ::mexo::function_block_t <
-		::mexo::filter<types, true>
-		, ::mexo::periodic_subsystem
-	>  speed_filter_b;
-	speed_filter_b speed_filter;
-	#endif 
 
 	#if ACTUATOR_POSITION_OV_CURRENT_MODE_ENABLED == 1 || \
 		ACTUATOR_POSITION_OV_VOLTAGE_CL_MODE_ENABLED == 1
@@ -309,6 +309,9 @@ public:
 	dev_t (hardwaresys_t& _hardwaresys, cstr _name, action_s& _action, feedback_s& _feedback, config_s& _config, present_s& _present, int _slot_index)
 		: ps_t(_hardwaresys, _name, _action.ps, _feedback.ps, _config.ps, _present.ps )
 		, slot_index_(_slot_index)
+		#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED ==1
+		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem, _config.speed_filter, _present.speed_filter, _hardwaresys.motor_enco_block.delta_acc_ref())
+		#endif
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		, motion_ov_current(
 			RT("sp_c_r")
@@ -373,9 +376,6 @@ public:
 			, _present.speed_force
 		)
 		#endif 		
-		#if ACTUATOR_MOTOR_SPEED_FILTER_ENABLED ==1
-		, speed_filter(RT("sp_f"), &_hardwaresys.periodic_subsystem, _config.speed_filter, _present.speed_filter, _hardwaresys.motor_enco_block.delta_acc_ref())
-		#endif
 		#if ACTUATOR_SPEED_OV_CURRENT_MODE_ENABLED == 1
 		, speed_ov_current_mode(mode::speed_ov_current, *this)
 		#endif

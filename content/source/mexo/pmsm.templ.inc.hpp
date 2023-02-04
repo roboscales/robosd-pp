@@ -16,28 +16,17 @@ namespace PMSM_TEMPLATE_NAME {
 
 	private:
 		friend class synchro_voltage_mode_t;
-
-		#if LAT_CURRENT_REGULATOR_ENABLED == 1
-		typedef ::mexo::controller_task_t <
-			::mexo::quazzy_adapt<types>
-			, ::mexo::backend_subsystem
-			, const typename types::signal_t&
-			, const typename types::signal_t&
-		> lat_current_regulator_b;
-		lat_current_regulator_b lat_current_regulator;
-		#endif
-
 		#if LAT_CURRENT_FILTER_ENABLED==1 || LAT_CURRENT_DIFF_ENABLED==1
 		typedef ::mexo::function_task_t <
 			::mexo::filter<types>
-			, ::mexo::realtime_subsystem
+			, ::mexo::backend_subsystem
 		>  lat_filter_b;
 		#endif 
 
 		#if LAT_CURRENT_FAST_FILTER_ENABLED==1
 		typedef ::mexo::function_block_t <
 			::mexo::fast_filter<types>
-			, ::mexo::realtime_subsystem
+			, ::mexo::backend_subsystem
 		>lat_fast_filter_b;
 		#endif 
 
@@ -52,6 +41,17 @@ namespace PMSM_TEMPLATE_NAME {
 		#if LAT_CURRENT_DIFF_FILTER_ENABLED == 1
 		lat_filter_b lat_current_diff_filter;
 		#endif 
+
+		#if LAT_CURRENT_REGULATOR_ENABLED == 1
+		typedef ::mexo::controller_task_t <
+			::mexo::quazzy_adapt<types>
+			, ::mexo::backend_subsystem
+			, const typename types::signal_t&
+			, const typename types::signal_t&
+		> lat_current_regulator_b;
+		lat_current_regulator_b lat_current_regulator;
+		#endif
+
 	public:
 		struct config_s {
 			typename actuator_t::config_s actuator;
@@ -376,7 +376,19 @@ namespace PMSM_TEMPLATE_NAME {
 
 		dev_t (hardwaresys_t &  _hardwaresys, cstr _name, action_s & _action, feedback_s& _feedback, config_s& _config, present_s& _present, int _slot_index)
 			: actuator_t(_hardwaresys, _name, _action.actuator, _feedback.actuator, _config.actuator, _present.actuator, _slot_index)
+
+			#if LAT_CURRENT_FILTER_ENABLED==1
+			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.backend_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
+			#endif
+			#if LAT_CURRENT_FAST_FILTER_ENABLED==1
+			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.backend_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
+			#endif
+			#if LAT_CURRENT_DIFF_FILTER_ENABLED==1
+			, lat_current_diff_filter(RT("lc_dif_f"), &actuator_t::hardwaresys.backend_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, actuator_t::hardwaresys.current_sence_block.lat_current_delta_ref())
+			#endif
+
 			, inverter_controller(::mexo::machine::slot::kind::backend ,*this, &dev_t::inverter_controller_run)
+
 			#if PMSM_SYNC_VOLTAGE_MODE_ENABLED ==1
 			, synchro_voltage_mode_(mode::sync_voltage,*this)
 			#endif
@@ -385,15 +397,7 @@ namespace PMSM_TEMPLATE_NAME {
 			, synchro_current_mode_(mode::sync_current, *this)
 			#endif
 			#endif
-			#if LAT_CURRENT_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
-			#endif
-			#if LAT_CURRENT_FAST_FILTER_ENABLED==1
-			, lat_current_filter(RT("lc_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.filter, _present.lat_current.filter, actuator_t::hardwaresys.current_sence_block.lat_current_ref())
-			#endif
-			#if LAT_CURRENT_DIFF_FILTER_ENABLED==1
-			, lat_current_diff_filter(RT("lc_dif_f"), &actuator_t::hardwaresys.realtime_subsystem, _config.lat_current.diff_filter, _present.lat_current.diff_filter, actuator_t::hardwaresys.current_sence_block.lat_current_delta_ref())
-			#endif
+
 			#if LAT_CURRENT_REGULATOR_ENABLED == 1
 			, lat_current_regulator(
 				RT("lc_re")
