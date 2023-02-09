@@ -604,6 +604,7 @@ namespace robo {
 		}
 	}
 	void  quest::happyend_(void) {
+		owned_confirm_();
 		quest* own = owner_;
 		release();
 		if (own) {
@@ -620,6 +621,24 @@ namespace robo {
 			}
 		}
 	}
+
+	void quest::owned_refuse_(void) {
+		ref* r = owned_.last();
+		while (r) {
+			quest* tmp = &(r->owner());
+			r = r->prev();
+			tmp->status_ = status::refuse;
+		}
+	}
+	void quest::owned_confirm_(void) {
+		ref* r = owned_.last();
+		while (r) {
+			quest* tmp = &(r->owner());
+			r = r->prev();
+			tmp->status_ = status::confirm;
+		}
+	}
+
 	void  quest::operator ()(void) {
 		switch (status_) {
 		case status::run:
@@ -643,11 +662,20 @@ namespace robo {
 			status_ = status::discarde;
 			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
 			if (answer_) {
-				if ((*answer_)(result::success) == reaction::terminate ) {
+				switch  ( (*answer_)(result::success) ) 
+				{
+				case reaction::terminate:
 					terminate();
 					return;
+				case reaction::normal:
+					break;
 				}
 			}
+			else {
+				owned_confirm_();
+			}
+
+
 			break;
 		case status::refuse:
 			if (use_ == 0) {
@@ -660,10 +688,17 @@ namespace robo {
 			status_ = status::discarde;
 			ROBO_VBREAKN(system::env::is_frontend() == isfrontend_);
 			if (answer_) {
-				if ((*answer_)(result::refuse) == reaction::terminate) {
-					terminate();
-					return;
+				switch ((*answer_)(result::refuse)) {
+				case reaction::terminate:
+				terminate();
+				return;
+				case reaction::normal:
+				break;
 				}
+			}
+			else {
+				terminate();
+				return;
 			}
 			break;
 		}
@@ -694,16 +729,10 @@ namespace robo {
 	}
 	void quest::refuse(void) {
 		post_answer_(status::refuse);
-		ref* r = owned_.last();
-		while (r) {
-			quest* tmp = &(r->owner());
-			r = r->prev();
-			//tmp->status_ = status::run;
-			//tmp->refuse();
-			tmp->status_ = status::refuse;
-		}
 	}
 	void quest::terminate(void) {
+		owned_refuse_();
+
 		quest* tmp = this;
 		while (tmp->owner_ != nullptr) {
 			tmp = tmp->owner_;

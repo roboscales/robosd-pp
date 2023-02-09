@@ -578,7 +578,7 @@ namespace robo {
 	class ROBO_EXPORT quest :  protected signal::performer {
 	public:
 		enum class result { refuse, success, cancel, broke };
-		enum class reaction { normal, terminate };
+		enum class reaction { normal, terminate};
 		using request_fabric = ::robo::delegat::autonum_fabric<void, quest*>;
 		using answer_fabric = ::robo::delegat::autonum_fabric< reaction, result >;
 
@@ -589,6 +589,9 @@ namespace robo {
 		typedef list::ref ref;
 		int use_ = 0;
 		void  happyend_(void);
+		void  owned_refuse_(void);
+		void  owned_confirm_(void);
+
 		void release(void) {
 			ref* r = childs_.last();
 			while (r) {

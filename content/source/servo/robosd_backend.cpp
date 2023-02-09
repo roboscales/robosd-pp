@@ -333,6 +333,7 @@ namespace robo {
 			return statuses::unknown;
 			case state_s::locals::disabled:
 			return statuses::disabled;
+			case state_s::locals::discovery:
 			case state_s::locals::configure:
 			return statuses::busy;
 			case state_s::locals::ready:
@@ -488,7 +489,9 @@ namespace robo {
 				if (now - request_begin_us_ >= timeout_us_) {
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", display_alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
+						if (broken_obj->feedback<devagent>().state.local != common::devagent::state_s::locals::discovery) {
+							ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", display_alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
+						}
 					}
 					else {
 						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", display_alias(), now - request_begin_us_, now, request_begin_us_);
@@ -823,7 +826,9 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
+				if (own_agent().feedback<devagent>().state.local != state_s::locals::discovery) {
+					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
+				}
 			}
 		};
 
@@ -889,7 +894,7 @@ namespace robo {
 			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
-				feedback_.state.local = state_s::locals::configure;
+				feedback_.state.local = state_s::locals::discovery;
 				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
 				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			}
@@ -901,7 +906,7 @@ namespace robo {
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			if (feedback_.state.local == state_s::locals::configure) {
+			if (feedback_.state.local == state_s::locals::discovery) {
 				bus* b = find<bus>(bus_alias_);
 				bus_ref_.set_key(dev_id_.value);
 				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);

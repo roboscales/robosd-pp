@@ -26,7 +26,7 @@ namespace MODULE_NAME {
 				mexo::backend::devagent(_name, _boardagent, goal_, feedback_) {}
 			virtual bool do_load(void) {
 				ROBO_LBREAKN(mexo::backend::devagent::do_load());
-				if (feedback_.agent.state.local == state_s::locals::configure) {
+				if (feedback_.agent.state.local == state_s::locals::discovery) {
 					quest_configure(nullptr);					
 					::robo::quest::post();
 				}

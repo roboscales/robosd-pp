@@ -52,6 +52,7 @@ namespace robo {
 			virtual void do_finish(void) = 0;
 			agent(void) :ref_(*this,-1){}
 		public:
+			virtual void perform_command(int /*_cmd*/) {};
 			double sample_time;
 			static agent* find(int _id);
 			static agent* find(cstr __name);
