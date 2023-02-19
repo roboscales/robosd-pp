@@ -4,6 +4,7 @@
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_weak.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_string.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />

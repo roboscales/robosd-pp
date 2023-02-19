@@ -328,7 +328,7 @@ namespace robo{
 								itf::prints("\b \b");
 							itf::prints(line);
 						}
-						cur_index_ = std::strlen(line);
+						cur_index_ = (int)std::strlen(line);
 						cur_buf_index_ = prevline;
 					}
 				}
@@ -346,7 +346,7 @@ namespace robo{
 								itf::prints("\b \b");
 							itf::prints(line);
 						}
-						cur_index_ = std::strlen(line);
+						cur_index_ = (int)std::strlen(line);
 						cur_buf_index_ = nextline;
 					}
 				}
@@ -366,7 +366,7 @@ namespace robo{
 					start_of_line_();
 					itf::prints(line);
 				}
-				cur_index_ = std::strlen(line);
+				cur_index_ = (int)std::strlen(line);
 				break;
 			default: // any input character 
 				if (cur_index_ < ROBOSD_TERMINAL_BUFFER_SIZE)
@@ -619,7 +619,7 @@ namespace robo{
 			int len = 0;
 			itf::prints("\n\r");
 			for ( command::ref * r = childs_.first(); r; r = r->next() ){
-				int _len = std::strlen(r->owner().name_);
+				int _len = (int)std::strlen(r->owner().name_);
 				if (len<_len)
 					len = _len;
 			}
@@ -628,7 +628,7 @@ namespace robo{
 				itf::prints(cm->name_);
 				if (cm->note_)
 				{
-					for (int i = std::strlen(cm->name_); i < len + 2; i++)
+					for (int i = (int)std::strlen(cm->name_); i < len + 2; i++)
 						itf::put(' ');
 					itf::prints(cm->note_);
 				}
@@ -724,7 +724,7 @@ namespace robo{
 							if (!matched_cmd)
 							{
 								matched_cmd = cm;
-								common_len = std::strlen(cm->name_);
+								common_len = (int)std::strlen(cm->name_);
 							}
 							else
 							{

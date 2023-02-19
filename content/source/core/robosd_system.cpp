@@ -102,14 +102,15 @@ namespace robo {
 namespace robo {
 	namespace sysclock {
 		time_us_t time_us = 0;
-		time_us_t time_ms = 0;
+		time_ms_t time_ms = 0;
 		time_us_t period_us = 0;
 		time_us_t us_acc = 0;
 		time_us_t last_time_us = 0;
 		bool terminated = true;;
 		void setup(time_us_t _period_us) {
 			period_us = _period_us;
-			time_us = time_ms = us_acc = last_time_us = 0;
+			time_us = us_acc = last_time_us = 0;
+			time_ms = 0;
 			terminated = false;
 		}
 		void tick(void) {

@@ -344,7 +344,7 @@ namespace robo {
 		0x41, 0x81, 0x80, 0x40
 	};
  
-	uint16_t crc16_modbus_by_table(uint8_t * _pdata, size_t _len)
+	uint16_t crc16_modbus_by_table(uint8_t * _pdata, size_t _len )
 	{
 		uint8_t ucCRCHi = 0xFF;
 		uint8_t ucCRCLo = 0xFF;
