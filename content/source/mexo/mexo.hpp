@@ -393,6 +393,7 @@ namespace mexo {
 		virtual void do_stop(void) = 0;
 		task(cstr  _name, bool _autostart, node* _owner = nullptr) :node(_name, _owner), autostart_(_autostart) {};
 		task(cstr  _name, bool _autostart, task* _prev) :node(_name, _prev?_prev->owner():nullptr ), autostart_(_autostart) {};
+		task() :node(RT(""), nullptr), autostart_(false) {};
 		virtual bool do_reconfig(void);
 	public:
 		void start(void);
@@ -409,6 +410,7 @@ namespace mexo {
 		realtime_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
 		realtime_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
+		realtime_task(void) : task(), ref_(*this) {};
 		realtime_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 		realtime_task(cstr  _name, bool _autostart, realtime_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
@@ -434,6 +436,7 @@ namespace mexo {
 		backend_task(cstr  _name, node* _owner) : task(_name, false, _owner), ref_(*this) {};
 		backend_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
+		backend_task(void) : task(), ref_(*this) {};
 		backend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 		backend_task(cstr  _name, bool _autostart, backend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
@@ -446,6 +449,7 @@ namespace mexo {
 		frontend_task(cstr  _name, node* _owner ) : task(_name, false, _owner), ref_(*this) {};
 		frontend_task(cstr  _name, realtime_task* _prev) : task(_name, false, _prev), ref_(*this) {};
 	public:
+		frontend_task(void) : task(), ref_(*this) {};
 		frontend_task(cstr  _name, bool _autostart, node* _owner = nullptr) : task(_name, _autostart, _owner), ref_(*this) {};
 		frontend_task(cstr  _name, bool _autostart, frontend_task* _prev) : task(_name, _autostart, _prev), ref_(*this) {};
 	};
@@ -630,6 +634,7 @@ namespace mexo {
 		frontend_subsystem(cstr  _name, frontend_subsystem* _prev) : frontend_task(_name, false, _prev) {};
 	public:
 		virtual void operator ()(void) { subsystem::execute(); };
+		frontend_subsystem(void) : frontend_task() {};
 		frontend_subsystem(cstr  _name, bool _autostart, node* _owner = nullptr) : frontend_task(_name, _autostart, _owner) {};
 		frontend_subsystem(cstr  _name, bool _autostart, frontend_subsystem* _prev) : frontend_task(_name, _autostart, _prev) {};
 	};
@@ -1188,8 +1193,8 @@ namespace mexo {
 			} ;
 			state state_ = state::stopped;
 			void start_(void) { command_ = command::start; };
-			bool run_(void);
 		protected:
+			bool run(void);
 			virtual void onPrepare(void) {}
 			virtual void onStartup(void) {}
 			virtual void onExecute(void) {}
@@ -1207,8 +1212,17 @@ namespace mexo {
 		protected:
 			process(void) {};
 			void stop(void) { command_ = command::stop; };
+			void restart(void) { if(command_ == command::stop && state_ == state::relax ) state_ = state::stopped; };
 			void terminate(void);
 			virtual ~process(void) {};
+		};
+		class independed : public process{
+			protected:
+				independed(){}
+			public:
+				bool run(void){
+					return process::run();
+				}
 		};
 	private:
 		process* selected_ = 0;
@@ -1221,48 +1235,44 @@ namespace mexo {
 		void run(void);
 		void terminate(void);
 	};	
+	
+	template< class H> class timer_t :  public H{
+	public:
+		using tm = ::robo::time_us_t;
+	private:
+		tm last_= tm(0);
+		tm period_ = tm(0);
+		bool once_;
+		bool active_;
+	protected:
+		virtual void operator ()(void){
+			::robo::time_us_t now = ::robo::system::time_us();
+			if(now - last_ > period_){
+				last_ = now;
+				H::operator () ();
+				if(once_){
+				 H::stop();
+				}
+			}
+		}
+	public:
+		timer_t(void)
+		{
+		}
+		void start(tm _period, bool _once = false){
+			period_ = _period;			
+			once_ = _once;
+			last_ = ::robo::system::time_us();
+			H::start();
+			active_ = true;
+		}
+		void stop(void ){
+			H::stop();
+			active_ = false;
+		}
+		bool active(void){ return active_; }
+	};
 
 }
 #endif
 
-/*
-		template< typename T> class embd_mode :public mode {
-		public:
-			typedef (typename T::* delegat) (void) ;
-		private:
-			T& dev_;
-			delegat do_applay_;
-			delegat do_start_;
-			delegat do_stop_;
-		protected:
-			virtual void applay_action(void) {
-				(dev_.*do_applay_)();
-			}
-
-			virtual void do_start(void) {
-				(dev_.*do_start_)();
-			}
-
-			virtual void do_stop(void) {
-				(dev_.*do_stop_)();
-			}
-
-		public:
-			embd_mode(
-				int _index
-				, cstr _name
-				, T& _owner
-				, delegat _do_applay
-				, delegat _do_start
-				, delegat _do_stop
-			) :
-				mode(
-					_index
-					, _name
-					, _owner
-				)
-				, do_applay_(_do_applay)
-				, do_start_(_do_start)
-				, do_stop_(_do_stop) {}
-		};
-		*/

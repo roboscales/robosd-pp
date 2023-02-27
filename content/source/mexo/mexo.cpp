@@ -200,7 +200,7 @@ namespace mexo {
 	}
 
 	node::node(cstr _name, node* _owner) : ref_(*this), map_ref_(*this, 0)
-		, name_(_name)
+		, name_( _name)
 		, owner_(_owner == nullptr ? &root() : _owner) {
 		int key;
 		if (_owner) {
@@ -210,7 +210,11 @@ namespace mexo {
 		else {
 			key = 0;
 		}
-		key = hash(name_, key);
+		if(name_ &&  name_[0]!=0){
+			key = hash(name_, key);
+		} else{			
+			key^=owner_->childs_.count();
+		}
 		map_ref_.set_key(key);
 		ROBO_APP_ASSERT(map_ref_.attach_to(map_()));
 		ref_.attach_to(owner_->childs_);
@@ -514,7 +518,7 @@ namespace mexo {
 		}
 	}
 	#endif
-	bool controller::process::run_(void) {
+	bool controller::process::run(void) {
 		if (command_ == command::start) {
 			switch (state_) {
 			case state::stopped:
@@ -536,6 +540,7 @@ namespace mexo {
 				break;
 			case state::execute:
 			if (doExecute() == result::success) {
+				onShutdown();
 				stop();
 			}
 			else
@@ -562,9 +567,8 @@ namespace mexo {
 				doIdle();
 			break;
 			case state::prepare:
-				state_ = state::prepare;
-			onPrepare();
-			break;
+				//onPrepare(); -- ? это зачем? onPrepare уже было!
+			//break;
 			case state::startup:
 			case state::execute :
 				state_ = state::shutdown;
@@ -617,7 +621,7 @@ namespace mexo {
 				return;
 			}
 		}
-		if (runned_->run_()) {
+		if (runned_->run()) {
 			runned_ = 0;
 		}
 	}

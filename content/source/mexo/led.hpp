@@ -71,6 +71,8 @@ namespace mexo {
 	};
 	template <typename D>  led<D> led<D>::instance_;
 	
+
+	
 	class  dummy_led {
 		public:
 			static void on(unsigned int _verb = 0) { }
