@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "core/robosd_delegat.hpp"
+#include "core/robosd_system.hpp"
 
 namespace robo{
     namespace net{        
@@ -22,8 +23,8 @@ namespace robo{
 			enum class result { refuse, success, panic };
 			private:
 			bool wd_enabled = false;
-			unsigned int wd_begin_ms_ = 0;
-			unsigned int wd_delay_ms_ = 0;
+			unsigned int wd_begin_us_ = 0;
+			unsigned int wd_delay_us_ = 0;
 			
 			enum class state { idle, send, receive, stopped, disable, panic};
 			typedef typename system::guard guard;
@@ -32,10 +33,11 @@ namespace robo{
 			state state_ = state::disable;
 			
 			void panic_(void){
+				refuse();
 				if( phys::panic() ){
 					state_ = state::panic;
 				} else {
-				state_ = state::idle;
+					state_ = state::idle;
 				}
 				reset_();
 			}
@@ -98,9 +100,9 @@ namespace robo{
 				incom_packet_ = _incom_packet;
 				if (state_ == state::idle){
 					state_ = state::send;
-					wd_begin_ms_ = system::time_ms();
+					wd_begin_us_ = system::time_us();
 					wd_enabled = true;
-					wd_delay_ms_ = phys::wd_us(outcom_packet_);
+					wd_delay_us_ = phys::wd_us(outcom_packet_);
 					phys::send(outcom_packet_);						
 				} else {
 					panic_();
@@ -116,9 +118,9 @@ namespace robo{
 					switch (state_){
 					case state::send:
 						if(incom_packet_ !=nullptr){
-							wd_begin_ms_ = system::time_ms();
+							wd_begin_us_ = system::time_us();
 							state_ = state::receive;
-							wd_delay_ms_ = phys::wd_us(incom_packet_);
+							wd_delay_us_ = phys::wd_us(incom_packet_);
 							phys::receive(incom_packet_);
 							return;
 						}
@@ -159,7 +161,7 @@ namespace robo{
 			
 			void poll(void){
 				if(wd_enabled){
-					if( system::time_ms() - wd_begin_ms_ > wd_delay_ms_ ){
+					if( system::time_us() - wd_begin_us_ > wd_delay_us_ ){
 						refuse();
 					}
 				}

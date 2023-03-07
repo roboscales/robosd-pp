@@ -1,10 +1,12 @@
 #ifndef mrobosd_modbus_rtu_hpp
 #define mrobosd_modbus_rtu_hpp
 #include <stdint.h>
+#include "core/robosd_delegat.hpp"
+#include <net/robosd_net_master.hpp>
 namespace robo{
 	namespace net{
 		namespace modbus_rtu{
-			enum{min_frame_length=5, max_reg_count = 126};
+			enum{min_frame_length=5, max_reg_count = 124, max_frame_length=max_reg_count*2+7};
 			struct commands{
 				enum {
 					read_regs = 0x03
@@ -20,7 +22,8 @@ namespace robo{
 					, crc = 0x03
 					, proto = 0x04
 					, post = 0x05
-					, count = 0x06
+					, unknown = 0x06
+					, count = 0x07
 				};
 				enum class proto{
 					success = 0x00
@@ -36,7 +39,7 @@ namespace robo{
 					, lost = 0x0B	//Slave устройства нет в сети или от него нет ответа.
 				};
 			};
-		
+			
 			/*
 			// D - класс адаптации к конкретному устройству
 			class D{
@@ -54,15 +57,25 @@ namespace robo{
 				//чтение _count регистров, начиная с _index
 				errors::proto phy_read(int _index, uint16_t * _data, uint8_t _count);
 			};*/
-
+			static inline void write_to(uint16_t _value, uint8_t * & buf){
+				*buf++ = (uint8_t)(_value>>8);
+				*buf++ = (uint8_t)(_value & 0xFF);
+			}
+			static inline uint16_t read_from(const uint8_t * & buf){
+				uint16_t res = (*buf++) << 8; 
+				res |= *buf++;
+				return res;
+			}
+			using  guard =  ::robo::system::guard;
 			template <typename D, typename T> class slave_t{
 			public:
 				// вызовется когда придут данные с интерфейса
 				static void on_receive(const uint8_t * _frame, uint16_t _length){
 					uint32_t txLen = 0;
 					/*Check frame length*/
-					if(_length < min_frame_length){
+					if(_length < min_frame_length || _length>max_frame_length){
 						T::error(errors::frame::length);
+						D::start_receive();
 						return;
 					}
 					/*Check frame address*/
@@ -81,16 +94,19 @@ namespace robo{
 							}
 						} else{
 							T::error(errors::frame::crc);
+							D::start_receive();
 							return;
 						}
-					}				
+					}else{
+						D::start_receive();
+					}						
 				}
 				static void answer(errors::proto _error, int _command){
 					enum {header=3, total=5, marker = 0x80};
 					uint8_t * answer = D::answer_frame_get();
 					uint8_t * ansfirst= answer;
 					*answer++  = T::address();
-					if( _error ==errors::proto::success){
+					if( _error == errors::proto::success){
 						*answer++ =  _command;
 					} else{
 						*answer++ =  _command | marker;
@@ -98,7 +114,8 @@ namespace robo{
 					*answer++ =  (uint8_t)_error;
 					uint16_t crc = T::crc(ansfirst, header);
 					*(uint16_t*)answer = crc;
-					D::post(total);
+					if( D::post(total) != errors::proto::success )
+ 						D::start_receive();
 				}
 				static void perform(errors::proto _error, int _command){	
 					if(_error != errors::proto::success){
@@ -114,12 +131,10 @@ namespace robo{
 					}
 
 					/*Get start address*/
-					uint16_t addr = (*_payload) << 8; _payload++;
-					addr |= *_payload; _payload++;
+					uint16_t addr = read_from(_payload);
 
 					/*Get number of registers to read*/
-					uint16_t regNum = (*_payload++) << 8; 
-					regNum |= *_payload++;
+					uint16_t regNum = read_from(_payload);
 
 					/*Check max regs to read*/
 					if(regNum > max_reg_count){
@@ -132,16 +147,20 @@ namespace robo{
 					*answer++ =  commands::read_regs;
 					/*Set number of bytes*/
 					uint16_t payload_len = regNum << 1;
-					//*(uint16_t *)answer = regNum; answer+=2;
 					*answer ++= payload_len; 
 					
 					/*Copy data from memory to frame*/
-					for(uint16_t i = 0; i < regNum; ++i, ++addr, answer+=2 )
+					for(uint16_t i = 0; i < regNum; ++i, ++addr )
 					{
-						auto res = T::read(addr, *(uint16_t*)answer);
-						if( res != errors::proto::success){
-							return res;
-						}					
+						uint16_t reg; 
+						{	
+							guard g__;
+							auto res = T::read(addr,reg);
+							if( res != errors::proto::success){
+								return res;
+							}
+						}						
+						write_to(reg,answer);
 					}
 					uint16_t crc_len= 3+ payload_len;
 					uint16_t crc = T::crc(ansfirst, crc_len);
@@ -190,12 +209,15 @@ namespace robo{
 					/*Set number of bytes*/
 					uint16_t payload_len = regNum << 1;
 					/*Copy data from memory to frame*/
-					for(uint16_t i = 0; i < regNum; ++i, ++addr, _payload+=2 )
+					for(uint16_t i = 0; i < regNum; ++i, ++addr )
 					{
-						auto res = T::write(addr, *(uint16_t*)_payload);
-						if( res != errors::proto::success){
-							return res;
-						}					
+						{
+							guard g__;
+							auto res = T::write(addr, read_from(_payload) );
+							if( res != errors::proto::success){
+								return res;
+							}					
+						}
 					}
 					uint16_t crc_len= 6;
 					uint16_t crc = T::crc(ansfirst, crc_len);
@@ -203,6 +225,174 @@ namespace robo{
 					return D::post(8);	
 				}
 			};
+			struct packet{
+				uint8_t memo[max_frame_length];
+				uint8_t size;
+			};
+			template <typename D,typename T> class master_t: public ::robo::net::master_t<D, packet>, public T {
+				using M = ::robo::net::master_t<D, packet>;				
+				::robo::delegat::owned_fabric<void,bool>::member<master_t> write_regs_confirm_;
+				::robo::delegat::owned_fabric<void,bool>::member<master_t> read_regs_confirm_;
+				packet outcom_ ;
+				packet incom_;
+
+				uint8_t address_;
+				uint8_t command_;
+				uint8_t wait_length_;
+				uint16_t reg_adress_;
+				uint16_t count_;
+				uint16_t * incom_regs_;
+				void write_regs_confirm__(bool result_){
+					if(result_){
+						
+						if(incom_.size != wait_length_ ){
+							T::on_refuse(errors::frame::length);
+							return;							
+						}
+						uint8_t crc_length=wait_length_-2;
+						uint16_t crc = T::crc(incom_.memo,crc_length);
+						if( *(uint16_t*)(incom_.memo+crc_length) != crc){
+							T::on_refuse(errors::frame::crc);
+							return;
+						}
+						
+						const uint8_t * ptr = incom_.memo;
+						uint8_t addr = *ptr++;
+						if(addr!= address_){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						uint8_t cmd = *ptr++;
+						if(cmd!= command_){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						uint16_t reg_address = read_from(ptr);
+						if(reg_address!=reg_adress_){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						uint16_t count = read_from(ptr);
+						if(count!=count_){
+							T::on_refuse(errors::frame::proto);							
+							return;
+						}
+						
+						T::on_confirm();
+						
+					} else {
+						T::on_refuse(errors::frame::unknown);
+					}
+				}
+				
+				void read_regs_confirm__(bool result_){
+					if(result_){
+						
+						if(incom_.size != wait_length_ ){
+							T::on_refuse(errors::frame::length);
+							return;							
+						}
+						uint8_t crc_length=wait_length_-2;
+						uint16_t crc = T::crc(incom_.memo,crc_length);
+						if( *(uint16_t*)(incom_.memo+crc_length) != crc){
+							T::on_refuse(errors::frame::crc);
+							return;
+						}
+						
+						const uint8_t * ptr = incom_.memo;
+						uint8_t addr = *ptr++;
+						if(addr!= address_){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						uint8_t cmd = *ptr++;
+						if(cmd!= command_){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						uint8_t payload_len =*ptr++;
+						if(payload_len!=count_*2){
+							T::on_refuse(errors::frame::proto);
+							return;
+						}
+						
+						{
+							guard g__;
+							for(int i=0;i<count_;++i,++incom_regs_){
+								*incom_regs_ = read_from(ptr);
+							}							
+						}
+						
+						T::on_confirm();
+						
+					} else {
+						T::on_refuse(errors::frame::unknown);
+					}
+				}
+				
+
+			public:
+				master_t()
+					: write_regs_confirm_(*this,&master_t::write_regs_confirm__)
+					, read_regs_confirm_(*this,&master_t::read_regs_confirm__)
+					{
+					}
+			
+				void write_regs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, const uint16_t * _data ){
+					if( (_count>=1) && (_count<=max_reg_count) ){
+						address_ = _address;
+						reg_adress_ = _reg_adress;
+						command_ = commands::write_regs;
+						count_ = _count;
+						incom_regs_ = 0;
+						wait_length_ = 8;
+						uint8_t* ptr = outcom_.memo;
+						*ptr++ = address_;
+						*ptr++ = command_;
+						write_to(_reg_adress,ptr);
+						write_to(_count,ptr);
+						{
+							guard g__;
+							for(uint8_t i=0; i < _count; ++i,++_reg_adress, ++_data ){
+								write_to(*_data,ptr);
+							}
+						}
+						uint16_t crc_len= 6 + 2*_count;
+						uint16_t crc = T::crc(outcom_.memo, crc_len);
+						*(uint16_t*)ptr = crc;		
+						outcom_.size = crc_len+2;
+						incom_.size = wait_length_;
+						M::exchange(outcom_, &incom_, &write_regs_confirm_);
+					}					
+				}
+				void read_regs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs ){
+					if( (_count>=1) && (_count<=max_reg_count) ){
+						address_ = _address;
+						reg_adress_ = _reg_adress;
+						command_ = commands::read_regs;
+						count_ = _count;
+						incom_regs_ = _incom_regs;
+						wait_length_ = 5 +_count*2;
+						uint8_t* ptr = outcom_.memo;
+						*ptr++ = address_;
+						*ptr++ = command_;
+						write_to(_reg_adress,ptr);
+						write_to(_count,ptr);
+						uint16_t crc_len= 6;
+						uint16_t crc = T::crc(outcom_.memo, crc_len);
+						*(uint16_t*)ptr = crc;		
+						outcom_.size = crc_len+2;
+						incom_.size = wait_length_;
+						M::exchange(outcom_, &incom_, &read_regs_confirm_);
+					}					
+				}
+			};
+
 		}
 	}
 }
