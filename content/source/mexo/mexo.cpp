@@ -636,6 +636,21 @@ namespace mexo {
 		doTerminate();
 	}
 
+	
+	void stateflow::switchto(node * _node){
+		if(runned_){
+			runned_->onFinish();
+		}		
+		runned_ = _node;		
+		if(runned_){
+			runned_->onStartup();
+		}		
+	}
+	
+	void stateflow::run(void){
+		if(runned_) runned_->doExecute();
+	}
+
 }
 
 #include "mexo/mexo.h"

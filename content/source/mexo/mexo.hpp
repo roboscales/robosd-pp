@@ -1272,6 +1272,24 @@ namespace mexo {
 		}
 		bool active(void){ return active_; }
 	};
+	
+	class stateflow {
+	public:
+		class node {
+			friend class stateflow;
+		protected:
+			virtual void onStartup(void) = 0;
+			virtual void doExecute(void) = 0;
+			virtual void onFinish(void) = 0;
+
+		};
+
+	private:
+		node * runned_ = 0;
+	public:
+		void switchto(node * _node);
+		void run(void);
+	};	
 
 }
 #endif
