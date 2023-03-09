@@ -1243,7 +1243,7 @@ namespace mexo {
 		tm last_= tm(0);
 		tm period_ = tm(0);
 		bool once_;
-		bool active_;
+		bool started_;
 	protected:
 		virtual void operator ()(void){
 			::robo::time_us_t now = ::robo::system::time_us();
@@ -1264,13 +1264,13 @@ namespace mexo {
 			once_ = _once;
 			last_ = ::robo::system::time_us();
 			H::start();
-			active_ = true;
+			started_ = true;
 		}
 		void stop(void ){
 			H::stop();
-			active_ = false;
+			started_ = false;
 		}
-		bool active(void){ return active_; }
+		bool started(void){ return started_; }
 	};
 	
 	class stateflow {

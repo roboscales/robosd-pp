@@ -111,8 +111,11 @@ namespace mexo {
 			instance_.A::set();
 			instance_.B::start(_period);
 		}		
-		static bool activ(void){
+		static bool active(void){
 			return instance_.A::active();
+		}
+		static bool blinked(void){
+			return instance_.B::started();
 		}
 
 	};
