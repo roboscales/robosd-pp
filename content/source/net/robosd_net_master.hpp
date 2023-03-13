@@ -103,6 +103,9 @@ namespace robo{
 					wd_begin_us_ = system::time_us();
 					wd_enabled = true;
 					wd_delay_us_ = phys::wd_us(outcom_packet_);
+					if(incom_packet_){
+						wd_delay_us_ += phys::wd_us(incom_packet_);
+					}
 					phys::send(outcom_packet_);						
 				} else {
 					panic_();

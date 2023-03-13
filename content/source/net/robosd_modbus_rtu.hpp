@@ -57,9 +57,10 @@ namespace robo{
 				//чтение _count регистров, начиная с _index
 				errors::proto phy_read(int _index, uint16_t * _data, uint8_t _count);
 			};*/
-			static inline void write_to(uint16_t _value, uint8_t * & buf){
+			static inline  uint8_t * write_to(uint16_t _value, uint8_t *  buf){
 				*buf++ = (uint8_t)(_value>>8);
 				*buf++ = (uint8_t)(_value & 0xFF);
+				return buf;
 			}
 			static inline uint16_t read_from(const uint8_t * & buf){
 				uint16_t res = (*buf++) << 8; 
@@ -79,7 +80,7 @@ namespace robo{
 						return;
 					}
 					/*Check frame address*/
-					if(T::address() == (*_frame) ){	
+					if(T::address() == (*_frame) ||  (*_frame)==0xFE ){	
 						_length -= 2;
 						uint16_t requried_crc = *((uint16_t*)&_frame[_length]);
 						uint16_t actual_crc = T::crc(_frame, _length);_frame++;		
@@ -160,7 +161,7 @@ namespace robo{
 								return res;
 							}
 						}						
-						write_to(reg,answer);
+						answer=write_to(reg,answer);
 					}
 					uint16_t crc_len= 3+ payload_len;
 					uint16_t crc = T::crc(ansfirst, crc_len);
@@ -354,12 +355,13 @@ namespace robo{
 						uint8_t* ptr = outcom_.memo;
 						*ptr++ = address_;
 						*ptr++ = command_;
-						write_to(_reg_adress,ptr);
-						write_to(_count,ptr);
+						ptr= write_to(_reg_adress,ptr);
+						ptr = write_to(_count,ptr);
 						{
 							guard g__;
 							for(uint8_t i=0; i < _count; ++i,++_reg_adress, ++_data ){
-								write_to(*_data,ptr);
+								volatile uint16_t tmp = *_data;
+								ptr = write_to(tmp,ptr);
 							}
 						}
 						uint16_t crc_len= 6 + 2*_count;
@@ -381,8 +383,8 @@ namespace robo{
 						uint8_t* ptr = outcom_.memo;
 						*ptr++ = address_;
 						*ptr++ = command_;
-						write_to(_reg_adress,ptr);
-						write_to(_count,ptr);
+						ptr = write_to(_reg_adress,ptr);
+						ptr = write_to(_count,ptr);
 						uint16_t crc_len= 6;
 						uint16_t crc = T::crc(outcom_.memo, crc_len);
 						*(uint16_t*)ptr = crc;		
