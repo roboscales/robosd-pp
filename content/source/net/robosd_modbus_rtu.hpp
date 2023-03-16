@@ -168,10 +168,36 @@ namespace robo{
 					*(uint16_t*)answer = crc;
 					return D::post(5+payload_len);					
 				}
-				 
 				static errors::proto write_reg(const uint8_t * _payload, uint32_t _length){
-					return errors::proto::address;
+					if(_length<4){
+						return errors::proto::fault;
+					}
+
+					/*Get start address*/
+					uint16_t addr = read_from(_payload);
+					
+					uint8_t * answer = D::answer_frame_get();
+					uint8_t * ansfirst= answer;
+					*answer++  = T::address();
+					*answer++ =  commands::write_reg;
+					answer = write_to(addr,answer);
+					uint32_t value = read_from(_payload);
+					answer = write_to(value,answer);
+					/*Set number of bytes*/
+					{
+						guard g__;
+						auto res = T::write(addr, value );
+						if( res != errors::proto::success){
+							return res;
+						}					
+					}
+
+					uint16_t crc_len= 6;
+					uint16_t crc = T::crc(ansfirst, crc_len);
+					*(uint16_t*)answer = crc;
+					return D::post(8);					
 				}
+				 
 				static errors::proto write_regs(const uint8_t * _payload, uint32_t _length){
 					if(_length<4){
 						return errors::proto::fault;
