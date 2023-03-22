@@ -58,7 +58,7 @@ void burst_begin(void){
 	
 	for( p= burst.devs; p!=burst.devs_end;p++){
 		burst_alarm(p->dev);
-		burst_alarm(p->prioritet_loop);
+		burst_alarm(p->realtime_loop);
 		p->actual_mode = &burst_idle_mode;		
 		p->dev->ref=p;
 		if(p->begin)
@@ -86,17 +86,17 @@ void burst_start(void){
 	burst_started_ = burst_true;
 }
 
-void burst_prioritet_loop(void){
+void burst_realtime_loop(void){
 	if(burst_started_){
 		burst_dev_ref_p p ;
 		debug_tp_on(VERB_LOOP);
-		debug_tp_on(VERB_PRIORITRT);
+		debug_tp_on(VERB_REALTIME);
 		for( p= burst.devs; p!=burst.devs_end;p++){
-			p->prioritet_loop(p->dev);
+			p->realtime_loop(p->dev);
 		}
-		burst_sw_prioritet_loop();
-		burst_hw_prioritet_loop();
-		debug_tp_off(VERB_PRIORITRT);
+		burst_sw_realtime_loop();
+		burst_hw_realtime_loop();
+		debug_tp_off(VERB_REALTIME);
 	}
 }
 
@@ -345,8 +345,8 @@ BURST_WEAK void burst_hw_start(void){}
 BURST_WEAK void burst_sw_backend_loop(void){}
 BURST_WEAK void burst_hw_backend_loop(void){}
 
-BURST_WEAK void burst_sw_prioritet_loop(void){}
-BURST_WEAK void burst_hw_prioritet_loop(void){}
+BURST_WEAK void burst_sw_realtime_loop(void){}
+BURST_WEAK void burst_hw_realtime_loop(void){}
 
 BURST_WEAK void burst_sw_frontend_loop(void){}
 BURST_WEAK void burst_hw_frontend_loop(void){}

@@ -229,7 +229,7 @@ namespace mexo {
 			}
 		};
 
-		template < typename q, typename D  > class current_abc_sence : public machine<q, D> {
+		template < typename q, typename D, bool L = false  > class current_abc_sence : public machine<q, D> {
 		public:
 			typedef machine<q, D> BB;
 			typedef typename q::signal_t signal_t;
@@ -241,8 +241,10 @@ namespace mexo {
 			typedef abc_t<q> abc_t;
 			typedef ab_t<q> ab_t;
 			typedef dq_t<q> dq_t;
-
-			typedef typename BB::config_s config_s;
+			struct  config_s{
+				typename BB::config_s machine;
+				long_signal_t deform[9];
+			};
 			struct present_s {
 				typename BB::present_s	adc;
 				abc_t abc;
@@ -252,7 +254,7 @@ namespace mexo {
 			};
 
 			current_abc_sence(const config_s& _config, present_s& _present, const  cs_t<q>& _cs)
-				: BB(_config, _present.adc)
+				: BB(_config.machine, _present.adc)
 				, cs_(_cs) 
 			{}
 			typename q::signal_t& current_ref(void) { 
@@ -277,10 +279,21 @@ namespace mexo {
 				BB::execute();
 				present_s& present = handler::present<current_abc_sence>();
 				dq_t tmp = present.current;
-
-				present.abc.A = present.adc.values[0];
-				present.abc.B = present.adc.values[1];
-				present.abc.C = present.adc.values[2];
+				if(L){
+					const config_s& conf = handler::config<current_abc_sence>();
+					auto A = present.adc.values[0];
+					auto B = present.adc.values[1];
+					auto C = present.adc.values[2];
+					auto & [AA, AB, AC, BA, BB, BC, CA, CB, CC ] = conf.deform;
+					//todo רטפע
+					present.abc.A = ( AA*A + AB*B + AC*C  )>>15;
+					present.abc.B = ( BA*A + BB*B + BC*C  )>>15;
+					present.abc.C = ( CA*A + CB*B + CC*C  )>>15;
+				} else {
+					present.abc.A = present.adc.values[0];
+					present.abc.B = present.adc.values[1];
+					present.abc.C = present.adc.values[2];
+				}
 
 				present.abc.transform(present.ab);
 				present.ab.transform(present.current, cs_);

@@ -23,14 +23,14 @@ void burst_hw_guard_unlock(void);
 
 void burst_sw_begin(void);
 void burst_sw_start(void);
-void burst_sw_prioritet_loop(void);
+void burst_sw_realtime_loop(void);
 void burst_sw_backend_loop(void);
 void burst_sw_frontend_loop(void);
 void burst_sw_panic(void);
 
 void burst_hw_begin(void);
 void burst_hw_start(void);
-void burst_hw_prioritet_loop(void);
+void burst_hw_realtime_loop(void);
 void burst_hw_backend_loop(void);
 void burst_hw_frontend_loop(void);
 void burst_hw_panic(void);

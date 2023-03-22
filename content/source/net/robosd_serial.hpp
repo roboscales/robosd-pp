@@ -174,7 +174,7 @@ namespace robo {
 					return owner_.ring_a_.count();
 				}
 				virtual size_t space_max(void) {
-					return owner_.ring_a_.size();
+					return owner_.ring_b_.size();
 				}
 				virtual size_t space(void) {
 					return owner_.ring_b_.space();
@@ -257,6 +257,7 @@ namespace robo {
 				: A(*this)
 				, B(*this) {}
 
+
 		};
 		
 		template <typename D,unsigned SA, unsigned SB, typename G > class hardware_bridge_t: protected bridge_t<SA,SB,G>, public net::iserial{
@@ -267,14 +268,14 @@ namespace robo {
 					//D::fault(); to do крепко подумать
 				}
 			}
-			void on_receive(uint8_t* _data, size_t _max_size){
+			void on_receive(const uint8_t* _data, size_t _max_size){
 				if( ! bridge::A.put(_data,_max_size) ){
 					//D::fault(); to do крепко подумать
 				}
 			}
 			
 			virtual size_t available(void) {
-				return bridge::B.count();
+				return bridge::B.available();
 			}
 			virtual size_t space(void) {
 				return bridge::B.space();
@@ -292,7 +293,6 @@ namespace robo {
 					return 1;					
 				}
 				else {
-					//D::fault(); to do крепко подумать
 					return 0;
 				}
 			}
@@ -300,6 +300,7 @@ namespace robo {
 				bool tmp = bridge::B.put(_data);
 				D::try_send(bridge::A);
 				if(!tmp){
+					reset();
 					//D::fault(); to do крепко подумать
 				}
 				return tmp;
@@ -308,9 +309,18 @@ namespace robo {
 				D::try_send(bridge::A);
 			}
 			void on_refuse(void){
-				D::try_send(bridge::A);
+				reset();
+//				D::try_send(bridge::A);
 				//D::fault(); to do крепко подумать
 			}
+			virtual void reset(void){
+				bridge::A.reset();
+				bridge::B.reset();
+			}
+			virtual size_t space_max(void){
+				return bridge::A.space_max();
+			}
+
 		};
 		
 	}

@@ -63,7 +63,7 @@ typedef void ( * burst_dev_event)(burst_dev_p);
 struct burst_dev_ref_s{
 	burst_dev_event begin;
 	burst_dev_event start;
-	burst_dev_event prioritet_loop;
+	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
 	burst_dev_config_p config;
 	burst_dev_action_p action;
@@ -82,7 +82,7 @@ void burst_dev_runC(burst_dev_ref_p _ref);
 
 void burst_begin(void);
 void burst_start(void);
-void burst_prioritet_loop(void);
+void burst_realtime_loop(void);
 void burst_backend_loop(void);
 void burst_frontend_loop(void);
 
@@ -110,7 +110,7 @@ burst_thread_t burst_thread(void);
 typedef  BURST_DATA_SIZE_TYPE  burst_size_t;
 
 
-enum{ VERB_PRIORITRT = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
+enum{ VERB_REALTIME = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
 
 #ifndef BURST_DEBUG_TP_ENABLED
 #define BURST_DEBUG_TP_ENABLED 0
