@@ -1,5 +1,4 @@
 #include "burst/burst_app.h"
-#include "burst/burst_tp.h"
 
 #if BURST_TIMER_ENABLED == 1
 #include "burst/burst_timer.h"
@@ -463,5 +462,6 @@ BURST_WEAK  void burst_hw_guard_unlock(void){}
 
 	
 #if BURST_DEBUG_TP_ENABLED == 1
-BURST_TP_CREATE(burst_tp)
+#define CLCH_NAME burst_tp
+#include "burst/cliche/tp.h"
 #endif

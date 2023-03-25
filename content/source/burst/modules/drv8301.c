@@ -1,4 +1,4 @@
-#include "burst/modules/drv8301_reg.h"
+#include "burst/modules/drv8301.h"
 unsigned int delay = 50;
 
 

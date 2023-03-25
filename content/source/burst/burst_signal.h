@@ -1,7 +1,7 @@
 #ifndef __burst_signal_h
 #define __burst_signal_h
 
-#include "burst/burst.h"
+#include "burst/burst_common.h"
 #include <stdint.h>
 #ifndef burst_signal_t
 #define burst_signal_t int16_t
@@ -101,15 +101,6 @@ typedef  uint32_t burst_ulong_signal_t;
 #define BURST_SAT(x,Lo,Hi) ( ((x)<(Lo))? { (Lo)} : (((x)>(Hi))? (Hi} : (x) ) ) )
 #endif
 
-#ifndef BURST_DATA_TYPE
-#define BURST_DATA_TYPE uint8_t
-#endif
-
-typedef BURST_DATA_TYPE burst_data_t;
-typedef burst_data_t * burst_data_p;
-typedef  burst_size_t *   burst_size_p;
-
-
 #define signal2ph_t struct signal2ph_s
 #define signal2ph_p signal2ph_t *
 struct signal2ph_s{
@@ -188,7 +179,6 @@ typedef struct {
 } burst_range_t;
 typedef burst_range_t * burst_range_p;
 
-typedef enum{burst_satstate_none = 0,burst_satstate_lo=1,burst_satstate_hi=2,burst_satstate_both=3} burst_satstate_t;
 
 typedef struct {
 	burst_range_t in_range;

@@ -6,11 +6,8 @@ extern "C"
 {
 #endif
 
-#include "burst_app_tuning.h"
-#include "burst_target.h"
-#include "burst_front.h"
-#include "burst_tp.h"
 
+#include "burst_common.h"
 
 /**
 @brief  Структура - описатель режима работы
@@ -98,33 +95,28 @@ void burst_sw_on_crash(const char * _file, const char * _function, int _line);
 #define burst_alarm(x)  if(!(x)){ burst_crash(); };
 #endif
 
-typedef enum  { burst_true = 1, burst_false = 0 } burst_bool_t;
-typedef enum  { burst_backend = 1, burst_frontend = 0 } burst_thread_t;
-typedef enum  { burst_complete = 1, burst_panic = 0, burst_fault = 3, burst_continue =2 } burst_run_t;
-
 burst_thread_t burst_thread(void);
-
-#ifndef BURST_DATA_SIZE_TYPE
-#define BURST_DATA_SIZE_TYPE unsigned int
-#endif
-typedef  BURST_DATA_SIZE_TYPE  burst_size_t;
-
-
-enum{ VERB_REALTIME = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
 
 #ifndef BURST_DEBUG_TP_ENABLED
 #define BURST_DEBUG_TP_ENABLED 0
 #endif
 
 #if BURST_DEBUG_TP_ENABLED == 1
-BURST_TP(burst_tp)
-#define debug_tp_on(n)  burst_tp.on(n)
-#define debug_tp_off(n)  burst_tp.off(n)
-#define debug_set_verb(n)  burst_tp.verb = n
+
+#define CLCH_NAME burst_tp
+#define CLCH_HEADER 
+#include "burst/cliche/tp.h"
+
+#define debug_tp_on(n)  burst_tp_on(n)
+#define debug_tp_off(n)  burst_tp_off(n)
+#define debug_set_verb(n)  burst_tp_verb_set(n)
+
 #else
+
 #define debug_tp_on(n)
 #define debug_tp_off(n)
 #define debug_set_verb(n) 
+
 #endif
 
 #if defined(__cplusplus)
