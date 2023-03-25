@@ -40,7 +40,7 @@ typedef struct hall_s {
 } hall_t;
 typedef hall_t * hall_p;
 
-void hall_update(hall_p _hall, const hall_pins_p _pins , int _dir);
+void hall_update(hall_p _hall, const hall_pins_p _pins);
 void hall_begin(hall_p _hall, hall_config_p _config);
 
 enum { hall_qubic_rank = 14, hall_regress_rank = 6, hall_fuzzy_rank = 6 };

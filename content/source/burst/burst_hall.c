@@ -24,7 +24,7 @@ burst_signal_t  hall_angles[6] = {
 	, -BURST_SIGNAL_T(0.3333333333)
 };
 
-void hall_update(hall_p _hall, const hall_pins_p _pins, int _dir){
+void hall_update(hall_p _hall, const hall_pins_p _pins){
 	//int index = _pins->A + (_pins->B <<1) + (_pins->C <<2);
 	int index = _pins->index;
 	if(index!=_hall->index){
@@ -56,12 +56,12 @@ void hall_update(hall_p _hall, const hall_pins_p _pins, int _dir){
 					raw = hall_angles[sector];
 				}
 				burst_signal_t angle = raw + _hall->config->offset.native;
-				if (_dir > 0) {
+				/*if (_dir > 0) {
 					angle += _hall->config->offset.dynamic;
 				}
 				else if ( _dir  < 0) {
-					angle += _hall->config->offset.dynamic;
-				}			
+					angle -= _hall->config->offset.dynamic;
+				}*/			
 				_hall->delta_acc += delta;
 				_hall->delta = delta;
 				_hall->angle = angle;
