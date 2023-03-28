@@ -12,14 +12,12 @@ extern "C"
 /**
 @brief  Структура - описатель режима работы
 */
-struct burst_dev_s;
-typedef struct burst_dev_s burst_dev_t;
-typedef burst_dev_t * burst_dev_p;
+
 
 struct burst_dev_mode_s;
 typedef struct burst_dev_mode_s burst_dev_mode_t;
 typedef burst_dev_mode_t * burst_dev_mode_p;
-typedef void ( * burst_dev_mode_event)(burst_dev_p);
+
 
 struct burst_dev_config_s{
 	int tag;
@@ -39,11 +37,12 @@ typedef burst_dev_present_t * burst_dev_present_p;
 struct burst_dev_ref_s;
 typedef struct burst_dev_ref_s burst_dev_ref_t;
 typedef burst_dev_ref_t * burst_dev_ref_p;
+typedef void ( * burst_dev_mode_event)(burst_dev_ref_p);
 
-struct burst_dev_s{
+/*struct burst_dev_s{
 	burst_dev_ref_p ref;
 };
-
+*/
 struct  burst_dev_mode_s{
 	burst_dev_mode_event applay_action;
 	burst_dev_mode_event start;
@@ -52,16 +51,16 @@ struct  burst_dev_mode_s{
 	burst_dev_mode_event loopB;
 	burst_dev_mode_event loopC;
 	burst_dev_mode_event frontend_loop;
-	burst_dev_p dev;
 };
 
-typedef void ( * burst_dev_event)(burst_dev_p);
+typedef void ( * burst_dev_event)(burst_dev_ref_p);
 
 struct burst_dev_ref_s{
 	burst_dev_event begin;
 	burst_dev_event start;
 	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
+	burst_dev_mode_event updaye_feedback;
 	burst_dev_config_p config;
 	burst_dev_action_p action;
 	burst_dev_feedback_p feedback;
@@ -69,14 +68,16 @@ struct burst_dev_ref_s{
 	int mode_count;
 	burst_dev_mode_p * modes;	
 	burst_dev_mode_p * modes_end;	
-	burst_dev_p dev;
 	burst_dev_mode_p actual_mode;
 };
-void burst_dev_idle_mode_event(burst_dev_p _mode);
+void burst_dev_idle_event(burst_dev_ref_p _ref);
 void burst_dev_runA(burst_dev_ref_p _ref);
 void burst_dev_runB(burst_dev_ref_p _ref);
 void burst_dev_runC(burst_dev_ref_p _ref);
 
+void burst_dev_attach(burst_dev_ref_p _ref);
+
+extern burst_dev_mode_t burst_idle_mode;
 void burst_begin(void);
 void burst_start(void);
 void burst_realtime_loop(void);

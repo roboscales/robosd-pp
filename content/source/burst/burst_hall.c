@@ -97,9 +97,11 @@ int hall_update_(hall_qubic_p _qubic){
 	if(_qubic->ticks==0) return 0;
 	burst_signal_t actual = *(_qubic->hall.pactual);
 	if( _qubic->hall.prev !=  actual){
+		_qubic->lost_flag = burst_false;
 		uint32_t tm = _qubic->ticks;
 		_qubic->angle32 = ((burst_long_signal_t)actual)<<16;
 		uint32_t period = tm - _qubic->begin;
+		_qubic->period = period;
 		_qubic->begin = tm;
 		if(period==0){
 			_qubic->hall.prev = actual;
@@ -213,8 +215,41 @@ void hall_qubic_interp(hall_qubic_p _qubic){
 		_qubic->ticks++;
 	} else {
 		_qubic->ticks++;
-		_qubic->angle32 += _qubic->speed32;
-		 _qubic->speed32 =  ((int64_t)_qubic->speed32*255)>>8;
+		if(!_qubic->lost_flag){
+			_qubic->angle32 += _qubic->speed32;
+			_qubic->angle  = _qubic->angle32 >> 16;
+			burst_signal_t delta = _qubic->angle - _qubic->hall.prev;
+			static const burst_signal_t alarm = BURST_SIGNAL_T(70./180.);
+			static const burst_signal_t pi_6 = BURST_SIGNAL_T(30./180.);
+			if (delta > alarm){
+				_qubic->speed32 = 0;
+				_qubic->angle = _qubic->hall.prev + pi_6;
+				_qubic->angle32 = _qubic->angle<<16;
+
+				_qubic->lost = _qubic->ticks;
+				_qubic->lost_flag = burst_true;
+				_qubic->lost = _qubic->ticks;
+				_qubic->period = _qubic->ticks - _qubic->begin;
+			} else if(delta < -alarm){
+				_qubic->speed32 = 0;
+				_qubic->angle = _qubic->hall.prev - pi_6;
+				_qubic->angle32 = _qubic->angle<<16;
+
+				_qubic->lost = _qubic->ticks;
+				_qubic->lost_flag = burst_true;
+				_qubic->period = _qubic->ticks - _qubic->begin;
+			}
+		} else{
+			if(_qubic->ticks - _qubic->lost > 1000000/BURST_TIMER_TICK_US){
+				burst_long_signal_p d = _qubic->speeds32;
+				burst_long_signal_p s = d+1;
+				for( int i=0;i<hall_qubic_rank-1; ++i, ++s,++d) *d = *s;
+				*d = 0;
+				_qubic->lost = _qubic->ticks;
+				_qubic->period = _qubic->ticks - _qubic->begin;
+			}
+		}
+		/* _qubic->speed32 =  ((int64_t)_qubic->speed32*255)>>8;
 		if(_qubic->speed32>=-255){			
 			if(_qubic->speed32<0){
 				_qubic->speed32++;
@@ -223,7 +258,7 @@ void hall_qubic_interp(hall_qubic_p _qubic){
 			if(_qubic->speed32>0){
 				_qubic->speed32--;
 			}
-		}
+		}*/
 	}
 }
 

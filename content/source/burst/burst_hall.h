@@ -46,6 +46,7 @@ void hall_begin(hall_p _hall, hall_config_p _config);
 enum { hall_qubic_rank = 14, hall_regress_rank = 6, hall_fuzzy_rank = 6 };
 typedef struct hall_qubic_s {
 	burst_long_signal_t angle32;
+	burst_long_signal_t angle;
 	burst_long_signal_t speed32;
 	struct{
 		burst_signal_t prev;
@@ -53,6 +54,9 @@ typedef struct hall_qubic_s {
 	} hall;
 	uint32_t ticks;
 	uint32_t begin;
+	uint32_t lost;
+	uint32_t period;
+	burst_bool_t lost_flag;
 	burst_long_signal_t speeds32[hall_qubic_rank];
 	burst_long_signal_t A;
 	burst_long_signal_t B;

@@ -12,73 +12,93 @@ typedef burst_t * burst_p;
 
 
 #ifndef BURST_DEV_COUNT
-#define BURST_DEV_COUNT 1
+#define BURST_DEV_COUNT 0
 #endif
 
 struct burst_s{
 	#if BURST_DEV_COUNT == 0
-	burst_dev_ref_p devs;
+	burst_dev_ref_p * devs;
 	#else	
-	burst_dev_ref_t devs[BURST_DEV_COUNT];
+	burst_dev_ref_p devs[BURST_DEV_COUNT];
 	#endif
-	burst_dev_ref_p devs_end;
+	burst_dev_ref_p * devs_end;
+	int dev_count;
 };
 
 burst_t burst = BURST_EMPTY_STRUCT;
 
-void burst_dev_idle_mode_event(burst_dev_p _mode){
-		BURST_UNUSED(_mode);
+void burst_dev_idle_event(burst_dev_ref_p _dev){
+		BURST_UNUSED(_dev);
 }
+
+void burst_dev_attach(burst_dev_ref_p _ref){
+	burst_alarm(burst.dev_count<BURST_DEV_COUNT);
+	burst.devs[ burst.dev_count ] = _ref;
+	burst.dev_count ++ ;
+}
+
 burst_dev_mode_t burst_idle_mode ={
-	&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,&burst_dev_idle_mode_event
-	,0
+	&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
 };
 
 void burst_dev_runA(burst_dev_ref_p _ref){
-	_ref->actual_mode->loopA(_ref->dev);
+	_ref->actual_mode->loopA(_ref);
 }
 void burst_dev_runB(burst_dev_ref_p _ref){
-	_ref->actual_mode->loopB(_ref->dev);
+	_ref->actual_mode->loopB(_ref);
 }
 void burst_dev_runC(burst_dev_ref_p _ref){
-	_ref->actual_mode->loopC(_ref->dev);
+	_ref->actual_mode->loopC(_ref);
 }
 
 void burst_begin(void){
-	burst_dev_ref_p p ;
-	burst_dev_mode_p * m ;
+	burst_sw_begin();
+	burst_dev_ref_p * p ;	
 	burst.devs_end = burst.devs+BURST_DEV_COUNT;
 	
-	for( p= burst.devs; p!=burst.devs_end;p++){
-		burst_alarm(p->dev);
-		burst_alarm(p->realtime_loop);
-		p->actual_mode = &burst_idle_mode;		
-		p->dev->ref=p;
-		if(p->begin)
-			p->begin(p->dev);
-		p->modes_end = p->modes+p->mode_count;
-		for( m= p->modes; m!=p->modes_end;m++){
+	for( p= burst.devs; p!=burst.devs_end;p++){		
+		burst_alarm(*p);
+		burst_alarm((*p)->begin);
+		burst_alarm((*p)->start);
+		burst_alarm((*p)->realtime_loop);
+		burst_alarm((*p)->frontend_loop);
+		burst_alarm((*p)->config);
+		burst_alarm((*p)->action);
+		burst_alarm((*p)->feedback);
+		burst_alarm((*p)->present);
+		if((*p)->mode_count>0){
+			burst_alarm((*p)->modes);
+		}	
+		(*p)->actual_mode = &burst_idle_mode;		
+		(*p)->begin((*p));
+		(*p)->modes_end = (*p)->modes+(*p)->mode_count;
+		for(	burst_dev_mode_p  * pm = (*p)->modes; pm!=(*p)->modes_end; ++pm) {
+			burst_dev_mode_p m = *pm;
 			if(m){
-				(*m)->dev = p->dev;
+				burst_alarm(m->applay_action);
+				burst_alarm(m->start);
+				burst_alarm(m->stop);
+				burst_alarm(m->loopA);
+				burst_alarm(m->loopB);
+				burst_alarm(m->loopC);
+				burst_alarm(m->frontend_loop);
 			}
 		}
 	}
 	
-	burst_sw_begin();
 	burst_hw_begin();
 }
 burst_bool_t burst_started_ = burst_false;
 void burst_start(void){
-	burst_dev_ref_p p ;
+	burst_dev_ref_p * p ;
 	for( p= burst.devs; p!=burst.devs_end;p++){
-		if(p->start)
-			p->start(p->dev);
+		(*p)->start(*p);
 	}
 	burst_hw_start();
 	burst_sw_start();
@@ -87,11 +107,11 @@ void burst_start(void){
 
 void burst_realtime_loop(void){
 	if(burst_started_){
-		burst_dev_ref_p p ;
+		burst_dev_ref_p * p ;
 		debug_tp_on(VERB_LOOP);
 		debug_tp_on(VERB_REALTIME);
 		for( p= burst.devs; p!=burst.devs_end;p++){
-			p->realtime_loop(p->dev);
+			(*p)->realtime_loop(*p);
 		}
 		burst_sw_realtime_loop();
 		burst_hw_realtime_loop();
@@ -111,7 +131,7 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 		burst_dev_mode_p actual_mode = _ref->actual_mode;
 		if ( action_mode != _ref->present->mode) {
 			if (actual_mode) {
-				actual_mode->stop(_ref->dev);
+				actual_mode->stop(_ref);
 			}
 
 			if (action_mode == burst_dev_mode_idle) {
@@ -124,8 +144,8 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 						burst_dev_switch_to_idle(_ref);
 					}
 					else {
-						m->start(_ref->dev);
-						m->applay_action(_ref->dev);
+						m->start(_ref);
+						m->applay_action(_ref);
 						_ref->actual_mode = m;
 						_ref->present->mode = action_mode;
 					}
@@ -135,7 +155,7 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 			}
 		} else{
 			if(action->actual){
-				actual_mode->applay_action(_ref->dev);
+				actual_mode->applay_action(_ref);
 				action->actual = 0;
 			}
 		}
@@ -289,22 +309,22 @@ burst_thread_t burst_thread(void){
 void burst_backend_loop(void){
 	if(burst_started_){
 		debug_tp_on(VERB_BACKEND);
-		burst_alarm(burst_thread_ != burst_frontend)
+		burst_alarm(burst_thread_ != burst_backend)
 		burst_thread_ = burst_backend;
 		#if BURST_TIMER_ENABLED == 1
 		burst_timer_poll();
 		#endif
-		burst_sw_backend_loop();
-		burst_hw_backend_loop();
 		(*burst_slot)();
 		burst_slot++;
 		if(burst_slot==burst_slots_end) burst_slot = burst_slots;
 		{
-			burst_dev_ref_p p ;
+			burst_dev_ref_p * p ;
 			for( p= burst.devs; p!=burst.devs_end;p++){
-				burst_dev_backend_loop(p);
+				burst_dev_backend_loop((*p));
 			}
 		}
+		burst_hw_backend_loop();
+		burst_sw_backend_loop();
 		burst_thread_ = burst_frontend;
 		debug_tp_off(VERB_BACKEND);
 		debug_tp_off(VERB_LOOP);
@@ -319,10 +339,11 @@ void burst_frontend_loop(void){
 	burst_sw_frontend_loop();
 	burst_hw_frontend_loop();
 	{
-		burst_dev_ref_p p ;
+		burst_dev_ref_p * p ;
 		for( p= burst.devs; p!=burst.devs_end;p++){
-			if(p->frontend_loop)
-				p->frontend_loop(p->dev);
+			burst_dev_ref_p s = *p;
+			s->frontend_loop(s);
+			s->actual_mode->frontend_loop(s);
 		}
 	}
 	debug_tp_off(VERB_FRONTEND);

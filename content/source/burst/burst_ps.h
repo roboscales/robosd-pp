@@ -90,7 +90,7 @@ burst_ps_t S ={ \
 	, S##_shutdown_complete \
 };
 
-typedef struct  {
+typedef struct  burst_ps_dc_config_s{
 	burst_ps_config_t ps;
 	burst_range_t duty;			
 	burst_range_t voltage;			
