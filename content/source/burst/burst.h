@@ -7,7 +7,7 @@ extern "C"
 #endif
 
 
-#include "burst_common.h"
+#include "burst/burst_common.h"
 
 /**
 @brief  Структура - описатель режима работы
@@ -25,11 +25,6 @@ struct burst_dev_config_s{
 typedef struct burst_dev_config_s burst_dev_config_t;
 typedef burst_dev_config_t * burst_dev_config_p;
 
-struct burst_dev_present_s{
-	int mode;
-};
-typedef struct burst_dev_present_s burst_dev_present_t;
-typedef burst_dev_present_t * burst_dev_present_p;
 
 /**
 @brief Структура. Базовое устройство.
@@ -64,11 +59,11 @@ struct burst_dev_ref_s{
 	burst_dev_config_p config;
 	burst_dev_action_p action;
 	burst_dev_feedback_p feedback;
-	burst_dev_present_p present;
 	int mode_count;
 	burst_dev_mode_p * modes;	
 	burst_dev_mode_p * modes_end;	
 	burst_dev_mode_p actual_mode;
+	int mode;
 };
 void burst_dev_idle_event(burst_dev_ref_p _ref);
 void burst_dev_runA(burst_dev_ref_p _ref);

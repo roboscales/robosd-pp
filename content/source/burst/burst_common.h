@@ -25,4 +25,19 @@ typedef enum{burst_satstate_none = 0,burst_satstate_lo=1,burst_satstate_hi=2,bur
 
 enum{ VERB_REALTIME = 1,VERB_BACKEND = 2, VERB_LOOP = 3, VERB_FRONTEND = 4};
 
+
+#define BURST_OBJECT( O, S ) BURST_OBJECT_( O, S )
+#define BURST_OBJECT_( O, S ) \
+extern O##_t  S;
+
+#define BURST_OBJECT_SUBCREATE( O, S, P ) BURST_OBJECT_SUBCREATE_( O, S, P )
+#define BURST_OBJECT_SUBCREATE_( O, S, P ) O##_impl(S##_##P,S.P)
+
+#define BURST_OBJECT_SUBSETUP( O, S, P ) BURST_OBJECT_SUBSETUP_( O, S, P )
+#define BURST_OBJECT_SUBSETUP_( O, S, P )  O##_setup(S##.##P)
+
+#define BURST_OBJECT_CREATE( O, S ) BURST_OBJECT_CREATE_( O, S )
+#define BURST_OBJECT_CREATE_( O, S ) \
+O##_impl(S,S)\
+O##_t S =O##_setup(S);
 #endif

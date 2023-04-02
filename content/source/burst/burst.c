@@ -71,7 +71,6 @@ void burst_begin(void){
 		burst_alarm((*p)->config);
 		burst_alarm((*p)->action);
 		burst_alarm((*p)->feedback);
-		burst_alarm((*p)->present);
 		if((*p)->mode_count>0){
 			burst_alarm((*p)->modes);
 		}	
@@ -122,14 +121,14 @@ void burst_realtime_loop(void){
 
 void burst_dev_switch_to_idle(burst_dev_ref_p _ref){
 	_ref->actual_mode = &burst_idle_mode;
-	_ref->present->mode = burst_dev_mode_idle;
+	_ref->mode = burst_dev_mode_idle;
 }
 void burst_dev_backend_loop(burst_dev_ref_p _ref){
 		//burst_alarm(is_backend__);
 		burst_dev_action_p action = _ref->action;
 		int action_mode = action->mode;
 		burst_dev_mode_p actual_mode = _ref->actual_mode;
-		if ( action_mode != _ref->present->mode) {
+		if ( action_mode != _ref->mode) {
 			if (actual_mode) {
 				actual_mode->stop(_ref);
 			}
@@ -147,7 +146,7 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 						m->start(_ref);
 						m->applay_action(_ref);
 						_ref->actual_mode = m;
-						_ref->present->mode = action_mode;
+						_ref->mode = action_mode;
 					}
 				}else{
 					burst_dev_switch_to_idle(_ref);

@@ -20,6 +20,22 @@ typedef struct {
 typedef burst_motion_config_t * burst_motion_config_p;
 
 typedef struct {
+	void (* run)(void);
+	void (* setup)(	
+			burst_signal_p				_signal_req
+		, burst_signal_p				_signal
+		, burst_signal_p				_control
+		, burst_signal_t 				_start_control
+		, burst_satstate_t *		_master_sut_flag
+		,	burst_signal_p				_controlMax
+		, burst_signal_p				_controlMin
+		, burst_signal_p				_signal_diff
+		, burst_long_signal_p 	_reference
+		, burst_long_signal_p 	_reference_max
+		, burst_long_signal_p 	_reference_min
+	);
+	void (* reset)(burst_signal_t _start_control );
+	burst_satstate_t		satstate;
 	burst_motion_config_p config;
 	burst_signal_p			signal_req;
 	burst_signal_p			signal;
@@ -34,41 +50,34 @@ typedef struct {
 	burst_long_signal_t force;
 	burst_long_signal_t long_model;
 	burst_signal_t			* control;
-	burst_satstate_t		satstate;
-	void (* run)(void);
-	void (* begin)(	burst_motion_config_p _config
-		,	burst_signal_p				_signal_req
-		, burst_signal_p				_signal
-		, burst_signal_p				_control
-		, burst_signal_t 				_start_control
-		, burst_satstate_t *		_master_sut_flag
-		,	burst_signal_p				_controlMax
-		, burst_signal_p				_controlMin
-		, burst_signal_p				_signal_diff
-		, burst_long_signal_p 	_reference
-		, burst_long_signal_p 	_reference_max
-		, burst_long_signal_p 	_reference_min
-	);
-	void (* reset)(burst_signal_t _start_control );
+
 } burst_motion_t;
 typedef burst_motion_t * burst_motion_p;
 
-void burst_motion_begin_( burst_motion_p _motion, burst_signal_t _start_control );
+void burst_motion_begin( burst_motion_p _motion,burst_motion_config_p _config);
 void burst_motion_run_(burst_motion_p _motion);
 void burst_motion_reset_(burst_motion_p _motion, burst_signal_t _start_control);
+void burst_motion_setup_(
+	  burst_motion_p 				_motion
+	,	burst_signal_p				_signal_req
+	, burst_signal_p				_signal
+	, burst_signal_p			  _control
+	, burst_signal_t 				_start_control
+	, burst_satstate_t *		_master_sut_flag
+	,	burst_signal_p				_controlMax
+	, burst_signal_p				_controlMin
+	, burst_signal_p				_signal_diff
+	, burst_long_signal_p 	_reference
+	, burst_long_signal_p 	_reference_max
+	, burst_long_signal_p 	_reference_min
+);
 
-#define BURST_MOTION( S ) BURST_MOTION_( S )
-#define BURST_MOTION_( S ) \
-extern burst_motion_t  S;
-
-#define BURST_MOTION_CREATE( S ) BURST_MOTION_CREATE_( S )
-#define BURST_MOTION_CREATE_( S ) \
+#define burst_motion_impl( S, D ) \
 BURST_WEAK  void S##_run(void){\
-	return burst_motion_run_(&S);\
+	return burst_motion_run_(&D);\
 }\
-BURST_WEAK  void S##_begin(\
-	burst_motion_config_p _config\
-	,	burst_signal_p				_signal_req\
+BURST_WEAK  void S##_setup(\
+	burst_signal_p				_signal_req\
 	, burst_signal_p				_signal\
 	, burst_signal_p			  _control\
 	, burst_signal_t 				_start_control\
@@ -80,40 +89,40 @@ BURST_WEAK  void S##_begin(\
 	, burst_long_signal_p 	_reference_max\
 	, burst_long_signal_p 	_reference_min\
 ){ \
-	S.config = _config;\
-	S.signal_req = _signal_req;\
-	S.signal = _signal;\
-	S.control = _control;\
-	S.master_sut_flag = _master_sut_flag;\
-	S.controlMax = _controlMax;\
-	S.controlMin = _controlMin;\
-	S.signal_diff = _signal_diff;\
-	S.reference = _reference;\
-	S.reference_max = _reference_max;\
-	S.reference_min = _reference_min;\
-	burst_motion_begin_(&S,_start_control); \
+	burst_motion_setup_(\
+		&D\
+		,_signal_req\
+		,_signal\
+		,_control\
+		,_start_control\
+		,_master_sut_flag\
+		,_controlMax\
+		,_controlMin\
+		,_signal_diff\
+		,_reference\
+		,_reference_max\
+		,_reference_min\
+	);\
 }\
 BURST_WEAK  void S##_reset(burst_signal_t _start_control){\
-	return burst_motion_reset_(&S,_start_control);\
-}\
-burst_motion_t S ={ \
-	0 \
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, burst_satstate_both\
-	, S##_run\
-	, S##_begin\
+	return burst_motion_reset_(&D,_start_control);\
+}
+
+#define burst_motion_setup( S ) \
+{\
+	S##_run\
+	, S##_setup\
 	, S##_reset\
+	, burst_satstate_both\
 }; 
+
+#define BURST_MOTION( S ) BURST_OBJECT(burst_motion,S)
+
+#define BURST_MOTION_CREATE( S ) BURST_OBJECT_CREATE(burst_motion,S)
+
+#define BURST_MOTION_SUBCREATE( S,P ) BURST_OBJECT_SUBCREATE(burst_motion,S,P)
+
+#define BURST_MOTION_SUBSETUP( S,P )  BURST_OBJECT_SUBSETUP(burst_motion,S,P)
+
+
 #endif

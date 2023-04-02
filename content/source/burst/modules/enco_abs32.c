@@ -1,15 +1,15 @@
-#include "burst/burst_enco.h"
-void burst_enco_run_(burst_enco_p _enco){
-	burst_enco_config_p conf = _enco->config;
+#include "burst/modules/enco_abs32.h"
+void enco_abs32_run_(enco_abs32_p _enco){
+	enco_abs32_config_p conf = (enco_abs32_config_p)_enco->ref.config;
 	if(conf == 0) return;
-	if (conf->offset.native != _enco->offset.native || conf->offset.position != _enco->offset.position) {
-		_enco->begin(conf);
+	if (_enco->ref.ready && (conf->offset.native != _enco->offset.native || conf->offset.position != _enco->offset.position) ) {
+		_enco->ref.reset();
 		return;
 	}
-	_enco->counter.total++;
+	_enco->ref.counter.total++;
 	_enco->native.raw = _enco->encode();
 	_enco->query();
-	if (_enco->start_pause_tick == 0) {
+	if (_enco->ref.ready) {
 		if ( !_enco->error() ) {
 			uint32_t tmp = _enco->native.raw << _enco->shift.raw;
 			int32_t  tmp_delta = (int32_t)(tmp - _enco->native.ceiled);
@@ -26,25 +26,25 @@ void burst_enco_run_(burst_enco_p _enco){
 			}
 			
 			if(dtmp > BURST_SIGNAL_MAX){
-				_enco->delta = _enco->delta_acc = BURST_SIGNAL_MAX;
+				_enco->delta = _enco->ref.delta_acc = BURST_SIGNAL_MAX;
 			} else if(dtmp < BURST_SIGNAL_MIN) {
-				_enco->delta = _enco->delta_acc = BURST_SIGNAL_MIN;
+				_enco->delta = _enco->ref.delta_acc = BURST_SIGNAL_MIN;
 			} else {
 				_enco->delta = dtmp;
-				burst_long_signal_t adtmp = _enco->delta_acc + _enco->delta;
+				burst_long_signal_t adtmp = _enco->ref.delta_acc + _enco->delta;
 				if(dtmp > BURST_SIGNAL_MAX){
-					_enco->delta_acc = BURST_SIGNAL_MAX;
+					_enco->ref.delta_acc = BURST_SIGNAL_MAX;
 				} else if(dtmp < BURST_SIGNAL_MIN) {
-					_enco->delta_acc = BURST_SIGNAL_MIN;
+					_enco->ref.delta_acc = BURST_SIGNAL_MIN;
 				}	else {						
-					_enco->delta_acc = adtmp;
+					_enco->ref.delta_acc = adtmp;
 				}
 			}
 		}
 		else {
-			_enco->counter.fault++;
+			_enco->ref.counter.fault++;
+			_enco->native.delta = _enco->ref.delta_acc = 0;
 			//to do так делать нельзя, та как накапливается ошибка!
-			_enco->native.delta = _enco->delta_acc = 0;
 			/*present.native.raw += present.native.delta;
 			present.native.ceiled += (present.native.delta << shift);
 			present.delta_acc += present.delta;*/
@@ -56,8 +56,8 @@ void burst_enco_run_(burst_enco_p _enco){
 			_enco->acc += _enco->native.delta;
 		}
 		//todo round_l не катит
-		_enco->position = _enco->acc >> _enco->shift.value;
-		_enco->position += conf->offset.position;
+		_enco->ref.position = _enco->acc >> _enco->shift.value;
+		_enco->ref.position += conf->offset.position;
 	}
 	else {
 		if ( !_enco->error() )  {
@@ -67,31 +67,41 @@ void burst_enco_run_(burst_enco_p _enco){
 				tmp = 0xFFFFFFFF - tmp;
 			}
 			_enco->acc = ((burst_long_signal_t)tmp)>>_enco->shift.raw;
-			_enco->position = (_enco->acc >> _enco->shift.value );
-			_enco->position += conf->offset.position;
+			_enco->ref.position = (_enco->acc >> _enco->shift.value );
+			_enco->ref.position += conf->offset.position;
 			_enco->start_pause_tick--;
+			if(_enco->start_pause_tick==0){
+				_enco->ref.ready = burst_true;
+			}
 		}
 		else {
-				_enco->counter.fault++;
+				_enco->ref.counter.fault++;
 		}
 	}
 }
-void burst_enco_begin_(burst_enco_p _enco,burst_enco_config_p _config){
-	_enco->config = _config;
+void enco_abs32_begin(enco_abs32_p _enco,enco_abs32_config_p _config){
+	_enco->ref.config = &(_config->ref);
 	_enco->shift.raw = (_config->resolution.round - _config->resolution.raw);
 	_enco->shift.value = (_config->resolution.raw - _config->resolution.actual);
-	_enco->counter.fault = 0;
-	_enco->counter.total = 0;
+	_enco->ref.counter.fault = 0;
+	_enco->ref.counter.total = 0;
 	_enco->native.raw = 0;
 	_enco->native.delta = 0;
 	_enco->native.ceiled = 0;
 	_enco->delta = 0;
-	_enco->delta_acc = 0;
+	_enco->ref.delta_acc = 0;
 	_enco->acc = 0;
-	_enco->position = 0;
-	_enco->start_pause_tick = 1 <<  _config->init_count_shift;
+	_enco->ref.position = 0;
 	_enco->offset.position =		_config->offset.position;
 	_enco->offset.native =		_config->offset.native;
 	_enco->query();
+	enco_abs32_reset_(_enco);
 }
 
+void enco_abs32_reset_(enco_abs32_p _enco){
+	enco_abs32_config_p conf = (enco_abs32_config_p)_enco->ref.config;
+	_enco->start_pause_tick = 1 <<  conf->init_count_shift;
+	_enco->ref.ready = burst_false;
+	_enco->offset.position =		conf->offset.position;
+	_enco->offset.native =		conf->offset.native;
+}

@@ -179,6 +179,11 @@ typedef struct {
 } burst_range_t;
 typedef burst_range_t * burst_range_p;
 
+typedef struct {
+	burst_long_signal_t lo;
+	burst_long_signal_t hi;
+} burst_long_range_t;
+typedef burst_long_range_t * burst_long_range_p;
 
 typedef struct {
 	burst_range_t in_range;

@@ -1,7 +1,6 @@
 #include "burst/burst_motion.h"
-void burst_motion_begin_(burst_motion_p _motion, burst_signal_t _start_control){
-	//todo
-	burst_motion_reset_(_motion,_start_control);
+void burst_motion_begin(burst_motion_p _motion,burst_motion_config_p _config){
+	_motion->config = _config;
 }
 void burst_motion_run_(burst_motion_p _motion){
   burst_motion_config_p s =_motion->config;
@@ -129,4 +128,32 @@ void burst_motion_reset_(burst_motion_p _motion, burst_signal_t _start_control){
 	_motion->long_model=0;
 	*(_motion->control)=0;
 	_motion->satstate=burst_satstate_both;
+}
+
+
+void burst_motion_setup_(
+	  burst_motion_p 				_motion
+	,	burst_signal_p				_signal_req
+	, burst_signal_p				_signal
+	, burst_signal_p			  _control
+	, burst_signal_t 				_start_control
+	, burst_satstate_t *		_master_sut_flag
+	,	burst_signal_p				_controlMax
+	, burst_signal_p				_controlMin
+	, burst_signal_p				_signal_diff
+	, burst_long_signal_p 	_reference
+	, burst_long_signal_p 	_reference_max
+	, burst_long_signal_p 	_reference_min
+){
+	_motion->signal_req = _signal_req;
+	_motion->signal = _signal;
+	_motion->control = _control;
+	_motion->master_sut_flag = _master_sut_flag;
+	_motion->controlMax = _controlMax;
+	_motion->controlMin = _controlMin;
+	_motion->signal_diff = _signal_diff;
+	_motion->reference = _reference;
+	_motion->reference_max = _reference_max;
+	_motion->reference_min = _reference_min;
+	burst_motion_reset_(_motion,_start_control);
 }

@@ -1,19 +1,19 @@
 #include "burst/burst_positioner.h"
-void burst_positioner_begin_(burst_posicioner_p _posicioner){
-	burst_positioner_reset_(_posicioner);
+void burst_positioner_begin(burst_positioner_p _positioner, burst_positioner_config_p _config){
+	_positioner->config = _config;
 }
 #ifndef  BURTS_POSITINER_MAX_ERR
 #define BURTS_POSITINER_MAX_ERR BURST_SIGNAL_T(0.9)
 #endif
-void burst_positioner_run_(burst_posicioner_p _posicioner){
-	burst_positioner_config_p s = _posicioner->config;
-	burst_long_signal_t err = *(_posicioner->signal_req) - *(_posicioner->signal);
+void burst_positioner_run_(burst_positioner_p _positioner){
+	burst_positioner_config_p s = _positioner->config;
+	burst_long_signal_t err = *(_positioner->signal_req) - *(_positioner->signal);
 	burst_signal_t deadZone = s->deadZone;
 	if (err==0){
-			if (_posicioner->forceControl) {
-				*(_posicioner->control)= *(_posicioner->forceControl);
+			if (_positioner->forceControl) {
+				*(_positioner->control)= *(_positioner->forceControl);
 			} else{
-				*(_posicioner->control)= 0;
+				*(_positioner->control)= 0;
 			}
 			return;
 	}else{
@@ -38,13 +38,13 @@ void burst_positioner_run_(burst_posicioner_p _posicioner){
 	}
 	{        
 		burst_long_signal_t control_val = err*(s->propGain);
-		burst_signal_t controlMin = *(_posicioner->controlMin);
-		burst_signal_t controlMax = *(_posicioner->controlMax);
-		if(_posicioner->signal_diff){
-			control_val -= (*(_posicioner->signal_diff))*(s->diffGain);
+		burst_signal_t controlMin = *(_positioner->controlMin);
+		burst_signal_t controlMax = *(_positioner->controlMax);
+		if(_positioner->signal_diff){
+			control_val -= (*(_positioner->signal_diff))*(s->diffGain);
 		}
 		control_val = BURST_RIGHT_SHIFT(control_val, s->controlShift);
-		if (_posicioner->forceControl) control_val += *(_posicioner->forceControl);
+		if (_positioner->forceControl) control_val += *(_positioner->forceControl);
 		BURST_SATURATE(control_val, controlMin, controlMax);
 		if(control_val == 0 && s->crawlSpeed >0 ){
 			if(err>s->deadZone){
@@ -53,9 +53,31 @@ void burst_positioner_run_(burst_posicioner_p _posicioner){
 				control_val =   -s->crawlSpeed;				
 			}
 		}
-		*(_posicioner->control) = control_val;
+		*(_positioner->control) = control_val;
 	}
+
 }
 
-void burst_positioner_reset_(burst_posicioner_p _motion){
+void burst_positioner_reset_(burst_positioner_p _motion){
+}
+
+void burst_positioner_setup_(
+	burst_positioner_p _positioner
+	,	burst_long_signal_p				_signal_req
+	, burst_long_signal_p				_signal
+	, burst_signal_p				_signal_diff
+	,	burst_signal_p				_forceControl
+	, burst_signal_p			  _control
+	,	burst_signal_p				_controlMax
+	, burst_signal_p				_controlMin
+){ 
+	_positioner->signal_req = _signal_req;
+	_positioner->signal = _signal;
+	_positioner->signal_diff = _signal_diff;
+	_positioner->forceControl = _forceControl;
+	_positioner->control = _control;
+	_positioner->controlMax = _controlMax;
+	_positioner->controlMin = _controlMin;
+	burst_positioner_reset_(_positioner);
+
 }

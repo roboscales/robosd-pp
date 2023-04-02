@@ -14,19 +14,10 @@ typedef struct {
 
 typedef burst_positioner_config_t * burst_positioner_config_p;
 
-typedef struct {
-	burst_positioner_config_p config;
-	burst_long_signal_p signal_req;
-	burst_long_signal_p signal;
-	burst_signal_p signal_diff;
-	burst_signal_p forceControl;
-	burst_signal_p control;
-	burst_signal_p controlMax;
-	burst_signal_p controlMin;
+typedef struct burst_positioner_s{
 	void (* run)(void);
-	void (* begin)(	
-		burst_positioner_config_p _config
-		,	burst_long_signal_p				_signal_req
+	void (* setup)(			
+		burst_long_signal_p				_signal_req
 		, burst_long_signal_p				_signal
 		,	burst_signal_p						_signal_diff
 		,	burst_signal_p						_forceControl
@@ -35,25 +26,38 @@ typedef struct {
 		, burst_signal_p						_controlMin
 	);
 	void (* reset)( void );
-} burst_posicioner_t;
-typedef burst_posicioner_t * burst_posicioner_p;
+	burst_positioner_config_p config;
+	burst_long_signal_p signal_req;
+	burst_long_signal_p signal;
+	burst_signal_p signal_diff;
+	burst_signal_p forceControl;
+	burst_signal_p control;
+	burst_signal_p controlMax;
+	burst_signal_p controlMin;
+} burst_positioner_t;
+typedef burst_positioner_t * burst_positioner_p;
 
-void burst_positioner_begin_( burst_posicioner_p _positioner);
-void burst_positioner_run_(burst_posicioner_p _positioner);
-void burst_positioner_reset_(burst_posicioner_p _positioner);
+void burst_positioner_begin( burst_positioner_p _positioner, burst_positioner_config_p _config);
+void burst_positioner_setup_(
+	burst_positioner_p _positioner
+	, burst_long_signal_p _signal_req
+	, burst_long_signal_p _signal
+	, burst_signal_p _signal_diff
+	, burst_signal_p _forceControl
+	, burst_signal_p _control
+	, burst_signal_p _controlMax
+	, burst_signal_p _controlMin
+);
+void burst_positioner_run_(burst_positioner_p _positioner);
+void burst_positioner_reset_(burst_positioner_p _positioner);
 
-#define BURST_POSITIONER( S ) BURST_POSITIONER_( S )
-#define BURST_POSITIONER_( S ) \
-extern burst_posicioner_t  S;
 
-#define BURST_POSITIONER_CREATE( S ) BURST_POSITIONER_CREATE_( S )
-#define BURST_POSITIONER_CREATE_( S ) \
+#define burst_positioner_impl( S, D ) \
 BURST_WEAK  void S##_run(void){\
-	burst_positioner_run_(&S);\
+	burst_positioner_run_(&D);\
 }\
-BURST_WEAK  void S##_begin(\
-	burst_positioner_config_p _config\
-	,	burst_long_signal_p				_signal_req\
+BURST_WEAK  void S##_setup(\
+		burst_long_signal_p				_signal_req\
 	, burst_long_signal_p				_signal\
 	, burst_signal_p				_signal_diff\
 	,	burst_signal_p				_forceControl\
@@ -61,30 +65,35 @@ BURST_WEAK  void S##_begin(\
 	,	burst_signal_p				_controlMax\
 	, burst_signal_p				_controlMin\
 ){ \
-	S.config = _config;\
-	S.signal_req = _signal_req;\
-	S.signal = _signal;\
-	S.signal_diff = _signal_diff;\
-	S.forceControl = _forceControl;\
-	S.control = _control;\
-	S.controlMax = _controlMax;\
-	S.controlMin = _controlMin;\
-	burst_positioner_begin_(&S); \
+	burst_positioner_setup_(\
+		&D\
+		, _signal_req\
+		, _signal\
+		, _signal_diff\
+		, _forceControl\
+		, _control\
+		, _controlMax\
+		, _controlMin\
+	);\
 }\
 BURST_WEAK  void S##_reset(void){\
 	burst_positioner_reset_(&S);\
-}\
-burst_posicioner_t S ={ \
-	0 \
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, 0\
-	, S##_run\
-	, S##_begin\
+}
+
+
+#define burst_positioner_setup( S ) \
+{ \
+	 S##_run\
+	, S##_setup\
 	, S##_reset\
 }; 
+
+#define BURST_POSITIONER( S ) BURST_OBJECT(burst_positioner,S)
+
+#define BURST_POSITIONER_CREATE( S ) BURST_OBJECT_CREATE(burst_positioner,S)
+
+#define BURST_POSITIONER_SUBCREATE( S,P ) BURST_OBJECT_SUBCREATE(burst_positioner,S,P)
+
+#define BURST_POSITIONER_SUBSETUP( S,P )  BURST_OBJECT_SUBSETUP(burst_positioner,S,P)
+
 #endif
