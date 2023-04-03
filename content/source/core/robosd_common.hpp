@@ -253,6 +253,12 @@ namespace robo {
 #define ROBO_APP_SYSTEM_ENABLED 0
 #endif
 
+#if ROBO_APP_SYSTEM_ENABLED == 0
+#ifdef ROBO_APP_ENV_TYPE
+#undef ROBO_APP_ENV_TYPE
+#endif
+#define ROBO_APP_ENV_TYPE ROBO_APP_ENV_NONE
+#endif
 
 #define ROBO_APP_TYPE_NONE 0
 #define ROBO_APP_TYPE_NATIVE 1

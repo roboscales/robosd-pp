@@ -65,6 +65,7 @@ namespace robo {
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			template< typename B> static bool format_stream(B & _b,  cstr _format, va_list _args) {
 				stream_s stream;
+				#if ROBO_APP_SYSTEM_ENABLED == 1
 				#if ROBO_APP_ENV_ENABLED == 1
 				if (system::env::is_backend()) {
 					return ( sprintf_backend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
@@ -75,6 +76,9 @@ namespace robo {
 				}
 				#else
 				return ( sprintf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );								
+				#endif
+				#else
+					return ( sprintf_frontend_(stream,_format,_args)  && _b.put((uint8_t *)stream.memo, stream.size*sizeof(char_t)) );			
 				#endif
 			};
 			#if ROBO_UNICODE_ENABLED == 1

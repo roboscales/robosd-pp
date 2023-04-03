@@ -21,3 +21,9 @@
 /content/app-template/app/burst-drive/projects/STM32F103/Core/Src
 /content/build/vs19/flow2serial++/.vs/flow2serial++/v16
 /content/source/kinematics/robosd_kinematics — копия.cpp
+/content/doc/matlab/slprj/sim/varcache/m1
+/content/doc/matlab/*.slxc
+/content/app-template/app/mexo++drive/projects/STM32F103C6/MDK-ARM/mexo++drive
+/content/app-template/app/mexo++drive/projects/STM32F103C6/Drivers
+/content/app-template/app/mexo++drive/projects/STM32F405/MDK-ARM/mexo-test
+/content/app-template/app/mexo++drive/projects/STM32F405/Drivers/
