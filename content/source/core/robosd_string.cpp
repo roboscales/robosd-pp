@@ -160,7 +160,7 @@ namespace robo {
 
 	bool string::format(cstr _format, va_list _args) {
 		stream_s stream;
-		#if ROBO_APPS_SYSTEM_ENABLED
+		#if ROBO_APP_SYSTEM_ENABLED
 		if (system::env::is_backend()) {			
 			if(sprintf_backend_(stream, _format, _args)){
 				*((stds*)value_) = stream.memo;

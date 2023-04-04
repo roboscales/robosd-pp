@@ -63,6 +63,5 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\app\kalina1-im\projects\vs19\robosd_app_tuning.hpp" />
   </ItemGroup>
 </Project>

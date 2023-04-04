@@ -99,9 +99,18 @@ void enco_abs32_begin(enco_abs32_p _enco,enco_abs32_config_p _config){
 }
 
 void enco_abs32_reset_(enco_abs32_p _enco){
+	_enco->ref.counter.fault = 0;
+	_enco->ref.counter.total = 0;
+	_enco->native.raw = 0;
+	_enco->native.delta = 0;
+	_enco->native.ceiled = 0;
+	_enco->delta = 0;
+	_enco->ref.delta_acc = 0;
+	_enco->acc = 0;
+	_enco->ref.position = 0;
 	enco_abs32_config_p conf = (enco_abs32_config_p)_enco->ref.config;
-	_enco->start_pause_tick = 1 <<  conf->init_count_shift;
-	_enco->ref.ready = burst_false;
 	_enco->offset.position =		conf->offset.position;
 	_enco->offset.native =		conf->offset.native;
+	_enco->start_pause_tick = 1 <<  conf->init_count_shift;
+	_enco->ref.ready = burst_false;
 }

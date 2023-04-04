@@ -187,7 +187,6 @@
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp" />
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp" />
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.hpp" />
-    <ClInclude Include="..\..\..\..\app\kalina1-im\projects\vs19\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

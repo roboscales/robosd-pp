@@ -85,13 +85,15 @@ namespace number_test {
 			cl.tick();
 			X x(1);
 			Y y(1);
-			x = mppd::clock::prf::tick();
-			y = mppd::clock::prf::tick();
-			for (int i=0;i<1000;++i){
-				r *= x;
-				r *= y;
-				r += x;
-				r += y;
+			for (int i=0;i<10;++i){
+				x = mppd::clock::prf::tick();
+				y = mppd::clock::prf::tick();
+				for(int j=0;j<100;j++){
+					r *= x;
+					r *= y;
+					r += x;
+					r += y;
+				}
 			}
 			ns = (cl.tock()+512);
 		}

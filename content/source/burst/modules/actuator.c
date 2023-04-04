@@ -131,20 +131,17 @@ burst_dev_mode_t actuator_mode_voltage = {
 	,&burst_dev_idle_event
 };
 void actuator_set_speed_range_(actuator_p _actuator, actuator_action_p _action, actuator_config_p _config){
-if( _action->speed > _config->range.speed.hi ){
+	if(_action->speed<0) _action->speed = 0;
+	if( _action->speed > _config->range.speed.hi ){
 		_actuator->speed.range.hi = _config->range.speed.hi;
-	} else if( _action->speed < _config->range.speed.lo ){
-		_actuator->speed.range.hi = _config->range.speed.lo;
-	} else {
+	}  else {
 		_actuator->speed.range.hi =  _action->speed;
 	}
 	
-	if( -_action->speed >_config->range.speed.hi ){
-		_actuator->speed.range.lo = _config->range.speed.hi;
-	} else if( -_action->speed < _config->range.speed.lo ){
+	if( -_action->speed < _config->range.speed.lo ){
 		_actuator->speed.range.lo = _config->range.speed.lo;
 	} else {
-		_actuator->speed.range.lo =  _action->speed;
+		_actuator->speed.range.lo =  -_action->speed;
 	}
 }
 
