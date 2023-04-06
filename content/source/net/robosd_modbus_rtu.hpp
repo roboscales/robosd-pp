@@ -10,6 +10,7 @@ namespace robo{
 			struct commands{
 				enum {
 					read_regs = 0x03
+					,read_outputs = 0x04
 					, write_reg = 0x06
 					, write_regs = 0x010
 				} ;
@@ -398,11 +399,11 @@ namespace robo{
 						M::exchange(outcom_, &incom_, &write_regs_confirm_);
 					}					
 				}
-				void read_regs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs ){
+				void read_regs__(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs, uint8_t _command ){
 					if( (_count>=1) && (_count<=max_reg_count) ){
 						address_ = _address;
 						reg_adress_ = _reg_adress;
-						command_ = commands::read_regs;
+						command_ = _command;
 						count_ = _count;
 						incom_regs_ = _incom_regs;
 						wait_length_ = 5 +_count*2;
@@ -419,7 +420,14 @@ namespace robo{
 						M::exchange(outcom_, &incom_, &read_regs_confirm_);
 					}					
 				}
+				void read_regs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs ){
+					read_regs__(_address,_reg_adress,_count,_incom_regs,commands::read_regs);
+				}
+				void read_outputs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs ){
+					read_regs__(_address,_reg_adress,_count,_incom_regs, commands::read_outputs);
+				}
 			};
+
 
 		}
 	}
