@@ -399,6 +399,25 @@ namespace robo{
 						M::exchange(outcom_, &incom_, &write_regs_confirm_);
 					}					
 				}
+				void write_reg(uint8_t _address, uint16_t _reg_adress, uint16_t _data ){
+						address_ = _address;
+						reg_adress_ = _reg_adress;
+						command_ = commands::write_reg;
+						count_ = 1;
+						incom_regs_ = 0;
+						wait_length_ = 8;
+						uint8_t* ptr = outcom_.memo;
+						*ptr++ = address_;
+						*ptr++ = command_;
+						ptr= write_to(_reg_adress,ptr);
+						ptr = write_to(_data,ptr);
+						uint16_t crc_len= 6 ;
+						uint16_t crc = T::crc(outcom_.memo, crc_len);
+						*(uint16_t*)ptr = crc;		
+						outcom_.size = crc_len+2;
+						incom_.size = wait_length_;
+						M::exchange(outcom_, &incom_, &write_regs_confirm_);					
+				}
 				void read_regs__(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs, uint8_t _command ){
 					if( (_count>=1) && (_count<=max_reg_count) ){
 						address_ = _address;
