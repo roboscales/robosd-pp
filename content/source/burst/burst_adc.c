@@ -24,7 +24,7 @@ void adc_update( adc_p _adc, const BURST_ADC_TYPE *  _raw){
 		const burst_signal_t* s = _adc->config->scale;
 		BURST_ADC_TYPE * o = _adc->offset;
 		for (int i = 0; i < BURST_ADC_CHANNEL_COUNT; ++i, ++v, ++n, ++s, ++o) {
-			*v = *s * (burst_signal_t)(*n - *o);
+			*v =  (burst_signal_t) ((burst_long_signal_t) (*n - *o) * *s);
 		}
 	}
 	else {
@@ -43,7 +43,7 @@ void adc_update( adc_p _adc, const BURST_ADC_TYPE *  _raw){
 			int shift = _adc->config->init_count_shift;
 			for (int i = 0; i < BURST_ADC_CHANNEL_COUNT; ++i, ++v, ++n, ++s, ++o, ++a) {
 				*o = (BURST_ADC_TYPE)((*a + (1 << (shift - 1))) >> shift)+1;
-				*v = *s * (*n - *o);
+				*v =  (burst_signal_t) ((burst_long_signal_t) (*n - *o) * *s);
 			}
 			adc_reset(_adc);
 			_adc->ready = burst_true;

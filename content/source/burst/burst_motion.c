@@ -1,7 +1,4 @@
 #include "burst/burst_motion.h"
-void burst_motion_begin(burst_motion_p _motion,burst_motion_config_p _config){
-	_motion->config = _config;
-}
 void burst_motion_run_(burst_motion_p _motion){
   burst_motion_config_p s =_motion->config;
 	burst_long_signal_t Error;
@@ -144,7 +141,9 @@ void burst_motion_setup_(
 	, burst_long_signal_p 	_reference
 	, burst_long_signal_p 	_reference_max
 	, burst_long_signal_p 	_reference_min
+	, burst_motion_config_p _config
 ){
+	_motion->config = _config;
 	_motion->signal_req = _signal_req;
 	_motion->signal = _signal;
 	_motion->control = _control;

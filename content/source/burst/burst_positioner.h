@@ -24,6 +24,7 @@ typedef struct burst_positioner_s{
 		, burst_signal_p						_control
 		,	burst_signal_p						_controlMax
 		, burst_signal_p						_controlMin
+		, burst_positioner_config_p _config
 	);
 	void (* reset)( void );
 	burst_positioner_config_p config;
@@ -37,7 +38,6 @@ typedef struct burst_positioner_s{
 } burst_positioner_t;
 typedef burst_positioner_t * burst_positioner_p;
 
-void burst_positioner_begin( burst_positioner_p _positioner, burst_positioner_config_p _config);
 void burst_positioner_setup_(
 	burst_positioner_p _positioner
 	, burst_long_signal_p _signal_req
@@ -47,6 +47,7 @@ void burst_positioner_setup_(
 	, burst_signal_p _control
 	, burst_signal_p _controlMax
 	, burst_signal_p _controlMin
+	, burst_positioner_config_p _config
 );
 void burst_positioner_run_(burst_positioner_p _positioner);
 void burst_positioner_reset_(burst_positioner_p _positioner);
@@ -64,6 +65,7 @@ BURST_WEAK  void S##_setup(\
 	, burst_signal_p			  _control\
 	,	burst_signal_p				_controlMax\
 	, burst_signal_p				_controlMin\
+	, burst_positioner_config_p _config\
 ){ \
 	burst_positioner_setup_(\
 		&D\
@@ -74,6 +76,7 @@ BURST_WEAK  void S##_setup(\
 		, _control\
 		, _controlMax\
 		, _controlMin\
+		, _config\
 	);\
 }\
 BURST_WEAK  void S##_reset(void){\

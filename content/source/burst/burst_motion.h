@@ -33,6 +33,7 @@ typedef struct {
 		, burst_long_signal_p 	_reference
 		, burst_long_signal_p 	_reference_max
 		, burst_long_signal_p 	_reference_min
+		, burst_motion_config_p _config
 	);
 	void (* reset)(burst_signal_t _start_control );
 	burst_satstate_t		satstate;
@@ -54,7 +55,6 @@ typedef struct {
 } burst_motion_t;
 typedef burst_motion_t * burst_motion_p;
 
-void burst_motion_begin( burst_motion_p _motion,burst_motion_config_p _config);
 void burst_motion_run_(burst_motion_p _motion);
 void burst_motion_reset_(burst_motion_p _motion, burst_signal_t _start_control);
 void burst_motion_setup_(
@@ -70,6 +70,7 @@ void burst_motion_setup_(
 	, burst_long_signal_p 	_reference
 	, burst_long_signal_p 	_reference_max
 	, burst_long_signal_p 	_reference_min
+	, burst_motion_config_p _config
 );
 
 #define burst_motion_impl( S, D ) \
@@ -88,6 +89,7 @@ BURST_WEAK  void S##_setup(\
 	, burst_long_signal_p 	_reference\
 	, burst_long_signal_p 	_reference_max\
 	, burst_long_signal_p 	_reference_min\
+	, burst_motion_config_p _config\
 ){ \
 	burst_motion_setup_(\
 		&D\
@@ -102,6 +104,7 @@ BURST_WEAK  void S##_setup(\
 		,_reference\
 		,_reference_max\
 		,_reference_min\
+		,_config\
 	);\
 }\
 BURST_WEAK  void S##_reset(burst_signal_t _start_control){\

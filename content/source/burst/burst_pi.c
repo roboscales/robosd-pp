@@ -1,8 +1,5 @@
 #include "burst/burst_pi.h"
-void burst_pi_begin_(burst_pi_p _pi, burst_signal_t _start_control){
-	//todo
-	burst_pi_reset_(_pi,_start_control);
-}
+
 void burst_pi_run_(burst_pi_p _pi){
   burst_pi_config_p s =_pi->config;
 	burst_long_signal_t Error;
@@ -73,4 +70,75 @@ void burst_pi_reset_(burst_pi_p _pi, burst_signal_t _start_control){
 	_pi->long_model=0;
 	*(_pi->control)=0;
 	_pi->satstate=burst_satstate_both;
+}
+
+
+void burst_limiter_run(burst_limiter_p _limiter){
+	burst_long_signal_t test_lim_control;
+	burst_signal_t control_des = _limiter->control_des;
+    burst_signal_t  control_req = *(_limiter->control_req);
+    _limiter->signal_hi = *(_limiter->signal) - *(_limiter->signalMax);
+    _limiter->signal_low = *(_limiter->signal) - *(_limiter->signalMin);
+    burst_pi_run_( _limiter->r_hi);
+    burst_pi_run_( _limiter->r_low);
+
+    if( control_des < control_req){
+		control_des = s_inc(control_des, *(_limiter-> ramp), *(_limiter->controlMin), control_req);
+    } else {
+    	if( control_des > control_req){
+				control_des = s_inc(control_des, -*(_limiter->ramp), control_req, *(_limiter->controlMax));
+      }
+    }
+
+
+    test_lim_control =  _limiter -> control_hi +  _limiter -> control_low + control_des;
+    _limiter->control_des = control_des;
+    
+    
+    if(test_lim_control > *(_limiter->controlMax)){
+       *(_limiter->control_val) =  *(_limiter->controlMax);
+        _limiter ->sut_flag = burst_satstate_hi;
+    } else if(test_lim_control < *(_limiter->controlMin)){
+        *(_limiter->control_val) =  *(_limiter->controlMin);        
+        _limiter ->sut_flag = burst_satstate_lo;
+    } else {
+        _limiter ->sut_flag = burst_satstate_none;
+        *(_limiter->control_val) =  test_lim_control;                
+    }
+}
+
+void burst_limiter_reset(burst_limiter_p _limiter, burst_signal_t _def){
+	burst_pi_reset_(_limiter->r_hi,_def);
+	burst_pi_reset_(_limiter->r_low,_def);
+	*(_limiter->control_val)=_def;
+}
+void burst_limiter_setup(burst_limiter_p _limiter, burst_limiter_config_p _config, burst_signal_t _def ){
+	_limiter->r_hi->config = _config->reg_config;
+	_limiter->r_hi->config = _config->reg_config;
+	_limiter->r_hi->controlMin =  _config->controlMin; 
+	_limiter->r_hi->controlMax = &(_limiter->zero_signal);
+	_limiter->r_hi->signal = &(_limiter -> signal_hi);
+	_limiter->r_hi->signal_req = &(_limiter->zero_signal);
+	_limiter->r_hi->control = &(_limiter -> control_hi);
+	_limiter->r_hi->master_sut_flag = &(_limiter ->sut_flag);
+
+	_limiter->r_low->config = _config->reg_config;
+	_limiter->r_low->controlMin =  &(_limiter->zero_signal); 
+	_limiter->r_low->controlMax = _config->controlMax;
+	_limiter->r_low->signal = &(_limiter -> signal_low);
+	_limiter->r_low->signal_req = &(_limiter->zero_signal);
+	_limiter->r_low->control = &(_limiter -> control_low);
+	_limiter->r_low->master_sut_flag = &(_limiter ->sut_flag);
+
+	_limiter->control_req = _config->control_req;
+	_limiter->control_val=  _config->control_val;
+	_limiter->signal=  _config->signal;
+	_limiter->controlMax = _config->controlMax;
+	_limiter->controlMin = _config->controlMin;
+	_limiter->signalMin = _config->signalMin;
+	_limiter->signalMax = _config->signalMax;
+
+	_limiter->ramp = &(_config->reg_config->ramp);
+	
+	burst_limiter_reset(_limiter, _def);
 }

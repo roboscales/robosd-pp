@@ -2,9 +2,7 @@
 #define burst_pi_h
 #include "burst/burst_signal.h"
 #include "burst/burst.h"
-#ifndef BURST_MOTION_VIRTUAL_ELASTIC_ENABLED
-#define BURST_MOTION_VIRTUAL_ELASTIC_ENABLED 0
-#endif
+
 typedef struct {
 	burst_parametr_t	propGain;
 	burst_parametr_t	modelGain;
@@ -12,6 +10,7 @@ typedef struct {
 	burst_parametr_t	forceGain;
 	uint8_t						controlShift;
 	uint8_t						modelShift;
+	burst_parametr_t	ramp;
 } burst_pi_config_t;
 
 typedef burst_pi_config_t * burst_pi_config_p;
@@ -32,7 +31,7 @@ typedef struct {
 	burst_signal_p			control;
 	burst_satstate_t		satstate;
 	void (* run)(void);
-	void (* begin)(	
+	void (* setup)(	
 		burst_pi_config_p _config
 		,	burst_signal_p				_signal_req
 		, burst_signal_p				_signal
@@ -48,7 +47,6 @@ typedef struct {
 } burst_pi_t;
 typedef burst_pi_t * burst_pi_p;
 
-void burst_pi_begin_( burst_pi_p _pi, burst_signal_t _start_control );
 void burst_pi_run_(burst_pi_p _pi);
 void burst_pi_reset_(burst_pi_p _pi, burst_signal_t _start_control);
 
@@ -63,7 +61,7 @@ BURST_WEAK  void S##_run(void){\
 }\
 burst_signal_t S##_def_control_min=BURST_SIGNAL_MIN;\
 burst_signal_t S##_def_control_max=BURST_SIGNAL_MAX;\
-BURST_WEAK  void S##_begin(\
+BURST_WEAK  void S##_setup(\
 	burst_pi_config_p _config\
 	,	burst_signal_p				_signal_req\
 	, burst_signal_p				_signal\
@@ -84,7 +82,7 @@ BURST_WEAK  void S##_begin(\
 	S.controlMin = _controlMin?_controlMin:&S##_def_control_min;\
 	S.signal_diff = _signal_diff;\
 	S.signal_force = _signal_force;\
-	burst_pi_begin_(&S,_start_control); \
+	burst_pi_reset_(&S,_start_control); \
 }\
 BURST_WEAK  void S##_reset(burst_signal_t _start_control){\
 	return burst_pi_reset_(&S,_start_control);\
@@ -105,7 +103,46 @@ burst_pi_t S ={ \
 	, 0\
 	, burst_satstate_both\
 	, S##_run\
-	, S##_begin\
+	, S##_setup\
 	, S##_reset\
 }; 
+
+
+typedef struct burst_limiter_s{
+    burst_pi_p r_hi;
+    burst_pi_p r_low;
+    burst_signal_t zero_signal;
+    burst_signal_t signal_hi;
+    burst_signal_t signal_low;
+    burst_signal_t control_hi;
+    burst_signal_t control_low;
+    burst_signal_t control_des;
+    burst_satstate_t sut_flag;
+    burst_signal_p control_req;
+    burst_signal_p control_val;
+    burst_signal_p signal;
+    burst_signal_p controlMax;
+    burst_signal_p controlMin;
+    burst_signal_p signalMin;
+    burst_signal_p signalMax;
+    burst_signal_p ramp;
+} burst_limiter_t;
+typedef burst_limiter_t * burst_limiter_p;
+void burst_limiter_run(burst_limiter_p _limiter);
+void burst_limiter_reset(burst_limiter_p _limiter, burst_signal_t _def);
+
+typedef struct burst_limiter_config_s{
+    burst_pi_p r_hi;
+    burst_pi_p r_lo;
+    burst_signal_p control_req;
+    burst_signal_p control_val;
+    burst_signal_p controlMin;
+    burst_signal_p controlMax;
+    burst_signal_p signal;
+    burst_signal_p signalMin;
+    burst_signal_p signalMax;
+    burst_pi_config_p reg_config;
+} burst_limiter_config_t;
+typedef burst_limiter_config_t * burst_limiter_config_p;
+void burst_limiter_setup(burst_limiter_p _limiter, burst_limiter_config_p _config, burst_signal_t _def );
 #endif

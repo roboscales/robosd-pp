@@ -195,4 +195,6 @@ typedef burst_scaler_t * burst_scaler_p;
 void burst_scaler_begin(burst_scaler_p,burst_range_p _in_range,burst_range_p _out_range);
 burst_satstate_t burst_scaler_run(burst_scaler_p, burst_signal_t _in, burst_signal_t * _out);
 
+void burst_range_set(burst_range_p _dst, burst_signal_t _src, burst_range_p _lim);
+burst_signal_t burst_range_apply(burst_signal_t _src, burst_range_p _lim);
 #endif

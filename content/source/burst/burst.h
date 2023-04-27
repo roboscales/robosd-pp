@@ -50,20 +50,25 @@ struct  burst_dev_mode_s{
 
 typedef void ( * burst_dev_event)(burst_dev_ref_p);
 
+typedef struct burst_dev_modes_config_s{
+} burst_dev_modes_config_t;
+typedef burst_dev_modes_config_t * burst_dev_modes_config_p;
+
 struct burst_dev_ref_s{
 	burst_dev_event begin;
 	burst_dev_event start;
 	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
-	burst_dev_mode_event updaye_feedback;
+	burst_dev_mode_event update_feedback;
 	burst_dev_config_p config;
+	burst_dev_modes_config_p modes_config;
 	burst_dev_action_p action;
 	burst_dev_feedback_p feedback;
 	int mode_count;
 	burst_dev_mode_p * modes;	
 	burst_dev_mode_p * modes_end;	
 	burst_dev_mode_p actual_mode;
-	int mode;
+	int mode;	
 };
 void burst_dev_idle_event(burst_dev_ref_p _ref);
 void burst_dev_runA(burst_dev_ref_p _ref);

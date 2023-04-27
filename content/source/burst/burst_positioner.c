@@ -1,7 +1,4 @@
 #include "burst/burst_positioner.h"
-void burst_positioner_begin(burst_positioner_p _positioner, burst_positioner_config_p _config){
-	_positioner->config = _config;
-}
 #ifndef  BURTS_POSITINER_MAX_ERR
 #define BURTS_POSITINER_MAX_ERR BURST_SIGNAL_T(0.9)
 #endif
@@ -70,7 +67,9 @@ void burst_positioner_setup_(
 	, burst_signal_p			  _control
 	,	burst_signal_p				_controlMax
 	, burst_signal_p				_controlMin
+	, burst_positioner_config_p _config
 ){ 
+	_positioner->config = _config;
 	_positioner->signal_req = _signal_req;
 	_positioner->signal = _signal;
 	_positioner->signal_diff = _signal_diff;

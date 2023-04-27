@@ -174,3 +174,33 @@ burst_satstate_t burst_scaler_run(burst_scaler_p _scaler, burst_signal_t _in, bu
 	return st;
 }
 
+void burst_range_set(burst_range_p _dst, burst_signal_t _src, burst_range_p _lim){
+	burst_signal_t hi = _lim->hi;
+	burst_signal_t lo = _lim->lo;
+	if(_src<0) _src = 0;
+	if( _src > hi ){
+		_dst->hi =  hi;
+	} else if( _src <  lo ){
+		_dst->hi =  lo;
+	} else {
+		_dst->hi =  _src;
+	}
+	_src=-_src;
+	if( _src > hi ){
+		_dst->lo =  hi;
+	} else if( _src <  lo ){
+		_dst->lo =  lo;
+	} else {
+		_dst->lo =  _src;
+	}
+}
+
+burst_signal_t burst_range_apply(burst_signal_t _src, burst_range_p _lim){
+	if(_src >_lim->hi){
+		return _lim->hi;
+	} else if( _src < _lim->lo){
+		return _lim->lo;
+	} else {
+		return _src;
+	}
+}
