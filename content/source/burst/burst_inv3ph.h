@@ -39,7 +39,7 @@ typedef struct inv3ph_s{
 	burst_signal_t discret_delta_hi;
 } inv3ph_t;
 typedef inv3ph_t * inv3ph_p;
-void inv3ph_run(inv3ph_p _inverter, burst_signal_t _angle);
+void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _lateral, burst_signal_t _angle);
 void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config);
 
 typedef struct current3ph_config_s{

@@ -23,6 +23,9 @@ void nikitin_run_(nikitin_p _filter){
 	}
 	BURST_SATURATE(long_value, BURST_SIGNAL_MIN, BURST_SIGNAL_MAX);
 	_filter->ref.value =(burst_signal_t)long_value;
+	if(_filter->ref.input_autozero){
+		*_filter->ref.input = 0;
+	}
 }
 
 void nikitin_reset_(nikitin_p _filter){	

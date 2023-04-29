@@ -64,7 +64,7 @@ void burst_begin(void){
 	
 	for( p= burst.devs; p!=burst.devs_end;p++){		
 		burst_alarm(*p);
-		burst_alarm((*p)->begin);
+		burst_alarm((*p)->reset);
 		burst_alarm((*p)->start);
 		burst_alarm((*p)->realtime_loop);
 		burst_alarm((*p)->frontend_loop);
@@ -75,7 +75,6 @@ void burst_begin(void){
 			burst_alarm((*p)->modes);
 		}	
 		(*p)->actual_mode = &burst_idle_mode;		
-		(*p)->begin((*p));
 		(*p)->modes_end = (*p)->modes+(*p)->mode_count;
 		for(	burst_dev_mode_p  * pm = (*p)->modes; pm!=(*p)->modes_end; ++pm) {
 			burst_dev_mode_p m = *pm;
@@ -89,6 +88,8 @@ void burst_begin(void){
 				burst_alarm(m->frontend_loop);
 			}
 		}
+		//сброс в начальное состояние
+		(*p)->reset((*p));
 	}
 	
 	burst_hw_begin();
@@ -102,6 +103,12 @@ void burst_start(void){
 	burst_hw_start();
 	burst_sw_start();
 	burst_started_ = burst_true;
+}
+void burst_reset(void){
+	burst_dev_ref_p * p ;
+	for( p= burst.devs; p!=burst.devs_end;p++){
+		(*p)->reset(*p);
+	}
 }
 
 void burst_realtime_loop(void){

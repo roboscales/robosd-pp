@@ -50,10 +50,10 @@ void actuator_mode_speed_applay_action(burst_dev_ref_p _ref){
 void actuator_mode_speed_start(burst_dev_ref_p _ref){
 	actuator_p actuator = (actuator_p)(_ref);
 	actuator->ps->command =  burst_ps_command_on;
-	actuator_modes_config_p cfg =(actuator_modes_config_p)(_ref->modes_config);	
+	actuator_config_p cfg =(actuator_config_p)(_ref->config);
 	actuator->motion->setup(
 		 &actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &actuator->voltage.req
 		, 0
 		, &actuator->ps->satstate
@@ -63,9 +63,9 @@ void actuator_mode_speed_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->motion
+		, &(cfg->modes.motion)
 	);
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 }
 
 void actuator_mode_speed_stop(burst_dev_ref_p _ref){
@@ -139,11 +139,11 @@ void actuator_mode_position_applay_action(burst_dev_ref_p _ref){
 
 void actuator_mode_position_start(burst_dev_ref_p _ref){
 	actuator_p actuator = (actuator_p)(_ref);
-	actuator_modes_config_p cfg =(actuator_modes_config_p)(_ref->modes_config);	
 	actuator->ps->command =  burst_ps_command_on;
+	actuator_config_p cfg =(actuator_config_p)(_ref->config);
 	actuator->motion->setup(
 			&actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &actuator->voltage.req
 		, 0
 		, &actuator->ps->satstate
@@ -153,19 +153,19 @@ void actuator_mode_position_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->motion 
+		, &(cfg->modes.motion)
 	);
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 	
 	actuator->positioner->setup(
 			&actuator->position.req
 		, &actuator->enco->position
-		,	&actuator->spf->value
+		,	&actuator->speed.flt->value
 		,	0
 		, &actuator->speed.req
 		,	&actuator->speed.range.hi
 		, &actuator->speed.range.lo
-		, cfg->positioner 
+		, &(cfg->modes.positioner)
 	);
 	actuator->positioner->reset(); 	
 
@@ -190,15 +190,11 @@ burst_dev_mode_t actuator_mode_position = {
 	,&burst_dev_idle_event
 };
 
-void actuator_event_begin (burst_dev_ref_p _dev){
-	actuator_p actuator = (actuator_p)(_dev);
-	actuator->spf->setup(&actuator->enco->delta_acc);
-}
-void actuator_update_feedback(burst_dev_ref_p _dev){
+void actuator_event_update_feedback(burst_dev_ref_p _dev){
 	actuator_feedback_p fb =(actuator_feedback_p)(_dev->feedback);
 	actuator_p actuator = (actuator_p)(_dev);
 	fb->voltage = actuator->voltage.req;
-	fb->speed = actuator->spf->value;
+	fb->speed = actuator->speed.flt->value;
 	fb->position = actuator->enco->position;
 }
 
@@ -206,7 +202,6 @@ void actuator_update_feedback(burst_dev_ref_p _dev){
 void actuator_begin (
 	actuator_p _actuator
 	, actuator_config_p _config
-	,	actuator_modes_config_p _modes_config
 	, actuator_action_p _action
 	, actuator_feedback_p _feedback
 	, burst_ps_p _ps
@@ -216,14 +211,13 @@ void actuator_begin (
 	, burst_positioner_p _positioner	
 	, int _mode_count
 	, burst_dev_mode_p * _modes	
-	){
-	_actuator->ref.begin = actuator_event_begin;
+){
+	_actuator->ref.reset = burst_dev_idle_event;
 	_actuator->ref.start = burst_dev_idle_event;
 	_actuator->ref.realtime_loop = burst_dev_idle_event;
 	_actuator->ref.frontend_loop = burst_dev_idle_event;
-	_actuator->ref.update_feedback = actuator_update_feedback;
+	_actuator->ref.update_feedback = actuator_event_update_feedback;
 	_actuator->ref.config = &(_config->ref);
-	_actuator->ref.modes_config = &(_modes_config->ref);
 	_actuator->ref.action = &(_action->ref);
 	_actuator->ref.feedback = &(_feedback->ref);
 	_actuator->ref.mode_count = _mode_count;
@@ -231,10 +225,10 @@ void actuator_begin (
 	_actuator->def_mode = burst_dev_mode_idle;
 	_actuator->ps = _ps;
 	_actuator->enco = _enco;
-	_actuator->spf = _spf;
+	_actuator->speed.flt = _spf;
 	_actuator->motion = _motion;
 	_actuator->positioner = _positioner;
 	burst_dev_attach(&(_actuator->ref));
-	_spf->setup(&(_enco->delta_acc));
+	_spf->setup(&_enco->delta_acc,1);
 }
 

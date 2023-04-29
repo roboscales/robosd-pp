@@ -21,22 +21,19 @@ typedef struct actuator_config_s{
 		burst_range_t speed;
 		burst_long_range_t position;
 	} range;
+	struct {
+		burst_motion_config_t motion;
+		burst_positioner_config_t positioner;
+	} modes;
 } actuator_config_t;
 typedef actuator_config_t * actuator_config_p;
 
-typedef struct actuator_modes_config_s{
-	burst_dev_modes_config_t ref;
-	burst_motion_config_p motion;
-	burst_positioner_config_p positioner;
-} actuator_modes_config_t;
-typedef actuator_modes_config_t * actuator_modes_config_p;
 
 typedef struct {
 	burst_dev_ref_t ref;
 	int def_mode;
 	burst_ps_p ps;	
 	burst_enco_p enco;
-	burst_filter_p spf;
 	burst_motion_p motion;
 	burst_positioner_p positioner;
 	struct {
@@ -47,6 +44,7 @@ typedef struct {
 	struct {
 		burst_signal_t req;
 		burst_range_t range;
+		burst_filter_p flt;
 	} speed;
 	struct {
 		burst_long_signal_t req;
@@ -77,13 +75,11 @@ void actuator_mode_position_applay_action(burst_dev_ref_p _ref);
 //void actuator_mode_position_runB(burst_dev_ref_p _ref);
 extern burst_dev_mode_t actuator_mode_position;
 
-void actuator_event_begin (burst_dev_ref_p _dev);
-void actuator_update_feedback(burst_dev_ref_p _dev);
+void actuator_event_update_feedback(burst_dev_ref_p _dev);
 
 void actuator_begin (
 	actuator_p _actuator
 	, actuator_config_p _config
-	,	actuator_modes_config_p _modes_config
 	, actuator_action_p _action
 	, actuator_feedback_p _feedback
 	, burst_ps_p _ps

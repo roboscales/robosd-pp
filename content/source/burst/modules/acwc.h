@@ -11,22 +11,19 @@ typedef struct acwc_config_s{
 		burst_pi_config_t pi;
 		burst_range_t range;
 	} current;
+	struct {
+		struct{
+			burst_motion_config_t motion;
+			burst_positioner_config_t positioner;
+		} voltage_cl;
+		struct{
+			burst_motion_config_t motion;
+			burst_positioner_config_t positioner;
+		} current;
+	} modes;
 } acwc_config_t;
 typedef acwc_config_t * acwc_config_p;
 
-typedef struct acwc_modes_config_s{
-	actuator_modes_config_t ac;
-	struct{
-		burst_motion_config_p motion;
-		burst_positioner_config_p positioner;
-	} voltage_cl_modes_config;
-	struct{
-		burst_pi_config_p pi;
-		burst_motion_config_p motion;
-		burst_positioner_config_p positioner;
-	} current_modes_config;
-} acwc_modes_config_t;
-typedef acwc_modes_config_t * acwc_modes_config_p;
 
 	
 typedef struct {
@@ -46,31 +43,30 @@ typedef  acwc_t * acwc_p;
 
 
 void acwc_mode_voltage_cl_applay_action(burst_dev_ref_p _ref);
-extern burst_dev_mode_t acwc_voltage_cl_speed;
+extern burst_dev_mode_t acwc_mode_voltage_cl;
 
-void acwc_modee_speed_cl_applay_action(burst_dev_ref_p _ref);
-extern burst_dev_mode_t acwc_mode_speed_cl;
+void acwc_mode_speed_cl_applay_action(burst_dev_ref_p _ref);
+extern burst_dev_mode_t acwc_mode_cl_speed;
 
 void acwc_mode_position_cl_applay_action_(burst_dev_ref_p _ref);
-extern burst_dev_mode_t acwc_mode_position_cl;
+extern burst_dev_mode_t acwc_mode_cl_position;
 
 
-void acwc_modee_current_applay_action(burst_dev_ref_p _ref);
-extern burst_dev_mode_t acwc_mode_voltage;
+void acwc_mode_current_applay_action(burst_dev_ref_p _ref);
+extern burst_dev_mode_t acwc_mode_current;
 
-void acwc_modee_speed_applay_action(burst_dev_ref_p _ref);
+void acwc_mode_speed_applay_action(burst_dev_ref_p _ref);
 extern burst_dev_mode_t acwc_mode_speed;
 
 void acwc_mode_position_applay_action_(burst_dev_ref_p _ref);
 extern burst_dev_mode_t acwc_mode_position;
 
-void acwc_event_begin (burst_dev_ref_p _dev);
-void acwc_update_feedback(burst_dev_ref_p _dev);
+
+void acwc_event_update_feedback(burst_dev_ref_p _dev);
 
 void acwc_begin (
 	acwc_p _acwc
 	, acwc_config_p _config
-	,	acwc_modes_config_p _modes_config
 	, acwc_action_p _action
 	, acwc_feedback_p _feedback
 	, burst_ps_p _ps

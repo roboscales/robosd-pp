@@ -26,7 +26,14 @@ typedef struct actuator_feedback_s{
 } actuator_feedback_t;
 typedef actuator_feedback_t * actuator_feedback_p;
 
-enum {actuator_mode_idle_ix = 0, actuator_mode_fault_ix = 1, actuator_mode_voltage_ix = 2, actuator_mode_speed_ix = 3, actuator_mode_position_ix = 4, actuator_mode_count = 5};
+enum {
+	actuator_mode_idle_ix = 0
+	, actuator_mode_fault_ix = 1
+	, actuator_mode_voltage_ix = 2
+	, actuator_mode_speed_ix = 3
+	, actuator_mode_position_ix = 4
+	, actuator_mode_count = 5
+};
 
 #pragma pack(pop)
 

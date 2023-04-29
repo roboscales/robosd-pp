@@ -27,7 +27,7 @@ void acwc_mode_voltage_cl_runA(burst_dev_ref_p _ref){
 	burst_limiter_run( &(acwc->current.limiter) );
 }
 
-burst_dev_mode_t actuator_mode_voltage_cl = {
+burst_dev_mode_t acwc_mode_voltage_cl = {
 	&acwc_mode_voltage_cl_applay_action
 	,&acwc_mode_voltage_cl_start
 	,&acwc_mode_voltage_cl_stop
@@ -49,10 +49,10 @@ void acwc_mode_speed_cl_applay_action(burst_dev_ref_p _ref){
 void acwc_mode_speed_cl_start(burst_dev_ref_p _ref){
 	acwc_p acwc = (acwc_p)(_ref);
 	actuator_p actuator = (actuator_p)(_ref);
-	acwc_modes_config_p cfg =(acwc_modes_config_p)(_ref->modes_config);	
+	acwc_config_p cfg =(acwc_config_p)(_ref->config);	
 	actuator->motion->setup(
 			&actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &actuator->voltage.des
 		, 0
 		, &acwc->current.limiter.sut_flag
@@ -62,10 +62,10 @@ void acwc_mode_speed_cl_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->voltage_cl_modes_config.motion
+		, &(cfg->modes.voltage_cl.motion)
 	);
 
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 	acwc_mode_voltage_cl_start(_ref);
 }
 void acwc_mode_speed_cl_stop(burst_dev_ref_p _ref){
@@ -81,7 +81,7 @@ void acwc_mode_speed_cl_runB(burst_dev_ref_p _ref){
 	actuator->motion->run();
 }
 
-burst_dev_mode_t actuator_mode_cl_speed = {
+burst_dev_mode_t acwc_mode_cl_speed = {
 	&acwc_mode_speed_cl_applay_action
 	,&acwc_mode_speed_cl_start
 	,&acwc_mode_speed_cl_stop
@@ -106,11 +106,11 @@ void acwc_mode_position_cl_start(burst_dev_ref_p _ref){
 	actuator_p actuator = (actuator_p)(_ref);
 
 	acwc_mode_voltage_cl_start(_ref);
-	acwc_modes_config_p cfg =(acwc_modes_config_p)(_ref->modes_config);	
+	acwc_config_p cfg =(acwc_config_p)(_ref->config);
 	actuator->ps->command =  burst_ps_command_on;
 	actuator->motion->setup(
 			&actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &actuator->voltage.des
 		, 0
 		, &acwc->current.limiter.sut_flag
@@ -120,20 +120,20 @@ void acwc_mode_position_cl_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->voltage_cl_modes_config.motion
+		, &(cfg->modes.voltage_cl.motion)
 	);
 
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 	
 	actuator->positioner->setup(
 			&actuator->position.req
 		, &actuator->enco->position
-		,	&actuator->spf->value
+		,	&actuator->speed.flt->value
 		,	0
 		, &actuator->speed.req
 		,	&actuator->speed.range.hi
 		, &actuator->speed.range.lo
-		, cfg->voltage_cl_modes_config.positioner
+		, &(cfg->modes.voltage_cl.positioner)
 	);
 	actuator->positioner->reset(); 
 
@@ -157,7 +157,7 @@ void acwc_mode_position_cl_runB(burst_dev_ref_p _ref){
 }
 
 
-burst_dev_mode_t actuator_mode_cl_position = {
+burst_dev_mode_t acwc_mode_cl_position = {
 	&acwc_mode_position_cl_applay_action
 	,&acwc_mode_position_cl_start
 	,&acwc_mode_position_cl_stop
@@ -169,7 +169,7 @@ burst_dev_mode_t actuator_mode_cl_position = {
 
 
 
-void acwc_modee_current_applay_action(burst_dev_ref_p _ref){
+void acwc_mode_current_applay_action(burst_dev_ref_p _ref){
 	acwc_p acwc = (acwc_p)(_ref);
 	acwc_action_p action =(acwc_action_p)(_ref->action);
 	acwc_config_p config =(acwc_config_p)(_ref->config);
@@ -194,8 +194,8 @@ void acwc_mode_current_runA(burst_dev_ref_p _ref){
 	acwc->current.dir->run();
 }
 
-burst_dev_mode_t actuator_mode_current = {
-	&acwc_modee_current_applay_action
+burst_dev_mode_t acwc_mode_current = {
+	&acwc_mode_current_applay_action
 	,&acwc_mode_current_start
 	,&acwc_mode_current_stop
 	,&acwc_mode_current_runA
@@ -214,10 +214,10 @@ void acwc_mode_speed_applay_action(burst_dev_ref_p _ref){
 void acwc_mode_speed_start(burst_dev_ref_p _ref){
 	acwc_p acwc = (acwc_p)(_ref);
 	actuator_p actuator = (actuator_p)(_ref);
-	acwc_modes_config_p cfg =(acwc_modes_config_p)(_ref->modes_config);	
+	acwc_config_p cfg =(acwc_config_p)(_ref->config);	
 	actuator->motion->setup(
 			&actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &acwc->current.req
 		, 0
 		, &acwc->current.dir->satstate
@@ -227,10 +227,10 @@ void acwc_mode_speed_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->current_modes_config.motion
+		, &(cfg->modes.current.motion)
 	);
 
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 	acwc_mode_current_start(_ref);
 }
 void acwc_mode_speed_stop(burst_dev_ref_p _ref){
@@ -246,7 +246,7 @@ void acwc_mode_speed_runB(burst_dev_ref_p _ref){
 	actuator->motion->run();
 }
 burst_dev_mode_t acwc_mode_speed = {
-	&acwc_modee_speed_applay_action
+	&acwc_mode_speed_applay_action
 	,&acwc_mode_speed_start
 	,&acwc_mode_speed_stop
 	,&acwc_mode_speed_runA
@@ -268,11 +268,11 @@ void acwc_mode_position_start(burst_dev_ref_p _ref){
 	actuator_p actuator = (actuator_p)(_ref);
 
 	acwc_mode_voltage_cl_start(_ref);
-	acwc_modes_config_p cfg =(acwc_modes_config_p)(_ref->modes_config);	
+	acwc_config_p cfg =(acwc_config_p)(_ref->config);	
 	actuator->ps->command =  burst_ps_command_on;
 	actuator->motion->setup(
 			&actuator->speed.req
-		, &actuator->spf->value
+		, &actuator->speed.flt->value
 		, &acwc->current.req
 		, 0
 		, &acwc->current.dir->satstate
@@ -282,41 +282,54 @@ void acwc_mode_position_start(burst_dev_ref_p _ref){
 		, 0
 		, 0
 		, 0
-		, cfg->current_modes_config.motion
+		, &(cfg->modes.current.motion)
 	);
 
-	actuator->motion->reset(actuator->spf->value); 
+	actuator->motion->reset(actuator->speed.flt->value); 
 	
 	actuator->positioner->setup(
 			&actuator->position.req
 		, &actuator->enco->position
-		,	&actuator->spf->value
+		,	&actuator->speed.flt->value
 		,	0
 		, &actuator->speed.req
 		,	&actuator->speed.range.hi
 		, &actuator->speed.range.lo
-		, cfg->current_modes_config.positioner
+		,&(cfg->modes.current.positioner)
 	);
 	actuator->positioner->reset(); 
 
-	acwc_mode_voltage_cl_start(_ref);
+	acwc_mode_current_start(_ref);
 }
-void acwc_mode_position_stop_(burst_dev_ref_p _ref){
+void acwc_mode_position_stop(burst_dev_ref_p _ref){
 	acwc_p acwc = (acwc_p)(_ref);
 	acwc->ac.ps->command =  burst_ps_command_off;	
 }
 
-void acwc_mode_position_runB_(burst_dev_ref_p _ref){
+void acwc_mode_position_runA(burst_dev_ref_p _ref){
+	acwc_p acwc = (acwc_p)(_ref);
+	acwc->current.dir->run();
+}
+
+void acwc_mode_position_runB(burst_dev_ref_p _ref){
 	actuator_p actuator = (actuator_p)(_ref);
 	actuator->positioner->run();
 	actuator->motion->run();
 }
 
+burst_dev_mode_t acwc_mode_position = {
+	&acwc_mode_position_applay_action
+	,&acwc_mode_position_start
+	,&acwc_mode_position_stop
+	,&acwc_mode_position_runA
+	,&acwc_mode_position_runB
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+};
 
 void acwc_begin (
 	acwc_p _acwc
 	, acwc_config_p _config
-	,	acwc_modes_config_p _modes_config
 	, acwc_action_p _action
 	, acwc_feedback_p _feedback
 	, burst_ps_p _ps
@@ -335,7 +348,6 @@ void acwc_begin (
 	actuator_begin(
 		&(_acwc->ac)
 		, &(_config->ac)
-		, &(_modes_config->ac)
 		, &(_action->ac)
 		, &(_feedback->ac)
 		, _ps
@@ -375,16 +387,13 @@ void acwc_begin (
 	);
 	_acwc->current.flt = _curf;
 	_acwc->current.raw = _current_raw;
+	_acwc->ac.ref.update_feedback = acwc_event_update_feedback;
+	_curf->setup(	_acwc->current.raw,0);
 }
 	
-void acwc_event_begin (burst_dev_ref_p _dev){
-	actuator_event_begin(_dev);
-	acwc_p acwc = (acwc_p)(_dev);
-	acwc->current.flt->setup(acwc->current.raw);
-}
 
-void acwc_update_feedback(burst_dev_ref_p _dev){
-	actuator_update_feedback(_dev);
+void acwc_event_update_feedback(burst_dev_ref_p _dev){
+	actuator_event_update_feedback(_dev);
 	acwc_feedback_p fb =(acwc_feedback_p)(_dev->feedback);
 	acwc_p acwc = (acwc_p)(_dev);
 	fb->current = acwc->current.flt->value;

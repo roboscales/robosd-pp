@@ -12,4 +12,5 @@
 #define BURST_WEAK __weak
 #define BURST_STATIC_INLINE static inline
 #define BURST_NOP() asm("nop")
+#define BURST_ZEROS_STRUCT( x ) { uint8_t * p = (uint8_t *) (x); for(int i=0;i<sizeof(*(x)),++i,++x) *x = 0; }
 

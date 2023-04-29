@@ -8,7 +8,7 @@ extern "C"
 #include "burst/burst_common.h"
 #include "burst/modules/acwc_front.h"
 typedef struct pmsm_action_s{
-	acwc_action_t acwc;
+	acwc_action_t cross;
 	struct{
 		int16_t voltage;
 		int16_t current;
@@ -21,14 +21,20 @@ typedef struct pmsm_action_s{
 typedef pmsm_action_t * pmsm_action_p;
 
 typedef struct pmsm_feedback_s{
-	acwc_feedback_t acwc;
-	int16_t voltage;
-	int16_t speed;
-	int32_t position;
+	acwc_feedback_t cross;
+	struct{
+		int16_t voltage;
+		int16_t current;
+	} lateral;
 } pmsm_feedback_t;
 typedef pmsm_feedback_t * pmsm_feedback_p;
 
-enum {pmsm_mode_synchro_voltage_ix = acw_mode_count+1, pmsm_mode_synchro_curent_ix = acw_mode_count+2};
+enum {
+	pmsm_mode_synchro_voltage_ix = acw_mode_count+1
+	, pmsm_mode_synchro_curent_ix = acw_mode_count+2
+	, pmsm_mode_estimate_ix = acw_mode_count+3
+	, pmsm_mode_count = acw_mode_count+4
+};
 
 #if defined(__cplusplus)
 }

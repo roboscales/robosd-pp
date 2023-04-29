@@ -31,8 +31,9 @@ void nikitin_reset_(nikitin_p _filter);
 BURST_WEAK  void S##_run(void){\
 	return nikitin_run_(&D);\
 }\
-BURST_WEAK  void S##_setup(burst_signal_p _input){ \
+BURST_WEAK  void S##_setup(burst_signal_p _input, uint8_t _input_autozero){ \
 	D.ref.input = _input;\
+	D.ref.input_autozero = _input_autozero;\
 	nikitin_reset_(&D);\
 }\
 BURST_WEAK  void S##_reset(void){ \

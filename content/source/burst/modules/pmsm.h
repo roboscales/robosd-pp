@@ -2,29 +2,67 @@
 #define burst_modules_pmsm_h
 #include "burst/modules/pmsm_front.h"
 #include "burst/modules/acwc.h"
+#include "burst/burst_inv3ph.h"
+
 typedef struct pmsm_config_s{
-	acwc_config_t acwc;
+	acwc_config_t cross;
+	inv3ph_config_t inverter;
+	current3ph_config_t sensor;
 	struct{
 		struct{
 			burst_pi_config_t pi;
 			burst_range_t range;
 		} current;
 		struct{
-			burst_pi_config_t pi;
 			burst_range_t range;
 		} voltage;
-	} lateral;
+	} lateral;	
 } pmsm_config_t;
 typedef pmsm_config_t * pmsm_config_p;
 
-typedef struct pmsm_modes_config_s{
-	acwc_modes_config_t acwc;
-	burst_pi_config_p lc_pi;
-} pmsm_modes_config_t;
-typedef pmsm_modes_config_t * pmsm_modes_config_p;
+typedef struct pmsm_estimate_s{
+	struct{
+		burst_signal_t speed;
+		burst_signal_t angle;
+	} electro;
+} pmsm_estimate_t;
+typedef pmsm_estimate_t * pmsm_estimate_p;
+
+
+
+typedef struct pmsm_angle_forcer_config_s{
+	struct{
+		burst_signal_t gain;
+		uint8_t shift;
+	} force;
+	struct{
+		burst_signal_t gain;
+		uint8_t shift1;
+		uint8_t shift2;
+	} eds;
+	burst_signal_t angle_lim;
+} pmsm_angle_forcer_config_t;
+typedef pmsm_angle_forcer_config_t * pmsm_angle_forcer_config_p;
+
+typedef struct pmsm_angle_forcer_s{
+	pmsm_estimate_t ref;
+	pmsm_angle_forcer_config_p config;
+	struct {
+		burst_signal_p raw;
+		burst_long_signal_t force;
+		burst_long_signal_t eds;
+		burst_long_signal_t total;
+	} angle;
+	burst_signal_p speed;
+	burst_signal_p current;
+} pmsm_angle_forcer_t;
+typedef pmsm_angle_forcer_t * pmsm_angle_forcer_p;
+
+void pmsm_angle_forcer_begin(pmsm_angle_forcer_p, pmsm_angle_forcer_config_p, burst_signal_p _angle, burst_signal_p _speed, burst_signal_p _current);
+void pmsm_angle_forcer_run(pmsm_angle_forcer_p);
 
 typedef struct pmsm_s {
-	acwc_t acwc;
+	acwc_t cross;
 	struct{
 		struct {
 			burst_signal_t req;
@@ -38,20 +76,27 @@ typedef struct pmsm_s {
 			burst_range_t range;
 		} voltage;
 	}lateral;	
+	struct{
+		burst_long_signal_t freq;
+		burst_long_signal_t angle;
+	} synchro;
+	inv3ph_t inverter;
+	current3ph_t sensor;
+	pmsm_estimate_p estimate;
+	int mode_prev;
 } pmsm_t;
 typedef  pmsm_t * pmsm_p;
 
 void pmsm_mode_synchro_voltage_applay_action(burst_dev_ref_p _ref);
-extern burst_dev_mode_t pmsm_synchro_voltage;
+extern burst_dev_mode_t pmcm_synchro_voltage;
 
 void pmsm_mode_synchro_current_applay_action(burst_dev_ref_p _ref);
-extern burst_dev_mode_t pmsm_synchro_current;
+extern burst_dev_mode_t pmcm_synchro_current;
 
 
 void pmsm_begin (
-	pmsm_p _acwc
+	pmsm_p _pmsm
 	, pmsm_config_p _config
-	,	pmsm_modes_config_p _modes_config
 	, pmsm_action_p _action
 	, pmsm_feedback_p _feedback
 	, burst_ps_p _ps
@@ -67,8 +112,13 @@ void pmsm_begin (
 	,	burst_pi_p _lateral_pi
 	,	burst_pi_p _cross_hi
 	,	burst_pi_p _cross_lo
-	, burst_signal_p _cross_current_raw
-	, burst_signal_p _lat_current_raw
+	, burst_signal_p _raw
+	, pmsm_estimate_p _estimate
 	);
+	
+	
+void pmsm_event_update_feedback(burst_dev_ref_p _dev);
+void pmsm_sence_run (pmsm_p _pmsm);
+void pmsm_inverter_run (pmsm_p _pmsm);
 
 #endif

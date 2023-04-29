@@ -13,7 +13,8 @@ typedef enum {
 	, clch_ps_status_shutdown = 4
 } clch_ps_status_t;
 #endif
-#if defined(CLCH_NAME) | 1
+#if defined(CLCH_NAME) 
+//| 1
 #include "burst/cliche/_begin.h"
 
 #ifdef CLCH_HEADER

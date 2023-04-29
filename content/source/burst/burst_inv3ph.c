@@ -52,9 +52,11 @@ burst_signal_t inv3ph_scale_(inv3ph_p _inverter,burst_signal_t _signal) {
 	}
 }
 
-void inv3ph_run(inv3ph_p _inverter, burst_signal_t _angle){
+void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _lateral, burst_signal_t _angle){
 	rotcalc( &(_inverter->rot), _angle );
 	_inverter->angle = _angle;
+	_inverter->dq.cross = _cross;
+	_inverter->dq.lateral = _lateral;
 	burst_long_signal_t lateral = mult_(_inverter->dq.lateral, sqrt2_div_2);
 	burst_long_signal_t cross = mult_(_inverter->dq.cross, sqrt2_div_2);
 	_inverter->ab.alfa = dot_(_inverter->rot.cs, lateral, -_inverter->rot.sn, cross);
