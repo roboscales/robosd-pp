@@ -83,6 +83,7 @@ void burst_frontend_loop(void);
 
 void burst_hw_on_crash(void);
 void burst_sw_on_crash(const char * _file, const char * _function, int _line);
+void burst_hw_reboot(void);
 
 
 #ifndef burst_crash

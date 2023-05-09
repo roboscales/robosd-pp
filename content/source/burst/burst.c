@@ -484,9 +484,9 @@ BURST_WEAK  void burst_hw_guard_leave(void* _context){
 
 BURST_WEAK  void burst_hw_guard_lock(void){}
 BURST_WEAK  void burst_hw_guard_unlock(void){}
-
 #endif
 
+BURST_WEAK  void burst_hw_reboot(void){}
 	
 #if BURST_DEBUG_TP_ENABLED == 1
 #define CLCH_NAME burst_tp
