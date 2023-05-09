@@ -30,10 +30,10 @@ typedef struct pmsm_feedback_s{
 typedef pmsm_feedback_t * pmsm_feedback_p;
 
 enum {
-	pmsm_mode_synchro_voltage_ix = acw_mode_count+1
-	, pmsm_mode_synchro_curent_ix = acw_mode_count+2
-	, pmsm_mode_estimate_ix = acw_mode_count+3
-	, pmsm_mode_count = acw_mode_count+4
+	pmsm_mode_synchro_voltage_ix = acw_mode_count+0 //11
+	, pmsm_mode_synchro_curent_ix = acw_mode_count+1 //12
+	, pmsm_mode_estimate_ix = acw_mode_count+2 //13
+	, pmsm_mode_count = acw_mode_count+3
 };
 
 #if defined(__cplusplus)

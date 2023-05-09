@@ -23,11 +23,12 @@ typedef struct acwc_feedback_s{
 typedef acwc_feedback_t * acwc_feedback_p;
 
 enum {
-	acwc_mode_voltage_cl_ix = actuator_mode_count+1
-	, acwc_mode_speed_cl_ix = actuator_mode_count+2
-	, acw_mode_position_cl_ix = actuator_mode_count+3
-	, acwc_mode_speed_ix = actuator_mode_count+4
-	, acw_mode_position_ix = actuator_mode_count+5
+	acwc_mode_voltage_cl_ix = actuator_mode_count+0			//5
+	, acwc_mode_speed_cl_ix = actuator_mode_count+1			//6
+	, acw_mode_position_cl_ix = actuator_mode_count+2		//7
+	, acwc_mode_current_ix = actuator_mode_count+3				//8
+	, acwc_mode_speed_ix = actuator_mode_count+3				//9
+	, acw_mode_position_ix = actuator_mode_count+4			//10
 	, acw_mode_count = actuator_mode_count+6
 };
 	

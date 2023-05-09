@@ -113,6 +113,9 @@ void burst_limiter_reset(burst_limiter_p _limiter, burst_signal_t _def){
 	*(_limiter->control_val)=_def;
 }
 void burst_limiter_setup(burst_limiter_p _limiter, burst_limiter_config_p _config, burst_signal_t _def ){
+	_limiter->r_hi = _config->r_hi;
+	_limiter->r_low = _config->r_lo;
+
 	_limiter->r_hi->config = _config->reg_config;
 	_limiter->r_hi->config = _config->reg_config;
 	_limiter->r_hi->controlMin =  _config->controlMin; 

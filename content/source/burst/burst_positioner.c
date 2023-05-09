@@ -22,6 +22,13 @@ void burst_positioner_run_(burst_positioner_p _positioner){
 									err -= deadZone;
 							}
 					}
+			} else if(err > 0){
+				if (_positioner->forceControl) {
+					*(_positioner->control)= *(_positioner->forceControl);
+				} else{
+					*(_positioner->control)= 0;
+				}
+				return;
 			}
 			if(err < -s->deadZone){
 					if (err<-BURTS_POSITINER_MAX_ERR){
@@ -31,6 +38,13 @@ void burst_positioner_run_(burst_positioner_p _positioner){
 									err += deadZone;
 							}
 					}
+			} else if(err < 0){
+				if (_positioner->forceControl) {
+					*(_positioner->control)= *(_positioner->forceControl);
+				} else{
+					*(_positioner->control)= 0;
+				}
+				return;
 			}
 	}
 	{        

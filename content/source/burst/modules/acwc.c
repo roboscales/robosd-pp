@@ -179,8 +179,11 @@ void acwc_mode_current_applay_action(burst_dev_ref_p _ref){
 void acwc_mode_current_start(burst_dev_ref_p _ref){
 	acwc_p acwc = (acwc_p)(_ref);
 	acwc_config_p cfg =(acwc_config_p)(_ref->config);
-	acwc->ac.voltage.range.hi =  cfg->ac.range.voltage.hi;
-	acwc->ac.voltage.range.lo =  cfg->ac.range.voltage.lo;
+//	acwc->ac.voltage.range.hi =  cfg->ac.range.voltage.hi;
+//	acwc->ac.voltage.range.lo =  cfg->ac.range.voltage.lo;
+	acwc->current.range.hi =  cfg->current.range.hi;
+	acwc->current.range.lo =  cfg->current.range.lo;
+
 	//todo согласовать
 	acwc->current.dir->reset(acwc->current.flt->value);
 	acwc->ac.ps->command =  burst_ps_command_on;
@@ -345,7 +348,12 @@ void acwc_begin (
 	,	burst_pi_p _lo
 	,	burst_signal_p _current_raw
 	){
-	actuator_begin(
+	_acwc->current.flt = _curf;
+	_acwc->current.raw = _current_raw;
+	_acwc->ac.ref.update_feedback = acwc_event_update_feedback;
+	_curf->setup(	_acwc->current.raw,0);
+
+		actuator_begin(
 		&(_acwc->ac)
 		, &(_config->ac)
 		, &(_action->ac)
@@ -358,7 +366,8 @@ void acwc_begin (
 		, _mode_count
 		, _modes	
 	);
-	burst_limiter_config_t  cfg = {
+
+		burst_limiter_config_t  cfg = {
 		_hi
 		,_lo
     , &(_acwc->ac.voltage.des)//burst_signal_p control_req;
@@ -380,15 +389,11 @@ void acwc_begin (
 		, &(_acwc->ac.voltage.req) //control
 		, 0//burst_signal_t 				_start_control
 		, &(_acwc->ac.ps->satstate) //master_sutstate
-		,	&(_acwc->current.range.hi)// _controlMax
-		, &(_acwc->current.range.lo)//_controlMin
+		,	&(_acwc->ac.voltage.range.hi)// _controlMax
+		, &(_acwc->ac.voltage.range.lo)//_controlMin
 		, 0//				_signal_diff
 		, 0//				_signal_force
 	);
-	_acwc->current.flt = _curf;
-	_acwc->current.raw = _current_raw;
-	_acwc->ac.ref.update_feedback = acwc_event_update_feedback;
-	_curf->setup(	_acwc->current.raw,0);
 }
 	
 

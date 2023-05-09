@@ -128,6 +128,7 @@ void pmsm_mode_synchro_current_start(burst_dev_ref_p _ref){
 	pmsm->cross.current.range.lo =  cfg->cross.current.range.lo;
 	pmsm->lateral.current.range.hi =  cfg->lateral.current.range.hi;
 	pmsm->lateral.current.range.lo =  cfg->lateral.current.range.lo;
+
 	pmsm->cross.ac.ps->command =  burst_ps_command_on;
 	pmsm->lateral.current.pi->reset(pmsm->lateral.current.flt->value);
 	pmsm->cross.current.dir->reset(pmsm->cross.current.flt->value);
@@ -175,7 +176,8 @@ void pmsm_inverter_run (pmsm_p _pmsm){
 	if(_pmsm->cross.ac.ps->command ==  burst_ps_command_on){
 		int mode = ((burst_dev_ref_p)(_pmsm))->mode;
 		if (mode != burst_dev_mode_idle) {
-			if(_pmsm->mode_prev!=mode){			
+			if(_pmsm->mode_prev!=mode){	
+				_pmsm->mode_prev = mode;		
 				switch(mode){
 					//в этих режимах контур тока не используется или используется напрямую
 					case pmsm_mode_synchro_voltage_ix:
@@ -183,8 +185,16 @@ void pmsm_inverter_run (pmsm_p _pmsm){
 					case pmsm_mode_estimate_ix:
 						break;
 					default:
-						//резетим контур продольного тока
-						_pmsm->lateral.current.pi->reset(_pmsm->lateral.current.flt->value);
+						{
+							pmsm_config_p cfg =(pmsm_config_p)(_pmsm->cross.ac.ref.config);	
+							//резетим контур продольного тока
+							_pmsm->lateral.current.req = 0; 
+							_pmsm->lateral.current.range.hi =  cfg->lateral.current.range.hi;
+							_pmsm->lateral.current.range.lo =  cfg->lateral.current.range.lo;			
+							_pmsm->lateral.voltage.range.hi =  cfg->lateral.voltage.range.hi;
+							_pmsm->lateral.voltage.range.lo =  cfg->lateral.voltage.range.lo;			
+							_pmsm->lateral.current.pi->reset(_pmsm->lateral.current.flt->value);
+						}
 				}
 			}
 			switch(mode){
@@ -242,6 +252,6 @@ void pmsm_angle_forcer_run(pmsm_angle_forcer_p _forcer){
 	}	else if(total<0){
 		total = 0;
 	}
-	_forcer->ref.electro.angle = *(_forcer->angle.raw) - (burst_signal_t)total;
+	_forcer->ref.electro.angle = *(_forcer->angle.raw) + (burst_signal_t)total;
 	_forcer->angle.total = total;
 }
