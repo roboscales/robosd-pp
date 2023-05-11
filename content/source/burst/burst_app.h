@@ -8,17 +8,30 @@ extern "C"
 
 #include "burst/burst.h"
 
+burst_bool_t burst_is_frontend(void);
+burst_bool_t burst_is_backend(void);
+
+void burst_fall(void);
+void burst_comeback(void);
+
+typedef enum {burst_guard_op_run =1 , burst_guard_op_skip =0} burst_guard_op_t;
+uint32_t burst_critical_enter(void);
+void burst_critical_leave(uint32_t _context);
+
+uint32_t burst_guard_enter(void);
+void burst_guard_leave(uint32_t _context);
+
 
 void burst_hw_fall(void);
 void burst_hw_comeback(void);
 
-void * burst_hw_critical_enter(void);
-void burst_hw_critical_leave(void* _context);
+burst_guard_op_t burst_hw_critical_enter(void);
+void burst_hw_critical_leave(void);
 
-void * burst_hw_guard_enter(void);
-void burst_hw_guard_leave(void* _context);
+burst_guard_op_t burst_hw_guard_enter(void);
+void burst_hw_guard_leave(void);
 
-void burst_hw_guard_lock(void);
+burst_guard_op_t burst_hw_guard_lock(void);
 void burst_hw_guard_unlock(void);
 
 void burst_sw_begin(void);

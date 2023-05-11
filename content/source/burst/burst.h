@@ -94,8 +94,6 @@ void burst_hw_reboot(void);
 #define burst_alarm(x)  if(!(x)){ burst_crash(); };
 #endif
 
-burst_thread_t burst_thread(void);
-
 #ifndef BURST_DEBUG_TP_ENABLED
 #define BURST_DEBUG_TP_ENABLED 0
 #endif
