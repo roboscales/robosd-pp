@@ -24,9 +24,9 @@
     <ClCompile Include="..\dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\app\im\source\platform\im\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\can\emulator\emu_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can.hpp" />
-    <ClInclude Include="..\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{69E62DCC-6BD0-499F-9427-A506D992FEE6}</ProjectGuid>

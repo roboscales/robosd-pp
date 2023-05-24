@@ -29,6 +29,7 @@
     <ClCompile Include="..\dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\app\im\source\platform\im\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp" />
@@ -36,7 +37,6 @@
     <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp" />
-    <ClInclude Include="..\robosd_app_tuning.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AC48134E-F553-4EAA-AE9B-6FE7BB7B5A30}</ProjectGuid>

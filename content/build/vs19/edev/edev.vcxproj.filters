@@ -25,7 +25,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp">
       <Filter>im\edev</Filter>
     </ClInclude>
@@ -47,6 +46,7 @@
     <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp">
       <Filter>im\model</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\app\im\source\platform\im\robosd_app_tuning.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="im">
