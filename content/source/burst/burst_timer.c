@@ -16,7 +16,7 @@ burst_time_us_t burst_time_us_ = 0;
 burst_bool_t burst_timer_start(burst_timer_p _timer){
 	burst_timer_p * ix;
 	int sz;
-	if(burst_thread()== burst_backend ){
+	if( burst_is_backend( ) ){
 		ix =  burst_timer_backend_inedex_;
 		sz = BURST_TIMER_BACKEHD_IX_SIZE;
 	} else{
@@ -36,7 +36,7 @@ burst_bool_t burst_timer_start(burst_timer_p _timer){
 void burst_timer_stop(burst_timer_p _timer){
 	burst_timer_p * ix;
 	int sz;
-	if(burst_thread()== burst_backend ){
+	if( burst_is_backend( ) ){
 		ix =  burst_timer_backend_inedex_;
 		sz = BURST_TIMER_BACKEHD_IX_SIZE;
 	} else{
@@ -55,7 +55,7 @@ void burst_timer_stop(burst_timer_p _timer){
 void burst_timer_poll(void){
 	burst_timer_p * ix;
 	int sz;
-	if(burst_thread()== burst_backend ){
+	if(burst_is_backend( ) ){
 		burst_time_us_ += BURST_TIMER_TICK_US;
 		ix =  burst_timer_backend_inedex_;
 		sz = BURST_TIMER_BACKEHD_IX_SIZE;

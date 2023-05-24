@@ -83,6 +83,7 @@ void burst_frontend_loop(void);
 
 void burst_hw_on_crash(void);
 void burst_sw_on_crash(const char * _file, const char * _function, int _line);
+void burst_hw_reboot(void);
 
 
 #ifndef burst_crash
@@ -92,8 +93,6 @@ void burst_sw_on_crash(const char * _file, const char * _function, int _line);
 #ifndef burst_alarm
 #define burst_alarm(x)  if(!(x)){ burst_crash(); };
 #endif
-
-burst_thread_t burst_thread(void);
 
 #ifndef BURST_DEBUG_TP_ENABLED
 #define BURST_DEBUG_TP_ENABLED 0

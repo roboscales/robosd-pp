@@ -234,7 +234,7 @@ void pmsm_angle_forcer_begin(pmsm_angle_forcer_p _forcer, pmsm_angle_forcer_conf
 void pmsm_angle_forcer_run(pmsm_angle_forcer_p _forcer){
 	pmsm_angle_forcer_config_p config = _forcer->config;
 	burst_long_signal_t speed = *(_forcer->speed);
-	if(speed<0) speed=-speed;
+//	if(speed<0) speed=-speed;
 	burst_long_signal_t total = _forcer->angle.force = (( speed * config->force.gain)>>config->force.shift);
 	if(_forcer->current){
 		burst_long_signal_t current = *(_forcer->current);
@@ -248,9 +248,9 @@ void pmsm_angle_forcer_run(pmsm_angle_forcer_p _forcer){
 		_forcer->angle.eds = 0;
 	}
 	if(total>config->angle_lim){
-		total = *(_forcer->angle.raw) + config->angle_lim;
-	}	else if(total<0){
-		total = 0;
+		total = config->angle_lim;
+	}	else if(total<-config->angle_lim){
+		total = -config->angle_lim;
 	}
 	_forcer->ref.electro.angle = *(_forcer->angle.raw) + (burst_signal_t)total;
 	_forcer->angle.total = total;

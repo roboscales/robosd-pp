@@ -56,6 +56,8 @@ void burst_dev_runB(burst_dev_ref_p _ref){
 void burst_dev_runC(burst_dev_ref_p _ref){
 	_ref->actual_mode->loopC(_ref);
 }
+typedef enum { burst_core_unknown=0,burst_core_backend=1,burst_core_frontend=2} burst_core_status;
+burst_core_status burst_core_status_ = burst_core_unknown;
 
 void burst_begin(void){
 	burst_sw_begin();
@@ -93,6 +95,7 @@ void burst_begin(void){
 	}
 	
 	burst_hw_begin();
+	burst_core_status_ = burst_core_frontend;
 }
 burst_bool_t burst_started_ = burst_false;
 void burst_start(void){
@@ -113,6 +116,7 @@ void burst_reset(void){
 
 void burst_realtime_loop(void){
 	if(burst_started_){
+		burst_fall();
 		burst_dev_ref_p * p ;
 		debug_tp_on(VERB_LOOP);
 		debug_tp_on(VERB_REALTIME);
@@ -131,6 +135,7 @@ void burst_dev_switch_to_idle(burst_dev_ref_p _ref){
 	_ref->mode = burst_dev_mode_idle;
 }
 void burst_dev_backend_loop(burst_dev_ref_p _ref){
+	if(burst_started_){
 		//burst_alarm(is_backend__);
 		burst_dev_action_p action = _ref->action;
 		int action_mode = action->mode;
@@ -165,6 +170,7 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 				action->actual = 0;
 			}
 		}
+	}
 }
 
 
@@ -308,15 +314,9 @@ burst_slot_f burst_slots[BURST_SLOT_COUNT]={
 burst_slot_f * burst_slot = burst_slots;
 burst_slot_f * burst_slots_end = burst_slots+BURST_SLOT_COUNT;
 
-burst_thread_t  burst_thread_ = burst_frontend;
-burst_thread_t burst_thread(void){
-	return burst_thread_;
-}
 void burst_backend_loop(void){
 	if(burst_started_){
 		debug_tp_on(VERB_BACKEND);
-		burst_alarm(burst_thread_ != burst_backend)
-		burst_thread_ = burst_backend;
 		#if BURST_TIMER_ENABLED == 1
 		burst_timer_poll();
 		#endif
@@ -331,9 +331,9 @@ void burst_backend_loop(void){
 		}
 		burst_hw_backend_loop();
 		burst_sw_backend_loop();
-		burst_thread_ = burst_frontend;
 		debug_tp_off(VERB_BACKEND);
 		debug_tp_off(VERB_LOOP);
+		burst_comeback();
 	}
 }
 
@@ -468,26 +468,127 @@ BURST_WEAK  void burst_hw_on_crash(void){
 BURST_WEAK  void burst_hw_fall(void){}
 BURST_WEAK  void burst_hw_comeback(void){}
 
-BURST_WEAK  void * burst_hw_critical_enter(void){
-	return 0;
+BURST_WEAK  burst_guard_op_t burst_hw_critical_enter(void){
+	return burst_guard_op_skip;
 }
-BURST_WEAK  void burst_hw_critical_leave(void* _context){
-	BURST_UNUSED(_context);
-}
-
-BURST_WEAK  void * burst_hw_guard_enter(void){
-	return 0;
-}
-BURST_WEAK  void burst_hw_guard_leave(void* _context){
-	BURST_UNUSED(_context);
+BURST_WEAK  void burst_hw_critical_leave(void){
 }
 
-BURST_WEAK  void burst_hw_guard_lock(void){}
-BURST_WEAK  void burst_hw_guard_unlock(void){}
+BURST_WEAK  burst_guard_op_t burst_hw_guard_enter(void){
+	return burst_guard_op_skip;
+}
+BURST_WEAK  void burst_hw_guard_leave(void){
+}
 
+BURST_WEAK  burst_guard_op_t burst_hw_guard_lock(void){ 
+return burst_guard_op_skip;
+}
+BURST_WEAK  void burst_hw_guard_unlock(void){ 
+}
 #endif
 
+BURST_WEAK  void burst_hw_reboot(void){}
+
+	burst_bool_t burst_is_frontend(void){
+	return (burst_bool_t) (burst_core_status_== burst_core_frontend );
+}
+burst_bool_t burst_is_backend(void){
+	return (burst_bool_t) (burst_core_status_== burst_core_backend);
+}
+#ifndef BURST_CORE_DEBUG
+#define BURST_CORE_DEBUG 1
+#endif
+
+#if BURST_CORE_DEBUG ==1
+#define  BURST_CORE_ALARM( x ) burst_alarm( (x) )
+#else
+#define  BURST_CORE_ALARM(x)
+#endif
+
+void burst_fall(void){
+	BURST_CORE_ALARM( burst_is_frontend() );
+	burst_hw_fall();
+	burst_core_status_= burst_core_backend;
+}
+void burst_comeback(void){
+	BURST_CORE_ALARM(burst_is_backend());
+	burst_hw_comeback();
+	burst_core_status_= burst_core_frontend;
+}
+int32_t guest_count_ = 0;
+int32_t lock_count_ = 0;
+typedef union {
+	uint32_t value;
+	struct{
+		uint8_t critical_op;
+		uint8_t guard_op;
+		#if BURST_CORE_DEBUG == 1
+		uint8_t guad_context;
+		#endif
+	};
+} burst_guard_context_t;
+
+uint32_t burst_guard_enter(void){
+	burst_guard_context_t ctx;
+	if (burst_is_frontend()) {
+		ctx.critical_op = (uint8_t)burst_hw_critical_enter();
+		#if BURST_CORE_DEBUG == 1
+		guest_count_++;			
+		ctx.guad_context = (uint8_t)burst_core_frontend;
+		#endif
+		ctx.guard_op = (uint8_t)burst_hw_guard_enter();
+	}	else {
+		#if BURST_CORE_DEBUG == 1
+		lock_count_++;
+		ctx.guad_context = (uint8_t)burst_core_backend;
+		#endif
+		ctx.guard_op = (uint8_t)burst_hw_guard_lock();
+	}
+	return ctx.value;
+}
+
+void burst_guard_leave(uint32_t _context){
+	burst_guard_context_t ctx;
+	ctx.value	= _context; 
+	if (burst_is_frontend()) {
+		#if BURST_CORE_DEBUG == 1
+		guest_count_--;
+		burst_alarm(ctx.guad_context == burst_core_frontend )
+		burst_alarm(guest_count_ >= 0);
+		#endif
+
+		if ( (burst_guard_op_t)ctx.guard_op == burst_guard_op_run) {
+			burst_hw_guard_leave();
+		}
+		if ( (burst_guard_op_t)ctx.critical_op == burst_guard_op_run) 
+			burst_hw_critical_leave();
+	}
+	else {
+		#if BURST_CORE_DEBUG == 1
+		lock_count_--;
+		burst_alarm(lock_count_ >= 0);
+		burst_alarm(ctx.guad_context == burst_core_backend);
+		#endif
+		if ((burst_guard_op_t)ctx.guard_op == burst_guard_op_run)
+			burst_hw_guard_unlock();
+	}
+}
 	
+uint32_t burst_critical_enter(void){
+	//быстрым процессам сдесь делать нечего - это разборки между потоками "фронткнд"
+	#if BURST_CORE_DEBUG == 1
+	burst_alarm(burst_is_frontend());
+	#endif
+	return (uint32_t) burst_hw_critical_enter();
+}
+void burst_critical_leave(uint32_t _context){
+	#if BURST_CORE_DEBUG == 1
+	burst_alarm(burst_is_frontend());
+	#endif
+	if ((burst_guard_op_t)_context == burst_guard_op_run)
+		burst_hw_critical_leave();
+}
+
 #if BURST_DEBUG_TP_ENABLED == 1
 #define CLCH_NAME burst_tp
 #include "burst/cliche/tp.h"
