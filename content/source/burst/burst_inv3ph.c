@@ -26,15 +26,15 @@ BURST_STATIC_INLINE burst_long_signal_t sum_x_ya_(burst_long_signal_t x, burst_l
 
 
 void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config) {
-	_inverter->discret_hi = _config->hi;
-	_inverter->discret_lo = _config->lo;
-	burst_long_signal_t delta = _config->hi - _config->lo;
-	burst_long_signal_t gain = (burst_long_signal_t)(_config->hi - _config->lo);
+	_inverter->discret_hi = _config->native.hi;
+	_inverter->discret_lo = _config->native.lo;
+	burst_long_signal_t delta = _config->native.hi - _config->native.lo;
+	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo);
 	gain <<= 16;
 	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //округление
 	gain /= ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN);
 	_inverter->scale_gain = gain;
-	_inverter->discret_delta_lo = -_config->lo;
+	_inverter->discret_delta_lo = -_config->native.lo;
 	_inverter->discret_delta_hi = delta;
 }
 

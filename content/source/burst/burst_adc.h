@@ -15,9 +15,18 @@
 typedef struct adc_config_s {
 		unsigned int index[BURST_ADC_CHANNEL_COUNT ];
 		burst_signal_t scale[BURST_ADC_CHANNEL_COUNT ];
-		unsigned init_count_shift;
+		unsigned init_count_bits;
 } adc_config_t;
 typedef adc_config_t * adc_config_p;
+
+#define ADC_CONFIG(a) ADC_CONFIG_(a)
+#define ADC_CONFIG_(a)\
+{\
+	a##_INDEX\
+	,a##_SCALE\
+	,a##_INIT_COUNT_BITS\
+}
+
 typedef struct adc_s {
 	BURST_ADC_TYPE native[BURST_ADC_CHANNEL_COUNT];
 	BURST_ADC_TYPE offset[BURST_ADC_CHANNEL_COUNT];

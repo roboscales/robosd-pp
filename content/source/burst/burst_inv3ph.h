@@ -19,10 +19,15 @@ typedef struct dq_s {
 } dq_t;
 
 typedef struct inv3ph_config_s{
-	burst_long_signal_t hi;
-	burst_long_signal_t lo;
+	burst_long_range_t native;
 } inv3ph_config_t;
 typedef inv3ph_config_t * inv3ph_config_p;
+
+#define INV3PH_CONFIG(a) INV3PH_CONFIG_(a)
+#define INV3PH_CONFIG_(a)\
+{\
+	RANGE_CONFIG(a##_NATIVE_RANGE)\
+}
 
 typedef struct inv3ph_s{
 	abc_t duty;
@@ -47,6 +52,14 @@ typedef struct current3ph_config_s{
 	burst_long_signal_t deform[9];
 } current3ph_config_t;
 typedef current3ph_config_t * current3ph_config_p;
+
+
+#define CURRENT3PH_CONFIG(a) CURRENT3PH_CONFIG_(a)
+#define CURRENT3PH_CONFIG_(a)\
+{\
+	a##_ADC_INDEX\
+	, a##_DEFORM\
+}
 
 typedef struct current3ph_s{
 	volatile abc_t abc;

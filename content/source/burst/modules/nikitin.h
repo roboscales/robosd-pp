@@ -12,6 +12,17 @@ typedef struct  {
 
 typedef nikitin_config_t * nikitin_config_p;
 
+#define NIKITIN_CONFIG(a) NIKITIN_CONFIG_(a)
+#define NIKITIN_CONFIG_(a)\
+{\
+	FILTER_CONFIG(a)\
+	, a##_SHIFT\
+	, a##_PRESC_SHIFT\
+	, a##_VALUE_SHIFT\
+	, 0\
+}
+
+
 typedef struct  {
 	burst_filter_t ref;
 	int8_t shift;

@@ -5,6 +5,10 @@
 typedef struct  {
 } burst_enco_config_t;
 typedef burst_enco_config_t * burst_enco_config_p;
+#define ENCO_CONFIG(a) ENCO_CONFIG_(a)
+#define ENCO_CONFIG_(a)\
+{\
+}
 
 typedef struct  {
 	burst_enco_config_p config;

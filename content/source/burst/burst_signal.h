@@ -198,3 +198,10 @@ burst_satstate_t burst_scaler_run(burst_scaler_p, burst_signal_t _in, burst_sign
 void burst_range_set(burst_range_p _dst, burst_signal_t _src, burst_range_p _lim);
 burst_signal_t burst_range_apply(burst_signal_t _src, burst_range_p _lim);
 #endif
+
+#define RANGE_CONFIG(a) RANGE_CONFIG_(a)
+#define RANGE_CONFIG_(a) \
+{\
+	a##_LO\
+	, a##_HI\
+}

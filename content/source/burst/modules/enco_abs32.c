@@ -111,6 +111,6 @@ void enco_abs32_reset_(enco_abs32_p _enco){
 	enco_abs32_config_p conf = (enco_abs32_config_p)_enco->ref.config;
 	_enco->offset.position =		conf->offset.position;
 	_enco->offset.native =		conf->offset.native;
-	_enco->start_pause_tick = 1 <<  conf->init_count_shift;
+	_enco->start_pause_tick = 1 <<  conf->init_count_bits;
 	_enco->ref.ready = burst_false;
 }

@@ -28,6 +28,24 @@ typedef struct actuator_config_s{
 } actuator_config_t;
 typedef actuator_config_t * actuator_config_p;
 
+#define ACTUATOR_CONFIG(a) ACTUATOR_CONFIG_(a)
+#define ACTUATOR_CONFIG_(a)\
+{\
+	DEV_CONFIG(a##_REF)\
+	,{\
+		a##_ENCO_FAULT_TICKS_RESET\
+		,a##_ENCO_FAULT_TICKS_SET\
+	}\
+	,{\
+		RANGE_CONFIG(a##_RANGE_VOLTAGE)\
+		, RANGE_CONFIG(a##_RANGE_SPEED)\
+		, RANGE_CONFIG(a##_RANGE_POSITION)\
+	}\
+	,{\
+			MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
+			,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE)\
+	}\
+}
 
 typedef struct {
 	burst_dev_ref_t ref;

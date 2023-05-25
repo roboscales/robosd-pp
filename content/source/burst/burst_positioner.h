@@ -14,6 +14,16 @@ typedef struct {
 
 typedef burst_positioner_config_t * burst_positioner_config_p;
 
+#define POSITIONER_CONFIG(a) POSITIONER_CONFIG_(a)
+#define POSITIONER_CONFIG_(a)\
+{\
+	a##_PROP_GAIN\
+	, a##_DIFF_GAIN\
+	, a##_DIFF_QUARD_GAIN\
+	, a##_CONTROL_SHIFT\
+	, a##_DEAD_ZONE\
+	, a##_CRAWL_SPEED\
+}
 typedef struct burst_positioner_s{
 	void (* run)(void);
 	void (* setup)(			

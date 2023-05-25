@@ -25,6 +25,11 @@ struct burst_dev_config_s{
 typedef struct burst_dev_config_s burst_dev_config_t;
 typedef burst_dev_config_t * burst_dev_config_p;
 
+#define DEV_CONFIG(a) DEV_CONFIG_(a)
+#define DEV_CONFIG_(a)\
+{\
+	a##_TAG\
+}
 
 /**
 @brief Структура. Базовое устройство.

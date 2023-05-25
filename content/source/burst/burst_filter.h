@@ -8,6 +8,12 @@ typedef struct  {
 
 typedef burst_filter_config_t * burst_filter_config_p;
 
+#define FILTER_CONFIG(a) FILTER_CONFIG_(a)
+#define FILTER_CONFIG_(a)\
+{\
+}
+
+
 typedef struct  {
 	burst_signal_t value;
 	burst_filter_config_p config;

@@ -9,7 +9,7 @@ typedef struct  enco_abs32_config_s{
 		uint8_t raw;
 		uint8_t actual;
 	} resolution;
-	uint8_t init_count_shift;
+	uint8_t init_count_bits;
 	struct{
 		uint32_t native;
 		burst_long_signal_t position;
@@ -17,6 +17,22 @@ typedef struct  enco_abs32_config_s{
 	burst_bool_t inverce;
 } enco_abs32_config_t;
 typedef enco_abs32_config_t * enco_abs32_config_p;
+
+#define ENCO_ABS32_CONFIG(a) ENCO_ABS32_CONFIG_(a)
+#define ENCO_ABS32_CONFIG_(a)\
+{\
+	ENCO_CONFIG(a)\
+	,{\
+		a##_RESOLUTION_ROUND\
+		, a##_RESOLUTION_RAW\
+		, a##_RESOLUTION_ACTUAL\
+	}\
+	, a##_INIT_COUNT_BITS\
+	,{\
+		a##_OFFSET_NATIVE\
+		,a##_OFFSET_POSITION\
+	}\
+}
 
 typedef struct  enco_abs32_s {
 	burst_enco_t ref;

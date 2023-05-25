@@ -25,6 +25,25 @@ typedef struct acwc_config_s{
 typedef acwc_config_t * acwc_config_p;
 
 
+#define ACWC_CONFIG(a,b) ACWC_CONFIG_(a,b)
+#define ACWC_CONFIG_(a,b)\
+{\
+	ACTUATOR_CONFIG(a)\
+	,{\
+		PI_CONFIG(b##_CURRENT_PI)\
+		, RANGE_CONFIG(b##_CURRENT_RANGE)\
+	}\
+	,{\
+		{\
+			MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
+			,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE_CL)\
+		}\
+		,{\
+			MOTION_CONFIG(a##_MOTION_OV_CURRENT)\
+			,POSITIONER_CONFIG(a##_POSITIONER_OV_CURRENT)\
+		}\
+	}\
+}
 	
 typedef struct {
 	actuator_t ac;

@@ -15,6 +15,18 @@ typedef struct {
 
 typedef burst_pi_config_t * burst_pi_config_p;
 
+#define PI_CONFIG(a) PI_CONFIG_(a)
+#define PI_CONFIG_(a)\
+{\
+	a##_PROP_GAIN\
+	,a##_MODEL_GAIN\
+	,a##_DIFF_GAIN\
+	,a##_FORCE_GAIN\
+	,a##_CONTROL_SHIFT\
+	,a##_MODEL_SHIFT\
+	,a##_RAMP\
+}
+
 typedef struct {
 	burst_pi_config_p config;
 	burst_signal_p			signal_req;

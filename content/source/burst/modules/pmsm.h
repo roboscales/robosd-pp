@@ -20,6 +20,23 @@ typedef struct pmsm_config_s{
 } pmsm_config_t;
 typedef pmsm_config_t * pmsm_config_p;
 
+#define PMSM_CONFIG(a) PMSM_CONFIG_(a)
+#define PMSM_CONFIG_(a)\
+{\
+	ACWC_CONFIG(a,a##_CROSS)\
+	,INV3PH_CONFIG(a##_INV3PH)\
+	,CURRENT3PH_CONFIG(a##_CURRENT3PH)\
+	,{\
+		{\
+			PI_CONFIG(a##_LATERAL_CURRENT_PI)\
+			, RANGE_CONFIG(a##_LATERAL_CURRENT_RANGE)\
+		}\
+		,{\
+			RANGE_CONFIG(a##_LATERAL_VOLTAGE_RANGE)\
+		}\
+	}\
+}
+
 typedef struct pmsm_estimate_s{
 	struct{
 		burst_signal_t speed;
@@ -43,6 +60,21 @@ typedef struct pmsm_angle_forcer_config_s{
 	burst_signal_t angle_lim;
 } pmsm_angle_forcer_config_t;
 typedef pmsm_angle_forcer_config_t * pmsm_angle_forcer_config_p;
+
+#define PMSM_ANGLE_FORCER_CONFIG(a) PMSM_ANGLE_FORCER_CONFIG_(a)
+#define PMSM_ANGLE_FORCER_CONFIG_(a)\
+{\
+	{\
+		a##_FORCE_GAIN\
+		, a##_FORCE_SHIFT\
+	}\
+	,{\
+		 a##_EDS_GAIN\
+		, a##_EDS_SHIFT1\
+		, a##_EDS_SHIFT2\
+	}\
+	, a##_ANGLE_LIMIT\
+}
 
 typedef struct pmsm_angle_forcer_s{
 	pmsm_estimate_t ref;

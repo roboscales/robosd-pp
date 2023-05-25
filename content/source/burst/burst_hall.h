@@ -11,6 +11,16 @@ typedef struct hall_config_s {
 } hall_config_t;
 typedef hall_config_t * hall_config_p;
 
+#define HALL_CONFIG(h) HALL_CONFIG_(h)
+#define HALL_CONFIG_(h)\
+{\
+	{\
+		h##_OFFSET_NATIVE\
+		,h##_OFFSET_DYNAMIC\
+	}\
+	,h##_INV\
+}
+
 typedef union hall_pins_s {
 	struct{
 		unsigned int A:1;

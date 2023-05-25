@@ -19,6 +19,19 @@ typedef struct {
 
 typedef burst_motion_config_t * burst_motion_config_p;
 
+#define MOTION_CONFIG(a) MOTION_CONFIG_(a)
+#define MOTION_CONFIG_(a)\
+{\
+	a##_PROP_GAIN\
+	, a##_MODEL_GAIN\
+	, a##_FORCE_GAIN\
+	, a##_FORCE_MAX\
+	, a##_CONTROL_SHIFT\
+	, a##_MODEL_SHIFT\
+	, a##_LIMIT_GAIN\
+	, a##_LIMIT_GAIN_PRESC\
+}
+
 typedef struct {
 	void (* run)(void);
 	void (* setup)(	
