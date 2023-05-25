@@ -58,7 +58,7 @@ typedef struct pmsm_hall_app_config_s {
 } pmsm_hall_app_config_t;
 typedef  pmsm_hall_app_config_t * pmsm_hall_app_config_p;
  
-void pmsm_hall_app_begin(pmsm_hall_app_config_p _config);
+void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, pmsm_feedback_p _feedback );
 void pmsm_hall_app_start(void);
 void pmsm_hall_app_realtime_loop(void);
 void pmsm_hall_app_backend_loop(void);
@@ -162,7 +162,7 @@ void pmsm_hall_app_control_step_3(void);
 #endif
 
 #ifndef angle_forcer_ANGLE_LIMIT 
-#define angle_forcer_ANGLE_LIMIT BURST_SIGNAL_T(0.25)
+#define angle_forcer_ANGLE_LIMIT 0
 #endif
 
 #ifndef enco_RESOLUTION_ROUND
@@ -182,11 +182,15 @@ void pmsm_hall_app_control_step_3(void);
 #endif
 
 #ifndef enco_OFFSET_NATIVE
-#define enco_OFFSET_NATIVE ((uint32_t) -BURST_LONG_SIGNAL_T( 28./180.))
+#define enco_OFFSET_NATIVE 0
 #endif
 
 #ifndef enco_OFFSET_POSITION
 #define enco_OFFSET_POSITION 0
+#endif
+
+#ifndef enco_INVERCE
+#define enco_INVERCE burst_false
 #endif
 
 #ifndef motor_INV3PH_NATIVE_RANGE_LO
@@ -194,7 +198,7 @@ void pmsm_hall_app_control_step_3(void);
 #endif
 
 #ifndef motor_INV3PH_NATIVE_RANGE_HI
-#define motor_INV3PH_NATIVE_RANGE_HI  (K1_PWM_MODULO-K1_ADC_DELAY)
+#define motor_INV3PH_NATIVE_RANGE_HI  0
 #endif
 
 #ifndef motor_CURRENT3PH_ADC_INDEX
@@ -202,7 +206,7 @@ void pmsm_hall_app_control_step_3(void);
 #endif
 
 #ifndef motor_CURRENT3PH_DEFORM
-#define motor_CURRENT3PH_DEFORM {1,0,0,0,1,0,0,0,1}
+#define motor_CURRENT3PH_DEFORM {65536,0,0,0,65536,0,0,0,65536}
 #endif
 
 #ifndef motor_LATERAL_CURRENT_PI_PROP_GAIN
@@ -295,6 +299,10 @@ void pmsm_hall_app_control_step_3(void);
 #define motor_MOTION_OV_VOLTAGE_CL_MODEL_GAIN 0
 #endif
 
+#ifndef motor_MOTION_OV_VOLTAGE_CL_DIFF_GAIN
+#define motor_MOTION_OV_VOLTAGE_CL_DIFF_GAIN 0
+#endif
+
 #ifndef motor_MOTION_OV_VOLTAGE_CL_FORCE_GAIN
 #define motor_MOTION_OV_VOLTAGE_CL_FORCE_GAIN 0
 #endif
@@ -347,6 +355,10 @@ void pmsm_hall_app_control_step_3(void);
 //=================================================
 #ifndef motor_MOTION_OV_CURRENT_PROP_GAIN
 #define motor_MOTION_OV_CURRENT_PROP_GAIN 0
+#endif
+
+#ifndef motor_MOTION_OV_CURRENT_DIFF_GAIN
+#define motor_MOTION_OV_CURRENT_DIFF_GAIN 0
 #endif
 
 #ifndef motor_MOTION_OV_CURRENT_MODEL_GAIN
@@ -445,6 +457,10 @@ void pmsm_hall_app_control_step_3(void);
 
 #ifndef motor_MOTION_OV_VOLTAGE_MODEL_GAIN
 #define motor_MOTION_OV_VOLTAGE_MODEL_GAIN 0
+#endif
+
+#ifndef motor_MOTION_OV_VOLTAGE_DIFF_GAIN
+#define motor_MOTION_OV_VOLTAGE_DIFF_GAIN 0
 #endif
 
 #ifndef motor_MOTION_OV_VOLTAGE_FORCE_GAIN
