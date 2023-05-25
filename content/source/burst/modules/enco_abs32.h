@@ -32,6 +32,7 @@ typedef enco_abs32_config_t * enco_abs32_config_p;
 		a##_OFFSET_NATIVE\
 		,a##_OFFSET_POSITION\
 	}\
+	,a##_INVERCE\
 }
 
 typedef struct  enco_abs32_s {

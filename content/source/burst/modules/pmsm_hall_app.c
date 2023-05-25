@@ -5,10 +5,11 @@ hall_extra_t hall_extra ={};
 adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
-pmsm_action_t pmsma = {};	
-pmsm_feedback_t feedback = {};	
-	
-pmsm_hall_app_config_p pmsm_hall_app_config = 0;
+//pmsm_action_p pmsm_hall_app_action;
+//pmsm_feedback_p pmsm_hall_app_feedback;
+//pmsm_action_t pmsma = {};	
+//pmsm_feedback_t feedback = {};	
+	//pmsm_hall_app_config_p pmsm_hall_app_config = 0;
 	
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode
@@ -27,15 +28,14 @@ burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 };
 
 
-void pmsm_hall_app_begin(pmsm_hall_app_config_p _config){
-	pmsm_hall_app_config = _config;
+void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, pmsm_feedback_p _feedback ){
 	hall_begin(&hall, &_config->hall);
 	adc_begin(&adc, &_config->adc);
 	pmsm_begin(
 		&motor//pmsm_p _pmsm
 		, &(_config->pmsm)//pmsm_config_p _config
-		, &pmsma//pmsm_action_p _action
-		, &feedback//pmsm_feedback_p _feedback
+		, _action//pmsm_action_p _action
+		, _feedback//pmsm_feedback_p _feedback
 		, &power//burst_ps_p _ps
 		, &enco.ref
 		, &speedse.ref
@@ -95,7 +95,7 @@ void pmsm_hall_app_control_step_1(void){
 static int presc = 0;
 void pmsm_hall_app_control_step_2(void){
 	presc++;
-	if(presc==pmsm_hall_app_config->controlPresc){
+	if(presc== ((pmsm_hall_app_config_p)( motor.cross.ac.ref.config))->controlPresc){
 		speedse.ref.run();
 		enco.ref.delta_acc = 0;
 		presc = 0;

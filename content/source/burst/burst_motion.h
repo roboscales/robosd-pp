@@ -24,6 +24,7 @@ typedef burst_motion_config_t * burst_motion_config_p;
 {\
 	a##_PROP_GAIN\
 	, a##_MODEL_GAIN\
+	, a##_DIFF_GAIN\
 	, a##_FORCE_GAIN\
 	, a##_FORCE_MAX\
 	, a##_CONTROL_SHIFT\
