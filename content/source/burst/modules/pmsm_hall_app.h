@@ -1,8 +1,5 @@
 #ifndef  pmsm_hall_app_h
 #define pmsm_hall_app_h
-#include "burst\burst.h"
-
-#include BURST_APP_PMSM_HALL_TUNNING
 
 #include "burst/burst.h"
 #include "burst/burst_serial.h"
@@ -46,6 +43,7 @@ extern pmsm_t motor;
 
 
 typedef struct pmsm_hall_app_config_s {
+	pmsm_config_t pmsm;
 	hall_config_t hall;
 	adc_config_t adc;
 	enco_abs32_config_t enco;
@@ -53,7 +51,6 @@ typedef struct pmsm_hall_app_config_s {
 	nikitin_config_t cross_flt;
 	nikitin_config_t lat_flt;
 	pmsm_angle_forcer_config_t angle_forcer;
-	pmsm_config_t pmsm;
 	int controlPresc;
 } pmsm_hall_app_config_t;
 typedef  pmsm_hall_app_config_t * pmsm_hall_app_config_p;
@@ -69,14 +66,14 @@ void pmsm_hall_app_control_step_3(void);
 
 #define PMSM_HALL_APP_CONFIG()\
 {\
-	HALL_CONFIG(hall)\
+	PMSM_CONFIG(motor)\
+	,HALL_CONFIG(hall)\
 	,ADC_CONFIG(adc)\
 	,ENCO_ABS32_CONFIG(enco)\
 	,NIKITIN_CONFIG(speedse)\
 	,NIKITIN_CONFIG(c_cross_flt)\
 	,NIKITIN_CONFIG(c_lat_flt)\
 	,PMSM_ANGLE_FORCER_CONFIG(angle_forcer)\
-	,PMSM_CONFIG(motor)\
 	,motor_CONTROL_PRESC\
 }
 
