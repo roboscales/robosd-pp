@@ -1,15 +1,11 @@
 #include "burst\modules\pmsm_hall_app.h"
-
+#include "burst\burst_timer.h"
 hall_t hall={};
 hall_extra_t hall_extra ={};
 adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
-//pmsm_action_p pmsm_hall_app_action;
-//pmsm_feedback_p pmsm_hall_app_feedback;
-//pmsm_action_t pmsma = {};	
-//pmsm_feedback_t feedback = {};	
-	//pmsm_hall_app_config_p pmsm_hall_app_config = 0;
+burst_signal_t RPM = 0;
 	
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode
@@ -104,6 +100,23 @@ void pmsm_hall_app_control_step_2(void){
 void pmsm_hall_app_control_step_3(void){
 	if(presc==0){
 		burst_dev_runB(&motor.cross.ac.ref);
+	}
+	{
+		static burst_time_us_t last_rpm_us = 0;
+		static burst_long_signal_t last_rpm_pos = 0;
+		static burst_long_signal_t delta_flt = 0;
+		burst_time_us_t now = burst_time_us();
+		if(  now - last_rpm_us  >= 1024*16 ){
+			burst_long_signal_t pos = enco.ref.position;
+			burst_long_signal_t delta = pos - last_rpm_pos;
+			delta_flt = delta_flt*31 + delta*32;
+			delta_flt >>= 5;
+			//60*1000000 / 256 (pp.об) / 16 = 14648
+			
+			RPM = (delta_flt*14648) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8 ) );			
+			last_rpm_us = now;
+			last_rpm_pos = pos;
+		}
 	}
 }
 

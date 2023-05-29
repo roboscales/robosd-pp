@@ -11,8 +11,6 @@
 #include "burst/modules/enco_abs32.h"
 #include "burst/modules/pmsm.h"
 
-
-
 //силовой преобразователь
 BURST_PS(power)
 
@@ -41,7 +39,7 @@ extern hall_t hall;
 extern adc_t adc;
 extern pmsm_t motor;
 
-
+extern burst_signal_t RPM ;
 typedef struct pmsm_hall_app_config_s {
 	pmsm_config_t pmsm;
 	hall_config_t hall;

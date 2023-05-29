@@ -8,6 +8,7 @@
 
 #if BURST_TIMER_ENABLED == 1
 typedef unsigned int burst_time_us_t;
+typedef unsigned int burst_time_ms_t;
 
 typedef struct burst_timer_s {
 	burst_time_us_t last;
@@ -23,7 +24,7 @@ burst_bool_t burst_timer_start(burst_timer_p _timer);
 void burst_timer_stop(burst_timer_p _timer);
 void burst_timer_poll(void);
 burst_time_us_t burst_time_us(void);
-
+burst_time_ms_t burst_time_ms(void);
 #define BURST_TIMER( S ) BURST_TIMER_( S )
 
 #define BURST_TIMER_( S ) \

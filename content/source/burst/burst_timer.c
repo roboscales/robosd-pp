@@ -12,7 +12,9 @@ burst_timer_p burst_timer_backend_inedex_ [BURST_TIMER_BACKEHD_IX_SIZE] = {};
 burst_timer_p burst_timer_frontend_inedex_ [BURST_TIMER_FRONTEND_IX_SIZE] = {};
 
 burst_time_us_t burst_time_us_ = 0;
-	
+burst_time_ms_t	burst_time_ms_ = 0;
+burst_time_us_t	burst_acc_us_ = 0;
+			
 burst_bool_t burst_timer_start(burst_timer_p _timer){
 	burst_timer_p * ix;
 	int sz;
@@ -59,6 +61,11 @@ void burst_timer_poll(void){
 		burst_time_us_ += BURST_TIMER_TICK_US;
 		ix =  burst_timer_backend_inedex_;
 		sz = BURST_TIMER_BACKEHD_IX_SIZE;
+			burst_acc_us_ += BURST_TIMER_TICK_US;
+			while (burst_acc_us_ > 1000) {
+				burst_acc_us_ -= 1000;
+				burst_time_ms_++;
+			}
 	} else{
 		sz = BURST_TIMER_FRONTEND_IX_SIZE;
 		ix =  burst_timer_frontend_inedex_;
@@ -77,5 +84,8 @@ void burst_timer_poll(void){
 }
 burst_time_us_t burst_time_us(void){
 	return burst_time_us_;
+}
+burst_time_ms_t burst_time_ms(void){
+	return burst_time_ms_;
 }
 #endif
