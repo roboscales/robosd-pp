@@ -76,6 +76,7 @@ typedef struct hall_qubic_s {
 } hall_extra_t;
 
 typedef hall_extra_t  * hall_qubic_p;
+void hall_dummy_interp(hall_qubic_p _qubic);
 void hall_qubic_poll(hall_qubic_p _qubic);
 void hall_regres_poll(hall_qubic_p _qubic);
 void hall_qubic_interp(hall_qubic_p _qubic);

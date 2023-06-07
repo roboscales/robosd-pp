@@ -59,7 +59,6 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 	//angle_forcer.speed = &speedse.ref.value;
 	
 	enco_abs32_begin(&enco, &_config->enco);
-	
 	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,&hall_extra.angle,  &speedse.ref.value, 0);
 }
 
@@ -78,12 +77,18 @@ void pmsm_hall_app_realtime_loop(void){
 
 void pmsm_hall_app_backend_loop(void){		
 	burst_dev_runA(&motor.cross.ac.ref);	
+	#if PMSM_HALL_APP_EXTRA_TYPE == PMSM_HALL_APP_EXTRA_TYPE_NONE
+	hall_dummy_interp(&hall_extra);
+	#else
 	hall_qubic_interp(&hall_extra);
+	#endif
 	pmsm_inverter_run(&motor);
 	power.run();
 }
 void pmsm_hall_app_frontend_loop(void){
+	#if PMSM_HALL_APP_EXTRA_TYPE == PMSM_HALL_APP_EXTRA_TYPE_REGRESS
 	hall_regres_poll(&hall_extra);
+	#endif
 }
 void pmsm_hall_app_control_step_1(void){
 	enco.ref.run();

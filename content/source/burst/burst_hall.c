@@ -190,6 +190,10 @@ void hall_regres_poll(hall_qubic_p _qubic){
 	}
 }
 
+void hall_dummy_interp(hall_qubic_p _qubic){
+	_qubic->angle =  *(_qubic->hall.pactual);
+}
+
 void hall_fuzzy_poll(hall_qubic_p _qubic){
 	static const burst_signal_t pseudo[hall_fuzzy_rank]={
 		 S(0.0476),    S(0.0952),    S(0.1429),    S(0.1905),    S(0.2381),    S(0.2857)
