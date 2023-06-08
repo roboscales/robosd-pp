@@ -5,7 +5,7 @@ hall_extra_t hall_extra ={};
 adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
-burst_signal_t RPM = 0;
+burst_long_signal_t RPM = 0;
 	
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode
@@ -113,7 +113,7 @@ void pmsm_hall_app_control_step_3(void){
 			delta_flt >>= 5;
 			//60*1000000 / 256 (pp.об) / 16 = 14648
 			
-			RPM = (delta_flt*14648) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8 ) );			
+			RPM = (14648L * delta_flt) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8 ) );			
 			last_rpm_us = now;
 			last_rpm_pos = pos;
 		}
