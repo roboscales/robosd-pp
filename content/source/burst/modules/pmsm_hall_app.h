@@ -1,6 +1,10 @@
 #ifndef  pmsm_hall_app_h
 #define pmsm_hall_app_h
 
+#define PMSM_HALL_APP_EXTRA_TYPE_NONE 0 
+#define PMSM_HALL_APP_EXTRA_TYPE_REGRESS 1
+#define PMSM_HALL_APP_EXTRA_TYPE_QUBIC 2
+
 #include "burst/burst.h"
 #include "burst/burst_serial.h"
 #include "burst/burst_inv3ph.h"
@@ -509,6 +513,14 @@ void pmsm_hall_app_control_step_3(void);
 //===============================================
 #ifndef motor_CONTROL_PRESC
 #define motor_CONTROL_PRESC 16
+#endif
+
+//#ifndef motor_ANGLE_FORCE_ENABLE
+//#define motor_ANGLE_FORCE_ENABLE 1
+//#endif
+
+#ifndef PMSM_HALL_APP_EXTRA_TYPE
+#define PMSM_HALL_APP_EXTRA_TYPE PMSM_HALL_APP_EXTRA_TYPE_NONE
 #endif
 
 #endif
