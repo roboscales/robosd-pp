@@ -3,7 +3,7 @@
 #include "core/robosd_common.hpp"
 #include "core/robosd_list.hpp"
 #include "core/robosd_string.hpp"
-#include "core/robosd_lambda.hpp"
+#include "core/robosd_delegat.hpp"
 #include  "robosd_ring_buf.hpp"
 #include "net/robosd_net_link.hpp"
 
@@ -323,6 +323,122 @@ namespace robo {
 
 		};
 		
+
+		template <typename D,unsigned SA, unsigned SB, typename G > class half_duplex_t: protected bridge_t<SA,SB,G>, public net::iserial{
+		typedef bridge_t<SA,SB,G> bridge;
+		public:
+			enum class panic{ rx_overflow, tx_refuse};
+			::robo::time_us_t last_tx_ = 0;
+		private:
+			bool busy_ = false;
+//			::robo::delegat::ref<void> & on_receive_;			
+			::robo::delegat::ref<void,panic> & on_panic_;
+			void try_send_(){
+				if( !busy_) {
+					uint8_t * buffer = D::tx_buffer;
+					size_t sz = bridge::A.get(buffer,D::buffer_size);
+					if(sz>0){
+						busy_ = true;
+						if(D::try_send(buffer, sz)){
+							last_tx_ = D::time_us();
+							return;
+						} else{
+							busy_ = false;
+							on_panic_(panic::tx_refuse);
+						}
+					}
+					D::begin_receive();
+				}
+			}
+			::robo::delegat::dummy<void,panic> pd_;
+		public:
+			half_duplex_t(const char * _name=nullptr, ::robo::delegat::ref<void,panic> * _on_panic=nullptr): 
+				on_panic_(_on_panic?*_on_panic:pd_){
+					if(_name){
+						iserial::begin(_name);						
+					}
+			}
+			void on_receive(uint8_t _data){
+				if( ! bridge::A.put(_data)){
+					on_panic_(panic::rx_overflow);
+				}else{
+					last_tx_ = D::time_us();
+				}
+			}
+			void on_receive(const uint8_t* _data, size_t _max_size){
+				if( ! bridge::A.put(_data,_max_size) ){
+					on_panic_(panic::rx_overflow);
+				} else {
+							last_tx_ = D::time_us();
+				}
+			}
+			void on_confirm(void){
+				busy_ = false;
+				try_send_();				
+			}
+			void on_refuse(void){
+				busy_ = false;
+				on_panic_(panic::tx_refuse);
+				reset();
+			}
+			
+			void watchdog(void){
+				robo::time_us_t now = D::time_us();
+				if(now - last_tx_ > D::watchdog_us){
+					reset();
+					last_tx_ = now;
+				}
+			}
+			
+			virtual size_t available(void) {
+				return bridge::B.available();
+			}
+			virtual size_t space(void) {
+				return bridge::B.space();
+			}
+			virtual size_t get(uint8_t* _data, size_t _max_size) {
+				return bridge::B.get(_data, _max_size);
+			}
+			virtual bool put(const uint8_t* _data, size_t _size) {
+				if( bridge::B.put(_data, _size)){
+					try_send_();
+					return true;
+				} else{
+					on_panic_(panic::tx_refuse);
+					return false;
+				}
+			}
+			virtual size_t get(uint8_t & _data) {
+				if (bridge::B.get(_data) > 0) {
+					return 1;					
+				}
+				else {
+					return 0;
+				}
+			}
+			virtual bool  put(uint8_t _data) {
+				if( bridge::B.put(_data)){
+					try_send_();
+					return true;
+				} else{
+					on_panic_(panic::tx_refuse);
+					return false;
+				}
+			}
+			virtual void reset(void){
+				G g__;
+				bridge::A.reset();
+				bridge::B.reset();
+				D::begin_receive();
+			}
+			void start(void){
+				reset();
+			}
+			virtual size_t space_max(void){
+				return bridge::A.space_max();
+			}
+
+		};
 	}
 }
 
