@@ -650,6 +650,20 @@ namespace mexo {
 	void stateflow::run(void){
 		if(runned_) runned_->doExecute();
 	}
+	
+	void stateflowv2::switchto(node * _node){
+		if(runned_){
+			runned_->onLeave();
+		}		
+		runned_ = _node;		
+		if(runned_){
+			runned_->onEnter();
+		}		
+	}
+	
+	void stateflowv2::run(void){
+		if(runned_) runned_->doRun();
+	}
 
 }
 

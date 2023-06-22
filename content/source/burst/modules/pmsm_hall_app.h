@@ -5,6 +5,9 @@
 #define PMSM_HALL_APP_EXTRA_TYPE_REGRESS 1
 #define PMSM_HALL_APP_EXTRA_TYPE_QUBIC 2
 
+#define PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL 1
+#define PMSM_HALL_APP_ANGLE_SENCE_TYPE_EXTERN 2
+
 #include "burst/burst.h"
 #include "burst/burst_serial.h"
 #include "burst/burst_inv3ph.h"
@@ -65,6 +68,10 @@ void pmsm_hall_app_frontend_loop(void);
 void pmsm_hall_app_control_step_1(void);
 void pmsm_hall_app_control_step_2(void);
 void pmsm_hall_app_control_step_3(void);
+void pmsm_hall_app_update_feedback(void);
+#if PMSM_HALL_APP_ANGLE_SENCE_TYPE == PMSM_HALL_APP_ANGLE_SENCE_TYPE_EXTERN
+burst_signal_t * pmsm_hall_app_rotor_pos(void);
+#endif
 
 #define PMSM_HALL_APP_CONFIG()\
 {\
@@ -515,12 +522,13 @@ void pmsm_hall_app_control_step_3(void);
 #define motor_CONTROL_PRESC 16
 #endif
 
-//#ifndef motor_ANGLE_FORCE_ENABLE
-//#define motor_ANGLE_FORCE_ENABLE 1
-//#endif
-
 #ifndef PMSM_HALL_APP_EXTRA_TYPE
 #define PMSM_HALL_APP_EXTRA_TYPE PMSM_HALL_APP_EXTRA_TYPE_NONE
 #endif
+
+#ifndef PMSM_HALL_APP_ANGLE_SENCE_TYPE
+#define PMSM_HALL_APP_ANGLE_SENCE_TYPE PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL
+#endif
+
 
 #endif
