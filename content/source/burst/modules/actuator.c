@@ -193,6 +193,7 @@ burst_dev_mode_t actuator_mode_position = {
 void actuator_event_update_feedback(burst_dev_ref_p _dev){
 	actuator_feedback_p fb =(actuator_feedback_p)(_dev->feedback);
 	actuator_p actuator = (actuator_p)(_dev);
+	_dev->feedback->mode = _dev->mode;
 	fb->voltage = actuator->voltage.req;
 	fb->speed = actuator->speed.flt->value;
 	fb->position = actuator->enco->position;
