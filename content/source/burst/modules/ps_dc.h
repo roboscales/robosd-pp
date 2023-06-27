@@ -92,4 +92,13 @@ BURST_WEAK  void S##_set(burst_signal_t _duty){\
 
 #define PS_DC_SUBSETUP( S,P )  BURST_OBJECT_SUBSETUP(ps_dc,S,P)
 
+
+#define PS_DC_CONFIG(a) PS_DC_CONFIG_(a)
+#define PS_DC_CONFIG_(a)\
+{\
+	{}\
+	, RANGE_CONFIG(a##_DUTY_LIM)\
+	, RANGE_CONFIG(a##_VOLTAGE_LIM)\
+}
+
 #endif

@@ -29,3 +29,5 @@
 /content/app-template/app/mexo++drive/projects/STM32F405/Drivers/
 /content/doc/matlab/slprj/sim/varcache/discret_line_systemm
 /content/doc/matlab/*.autosave
+/content/doc/matlab/slprj/sim/varcache/power
+/content/doc/matlab/slprj/sim/varcache/ee_power_factor_correction

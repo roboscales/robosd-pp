@@ -11,6 +11,7 @@ burst_dev_mode_p irga_dpt_actuator_modes[ actuator_mode_count] = {
 void irga_dpt_begin (
 	irga_dpt_p _dpt
 	, irga_dpt_config_p _config
+	, ps_dc_config_p _ps_config
 	, ps_dc_p _ps
 	, enco_abs32_p _enco
 	, nikitin_p _spf
@@ -29,13 +30,13 @@ void irga_dpt_begin (
 	, _positioner//burst_positioner_p _positioner	
 	, actuator_mode_count//int _mode_count
 	, irga_dpt_actuator_modes//burst_dev_mode_p * _modes	
-	, &(_config->ps.voltage)//burst_range_p _voltage_range
+	//, &(_config->ps.voltage)//burst_range_p _voltage_range
 	);
-	ps_dc_begin(_ps,&(_config->ps));
+	ps_dc_begin(_ps,_ps_config);
 	_ps->setup( &(_dpt->actuator.voltage.req) );
-	_dpt->actuator.voltage_range = &(_config->ps.voltage);
+	//_dpt->actuator.voltage_range = &(_config->ps.voltage);
 	enco_abs32_begin(_enco,&(_config->enco));
 	nikitin_begin(_spf,&(_config->spf));
-	burst_motion_begin(_motion, &(_config->motion) );
-	burst_positioner_begin(_positioner, &(_config->positioner));
+	//burst_motion_begin(_motion, &(_config->motion) );
+	//burst_positioner_begin(_positioner, &(_config->positioner));
 }
