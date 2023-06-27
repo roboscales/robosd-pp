@@ -1290,7 +1290,24 @@ namespace mexo {
 		void switchto(node * _node);
 		void run(void);
 	};	
+	
+	class stateflowv2 {
+	public:
+		class node {
+			friend class stateflowv2;
+		protected:
+			virtual void onEnter(void) = 0;
+			virtual void doRun(void) = 0;
+			virtual void onLeave(void) = 0;
 
+		};
+
+	private:
+		node * runned_ = 0;
+	public:
+		void switchto(node * _node);
+		void run(void);
+	};	
 }
 #endif
 
