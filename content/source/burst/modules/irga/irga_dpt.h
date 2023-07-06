@@ -5,8 +5,8 @@
 #include "burst/modules/nikitin.h"
 #include "burst/modules/ps_dc.h"
 
-#define pitch_ENCO_OFFSET_NATIVE ((uint32_t)-BURST_LONG_SIGNAL_T(127.9/180.))
-#define yaw_ENCO_OFFSET_NATIVE ((uint32_t) -BURST_LONG_SIGNAL_T( 133.055/180.))
+#define pitch_ENCO_OFFSET_NATIVE ((uint32_t)-BURST_LONG_SIGNAL_T(136.9/180.))
+#define yaw_ENCO_OFFSET_NATIVE ((uint32_t) BURST_LONG_SIGNAL_T( 53.493/180.))
 
 typedef struct irga_dpt_config_s{
 	actuator_config_t  actuator;
@@ -135,7 +135,7 @@ burst_dev_mode_p S##_modes[ actuator_mode_count] = {\
 #endif
 //=================================================
 #ifndef yaw_MOTION_OV_VOLTAGE_PROP_GAIN
-#define yaw_MOTION_OV_VOLTAGE_PROP_GAIN 15
+#define yaw_MOTION_OV_VOLTAGE_PROP_GAIN 30
 #endif
 
 #ifndef yaw_MOTION_OV_VOLTAGE_MODEL_GAIN
@@ -233,7 +233,7 @@ burst_dev_mode_p S##_modes[ actuator_mode_count] = {\
 #endif
 
 #ifndef yaw_ENCO_INVERCE
-#define yaw_ENCO_INVERCE burst_true
+#define yaw_ENCO_INVERCE burst_false
 #endif
 //===================================================
 //=================================================
