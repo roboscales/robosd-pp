@@ -183,7 +183,7 @@ protected:
 				#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
 				feedback< dev_t >().current = -present< dev_t >().current_filter.fb.output;
 				#else
-				feedback< dev_t >().current = -hardwaresys.current_sence_block.current_delta_ref();
+				feedback< dev_t >().current = -hardwaresys.current_sence_block.current_ref();
 				#endif
 				#else
 				//feedback< dev_t >().current = 0;
@@ -195,7 +195,7 @@ protected:
 				#if POWER_SUPPLY_CURRENT_FILTER_ENABLED==1 || POWER_SUPPLY_CURRENT_FAST_FILTER_ENABLED==1
 				feedback< dev_t >().current = present< dev_t >().current_filter.fb.output;
 				#else
-				feedback< dev_t >().current = hardwaresys.current_sence_block.current_delta_ref();
+				feedback< dev_t >().current = hardwaresys.current_sence_block.current_ref();
 				#endif
 				#else
 				//feedback< dev_t >().current = 0;
