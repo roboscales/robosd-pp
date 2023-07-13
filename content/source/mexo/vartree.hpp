@@ -107,10 +107,10 @@ namespace mexo {
 
 		public:
 
-			const void* addr;
-			robo::cstr name;
+			const void* addr=nullptr;
+			robo::cstr name = nullptr;
 			descriptor desc;
-			int key;
+			int key=0;
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			size_t sprintf(::robo::char_t* buf, size_t _max_sz);
 			#endif

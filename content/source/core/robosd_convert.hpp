@@ -9,12 +9,12 @@ namespace robo{
 	
 	class ROBO_EXPORT converter: public app::node{
 	private:
-		float offset_;
-		float scale_;
-		float min_;
-		float max_;
+		float offset_ = 0.f;
+		float scale_ = 1.f;
+		float min_ = 0.f;
+		float max_ = 0.f;
 		float sut_(float value) const;
-		float eps_;
+		float eps_ = 0.f;
 	public:
 		float offset(void) { return offset_;};
 		float scale(void){ return scale_;}
