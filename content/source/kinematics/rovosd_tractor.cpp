@@ -2,7 +2,6 @@
 
 namespace robo {
 	namespace tractor {
-
 		
 		class test {
 			
