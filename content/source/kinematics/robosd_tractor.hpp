@@ -1155,18 +1155,21 @@ namespace robo {
 				case load_format::matrix:
 				{
 					ROBO_LBREAKN(transform_.load_raw(_path, RT("T")));
+					break;
 				}
 				case load_format::quaternion:
 				{
 					quaternion_t<T> q;
 					ROBO_LBREAKN(q.load(_path, RT("L")));
 					transform_ = q.A();
+					break;
 				}
 				case load_format::avionic:
 				{
 					avionic_t<T> a;
 					ROBO_LBREAKN(a.load_raw(_path, RT("A")));
 					a >> transform_;
+					break;
 				}
 				offset.load_raw(_path, RT("r"));
 				begin_update();
