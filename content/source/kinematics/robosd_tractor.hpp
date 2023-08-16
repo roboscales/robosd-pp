@@ -1171,9 +1171,9 @@ namespace robo {
 					a >> transform_;
 					break;
 				}
+				}
 				offset.load_raw(_path, RT("r"));
 				begin_update();
-				}
 				return true;
 			}
 
