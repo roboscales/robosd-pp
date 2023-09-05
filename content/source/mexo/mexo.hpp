@@ -1236,7 +1236,7 @@ namespace mexo {
 		void terminate(void);
 	};	
 	
-	template< class H> class timer_t :  public H{
+	template< class H, typename ... Args> class timer_t :  public H{
 	public:
 		using tm = ::robo::time_us_t;
 	private:
@@ -1256,7 +1256,7 @@ namespace mexo {
 			}
 		}
 	public:
-		timer_t(void)
+		timer_t(Args ... args): H(args...)
 		{
 		}
 		void start(tm _period, bool _once = false){
@@ -1272,6 +1272,18 @@ namespace mexo {
 		}
 		bool started(void){ return started_; }
 	};
+
+	template< class H, typename ... Args> class timer_delegat_t :  public H{
+	public:
+		void stop(void){}
+		void start(void){}
+		timer_delegat_t(Args ... args): H(args...)
+		{
+		}
+	};
+
+	typedef ::mexo::timer_t< timer_delegat_t<::robo::delegat::owned_fabric<void>::simple, void(*)(void)>, void(*)(void) > repeat_t;
+
 	
 	class stateflow {
 	public:

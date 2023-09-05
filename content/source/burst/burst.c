@@ -250,7 +250,9 @@ BURST_SLOT_D(15)
 #endif
 
 burst_slot_f burst_slots[BURST_SLOT_COUNT]={
+	#if BURST_SLOT_COUNT > 0
 	BURST_SLOT(0)
+	#endif
 	#if BURST_SLOT_COUNT > 1
 	,BURST_SLOT(1)
 	#endif
@@ -320,9 +322,12 @@ void burst_backend_loop(void){
 		#if BURST_TIMER_ENABLED == 1
 		burst_timer_poll();
 		#endif
+		#if BURST_SLOT_COUNT > 0
 		(*burst_slot)();
 		burst_slot++;
-		if(burst_slot==burst_slots_end) burst_slot = burst_slots;
+		if(burst_slot==burst_slots_end) 
+			burst_slot = burst_slots;
+		#endif
 		{
 			burst_dev_ref_p * p ;
 			for( p= burst.devs; p!=burst.devs_end;p++){

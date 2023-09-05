@@ -5,9 +5,6 @@
 #include "burst/modules/nikitin.h"
 #include "burst/modules/ps_dc.h"
 
-#define pitch_ENCO_OFFSET_NATIVE ((uint32_t)-BURST_LONG_SIGNAL_T(136.9/180.))
-#define yaw_ENCO_OFFSET_NATIVE ((uint32_t) BURST_LONG_SIGNAL_T( 53.493/180.))
-
 typedef struct irga_dpt_config_s{
 	actuator_config_t  actuator;
 	enco_abs32_config_t enco;
