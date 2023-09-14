@@ -78,6 +78,7 @@ void pmsm_hall_app_realtime_loop(void){
 	c_lat_flt.ref.run();
 	pmsm_angle_forcer_run(&angle_forcer);
 	pmsm_sence_run(&motor);
+	pmsm_protector_run (&motor);
 }
 
 void pmsm_hall_app_backend_loop(void){		

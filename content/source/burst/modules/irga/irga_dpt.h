@@ -371,7 +371,7 @@ burst_dev_mode_p S##_modes[ actuator_mode_count] = {\
 #endif
 
 #ifndef pitch_ENCO_INVERCE
-#define pitch_ENCO_INVERCE burst_true
+#define pitch_ENCO_INVERCE burst_false
 #endif
 
 

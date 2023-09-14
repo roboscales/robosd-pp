@@ -99,7 +99,7 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
 #ifndef adc_INDEX
-#define adc_INDEX {0,1,2,3,4}
+#define adc_INDEX {0,1,2}
 #endif
 
 #ifndef adc_SCALE
@@ -528,6 +528,22 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 
 #ifndef PMSM_HALL_APP_ANGLE_SENCE_TYPE
 #define PMSM_HALL_APP_ANGLE_SENCE_TYPE PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL
+#endif
+
+#ifndef motor_INV3PH_PWM_FORCE
+#define motor_INV3PH_PWM_FORCE 0
+#endif
+
+#ifndef motor_FAULT_CURRENT_PANIC
+#define motor_FAULT_CURRENT_PANIC 32767
+#endif
+
+#ifndef motor_FAULT_CURRENT_LEVEL
+#define motor_FAULT_CURRENT_LEVEL 32767
+#endif
+
+#ifndef motor_FAULT_CURRENT_US
+#define motor_FAULT_CURRENT_US 0
 #endif
 
 

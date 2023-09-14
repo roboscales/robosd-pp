@@ -28,8 +28,9 @@ BURST_STATIC_INLINE burst_long_signal_t sum_x_ya_(burst_long_signal_t x, burst_l
 void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config) {
 	_inverter->discret_hi = _config->native.hi;
 	_inverter->discret_lo = _config->native.lo;
+	_inverter->pwm_force = _config->pwm_force;
 	burst_long_signal_t delta = _config->native.hi - _config->native.lo;
-	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo);
+	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo );
 	gain <<= 16;
 	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //округление
 	gain /= ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN);
@@ -121,16 +122,52 @@ void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _later
 	pwmA += mult_(pwmA, scale);
 	pwmB += mult_(pwmB, scale);
 	pwmC += mult_(pwmC, scale);
+	
+	burst_long_signal_t pwm_force = _inverter->pwm_force;
+	if( pwm_force > 0){
+		burst_long_signal_t lo = BURST_SIGNAL_MIN + pwm_force;
+		burst_long_signal_t hi = BURST_SIGNAL_MAX - pwm_force;
+		
+		BURST_SATURATE(pwmA,lo,hi);
+		BURST_SATURATE(pwmB,lo,hi);
+		BURST_SATURATE(pwmC,lo,hi);
+		
+		_inverter->pwm.A = (burst_signal_t)pwmA;
+		_inverter->pwm.B = (burst_signal_t)pwmB;
+		_inverter->pwm.C = (burst_signal_t)pwmC;
 
-	BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	_inverter->pwm.A = (burst_signal_t)pwmA;
-	_inverter->pwm.B = (burst_signal_t)pwmB;
-	_inverter->pwm.C = (burst_signal_t)pwmC;
-	_inverter->duty.A = inv3ph_scale_(_inverter,_inverter->pwm.A);
-	_inverter->duty.B = inv3ph_scale_(_inverter,_inverter->pwm.B);
-	_inverter->duty.C = inv3ph_scale_(_inverter,_inverter->pwm.C);
+		if(pwmA>0){
+			pwmA+=pwm_force;
+		}
+		if(pwmB>0){
+			pwmB+=pwm_force;
+		}
+		if(pwmC>0){
+			pwmC+=pwm_force;
+		}
+		
+		if(pwmA<0){
+			pwmA -= pwm_force;
+		}
+		if(pwmB<0){
+			pwmB -= pwm_force;
+		}
+		if(pwmC<0){
+			pwmC -= pwm_force;
+		}		
+	} else{
+		BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		
+		_inverter->pwm.A = (burst_signal_t)pwmA;
+		_inverter->pwm.B = (burst_signal_t)pwmB;
+		_inverter->pwm.C = (burst_signal_t)pwmC;
+	}
+	
+	_inverter->duty.A = inv3ph_scale_(_inverter,pwmA);
+	_inverter->duty.B = inv3ph_scale_(_inverter,pwmB);
+	_inverter->duty.C = inv3ph_scale_(_inverter,pwmC);
 }
 
 void current3ph_begin(current3ph_p _sensor, current3ph_config_p _config, inv3ph_p _inverter, burst_signal_t * _raw){

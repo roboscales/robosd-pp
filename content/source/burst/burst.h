@@ -62,6 +62,7 @@ struct burst_dev_ref_s{
 	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
 	burst_dev_mode_event update_feedback;
+	burst_dev_event perform_panic;
 	burst_dev_config_p config;
 	burst_dev_action_p action;
 	burst_dev_feedback_p feedback;
@@ -70,6 +71,7 @@ struct burst_dev_ref_s{
 	burst_dev_mode_p * modes_end;	
 	burst_dev_mode_p actual_mode;
 	int mode;	
+	uint32_t panic;
 };
 void burst_dev_idle_event(burst_dev_ref_p _ref);
 void burst_dev_runA(burst_dev_ref_p _ref);
@@ -89,8 +91,8 @@ void burst_frontend_loop(void);
 void burst_hw_on_crash(void);
 void burst_sw_on_crash(const char * _file, const char * _function, int _line);
 void burst_hw_reboot(void);
-
-
+void burst_event_perform_panic(burst_dev_ref_p _dev);
+void burst_raise_panic(burst_dev_ref_p _dev, uint32_t flag);
 #ifndef burst_crash
 #define burst_crash()  { burst_hw_on_crash(); burst_sw_on_crash(BURST_PROC_FILE,BURST_PROC_NAME,BURST_PROC_LINE); }
 #endif

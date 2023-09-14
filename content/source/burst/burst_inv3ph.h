@@ -20,6 +20,7 @@ typedef struct dq_s {
 
 typedef struct inv3ph_config_s{
 	burst_long_range_t native;
+	burst_long_signal_t pwm_force;
 } inv3ph_config_t;
 typedef inv3ph_config_t * inv3ph_config_p;
 
@@ -27,6 +28,7 @@ typedef inv3ph_config_t * inv3ph_config_p;
 #define INV3PH_CONFIG_(a)\
 {\
 	RANGE_CONFIG(a##_NATIVE_RANGE)\
+	,a##_PWM_FORCE\
 }
 
 typedef struct inv3ph_s{
@@ -42,6 +44,7 @@ typedef struct inv3ph_s{
 	burst_signal_t discret_hi;
 	burst_signal_t discret_delta_lo;
 	burst_signal_t discret_delta_hi;
+	burst_long_signal_t pwm_force;
 } inv3ph_t;
 typedef inv3ph_t * inv3ph_p;
 void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _lateral, burst_signal_t _angle);

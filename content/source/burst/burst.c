@@ -73,6 +73,7 @@ void burst_begin(void){
 		burst_alarm((*p)->config);
 		burst_alarm((*p)->action);
 		burst_alarm((*p)->feedback);
+		burst_alarm((*p)->perform_panic);		
 		if((*p)->mode_count>0){
 			burst_alarm((*p)->modes);
 		}	
@@ -121,6 +122,9 @@ void burst_realtime_loop(void){
 		debug_tp_on(VERB_LOOP);
 		debug_tp_on(VERB_REALTIME);
 		for( p= burst.devs; p!=burst.devs_end;p++){
+			if( (*p) -> panic){
+				(*p)->perform_panic(*p);				
+			}
 			(*p)->realtime_loop(*p);
 		}
 		burst_sw_realtime_loop();
@@ -598,3 +602,20 @@ void burst_critical_leave(uint32_t _context){
 #define CLCH_NAME burst_tp
 #include "burst/cliche/tp.h"
 #endif
+
+void burst_event_perform_panic(burst_dev_ref_p _dev){	
+	if(_dev->mode!=burst_dev_mode_idle){
+		burst_dev_mode_p actual_mode = _dev->actual_mode;
+		if (actual_mode) {
+			actual_mode->stop(_dev);
+		}
+		
+		burst_dev_switch_to_idle(_dev);
+	}
+	_dev->action->mode = burst_dev_mode_idle;
+}
+
+void burst_raise_panic(burst_dev_ref_p _dev, uint32_t flag){
+	_dev->panic |= flag;
+	burst_event_perform_panic(_dev);
+}

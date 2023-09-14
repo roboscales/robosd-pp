@@ -1,8 +1,10 @@
 #ifndef burst_modules_pmsm_h
 #define burst_modules_pmsm_h
+
 #include "burst/modules/pmsm_front.h"
 #include "burst/modules/acwc.h"
 #include "burst/burst_inv3ph.h"
+#include "burst/burst_timer.h"
 
 typedef struct pmsm_config_s{
 	acwc_config_t cross;
@@ -17,6 +19,23 @@ typedef struct pmsm_config_s{
 			burst_range_t range;
 		} voltage;
 	} lateral;	
+	struct{
+		/*struct{
+			burst_usignal_t hi;
+			burst_usignal_t lo;
+			burst_time_us_t us;
+		}	voltage;*/
+		struct{
+			burst_signal_t panic;
+			burst_signal_t level;
+			burst_time_us_t us;
+		}	current;
+		/*struct{
+			burst_usignal_t hi;
+			burst_usignal_t lo;
+			burst_time_us_t us;
+		}	temper;*/
+	} fault;
 } pmsm_config_t;
 typedef pmsm_config_t * pmsm_config_p;
 
@@ -33,6 +52,13 @@ typedef pmsm_config_t * pmsm_config_p;
 		}\
 		,{\
 			RANGE_CONFIG(a##_LATERAL_VOLTAGE_RANGE)\
+		}\
+	}\
+	,{\
+		{\
+			a##_FAULT_CURRENT_PANIC\
+			, a##_FAULT_CURRENT_LEVEL\
+			, a##_FAULT_CURRENT_US\
 		}\
 	}\
 }
@@ -116,6 +142,25 @@ typedef struct pmsm_s {
 	current3ph_t sensor;
 	pmsm_estimate_p estimate;
 	int mode_prev;
+	struct{
+		/*struct{
+			burst_usignal_t value;
+			burst_signal_t delta;
+			burst_time_us_t us;
+			uint32_t count;
+		} voltage;*/
+		struct{
+			burst_signal_t magnitude;
+			burst_signal_t delta;
+			burst_time_us_t us;
+			uint32_t count;
+		} current;
+		/*struct{			
+			burst_signal_t value;
+			uint8_t status;
+		} temper;*/
+		uint32_t panic;
+	} protector;
 } pmsm_t;
 typedef  pmsm_t * pmsm_p;
 
@@ -152,5 +197,5 @@ void pmsm_begin (
 void pmsm_event_update_feedback(burst_dev_ref_p _dev);
 void pmsm_sence_run (pmsm_p _pmsm);
 void pmsm_inverter_run (pmsm_p _pmsm);
-
+void pmsm_protector_run (pmsm_p _pmsm);
 #endif
