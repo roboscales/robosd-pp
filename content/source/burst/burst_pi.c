@@ -26,7 +26,9 @@ void burst_pi_run_(burst_pi_p _pi){
 			if( (Error<0) && ( (control<=controlMin) || (_pi->long_model<(BURST_LONG_SIGNAL_MIN*MODEL_VALUE_MAX)) || (master_sut_flag == burst_satstate_lo)  ) ){
 					sut_flag = burst_satstate_lo;
 			}
-			else sut_flag =  master_sut_flag;
+			else {
+				sut_flag =  burst_satstate_none;
+			}
 	}
 	_pi->satstate = sut_flag;
 	if ( sut_flag == burst_satstate_none )
