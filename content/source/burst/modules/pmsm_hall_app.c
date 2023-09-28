@@ -121,14 +121,14 @@ void pmsm_hall_app_control_step_3(void){
 		static burst_long_signal_t last_rpm_pos = 0;
 		static burst_long_signal_t delta_flt = 0;
 		burst_time_us_t now = burst_time_us();
-		if(  now - last_rpm_us  >= 1024*16 ){
+		if(  now - last_rpm_us  >= (1024)*16 ){
 			burst_long_signal_t pos = enco.ref.position;
-			burst_long_signal_t delta = pos - last_rpm_pos;
+			burst_signal_t delta = pos - last_rpm_pos;
 			delta_flt = delta_flt*31 + delta*32;
 			delta_flt >>= 5;
 			//60*1000000 / 256 (pp.об) / 16 = 14648
 			
-			RPM = (14648L * delta_flt) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8 ) );			
+			RPM = (14648L * delta_flt) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8   )  );			
 			last_rpm_us = now;
 			last_rpm_pos = pos;
 		}
