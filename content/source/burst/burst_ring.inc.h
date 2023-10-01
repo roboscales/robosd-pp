@@ -84,7 +84,7 @@ BURST_STATIC_INLINE void RING_PREFIX(clear_)()
 	RING_PREFIX(writeCount) = 0;
 }
 
-BURST_STATIC_INLINE void RING_PREFIX(buf_put_)(const RING_DATA_T * _buf, RING_SIZE_T _len){
+BURST_STATIC_INLINE void RING_PREFIX(buf_put_)(const RING_DATA_T  _buf[], RING_SIZE_T _len){
 	while( _len-- ){
 		RING_PREFIX(put_)(*_buf++);
 	}
@@ -139,7 +139,7 @@ BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(buf_get)(RING_DATA_T * _buf, RING_SI
 	RING_SIZE_T av;
 	RING_SIZE_T ret;
 	RING_LOCK();
-	av = RING_PREFIX(count)();
+	av = RING_PREFIX(count_)();
 	if(av>max_len){
 			av = max_len;
 	}
