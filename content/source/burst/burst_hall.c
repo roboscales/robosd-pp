@@ -76,6 +76,7 @@ void hall_update(hall_p _hall, const hall_pins_p _pins){
 		_hall->delta = 0;
 		_hall->delta_acc = 0;
 	} else {
+		_hall->delta = 0;
 		return;
 	}
 }
