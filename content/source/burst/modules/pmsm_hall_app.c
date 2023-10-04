@@ -74,10 +74,11 @@ void pmsm_hall_app_start(void){
 }
 
 void pmsm_hall_app_realtime_loop(void){	
-	c_cross_flt.ref.run();
-	c_lat_flt.ref.run();
+	enco.ref.run();
 	pmsm_angle_forcer_run(&angle_forcer);
 	pmsm_sence_run(&motor);
+	c_cross_flt.ref.run();
+	c_lat_flt.ref.run();
 	pmsm_protector_run (&motor);
 }
 
@@ -100,38 +101,60 @@ void pmsm_hall_app_update_feedback(void){
 	burst_dev_ref_p r = (burst_dev_ref_p)&motor;
 	r->update_feedback(r);
 }
+static int pmsm_hall_app_presc = 0;
 void pmsm_hall_app_control_step_1(void){
-	enco.ref.run();
-}
-static int presc = 0;
-void pmsm_hall_app_control_step_2(void){
-	presc++;
-	if(presc== ((pmsm_hall_app_config_p)( motor.cross.ac.ref.config))->controlPresc){
+	pmsm_hall_app_presc++;
+	if(pmsm_hall_app_presc== ((pmsm_hall_app_config_p)( motor.cross.ac.ref.config))->controlPresc){
 		speedse.ref.run();
 		enco.ref.delta_acc = 0;
-		presc = 0;
+		pmsm_hall_app_presc = 0;
 	}
 }
-void pmsm_hall_app_control_step_3(void){
-	if(presc==0){
+void pmsm_hall_app_control_step_2(void){
+	if(pmsm_hall_app_presc==0){
 		burst_dev_runB(&motor.cross.ac.ref);
 	}
-	{
-		static burst_time_us_t last_rpm_us = 0;
-		static burst_long_signal_t last_rpm_pos = 0;
-		static burst_long_signal_t delta_flt = 0;
-		burst_time_us_t now = burst_time_us();
-		if(  now - last_rpm_us  >= (1024)*16 ){
-			burst_long_signal_t pos = enco.ref.position;
-			burst_signal_t delta = pos - last_rpm_pos;
-			delta_flt = delta_flt*31 + delta*32;
-			delta_flt >>= 5;
-			//60*1000000 / 256 (pp.об) / 16 = 14648
-			
-			RPM = (14648L * delta_flt) >> (15+( ((enco_abs32_config_p)(enco.ref.config))->resolution.actual - 8   )  );			
-			last_rpm_us = now;
-			last_rpm_pos = pos;
-		}
+}
+
+#ifndef PMSM_HALL_RPM_FILTER_VALUE_PRESC
+#define PMSM_HALL_RPM_FILTER_VALUE_PRESC 5
+#endif
+#ifndef PMSM_HALL_RPM_VALUE_TOTAL_PRESC
+#define PMSM_HALL_RPM_VALUE_TOTAL_PRESC 10
+#endif
+#ifndef PMSM_HALL_RPM_ENCODER_DEFRES 
+#define PMSM_HALL_RPM_ENCODER_DEFRES 8
+#endif
+
+#ifndef PMSM_HALL_RPM_BASE_PERIOD_US 
+#define PMSM_HALL_RPM_BASE_PERIOD_US BURST_TIMER_TICK_US
+#endif
+
+#ifndef PMSM_HALL_RPM_FILTER_GAIN_PRESC 
+#define PMSM_HALL_RPM_FILTER_GAIN_PRESC 5
+#endif
+
+#define PMSM_HALL_RPM_GAIN ( ((int32_t)( (60000000./PMSM_HALL_RPM_BASE_PERIOD_US))>>enco_RESOLUTION_ACTUAL))
+
+#define PMSM_HALL_RPM_PRESC (PMSM_HALL_RPM_VALUE_TOTAL_PRESC - PMSM_HALL_RPM_FILTER_VALUE_PRESC + PMSM_HALL_RPM_ENCODER_DEFRES - enco_RESOLUTION_ACTUAL) 
+
+
+
+void pmsm_hall_app_control_step_3(void){
+	static burst_time_us_t last_rpm_us = 0;
+	static burst_long_signal_t last_rpm_pos = 0;
+	static burst_long_signal_t delta_flt = 0;
+	burst_time_us_t now = burst_time_us();
+	if(  now - last_rpm_us  >= (1<<PMSM_HALL_RPM_PRESC)*PMSM_HALL_RPM_BASE_PERIOD_US ){
+		burst_long_signal_t pos = enco.ref.position;
+		burst_signal_t delta = pos - last_rpm_pos;
+		delta_flt = delta_flt*((1<<PMSM_HALL_RPM_FILTER_GAIN_PRESC)-1) + delta*(1<<PMSM_HALL_RPM_FILTER_VALUE_PRESC);
+		delta_flt >>= PMSM_HALL_RPM_FILTER_GAIN_PRESC;
+		//60*1000000 / 256 (pp.об) / 16 = 14648
+		
+		RPM = (delta_flt * PMSM_HALL_RPM_GAIN ) >> (PMSM_HALL_RPM_FILTER_VALUE_PRESC+PMSM_HALL_RPM_PRESC);			
+		last_rpm_us = now;
+		last_rpm_pos = pos;
 	}
 }
 

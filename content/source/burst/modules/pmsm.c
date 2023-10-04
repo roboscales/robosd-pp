@@ -300,17 +300,16 @@ void pmsm_protector_run (pmsm_p _pmsm){
 		if( 
 			magnitude > cfg->fault.current.level
 		){
-			burst_time_us_t last = _pmsm ->protector.current.us;
-			if(last == 0){
-				_pmsm ->protector.current.us = now;
-			} else {
-				if( now -  last > cfg->fault.current.us){
+			//burst_time_us_t last = _pmsm ->protector.current.us;
+			//if(last == 0){
+			//	_pmsm ->protector.current.us = now;
+			//} else {
+				if( now -  _pmsm ->protector.current.us > cfg->fault.current.us){
 					burst_raise_panic(&(_pmsm->cross.ac.ref),2);
 					_pmsm ->protector.current.us = 0;
 				}
-			}
 		} else{
-			_pmsm ->protector.current.us = 0;
+			_pmsm ->protector.current.us = now;
 		}
 	}
 }
