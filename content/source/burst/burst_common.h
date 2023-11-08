@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "burst_app_tuning.h"
 #include "burst_target.h"
-#include "burst_front.h"
+#include "burst/burst_front.h"
 
 #ifndef BURST_DATA_SIZE_TYPE
 #define BURST_DATA_SIZE_TYPE unsigned int
@@ -40,4 +40,21 @@ extern O##_t  S;
 #define BURST_OBJECT_CREATE_( O, S ) \
 O##_impl(S,S)\
 O##_t S =O##_setup(S);
+
+#ifndef BURST_PANICS_MASTER_LOST_ENABLED
+#define BURST_PANICS_MASTER_LOST_ENABLED 0
+#endif
+#ifndef BURST_PANICS_BOARD_TEMPER_ENABLED
+#define BURST_PANICS_BOARD_TEMPER_ENABLED 0
+#endif
+
+#ifndef BURST_PANICS_BOARD_VOLTAGE_ENABLED
+#define BURST_PANICS_BOARD_VOLTAGE_ENABLED 0
+#endif
+
+#ifndef BURST_PANICS_BOARD_CURRENT_ENABLED
+#define BURST_PANICS_BOARD_CURRENT_ENABLED 0
+#endif
+	
+		
 #endif

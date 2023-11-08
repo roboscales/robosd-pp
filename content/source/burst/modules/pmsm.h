@@ -20,24 +20,19 @@ typedef struct pmsm_config_s{
 		} voltage;
 	} lateral;	
 	struct{
-		/*struct{
-			burst_usignal_t hi;
-			burst_usignal_t lo;
-			burst_time_us_t us;
-		}	voltage;*/
-		struct{
-			burst_signal_t panic;
-			burst_signal_t level;
-			burst_time_us_t us;
-		}	current;
-		/*struct{
-			burst_usignal_t hi;
-			burst_usignal_t lo;
-			burst_time_us_t us;
-		}	temper;*/
-	} fault;
+		#if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
+		burst_signal_t current_misalignment_lim_pp;
+		#endif
+	} panic;
 } pmsm_config_t;
 typedef pmsm_config_t * pmsm_config_p;
+
+#if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
+#define PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)\
+	a##_PANICS_PMSM_CURRENT_MISSALIGMENT_PP
+#else
+#define PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)
+#endif
 
 #define PMSM_CONFIG(a) PMSM_CONFIG_(a)
 #define PMSM_CONFIG_(a)\
@@ -55,11 +50,7 @@ typedef pmsm_config_t * pmsm_config_p;
 		}\
 	}\
 	,{\
-		{\
-			a##_FAULT_CURRENT_PANIC\
-			, a##_FAULT_CURRENT_LEVEL\
-			, a##_FAULT_CURRENT_US\
-		}\
+		PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)\
 	}\
 }
 
@@ -141,26 +132,7 @@ typedef struct pmsm_s {
 	inv3ph_t inverter;
 	current3ph_t sensor;
 	pmsm_estimate_p estimate;
-	int mode_prev;
-	struct{
-		/*struct{
-			burst_usignal_t value;
-			burst_signal_t delta;
-			burst_time_us_t us;
-			uint32_t count;
-		} voltage;*/
-		struct{
-			burst_signal_t magnitude;
-			burst_signal_t delta;
-			burst_time_us_t us;
-			uint32_t count;
-		} current;
-		/*struct{			
-			burst_signal_t value;
-			uint8_t status;
-		} temper;*/
-		uint32_t panic;
-	} protector;
+	int mode_prev;	
 } pmsm_t;
 typedef  pmsm_t * pmsm_p;
 
@@ -197,5 +169,15 @@ void pmsm_begin (
 void pmsm_event_update_feedback(burst_dev_ref_p _dev);
 void pmsm_sence_run (pmsm_p _pmsm);
 void pmsm_inverter_run (pmsm_p _pmsm);
-void pmsm_protector_run (pmsm_p _pmsm);
+	
+#if BURST_PROTECTION_ENABLED == 1
+void burst_pmsm_realtime_protection(burst_dev_ref_p _ref);
+void burst_pmsm_frontend_protection(burst_dev_ref_p _ref);	
+
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+burst_signal_t burst_pmsm_magnitude_get (pmsm_p _pmsm);
+#endif
+
+#endif 
+	
 #endif

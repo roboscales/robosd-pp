@@ -175,22 +175,33 @@ void current3ph_begin(current3ph_p _sensor, current3ph_config_p _config, inv3ph_
 	_sensor->raw.A = _raw+_config->adc_index[0];
 	_sensor->raw.B = _raw+_config->adc_index[1];
 	_sensor->raw.C = _raw+_config->adc_index[2];
-	_sensor->deform = _config->deform;
+	if(_config->deform.enable){
+		_sensor->deform = _config->deform.matrix;
+	} else {
+		_sensor->deform = 0;
+	}
 }
 void current3ph_run(current3ph_p _sensor){
-	burst_signal_t A = *_sensor->raw.A;
-	burst_signal_t B = *_sensor->raw.B;
-	burst_signal_t C = *_sensor->raw.C;
 	burst_long_signal_t * R  = _sensor->deform;
-	
-	burst_long_signal_t a = (burst_signal_t)(( R[0]*A + R[1]*B + R[2]*C  )>>15);
-	burst_long_signal_t b =  (burst_signal_t)(( R[3]*A + R[4]*B + R[5]*C  )>>15);
-	burst_long_signal_t c = (burst_signal_t)(( R[6]*A + R[7]*B + R[8]*C  )>>15);
-	burst_long_signal_t ofs = ((a+b+c)*BURST_SIGNAL_T(0.33333333))>>15;
-	a-=ofs;
-	b-=ofs;
-	c-=ofs;
-
+	burst_long_signal_t a;
+	burst_long_signal_t b;
+	burst_long_signal_t c;
+	if(R){	
+		burst_signal_t A = *_sensor->raw.A;
+		burst_signal_t B = *_sensor->raw.B;
+		burst_signal_t C = *_sensor->raw.C;
+		a = (burst_signal_t)(( R[0]*A + R[1]*B + R[2]*C  )>>15);
+		b =  (burst_signal_t)(( R[3]*A + R[4]*B + R[5]*C  )>>15);
+		c = (burst_signal_t)(( R[6]*A + R[7]*B + R[8]*C  )>>15);
+		burst_long_signal_t ofs = ((a+b+c)*BURST_SIGNAL_T(0.33333333))>>15;
+		a-=ofs;
+		b-=ofs;
+		c-=ofs;
+	} else {
+		a = *_sensor->raw.A;
+		b = *_sensor->raw.B;
+		c = *_sensor->raw.C;
+	}
 	const burst_signal_t one_div_sqrt3 = BURST_SIGNAL_T(0.5773502691896258);
 	burst_long_signal_t beta = ( ( b*2 + a ) * one_div_sqrt3)>>15;
 	burst_signal_t sn = _sensor->inverter->rot.sn;

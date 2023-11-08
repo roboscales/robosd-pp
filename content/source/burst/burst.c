@@ -23,6 +23,7 @@ struct burst_s{
 	#endif
 	burst_dev_ref_p * devs_end;
 	int dev_count;
+	uint32_t panics;
 };
 
 burst_t burst = BURST_EMPTY_STRUCT;
@@ -59,6 +60,26 @@ void burst_dev_runC(burst_dev_ref_p _ref){
 typedef enum { burst_core_unknown=0,burst_core_backend=1,burst_core_frontend=2} burst_core_status;
 burst_core_status burst_core_status_ = burst_core_unknown;
 
+
+#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+void burst_master_alive(burst_dev_ref_p _ref){
+	if(_ref->config->alive_period_us>0){
+		_ref->master_alive_tm = burst_time_us();
+		_ref->master_exists = burst_true;
+	}
+}
+
+void burst_master_alive_check(burst_dev_ref_p _ref){
+	if(_ref->master_exists){
+		if(  burst_time_us() - _ref->master_alive_tm > _ref->config->alive_period_us) {
+			_ref->master_exists = burst_false;
+			burst_dev_raise_panic(_ref,burst_panic_dev_master_lost_bit);
+		}
+	}
+}
+#endif
+
+
 void burst_begin(void){
 	burst_sw_begin();
 	burst_dev_ref_p * p ;	
@@ -74,6 +95,11 @@ void burst_begin(void){
 		burst_alarm((*p)->action);
 		burst_alarm((*p)->feedback);
 		burst_alarm((*p)->perform_panic);		
+		#if BURST_PROTECTION_ENABLED == 1
+		burst_alarm((*p)->realtime_protection);
+		burst_alarm((*p)->frontend_protection);
+		#endif
+
 		if((*p)->mode_count>0){
 			burst_alarm((*p)->modes);
 		}	
@@ -122,17 +148,55 @@ void burst_realtime_loop(void){
 		debug_tp_on(VERB_LOOP);
 		debug_tp_on(VERB_REALTIME);
 		for( p= burst.devs; p!=burst.devs_end;p++){
+			(*p)->realtime_loop(*p);
+		}
+		burst_hw_realtime_loop();
+		burst_sw_realtime_loop();
+		#if BURST_PROTECTION_ENABLED == 1
+		for( p= burst.devs; p!=burst.devs_end;p++){
+			(*p)->realtime_protection(*p);
 			if( (*p) -> panic){
 				(*p)->perform_panic(*p);				
 			}
-			(*p)->realtime_loop(*p);
 		}
-		burst_sw_realtime_loop();
-		burst_hw_realtime_loop();
+		#endif
 		debug_tp_off(VERB_REALTIME);
 	}
 }
+burst_config_t burst_config_dummy = BURST_CONFIG();
+burst_config_t * burst_config = &burst_config_dummy;
 
+#if BURST_PROTECTION_ENABLED == 1
+void burst_dev_realtime_protection(burst_dev_ref_p _ref){
+	#if BURST_PANICS_BOARD_VOLTAGE_ENABLED 
+	int burst_board_voltage = burst_board_voltage_get_pp();
+	if( burst_board_voltage >= burst_config->panics.voltage_pp.overhi){
+		burst_board_raise_panic(burst_panic_board_overvoltage_bit);
+	} else if (burst_board_voltage<=burst_config->panics.voltage_pp.ultralo){
+		burst_board_raise_panic(burst_panic_board_lovoltage);
+	}
+	#endif
+
+	#if BURST_PANICS_BOARD_CURRENT_ENABLED 
+	int burst_board_current = burst_board_current_get_pp();
+	if( burst_board_current >= burst_config->overcurrent_pp){
+		burst_board_raise_panic(burst_panic_board_overcurrent_bit);
+	} else if (burst_board_current<=burst_config->locurrent_pp){
+		burst_board_raise_panic(burst_panic_board_locurrent);
+	}
+	#endif
+}
+void burst_dev_frontend_protection(burst_dev_ref_p _ref){
+	#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
+	int burst_board_temper = burst_board_temper_get_pp();
+	if( burst_board_temper >= burst_config->panics.temp_pp.overhi){
+		burst_board_raise_panic(burst_panic_board_overtemp_bit);
+	} else if (burst_board_temper<=burst_config->panics.temp_pp.ultralo){
+		burst_board_raise_panic(burst_panic_board_lotemp_bit);
+	}
+	#endif
+}
+#endif
 
 void burst_dev_switch_to_idle(burst_dev_ref_p _ref){
 	_ref->actual_mode = &burst_idle_mode;
@@ -320,7 +384,9 @@ burst_slot_f burst_slots[BURST_SLOT_COUNT]={
 burst_slot_f * burst_slot = burst_slots;
 burst_slot_f * burst_slots_end = burst_slots+BURST_SLOT_COUNT;
 
+
 void burst_backend_loop(void){
+	//todo!!! govnocod
 	if(burst_started_){
 		debug_tp_on(VERB_BACKEND);
 		#if BURST_TIMER_ENABLED == 1
@@ -344,10 +410,21 @@ void burst_backend_loop(void){
 		debug_tp_off(VERB_LOOP);
 		burst_comeback();
 	}
+
 }
+
+
 
 void burst_frontend_loop(void){
 	debug_tp_on(VERB_FRONTEND);
+	#if BURST_PROTECTION_ENABLED == 1
+	{
+		burst_dev_ref_p * p ;
+		for( p= burst.devs; p!=burst.devs_end;p++){
+			(*p)->frontend_protection(*p);
+		}
+	}
+	#endif
 	#if BURST_TIMER_ENABLED == 1
 	burst_timer_poll();
 	#endif
@@ -357,6 +434,9 @@ void burst_frontend_loop(void){
 		burst_dev_ref_p * p ;
 		for( p= burst.devs; p!=burst.devs_end;p++){
 			burst_dev_ref_p s = *p;
+			#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+			burst_master_alive_check( s );
+			#endif
 			s->frontend_loop(s);
 			s->actual_mode->frontend_loop(s);
 		}
@@ -366,6 +446,7 @@ void burst_frontend_loop(void){
 	#if BURST_BUTTON_ENABLED == 1
 	burst_btn_poll();
 	#endif
+
 }
 
 
@@ -615,7 +696,43 @@ void burst_event_perform_panic(burst_dev_ref_p _dev){
 	_dev->action->mode = burst_dev_mode_idle;
 }
 
-void burst_raise_panic(burst_dev_ref_p _dev, uint32_t flag){
-	_dev->panic |= flag;
-	burst_event_perform_panic(_dev);
+void burst_board_raise_panic(uint32_t _flag){
+	uint32_t mask = ( 1<< _flag );
+	if( (burst.panics & mask)  == 0){
+		burst.panics |= mask;
+	}
+	burst_dev_ref_p * p ;
+	for( p= burst.devs; p!=burst.devs_end;p++){
+		burst_dev_raise_panic(*p, burst_panic_dev_board_bit);
+	}
+	
+}
+
+void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){
+	uint32_t mask = ( 1<< _flag );
+	if( (_dev->panic & mask)  == 0){
+		_dev->panic |= mask;
+		burst_event_perform_panic(_dev);
+	}
+}
+
+#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
+BURST_WEAK int burst_board_temper_get(void){
+	return 0;
+}
+#endif
+#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1
+BURST_WEAK int burst_board_voltage_get(void){
+	return 0;
+}
+#endif
+
+#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1
+BURST_WEAKint burst_board_current_get_pp(void){
+	return 0;
+}
+#endif
+
+void burst_config_set( burst_config_t * _config){
+	 burst_config = _config;
 }

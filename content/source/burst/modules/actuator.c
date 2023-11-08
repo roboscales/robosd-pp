@@ -259,5 +259,26 @@ void actuator_begin (
 	_actuator->positioner = _positioner;
 	burst_dev_attach(&(_actuator->ref));
 	_spf->setup(&_enco->delta_acc,1);
+	
+	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
+	burst_alarm( _actuator->temper_pp() );
+	#endif
 }
-
+#if BURST_PROTECTION_ENABLED == 1
+void burst_actuator_realtime_protection(burst_dev_ref_p _ref){
+	burst_dev_realtime_protection(_ref);
+}
+void burst_actuator_frontend_protection(burst_dev_ref_p _ref){
+	burst_dev_frontend_protection(_ref);
+	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+	actuator_p a = (actuator_p)_ref;
+	actuator_config_p cfg =(actuator_config_p)(_ref->config);
+	burst_signal_t temper = a->temper_pp();
+	if( temper >= cfg->panic.temper_pp.overhi){
+		burst_board_raise_panic(burst_panic_actuator_overtemp_bit);
+	} else if (temper<=cfg->panic.temper_pp.ultralo){
+		burst_board_raise_panic(burst_panic_actuator_lotemp_bit);
+	}
+	#endif
+}
+#endif

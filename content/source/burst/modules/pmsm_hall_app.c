@@ -6,7 +6,66 @@ adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
 burst_long_signal_t RPM = 0;
-	
+
+void bldc_mode_pwm_applay_action(burst_dev_ref_p _ref){		
+}
+
+void bldc_mode_pwm_start(burst_dev_ref_p _ref){
+	swt_begin();
+	swt_pwm_start();
+}
+void bldc_mode_pwm_stop(burst_dev_ref_p _ref){
+	swt_pwm_stop();
+}
+void bldc_mode_pwm_runA(burst_dev_ref_p _ref){
+	swt_pwm_run();
+	rotcalc( &(motor.inverter.rot), hall.angle );
+}
+
+burst_dev_mode_t bldc_mode_pwm = {
+	&bldc_mode_pwm_applay_action
+	,&bldc_mode_pwm_start
+	,&bldc_mode_pwm_stop
+	,&bldc_mode_pwm_runA
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+};
+
+
+void bldc_mode_current_applay_action(burst_dev_ref_p _ref){		
+}
+
+void bldc_mode_current_start(burst_dev_ref_p _ref){
+	swt_begin();
+	swt_current_start();
+}
+void bldc_mode_current_stop(burst_dev_ref_p _ref){
+	swt_current_stop();
+}
+
+void swt_current_phase_get(int16_t * _A, int16_t * _B, int16_t * _C){
+	*_A  = motor.sensor.abc.A;
+	*_B  = motor.sensor.abc.B;
+	*_C  = motor.sensor.abc.C;
+}
+
+void bldc_mode_current_runA(burst_dev_ref_p _ref){
+	swt_current_run();
+	rotcalc( &(motor.inverter.rot), hall.angle );
+}
+
+burst_dev_mode_t bldc_mode_current = {
+	&bldc_mode_current_applay_action
+	,&bldc_mode_current_start
+	,&bldc_mode_current_stop
+	,&bldc_mode_current_runA
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+};
+
+
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode
 	, &actuator_mode_fault
@@ -21,8 +80,24 @@ burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	, &acwc_mode_position
 	, &pmcm_synchro_voltage
 	, &pmcm_synchro_current
+	, &burst_idle_mode
+	, &bldc_mode_pwm
+	, &bldc_mode_current
 };
 
+
+#if BURST_PROTECTION_ENABLED == 1 
+#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 
+BURST_WEAK burst_signal_t pmsm_hall_app_motor_temp(void){
+	return 0;
+}
+#endif
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+burst_signal_t pmsm_hall_app_motor_current_magnitude(void){
+	return burst_pmsm_magnitude_get(&motor);
+}
+#endif
+#endif
 
 void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, pmsm_feedback_p _feedback ){
 	hall_begin(&hall, &_config->hall);
@@ -65,6 +140,17 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 	#if PMSM_HALL_APP_ANGLE_SENCE_TYPE == PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL
 	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,&hall_extra.angle,  &speedse.ref.value, 0);
 	#endif
+	
+	#if BURST_PROTECTION_ENABLED == 1 
+	motor.cross.ac.ref.realtime_protection = burst_pmsm_realtime_protection;
+	motor.cross.ac.ref.frontend_protection = burst_pmsm_frontend_protection;
+	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+	motor.cross.ac.temper_pp = pmsm_hall_app_motor_temp;
+	#endif
+	#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+	motor.cross.current.magnitude.get = pmsm_hall_app_motor_current_magnitude;
+	#endif
+	#endif
 }
 
 void pmsm_hall_app_start(void){
@@ -79,7 +165,6 @@ void pmsm_hall_app_realtime_loop(void){
 	pmsm_sence_run(&motor);
 	c_cross_flt.ref.run();
 	c_lat_flt.ref.run();
-	pmsm_protector_run (&motor);
 }
 
 void pmsm_hall_app_backend_loop(void){		

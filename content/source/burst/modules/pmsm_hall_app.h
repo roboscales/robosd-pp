@@ -42,6 +42,11 @@ NIKITIN(c_lat_flt)
 
 NIKITIN(c_cross_flt)
 
+//swt
+#define CLCH_NAME swt
+#define CLCH_HEADER 
+#include "burst/cliche/swt.h"
+
 extern hall_t hall;
 extern adc_t adc;
 extern pmsm_t motor;
@@ -212,7 +217,10 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
 #ifndef motor_CURRENT3PH_DEFORM
+#define motor_CURRENT3PH_DEFORM_ENABLE 0
 #define motor_CURRENT3PH_DEFORM {65536,0,0,0,65536,0,0,0,65536}
+#else
+#define motor_CURRENT3PH_DEFORM_ENABLE 1
 #endif
 
 #ifndef motor_LATERAL_CURRENT_PI_PROP_GAIN

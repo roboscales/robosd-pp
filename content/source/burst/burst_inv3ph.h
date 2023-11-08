@@ -52,7 +52,10 @@ void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config);
 
 typedef struct current3ph_config_s{
 	int adc_index[3];
-	burst_long_signal_t deform[9];
+	struct{
+		burst_long_signal_t matrix[9];
+		burst_bool_t enable;
+	} deform;
 } current3ph_config_t;
 typedef current3ph_config_t * current3ph_config_p;
 
@@ -61,7 +64,10 @@ typedef current3ph_config_t * current3ph_config_p;
 #define CURRENT3PH_CONFIG_(a)\
 {\
 	a##_ADC_INDEX\
-	, a##_DEFORM\
+	,{\
+		a##_DEFORM\
+		,a##_DEFORM_ENABLE\
+	}\
 }
 
 typedef struct current3ph_s{

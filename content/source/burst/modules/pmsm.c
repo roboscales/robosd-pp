@@ -157,6 +157,7 @@ burst_dev_mode_t pmcm_synchro_current = {
 	,&burst_dev_idle_event
 	,&burst_dev_idle_event
 };
+//======================================
 
 
 void pmsm_event_update_feedback(burst_dev_ref_p _dev){
@@ -280,37 +281,20 @@ struct{
 */
 /*
 */
-void pmsm_protector_run (pmsm_p _pmsm){
 
-	pmsm_config_p cfg = (pmsm_config_p)(_pmsm->cross.ac.ref.config);
+
+#if BURST_PROTECTION_ENABLED == 1
+void burst_pmsm_realtime_protection(burst_dev_ref_p _ref){
+	burst_acwc_realtime_protection(_ref);
+}
+void burst_pmsm_frontend_protection(burst_dev_ref_p _ref){
+	burst_acwc_frontend_protection(_ref);	
+}
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+burst_signal_t burst_pmsm_magnitude_get (pmsm_p _pmsm){
 	burst_signal_t ix = *_pmsm->cross.current.raw;
 	burst_signal_t iy = *_pmsm->lateral.current.raw;
-	burst_signal_t magnitude = (burst_signal_t) burst_sqrt( (uint32_t)(ix*ix + iy*iy) );
-	burst_signal_t delta = magnitude -_pmsm ->protector.current.magnitude;
-	burst_time_us_t now = burst_time_us();
-	_pmsm ->protector.current.delta = delta;
-	_pmsm ->protector.current.magnitude = magnitude;
-	
-	if( 
-		magnitude > cfg->fault.current.panic 
-		|| (magnitude + delta) > cfg->fault.current.panic  
-	){
-		burst_raise_panic(&(_pmsm->cross.ac.ref),1);
-	} else {
-		if( 
-			magnitude > cfg->fault.current.level
-		){
-			//burst_time_us_t last = _pmsm ->protector.current.us;
-			//if(last == 0){
-			//	_pmsm ->protector.current.us = now;
-			//} else {
-				if( now -  _pmsm ->protector.current.us > cfg->fault.current.us){
-					burst_raise_panic(&(_pmsm->cross.ac.ref),2);
-					_pmsm ->protector.current.us = 0;
-				}
-		} else{
-			_pmsm ->protector.current.us = now;
-		}
-	}
+	return (burst_signal_t) burst_sqrt( (uint32_t)(ix*ix + iy*iy) );
 }
-
+#endif
+#endif 

@@ -5,6 +5,10 @@
 
 #include "burst/burst_pi.h"
 
+#ifndef BURST_PANICS_ACWC_OVERCURRENT_ENABLED
+#define BURST_PANICS_ACWC_OVERCURRENT_ENABLED 0
+#endif
+
 typedef struct acwc_config_s{
 	actuator_config_t ac;
 	struct{
@@ -21,9 +25,29 @@ typedef struct acwc_config_s{
 			burst_positioner_config_t positioner;
 		} current;
 	} modes;
+	#if BURST_PROTECTION_ENABLED == 1
+	#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+	struct{
+		burst_signal_t  overcurrent_pp;
+		burst_signal_t  overpower_pp;
+		burst_time_us_t  overpower_tm_us;
+	} panic;
+	#endif
+	#endif
 } acwc_config_t;
 typedef acwc_config_t * acwc_config_p;
 
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1 && 	BURST_PROTECTION_ENABLED == 1
+
+#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
+,{\
+	a##_PANICS_ACWC_OWERCURRENT_PP\
+	, a##_PANICS_ACWC_OWERPOWER_PP\
+	, a##_PANICS_ACWC_OWERPOWER_TM_US\
+}
+#else
+#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)
+#endif
 
 #define ACWC_CONFIG(a,b) ACWC_CONFIG_(a,b)
 #define ACWC_CONFIG_(a,b)\
@@ -43,6 +67,7 @@ typedef acwc_config_t * acwc_config_p;
 			,POSITIONER_CONFIG(a##_POSITIONER_OV_CURRENT)\
 		}\
 	}\
+	BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
 }
 	
 typedef struct {
@@ -56,6 +81,14 @@ typedef struct {
 		burst_limiter_t limiter;
 		burst_filter_p flt;
 		burst_signal_p raw;
+		struct {
+			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1 && 	BURST_PROTECTION_ENABLED == 1
+			burst_actuator_prf get;
+			#endif
+			burst_signal_t actual;
+			burst_signal_t delta;
+			burst_time_us_t us;
+		} magnitude;
 	} current;	
 } acwc_t;
 typedef  acwc_t * acwc_p;
@@ -102,5 +135,12 @@ void acwc_begin (
 	,	burst_signal_p _current_raw
 );
 
-
+#if BURST_PROTECTION_ENABLED == 1
+void burst_acwc_realtime_protection(burst_dev_ref_p _ref);
+void burst_acwc_frontend_protection(burst_dev_ref_p _ref);	
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+burst_signal_t burst_acwc_magnitude_get(acwc_p _acwc);
+#endif
+#endif
+	
 #endif

@@ -7,8 +7,6 @@
 #endif
 
 #if BURST_TIMER_ENABLED == 1
-typedef unsigned int burst_time_us_t;
-typedef unsigned int burst_time_ms_t;
 
 typedef struct burst_timer_s {
 	burst_time_us_t last;

@@ -10,11 +10,15 @@
 #include "burst/burst_positioner.h"
 #include "burst/modules/actuator_front.h"
 
+#ifndef BURST_PANICS_ACTUATOR_TEMPER_ENABLED
+#define BURST_PANICS_ACTUATOR_TEMPER_ENABLED 0
+#endif
+
 typedef struct actuator_config_s{
 	burst_dev_config_t ref;
 	struct{
-		int reset;
-		int set;
+		burst_time_us_t reset;
+		burst_time_us_t set;
 	} enco_fault_ticks;
 	struct {
 		burst_range_t voltage;
@@ -25,8 +29,28 @@ typedef struct actuator_config_s{
 		burst_motion_config_t motion;
 		burst_positioner_config_t positioner;
 	} modes;
+	struct {
+		#if BURST_PROTECTION_ENABLED == 1
+		#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+		burst_hyst_t temper_pp;		
+		#endif
+		#endif
+	} panic;
 } actuator_config_t;
 typedef actuator_config_t * actuator_config_p;
+
+#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
+
+#define BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
+{\
+	a##_PANICS_ACTUATOR_TEMPER_OVERHI_PP\
+	, a##_PANICS_ACTUATOR_TEMPER_HI_PP\
+	, a##_PANICS_ACTUATOR_TEMPER_LO_PP\
+	, a##_PANICS_ACTUATOR_TEMPER_ULTRALO_PP\
+}
+#else
+#define BURST_PANICS_ACTUATOR_TEMPER_CO(a)
+#endif
 
 #define ACTUATOR_CONFIG(a) ACTUATOR_CONFIG_(a)
 #define ACTUATOR_CONFIG_(a)\
@@ -45,9 +69,16 @@ typedef actuator_config_t * actuator_config_p;
 			MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
 			,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE)\
 	}\
+	,{\
+		BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
+	}\
 }
+struct actuator_s;
+typedef struct actuator_s actuator_t;
+typedef actuator_t * actuator_p;
+typedef burst_signal_t ( * burst_actuator_prf)(void);
 
-typedef struct {
+struct actuator_s {
 	burst_dev_ref_t ref;
 	int def_mode;
 	burst_ps_p ps;	
@@ -68,8 +99,11 @@ typedef struct {
 		burst_long_signal_t req;
 		burst_long_range_t range;
 	} position;
-} actuator_t;
-typedef  actuator_t * actuator_p;
+	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
+	burst_actuator_prf temper_pp;
+	#endif
+} ;
+
 
 //void actuator_mode_fault_start(burst_dev_ref_p _ref);
 //void actuator_mode_fault_runB(burst_dev_ref_p _ref);
@@ -108,6 +142,10 @@ void actuator_begin (
 	, int _mode_count
 	, burst_dev_mode_p * _modes	
 );
-	
+
+#if BURST_PROTECTION_ENABLED == 1
+void burst_actuator_realtime_protection(burst_dev_ref_p _ref);
+void burst_actuator_frontend_protection(burst_dev_ref_p _ref);	
+#endif 
 	
 #endif
