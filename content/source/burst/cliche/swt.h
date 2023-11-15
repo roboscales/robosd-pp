@@ -26,12 +26,15 @@ typedef struct {
 	int model;
 	int model32;
 	struct{
-		uint16_t control;
+		int16_t control;
 		uint16_t actual;
+		int16_t min;
+		int16_t max;
 	} pwm;
 }burst_swt_t;
 void swt_reset(burst_swt_t * _swt, int _pwm);
 void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  int _actual);
+void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 #endif
 
 /*typedef struct {
@@ -47,7 +50,7 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 #define c_CONFIG_GAIN_PROP 0
 #define c_CONFIG_GAIN_MODEL 0
 #define c_CONFIG_PWM_RAMP32 0
-#define c_CONFIG_PWM_MIN -100
+#define c_CONFIG_PWM_MIN 0
 #define c_CONFIG_PWM_MAX 100
 #define c_CONFIG_CURRENT_RAMP32 0
 #define c_CONFIG_CURRENT_MIN -100
@@ -79,6 +82,7 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 	void PREFIX(phy_B_on)(uint16_t _pwm);
 	void PREFIX(phy_C_on)(uint16_t _pwm);
 	uint8_t PREFIX(phy_sector_get)(void);
+	void PREFIX(current_mode_applay)(void);
 #ifndef CLCH_HEADER
 	burst_swt_config_t PREFIX(config) = {
 		{//gain
@@ -87,8 +91,8 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 		}// gain;
 		,{//pwm{
 			PREFIX(CONFIG_PWM_RAMP32)//uint16_t ramp32;
-			,PREFIX(CONFIG_PWM_MIN)//int16_t min;
-			,PREFIX(CONFIG_PWM_MAX)//int16_t max;
+			,PREFIX(CONFIG_PWM_MIN)//uint16_t min;
+			,PREFIX(CONFIG_PWM_MAX)//uint16_t max;
 		}//pwm;
 		,{//current{
 			PREFIX(CONFIG_CURRENT_RAMP32)//uint16_t ramp32;
@@ -127,6 +131,14 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 	} CLCH_NAME = {};
 	void PREFIX(begin)(void){
 	}
+	void PREFIX(current_mode_applay)(void){
+		CLCH_NAME.current.A.pi.pwm.min = - CLCH_NAME.pwm.requried;
+		CLCH_NAME.current.A.pi.pwm.max = CLCH_NAME.pwm.requried;
+		CLCH_NAME.current.B.pi.pwm.min = - CLCH_NAME.pwm.requried;
+		CLCH_NAME.current.B.pi.pwm.max = CLCH_NAME.pwm.requried;
+		CLCH_NAME.current.C.pi.pwm.min = - CLCH_NAME.pwm.requried;
+		CLCH_NAME.current.C.pi.pwm.max = CLCH_NAME.pwm.requried;
+	}
 	void PREFIX(pwm_start)(void){
 		PREFIX(sector_actual) = -1;
 	}
@@ -138,6 +150,26 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 		CLCH_NAME.pwm.actual32 = 0;
 		CLCH_NAME.pwm.actual = 0;
 	}
+	#define SWT_PHASE_VOLTAGE_DIRECT(A,B,C) _SWT_PHASE_VOLTAGE_DIRECT(A,B,C)
+	#define _SWT_PHASE_VOLTAGE_DIRECT(A,B,C)\
+		if(sectror_change){\
+			PREFIX(phy_##A##_off)();\
+			PREFIX(phy_##C##_set_lo)();\
+			PREFIX(phy_##B##_on)(pwm);\
+		} else{\
+			PREFIX(phy_##B##_set_pwm)(pwm);\
+		}
+
+	#define SWT_PHASE_VOLTAGE_REVERT(A,B,C) _SWT_PHASE_VOLTAGE_REVERT(A,B,C)
+	#define _SWT_PHASE_VOLTAGE_REVERT(A,B,C)\
+		if(sectror_change){\
+			PREFIX(phy_##C##_off)();\
+			PREFIX(phy_##A##_on)(PREFIX(config).pwm.max-pwm);\
+			PREFIX(phy_##B##_on)(PREFIX(config).pwm.max);\
+		} else{\
+			PREFIX(phy_##A##_set_pwm)(PREFIX(config).pwm.max-pwm);\
+		}		
+		
 	void PREFIX(pwm_run)(void){
 		
 		int sector = PREFIX(phy_sector_get)() + PREFIX(config).sector_offset;
@@ -171,58 +203,22 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 		if(voltage_dir_actual){
 			switch(sector){
 				case 0: //A
-					if(sectror_change){
-						PREFIX(phy_A_off)();
-						PREFIX(phy_C_set_lo)();
-						PREFIX(phy_B_on)(pwm);
-					} else{
-						PREFIX(phy_B_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_DIRECT(A,B,C)
 					break;
 				case 1://-C
-					if(sectror_change){
-						PREFIX(phy_C_off)();
-						PREFIX(phy_A_set_lo)();
-						PREFIX(phy_B_on)(pwm);
-					} else {
-						PREFIX(phy_B_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_REVERT(A,B,C)
 					break;
 				case 2://B
-					if(sectror_change){
-						PREFIX(phy_B_off)();
-						PREFIX(phy_A_set_lo)();
-						PREFIX(phy_C_on)(pwm);
-					} else {
-						PREFIX(phy_C_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_DIRECT(B,C,A)
 					break;
 				case 3://-A
-					if(sectror_change){
-						PREFIX(phy_A_off)();
-						PREFIX(phy_B_set_lo)();
-						PREFIX(phy_C_on)(pwm);
-					} else {
-						PREFIX(phy_C_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_REVERT(B,C,A)
 					break;
 				case 4://C
-					if(sectror_change){
-						PREFIX(phy_C_off)();
-						PREFIX(phy_B_set_lo)();
-						PREFIX(phy_A_on)(pwm);
-					} else {
-						PREFIX(phy_A_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_DIRECT(C,A,B)
 					break;
 				case 5: //-B
-					if(sectror_change){
-						PREFIX(phy_B_off)();
-						PREFIX(phy_C_set_lo)();
-						PREFIX(phy_A_on)(pwm);
-					} else {
-						PREFIX(phy_A_set_pwm)(pwm);
-					}
+					SWT_PHASE_VOLTAGE_REVERT(C,A,B)
 					break;
 			}
 		} else {
@@ -344,16 +340,33 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 				if(sectror_change){\
 					swt_reset(&CLCH_NAME.current.B.pi,CLCH_NAME.current.A.pi.pwm.control);\
 					swt_run( &CLCH_NAME.current.B.pi, &PREFIX(config),r, CLCH_NAME.current.B.actual);\
-					CLCH_NAME.current.A.pi.pwm.actual = -100;\
-					CLCH_NAME.current.B.pi.pwm.actual = CLCH_NAME.current.B.pi.pwm.control;\
+					CLCH_NAME.current.A.pi.pwm.actual = (uint16_t)-100;\
 					CLCH_NAME.current.C.pi.pwm.actual = 0;\
 					PREFIX(phy_##A##_off)();\
 					PREFIX(phy_##C##_set_lo)();\
+					swt_set_control(&CLCH_NAME.current.B.pi, &PREFIX(config));\
 					PREFIX(phy_##B##_on)(CLCH_NAME.current.B.pi.pwm.actual);\
 				} else{\
 					swt_run( &CLCH_NAME.current.B.pi, &PREFIX(config),r, CLCH_NAME.current.B.actual);\
-					CLCH_NAME.current.B.pi.pwm.actual = CLCH_NAME.current.B.pi.pwm.control;\
+					swt_set_control(&CLCH_NAME.current.B.pi, &PREFIX(config));\
 					PREFIX(phy_##B##_set_pwm)(CLCH_NAME.current.B.pi.pwm.actual);\
+				}\
+				
+	#define SWT_PHASE_CURRENT_ORD(A,B,C) _SWT_PHASE_CURRENT_ORD(A,B,C)
+#define _SWT_PHASE_CURRENT_ORD(A,B,C)\
+				if(sectror_change){\
+					swt_reset(&CLCH_NAME.current.A.pi,-CLCH_NAME.current.B.pi.pwm.control);\
+					swt_run( &CLCH_NAME.current.A.pi, &PREFIX(config),-r, CLCH_NAME.current.A.actual);\
+					CLCH_NAME.current.B.pi.pwm.actual = PREFIX(config).pwm.max;\
+					CLCH_NAME.current.C.pi.pwm.actual = (uint16_t)-100;\
+					PREFIX(phy_##B##_on)( CLCH_NAME.current.A.pi.pwm.actual );\
+					PREFIX(phy_##C##_off)();\
+					swt_set_control(&CLCH_NAME.current.A.pi, &PREFIX(config));\
+					PREFIX(phy_##A##_on)( CLCH_NAME.current.A.pi.pwm.actual );\
+				} else{\
+					swt_run( &CLCH_NAME.current.A.pi, &PREFIX(config),-r, CLCH_NAME.current.A.actual);\
+					swt_set_control(&CLCH_NAME.current.A.pi, &PREFIX(config));\
+					PREFIX(phy_##A##_set_pwm)(CLCH_NAME.current.A.pi.pwm.actual);\
 				}\
 				
 	void PREFIX(current_run)(void){
@@ -391,19 +404,19 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 				SWT_PHASE_CURRENT(A,B,C)
 				break;
 			case 1: //-C
-				SWT_PHASE_CURRENT(C,B,A)
+				SWT_PHASE_CURRENT_ORD(A,B,C)
 				break;
 			case 2: //B
 				SWT_PHASE_CURRENT(B,C,A)
 				break;
 			case 3: //-A
-				SWT_PHASE_CURRENT(A,C,B)
+				SWT_PHASE_CURRENT_ORD(B,C,A)
 				break;
 			case 4: //C
 				SWT_PHASE_CURRENT(C,A,B)
 				break;
 			case 5: //-B
-				SWT_PHASE_CURRENT(B,A,C)
+				SWT_PHASE_CURRENT_ORD(C,A,B)
 				break;
 
 		}		

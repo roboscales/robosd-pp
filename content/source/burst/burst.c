@@ -179,9 +179,9 @@ void burst_dev_realtime_protection(burst_dev_ref_p _ref){
 
 	#if BURST_PANICS_BOARD_CURRENT_ENABLED 
 	int burst_board_current = burst_board_current_get_pp();
-	if( burst_board_current >= burst_config->overcurrent_pp){
+	if( burst_board_current >= burst_config->panics.overcurrent_pp){
 		burst_board_raise_panic(burst_panic_board_overcurrent_bit);
-	} else if (burst_board_current<=burst_config->locurrent_pp){
+	} else if (burst_board_current<=burst_config->panics.locurrent_pp){
 		burst_board_raise_panic(burst_panic_board_locurrent);
 	}
 	#endif
@@ -715,23 +715,6 @@ void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){
 		burst_event_perform_panic(_dev);
 	}
 }
-
-#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
-BURST_WEAK int burst_board_temper_get(void){
-	return 0;
-}
-#endif
-#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1
-BURST_WEAK int burst_board_voltage_get(void){
-	return 0;
-}
-#endif
-
-#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1
-BURST_WEAKint burst_board_current_get_pp(void){
-	return 0;
-}
-#endif
 
 void burst_config_set( burst_config_t * _config){
 	 burst_config = _config;

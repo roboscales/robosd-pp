@@ -43,6 +43,10 @@ typedef struct burst_config_s{
 		burst_hyst_t voltage_pp;
 		#endif
 		#endif
+		#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
+		burst_signal_t overcurrent_pp;
+		burst_signal_t locurrent_pp;
+		#endif
 	} panics;
 } burst_config_t;
 
@@ -91,6 +95,7 @@ typedef struct burst_config_s{
 	,{\
 		BURST_PANICS_BOARD_TEMPER_CO()\
 		BURST_PANICS_BOARD_VOLTAGE_CO()\
+		BURST_PANICS_BOARD_CURRENT_CO()\
 	}\
 }
 

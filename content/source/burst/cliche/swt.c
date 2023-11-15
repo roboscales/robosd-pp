@@ -18,15 +18,22 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 		model = _swt->model32 >> 10;
 	}
 	int pwm = ((error  - _actual) * _config->gain.prop + model ) >> 7;
-	if( pwm < _config->pwm.min) {
-		pwm = _config->pwm.min;
-	} else if ( pwm > _config->pwm.max) {
-		pwm = _config->pwm.max;
+	if( pwm < _swt->pwm.min) {
+		pwm = _swt->pwm.min;
+	} else if ( pwm > _swt->pwm.max) {
+		pwm = _swt->pwm.max;
 	}
 	_swt->pwm.control = pwm;	
 	_swt->error = error;
 }
 
+void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config){
+	if( _swt->pwm.control>=0){
+		_swt->pwm.actual = _swt->pwm.control;
+	} else {		
+		_swt->pwm.actual = (uint16_t)((int16_t)_config->pwm.max + _swt->pwm.control);
+	}
+}
 #if 0
 
 int swt_pwm = 899;

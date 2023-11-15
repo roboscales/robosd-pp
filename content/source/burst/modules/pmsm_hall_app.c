@@ -34,6 +34,7 @@ burst_dev_mode_t bldc_mode_pwm = {
 
 
 void bldc_mode_current_applay_action(burst_dev_ref_p _ref){		
+	swt_current_mode_applay();
 }
 
 void bldc_mode_current_start(burst_dev_ref_p _ref){
