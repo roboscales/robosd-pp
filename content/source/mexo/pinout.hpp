@@ -111,6 +111,10 @@ namespace mexo {
 			instance_.A::set();
 			instance_.B::start(_period);
 		}		
+		static void irun(::robo::time_us_t _period ){
+			instance_.A::reset();
+			instance_.B::start(_period);
+		}		
 		static bool active(void){
 			return instance_.A::active();
 		}
