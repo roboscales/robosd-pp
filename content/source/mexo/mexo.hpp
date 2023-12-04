@@ -185,8 +185,8 @@ namespace mexo {
 		slots& slots_ref_;
 		int slot_index_;
 		static slots& slots_(void);
-		void begin_(void);
-		void start_(time_us_t _period_us);
+//		void begin_(void);
+		void begin_(time_us_t _period_us);
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		void realtime_loop_(void);
 		#endif
@@ -197,10 +197,11 @@ namespace mexo {
 	public:
 		machine(void);
 		~machine(void);
-		static void begin(void) { instance_.begin_(); }
-		static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		//static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		static void begin(time_us_t _period_us) { instance_.begin_(_period_us); }
 		#ifdef ROBO_APP_MEXO_SAMPLE_US
-		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+//		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+			static void begin(void) { instance_.begin_(ROBO_APP_MEXO_SAMPLE_US); }
 		#endif		
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		static void realtime_loop(void) { instance_.realtime_loop_(); }

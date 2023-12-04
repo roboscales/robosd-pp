@@ -140,6 +140,9 @@ void pmsm_mode_synchro_voltage_applay_action(burst_dev_ref_p _ref);
 extern burst_dev_mode_t pmcm_synchro_voltage;
 
 void pmsm_mode_synchro_current_applay_action(burst_dev_ref_p _ref);
+void pmsm_mode_synchro_current_start(burst_dev_ref_p _ref);
+void pmsm_mode_synchro_current_stop(burst_dev_ref_p _ref);
+void pmsm_mode_synchro_current_runA(burst_dev_ref_p _ref);
 extern burst_dev_mode_t pmcm_synchro_current;
 
 

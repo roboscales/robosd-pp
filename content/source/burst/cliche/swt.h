@@ -160,7 +160,16 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 			PREFIX(phy_##B##_set_pwm)(pwm);\
 		}
 
-	#define SWT_PHASE_VOLTAGE_REVERT(A,B,C) _SWT_PHASE_VOLTAGE_REVERT(A,B,C)
+	#define _SWT_PHASE_VOLTAGE_DIRECT2(A,B,C)\
+		if(sectror_change){\
+			PREFIX(phy_##A##_set_lo)();\
+			PREFIX(phy_##C##_set_lo)();\
+			PREFIX(phy_##B##_on)(pwm);\
+		} else{\
+			PREFIX(phy_##B##_set_pwm)(pwm);\
+		}
+
+		#define SWT_PHASE_VOLTAGE_REVERT(A,B,C) _SWT_PHASE_VOLTAGE_REVERT(A,B,C)
 	#define _SWT_PHASE_VOLTAGE_REVERT(A,B,C)\
 		if(sectror_change){\
 			PREFIX(phy_##C##_off)();\
@@ -170,11 +179,77 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 			PREFIX(phy_##A##_set_pwm)(PREFIX(config).pwm.max-pwm);\
 		}		
 		
+	#define _SWT_PHASE_VOLTAGE_REVERT2(A,B,C)\
+		if(sectror_change){\
+			PREFIX(phy_##C##_on)(PREFIX(config).pwm.max);\
+			PREFIX(phy_##A##_on)(PREFIX(config).pwm.max-pwm);\
+			PREFIX(phy_##B##_on)(PREFIX(config).pwm.max);\
+		} else{\
+			PREFIX(phy_##A##_set_pwm)(PREFIX(config).pwm.max-pwm);\
+		}		
+
 	void PREFIX(pwm_run)(void){
 		
 		int sector = PREFIX(phy_sector_get)() + PREFIX(config).sector_offset;
 		if (sector >=6){
 			sector = sector-6;
+		}
+		
+		
+		//CLCH_NAME.pwm.actual = CLCH_NAME.pwm.requried;
+		burst_bool_t voltage_dir_actual = CLCH_NAME.pwm.actual >= 0 ? burst_true:burst_false;
+		int sectror_change = sector != PREFIX(sector_actual) || (voltage_dir_actual != PREFIX(voltage_dir_actual));
+		PREFIX(sector_actual) = sector;
+		PREFIX(voltage_dir_actual) = voltage_dir_actual;
+		uint16_t pwm = (uint16_t)( CLCH_NAME.pwm.actual >= 0 ? CLCH_NAME.pwm.actual : -CLCH_NAME.pwm.actual );
+		if(pwm>70){
+			if( pwm <85 ) pwm = 85;
+		}
+		if(voltage_dir_actual){
+			switch(sector){
+				case 0: //A
+					SWT_PHASE_VOLTAGE_DIRECT(A,B,C)
+					break;
+				case 1://-C
+					//SWT_PHASE_VOLTAGE_REVERT(A,B,C)
+					SWT_PHASE_VOLTAGE_DIRECT(C,B,A)
+					break;
+				case 2://B
+					SWT_PHASE_VOLTAGE_DIRECT(B,C,A)
+					break;
+				case 3://-A
+					//SWT_PHASE_VOLTAGE_REVERT(B,C,A)
+					SWT_PHASE_VOLTAGE_DIRECT(A,C,B)
+					break;
+				case 4://C
+					SWT_PHASE_VOLTAGE_DIRECT(C,A,B)
+					break;
+				case 5: //-B
+					//SWT_PHASE_VOLTAGE_REVERT(C,A,B)
+					SWT_PHASE_VOLTAGE_DIRECT(B,A,C)
+					break;
+			}
+		} else {
+			switch(sector){
+				case 0: //A
+					SWT_PHASE_VOLTAGE_DIRECT(A,C,B)
+					break;
+				case 1://-C
+					SWT_PHASE_VOLTAGE_REVERT(B,A,C)
+					break;
+				case 2://B
+					SWT_PHASE_VOLTAGE_DIRECT(B,A,C)
+					break;
+				case 3://-A
+					SWT_PHASE_VOLTAGE_REVERT(C,B,A)
+					break;
+				case 4://C
+					SWT_PHASE_VOLTAGE_DIRECT(C,B,A)
+					break;
+				case 5: //-B
+					SWT_PHASE_VOLTAGE_REVERT(A,C,B)
+					break;
+			}
 		}
 		if(CLCH_NAME.pwm.requried>PREFIX(config).pwm.max){
 			CLCH_NAME.pwm.requried = PREFIX(config).pwm.max;
@@ -182,6 +257,7 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 		if(CLCH_NAME.pwm.requried<-PREFIX(config).pwm.max){
 			CLCH_NAME.pwm.requried = -PREFIX(config).pwm.max;
 		}
+		
 		if(CLCH_NAME.pwm.actual < CLCH_NAME.pwm.requried ){
 			CLCH_NAME.pwm.actual32 +=  PREFIX(config).pwm.ramp32;
 			CLCH_NAME.pwm.actual = (int16_t)(CLCH_NAME.pwm.actual32>>16);
@@ -195,90 +271,7 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 				CLCH_NAME.pwm.actual = CLCH_NAME.pwm.requried ;
 			}
 		}
-		burst_bool_t voltage_dir_actual = CLCH_NAME.pwm.actual >= 0 ? burst_true:burst_false;
-		int sectror_change = sector != PREFIX(sector_actual) || (voltage_dir_actual != PREFIX(voltage_dir_actual));
-		PREFIX(sector_actual) = sector;
-		PREFIX(voltage_dir_actual) = voltage_dir_actual;
-		uint16_t pwm = (uint16_t)( CLCH_NAME.pwm.actual >= 0 ? CLCH_NAME.pwm.actual : -CLCH_NAME.pwm.actual );
-		if(voltage_dir_actual){
-			switch(sector){
-				case 0: //A
-					SWT_PHASE_VOLTAGE_DIRECT(A,B,C)
-					break;
-				case 1://-C
-					SWT_PHASE_VOLTAGE_REVERT(A,B,C)
-					break;
-				case 2://B
-					SWT_PHASE_VOLTAGE_DIRECT(B,C,A)
-					break;
-				case 3://-A
-					SWT_PHASE_VOLTAGE_REVERT(B,C,A)
-					break;
-				case 4://C
-					SWT_PHASE_VOLTAGE_DIRECT(C,A,B)
-					break;
-				case 5: //-B
-					SWT_PHASE_VOLTAGE_REVERT(C,A,B)
-					break;
-			}
-		} else {
-			switch(sector){
-				case 0: //A
-					if(sectror_change){
-						PREFIX(phy_A_off)();
-						PREFIX(phy_B_set_lo)();
-						PREFIX(phy_C_on)(pwm);
-					} else{
-						PREFIX(phy_C_set_pwm)(pwm);
-					}
-					break;
-				case 1://-C
-					if(sectror_change){
-						PREFIX(phy_C_off)();
-						PREFIX(phy_B_set_lo)();
-						PREFIX(phy_A_on)(pwm);
-					} else {
-						PREFIX(phy_A_set_pwm)(pwm);
-					}
-					break;
-				case 2://B
-					if(sectror_change){
-						PREFIX(phy_B_off)();
-						PREFIX(phy_C_set_lo)();
-						PREFIX(phy_A_on)(pwm);
-					} else {
-						PREFIX(phy_A_set_pwm)(pwm);
-					}
-					break;
-				case 3://-A
-					if(sectror_change){
-						PREFIX(phy_A_off)();
-						PREFIX(phy_C_set_lo)();
-						PREFIX(phy_B_on)(pwm);
-					} else {
-						PREFIX(phy_B_set_pwm)(pwm);
-					}
-					break;
-				case 4://C
-					if(sectror_change){
-						PREFIX(phy_C_off)();
-						PREFIX(phy_A_set_lo)();
-						PREFIX(phy_B_on)(pwm);
-					} else {
-						PREFIX(phy_B_set_pwm)(pwm);
-					}
-					break;
-				case 5: //-B
-					if(sectror_change){
-						PREFIX(phy_B_off)();
-						PREFIX(phy_A_set_lo)();
-						PREFIX(phy_C_on)(pwm);
-					} else {
-						PREFIX(phy_C_set_pwm)(pwm);
-					}
-					break;
-			}
-		}
+		//CLCH_NAME.pwm.actual = CLCH_NAME.pwm.requried;
 	}
 	void PREFIX(current_start)(void){
 		PREFIX(sector_actual) = -1;

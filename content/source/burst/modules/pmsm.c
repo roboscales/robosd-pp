@@ -159,7 +159,6 @@ burst_dev_mode_t pmcm_synchro_current = {
 };
 //======================================
 
-
 void pmsm_event_update_feedback(burst_dev_ref_p _dev){
 	acwc_event_update_feedback(_dev);
 	pmsm_feedback_p fb =(pmsm_feedback_p)(_dev->feedback);
@@ -181,15 +180,16 @@ void pmsm_inverter_run (pmsm_p _pmsm){
 			if(_pmsm->mode_prev!=mode){	
 				_pmsm->mode_prev = mode;		
 				switch(mode){
-					//â ıòèõ ğåæèìàõ êîíòóğ òîêà íå èñïîëüçóåòñÿ èëè èñïîëüçóåòñÿ íàïğÿìóş
+					//Ğ² ÑÑ‚Ğ¸Ñ… Ñ€ĞµĞ¶Ğ¸Ğ¼Ğ°Ñ… ĞºĞ¾Ğ½Ñ‚ÑƒÑ€ Ñ‚Ğ¾ĞºĞ° Ğ½Ğµ Ğ¸ÑĞ¿Ğ¾Ğ»ÑŒĞ·ÑƒĞµÑ‚ÑÑ Ğ¸Ğ»Ğ¸ Ğ¸ÑĞ¿Ğ¾Ğ»ÑŒĞ·ÑƒĞµÑ‚ÑÑ Ğ½Ğ°Ğ¿Ñ€ÑĞ¼ÑƒÑ
 					case pmsm_mode_synchro_voltage_ix:
 					case pmsm_mode_synchro_curent_ix:
 					case pmsm_mode_estimate_ix:
+					case pmsm_mode_synchro_hall_estimate_ix:
 						break;
 					default:
 						{
 							pmsm_config_p cfg =(pmsm_config_p)(_pmsm->cross.ac.ref.config);	
-							//ğåçåòèì êîíòóğ ïğîäîëüíîãî òîêà
+							//Ñ€ĞµĞ·ĞµÑ‚Ğ¸Ğ¼ ĞºĞ¾Ğ½Ñ‚ÑƒÑ€ Ğ¿Ñ€Ğ¾Ğ´Ğ¾Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ Ñ‚Ğ¾ĞºĞ°
 							_pmsm->lateral.current.req = 0; 
 							_pmsm->lateral.current.range.hi =  cfg->lateral.current.range.hi;
 							_pmsm->lateral.current.range.lo =  cfg->lateral.current.range.lo;			
@@ -202,9 +202,10 @@ void pmsm_inverter_run (pmsm_p _pmsm){
 			switch(mode){
 				case pmsm_mode_synchro_voltage_ix:
 				case pmsm_mode_synchro_curent_ix:
+				case pmsm_mode_synchro_hall_estimate_ix:
 				break;
 				case pmsm_mode_estimate_ix:
-					//ğàáîòàåì áåç ğåãóëÿòîğà ïğîäîëüíîãî òîêà
+					//Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµĞ¼ Ğ±ĞµĞ· Ñ€ĞµĞ³ÑƒĞ»ÑÑ‚Ğ¾Ñ€Ğ° Ğ¿Ñ€Ğ¾Ğ´Ğ¾Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ Ñ‚Ğ¾ĞºĞ°
 					inv3ph_run(
 						&(_pmsm->inverter)
 						,_pmsm->cross.ac.voltage.req
@@ -213,7 +214,7 @@ void pmsm_inverter_run (pmsm_p _pmsm){
 					);			
 					break;
 				default:
-					//äëÿ ñèñòåì óïğàâëåíèÿ, àíàëîãè÷íûõ ÄÏÒ âêëş÷àåì ğåãóëÿòîğ ïğîäîüíîãî òîêà
+					//Ğ´Ğ»Ñ ÑĞ¸ÑÑ‚ĞµĞ¼ ÑƒĞ¿Ñ€Ğ°Ğ²Ğ»ĞµĞ½Ğ¸Ñ, Ğ°Ğ½Ğ°Ğ»Ğ¾Ğ³Ğ¸Ñ‡Ğ½Ñ‹Ñ… Ğ”ĞŸĞ¢ Ğ²ĞºĞ»ÑÑ‡Ğ°ĞµĞ¼ Ñ€ĞµĞ³ÑƒĞ»ÑÑ‚Ğ¾Ñ€ Ğ¿Ñ€Ğ¾Ğ´Ğ¾ÑŒĞ½Ğ¾Ğ³Ğ¾ Ñ‚Ğ¾ĞºĞ°
 					_pmsm->lateral.current.pi->run();
 					inv3ph_run(
 						&(_pmsm->inverter)

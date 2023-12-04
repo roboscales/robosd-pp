@@ -2,6 +2,7 @@
 #include "burst/burst_timer.h"
 
 static const int hall_sectors[8] = {
+	/*
 	-1 //{ 0, 0, 0 }
 	, 4//{ 1, 0, 0 }
 	, 0//{ 0, 1, 0 }
@@ -9,6 +10,16 @@ static const int hall_sectors[8] = {
 	, 2 //{ 0, 0, 1 }
 	, 3 //{ 1, 0, 1 }
 	, 1 //{ 0, 1, 1 }
+	, -1 //{1, 1, 1}
+	*/
+	// B C A
+	-1 //{ 0, 0, 0 }
+	, 0//{ 0, 0, 1 }
+	, 2//{ 0, 1, 0 }
+	, 1 //{ 0, 1, 1 }
+	, 4 //{ 1, 0, 0 }
+	, 5 //{ 1, 0, 1 }
+	, 3 //{ 1, 1, 0 }
 	, -1 //{1, 1, 1}
 };
 static const int hall_sdiffs[6] = {
@@ -27,7 +38,7 @@ burst_signal_t  hall_angles[6] = {
 void hall_update(hall_p _hall, const hall_pins_p _pins){
 	//int index = _pins->A + (_pins->B <<1) + (_pins->C <<2);
 	int index = _pins->index;
-	if(index!=_hall->index){
+	if(index!=_hall->pins.index){
 		_hall->counter.total++;
 		if (index > 0) {
 			int sector = hall_sectors[index];
@@ -66,7 +77,7 @@ void hall_update(hall_p _hall, const hall_pins_p _pins){
 				_hall->delta = delta;
 				_hall->angle = angle;
 				_hall->raw = raw;
-				_hall->index = index;
+				_hall->pins.index = index;
 				_hall->sector = sector;
 				return;
 			}
@@ -87,7 +98,7 @@ void hall_begin(hall_p _hall, hall_config_p _config){
 	_hall->config = _config;
 	_hall->true_diff = 0;
 	_hall->sector_prev = -1;
-	_hall->index = (unsigned)-1;
+	_hall->pins.index = (unsigned)-1;
 }
 
 
@@ -252,6 +263,8 @@ void hall_qubic_interp(hall_qubic_p _qubic){
 				*d = 0;
 				_qubic->lost = _qubic->ticks;
 				_qubic->period = _qubic->ticks - _qubic->begin;
+				_qubic->angle = *_qubic->hall.pactual;
+				_qubic->angle32 = (*_qubic->hall.pactual)<<16;
 			}
 		}
 		/* _qubic->speed32 =  ((int64_t)_qubic->speed32*255)>>8;

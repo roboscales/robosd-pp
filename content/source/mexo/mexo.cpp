@@ -19,21 +19,29 @@ namespace mexo {
 	machine::~machine(void) {
 
 	}
-	void machine::begin_(void) {
+	void machine::begin_(time_us_t _period_us) {
 		system::begin();
-		slots_ref_.begin.execute();
-		ROBO_APP_ASSERT(::mexo::node::begin());
-		#if ROBO_APP_NET_FLOW_ENABLED == 1
-		::robo::net::flow::machine::begin();
-		#endif
-		#if ROBO_APP_MEXO_VAR_ENABLED == 1
-		node::create_vars();
-		#endif
+		{
+			system::guard g__;
+			slots_ref_.begin.execute();
+			ROBO_APP_ASSERT(::mexo::node::begin());
+			#if ROBO_APP_NET_FLOW_ENABLED == 1
+			::robo::net::flow::machine::begin();
+			#endif
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			node::create_vars();
+			#endif
+			slots_ref_.start.execute();
+			system::start(_period_us);
+		}
 	}
+	
+	/*
 	void machine::start_(time_us_t _period_us) {
-		system::start(_period_us);
 		slots_ref_.start.execute();
+		system::start(_period_us);
 	}
+	*/
 	#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 	void machine::realtime_loop_(void) {
 		tp.on(tp_verb::loop);
@@ -668,18 +676,26 @@ namespace mexo {
 }
 
 #include "mexo/mexo.h"
+/*
 void mexo_begin(void) {
 	mexo::machine::begin();
 }
-
 #ifdef ROBO_APP_MEXO_SAMPLE_US
 void mexo_start( void ) {
 	mexo::machine::start(ROBO_APP_MEXO_SAMPLE_US);
 }
 #endif
-
 void mexo_start_ps(unsigned int _period_us) {
 	mexo::machine::start(_period_us);
+}
+*/
+#ifdef ROBO_APP_MEXO_SAMPLE_US
+void mexo_begin( void ) {
+	mexo::machine::begin(ROBO_APP_MEXO_SAMPLE_US);
+}
+#endif
+void mexo_begin_ps(unsigned int _period_us) {
+	mexo::machine::begin(_period_us);
 }
 void mexo_realtime_loop(void) {
 	mexo::machine::realtime_loop();

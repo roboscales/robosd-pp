@@ -18,7 +18,6 @@ void bldc_mode_pwm_stop(burst_dev_ref_p _ref){
 	swt_pwm_stop();
 }
 void bldc_mode_pwm_runA(burst_dev_ref_p _ref){
-	swt_pwm_run();
 	rotcalc( &(motor.inverter.rot), hall.angle );
 }
 
@@ -66,6 +65,223 @@ burst_dev_mode_t bldc_mode_current = {
 	,&burst_dev_idle_event
 };
 
+#ifndef PMSM_MODE_SYNCHRO_CURRENT_BUFFER_BITS
+#define PMSM_MODE_SYNCHRO_CURRENT_BUFFER_BITS 10
+#endif
+
+typedef struct pmsm_mode_hall_estimate_phase_s{
+	burst_long_signal_t ae;
+	burst_signal_t e;
+	burst_signal_t e0;
+	burst_long_signal_t af;
+	burst_signal_t f;
+	burst_signal_t f0;
+	uint8_t h_prev;
+	burst_signal_t status;
+	int ne;
+	int nf;
+} pmsm_mode_hall_estimate_phase_t;
+
+typedef struct pmsm_mode_hall_estimate_s{
+	pmsm_mode_hall_estimate_phase_t A;
+	pmsm_mode_hall_estimate_phase_t B;
+	pmsm_mode_hall_estimate_phase_t C;
+	pmsm_mode_hall_estimate_phase_t nA;
+	pmsm_mode_hall_estimate_phase_t nB;
+	pmsm_mode_hall_estimate_phase_t nC;
+	int dir;
+	burst_signal_t angle;
+} pmsm_mode_hall_estimate_t;
+
+pmsm_mode_hall_estimate_t pmsm_mode_hall_estimate = {};
+
+void pmsm_mode_hall_estimate_phase_reset_(pmsm_mode_hall_estimate_phase_t * p, uint8_t _h){
+	p->ae = 0;
+	p->e = 0;
+	p->af = 0;
+	p->f = 0;
+	p-> h_prev = _h;
+	p->status = 50;
+	p->ne = 0;
+	p->nf = 0;
+}
+
+
+
+burst_signal_t angle_mean_(burst_signal_t a1, burst_signal_t a2){
+	burst_signal_t d = a1 - a2;
+	return  a1 + (d>>1);
+}
+
+
+void angle_stat_(pmsm_mode_hall_estimate_phase_t * S, burst_signal_t f_prev, burst_signal_t f, uint8_t h, int dir){
+	S->status = (S->status*3 + h*100 +2)>>2;
+	if(dir>0){
+    if(S->h_prev < h ){
+			if(S->status<=50){
+				if(S->ne == 0){
+					S->ae = 0;
+					S->e0 = f;
+				} else{
+					burst_signal_t tmp = angle_mean_(f,f_prev);
+					burst_signal_t diff = tmp - S->e0;
+					S->ae = S->ae + diff;
+				}
+				S->ne = S->ne + 1;
+			}
+		} else {
+			if(S->h_prev > h ){
+				if(S->status>=50){
+					if(S->nf == 0){
+						S->af = 0;
+						S->f0 = f;
+					} else {
+						burst_signal_t tmp = angle_mean_(f,f_prev);
+						burst_signal_t diff = tmp - S->f0;
+						S->af = S->af + diff;
+					}
+					S->nf = S->nf + 1;
+				}
+			}
+		}
+	} else {
+		if(dir<0){
+			if(S->h_prev < h ){
+        if(S->status<=50){
+					if(S->nf == 0){
+						S->af = 0;
+						S->f0 = f;
+					} else {
+						burst_signal_t tmp = angle_mean_(f,f_prev);
+						burst_signal_t diff = tmp - S->f0;
+						S->af = S->af + diff;
+					}
+          S->nf = S->nf + 1;
+        }
+			} else {
+				if(S->h_prev > h ){
+					if(S->status>=50){
+						if(S->ne == 0){
+							S->ae = 0;
+							S->e0 = f;
+						} else{
+							burst_signal_t tmp = angle_mean_(f,f_prev);
+							burst_signal_t diff = tmp - S->e0;
+							S->ae = S->ae + diff;
+						}
+            S->ne = S->ne + 1;
+					}
+				}
+			}
+		}
+	}
+	S->h_prev = h;
+}
+
+void angle_estimate_(pmsm_mode_hall_estimate_phase_t * S){
+	S->e =  S->e0 + (S->ae+ (S->ne>>1)) / S->ne;
+	S->f =  S->f0 +(S->af+ (S->nf>>1)) / S->nf;
+}
+
+void pmsm_mode_hall_estimate_begin_(void){
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.A) ,hall.pins.A);
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.B) ,hall.pins.B);
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.C) ,hall.pins.C);
+	pmsm_mode_hall_estimate.dir = 1;
+}
+void pmsm_mode_hall_estimate_revert_(void){
+	angle_estimate_(&(pmsm_mode_hall_estimate.nA));
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.nA) ,hall.pins.A);
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.nB) ,hall.pins.B);
+	pmsm_mode_hall_estimate_phase_reset_( &(pmsm_mode_hall_estimate.nC) ,hall.pins.C);
+	pmsm_mode_hall_estimate.dir = -1;
+}
+
+void pmsm_mode_hall_estimate_finish_(void){
+	angle_estimate_(&(pmsm_mode_hall_estimate.A));
+	angle_estimate_(&(pmsm_mode_hall_estimate.B));
+	angle_estimate_(&(pmsm_mode_hall_estimate.C));
+	angle_estimate_(&(pmsm_mode_hall_estimate.nA));
+	angle_estimate_(&(pmsm_mode_hall_estimate.nB));
+	angle_estimate_(&(pmsm_mode_hall_estimate.nC));	
+}
+
+void pmsm_mode_hall_estimate_applay_action(burst_dev_ref_p _ref){	
+	pmsm_mode_synchro_current_applay_action(_ref);
+	
+}
+
+void pmsm_mode_hall_estimate_start(burst_dev_ref_p _ref){
+	pmsm_mode_hall_estimate_begin_();
+	pmsm_mode_synchro_current_start(_ref);
+}
+
+void pmsm_mode_hall_estimate_stop(burst_dev_ref_p _ref){
+	pmsm_mode_hall_estimate_finish_();
+	pmsm_mode_synchro_current_stop(_ref);
+}
+pmsm_hall_app_config_p pmsm_hall_app_config = 0;
+burst_bool_t pmsm_mode_hall_estimate_end_(void){
+	if(pmsm_mode_hall_estimate.dir > 0){
+		if(
+			pmsm_mode_hall_estimate.A.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.A.nf >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.B.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.B.nf >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.C.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.C.nf >  pmsm_hall_app_config->estimate_revert_count
+			){
+				return burst_true;
+		}
+	} else if(pmsm_mode_hall_estimate.dir < 0){
+		if(
+			pmsm_mode_hall_estimate.nA.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.nA.nf >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.nB.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.nB.nf >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.nC.ne >  pmsm_hall_app_config->estimate_revert_count
+			&& pmsm_mode_hall_estimate.nC.nf >  pmsm_hall_app_config->estimate_revert_count
+			){
+				return burst_true;
+		}
+	}
+	return burst_false;
+}
+
+void pmsm_mode_hall_estimate_runA(burst_dev_ref_p _ref){
+	pmsm_mode_synchro_current_runA(_ref);
+	burst_signal_t angle = (motor.synchro.angle)>>16;
+	if(pmsm_mode_hall_estimate.dir>0){
+		angle_stat_(&pmsm_mode_hall_estimate.A, pmsm_mode_hall_estimate.angle,angle, hall.pins.A, 1);
+		angle_stat_(&pmsm_mode_hall_estimate.B, pmsm_mode_hall_estimate.angle,angle, hall.pins.B, 1);
+		angle_stat_(&pmsm_mode_hall_estimate.C, pmsm_mode_hall_estimate.angle,angle, hall.pins.C, 1);
+	} else{
+		angle_stat_(&pmsm_mode_hall_estimate.nA, pmsm_mode_hall_estimate.angle,angle, hall.pins.A, -1);
+		angle_stat_(&pmsm_mode_hall_estimate.nB, pmsm_mode_hall_estimate.angle,angle, hall.pins.B, -1);
+		angle_stat_(&pmsm_mode_hall_estimate.nC, pmsm_mode_hall_estimate.angle,angle, hall.pins.C, -1);
+	}
+	pmsm_mode_hall_estimate.angle = angle;
+}
+
+void pmsm_mode_hall_estimate_check(burst_dev_ref_p _ref){
+	if(pmsm_mode_hall_estimate_end_() ==  burst_true){
+		if(pmsm_mode_hall_estimate.dir > 0 ){
+			pmsm_mode_hall_estimate_revert_();
+			motor.synchro.freq = -motor.synchro.freq;
+		} else{
+			motor.cross.ac.ref.action->mode = actuator_mode_idle_ix;
+		}
+	}
+}
+burst_dev_mode_t pmcm_synchro_hall_statistic_current = {
+	&pmsm_mode_hall_estimate_applay_action
+	,&pmsm_mode_hall_estimate_start
+	,&pmsm_mode_hall_estimate_stop
+	,&pmsm_mode_hall_estimate_runA
+	,&burst_dev_idle_event
+	,&burst_dev_idle_event
+	,&pmsm_mode_hall_estimate_check
+};
 
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode
@@ -84,6 +300,7 @@ burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	, &burst_idle_mode
 	, &bldc_mode_pwm
 	, &bldc_mode_current
+	, &pmcm_synchro_hall_statistic_current
 };
 
 
@@ -101,6 +318,7 @@ burst_signal_t pmsm_hall_app_motor_current_magnitude(void){
 #endif
 
 void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, pmsm_feedback_p _feedback ){
+	pmsm_hall_app_config = _config;
 	hall_begin(&hall, &_config->hall);
 	adc_begin(&adc, &_config->adc);
 	pmsm_begin(
@@ -161,6 +379,9 @@ void pmsm_hall_app_start(void){
 }
 
 void pmsm_hall_app_realtime_loop(void){	
+	if(motor.cross.ac.ref.mode == bldc_mode_pwm_ix){
+			swt_pwm_run();
+	}
 	enco.ref.run();
 	pmsm_angle_forcer_run(&angle_forcer);
 	pmsm_sence_run(&motor);

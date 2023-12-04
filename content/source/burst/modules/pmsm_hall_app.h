@@ -18,10 +18,10 @@
 #include "burst/modules/enco_abs32.h"
 #include "burst/modules/pmsm.h"
 
-//силовой преобразователь
+//СЃРёР»РѕРІРѕР№ РїСЂРµРѕР±СЂР°Р·РѕРІР°С‚РµР»СЊ
 BURST_PS(power)
 
-//датчик скорости - фильтh Никитина
+//РґР°С‚С‡РёРє СЃРєРѕСЂРѕСЃС‚Рё - С„РёР»СЊС‚СЂ РќРёРєРёС‚РёРЅР°
 NIKITIN(speedse)
 
 ENCO_ABS32(enco)
@@ -62,6 +62,7 @@ typedef struct pmsm_hall_app_config_s {
 	nikitin_config_t lat_flt;
 	pmsm_angle_forcer_config_t angle_forcer;
 	int controlPresc;
+	int estimate_revert_count;
 } pmsm_hall_app_config_t;
 typedef  pmsm_hall_app_config_t * pmsm_hall_app_config_p;
  
@@ -78,6 +79,10 @@ void pmsm_hall_app_update_feedback(void);
 burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
+#ifndef PMSM_HAL_APP_ESTIMATE_REVERT_COUNT
+#define PMSM_HAL_APP_ESTIMATE_REVERT_COUNT 200
+#endif
+
 #define PMSM_HALL_APP_CONFIG()\
 {\
 	PMSM_CONFIG(motor)\
@@ -89,6 +94,7 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 	,NIKITIN_CONFIG(c_lat_flt)\
 	,PMSM_ANGLE_FORCER_CONFIG(angle_forcer)\
 	,motor_CONTROL_PRESC\
+	,PMSM_HAL_APP_ESTIMATE_REVERT_COUNT\
 }
 
 #ifndef hall_OFFSET_NATIVE
@@ -553,6 +559,6 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #ifndef motor_FAULT_CURRENT_US
 #define motor_FAULT_CURRENT_US 0
 #endif
-
+extern pmsm_angle_forcer_t angle_forcer;
 
 #endif
