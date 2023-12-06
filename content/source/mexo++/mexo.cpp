@@ -16,32 +16,39 @@ namespace mexo {
 	machine::~machine(void) {
 
 	}
-	void machine::begin_(void) {
+	void machine::begin_(time_us_t _period_us) {
 		#if ROBO_APP_SYSTEM_ENABLED == 1
 		system::begin();
-		#endif
 		slots_ref_.begin.execute();
-		ROBO_APP_ASSERT(::mexo::node::begin());
-		#if ROBO_APP_NET_FLOW_ENABLED == 1
-		::robo::net::flow::machine::begin();
 		#endif
-		#if ROBO_APP_MEXO_VAR_ENABLED == 1
-		node::create_vars();
-		#endif
+		{
+			system::guard g__;
+			ROBO_APP_ASSERT(::mexo::node::begin());
+			#if ROBO_APP_NET_FLOW_ENABLED == 1
+			::robo::net::flow::machine::begin();
+			#endif
+			#if ROBO_APP_MEXO_VAR_ENABLED == 1
+			node::create_vars();
+			#endif
+			slots_ref_.start.execute();
+			system::start(_period_us);
+		}
 	}
+	/*
 	void machine::start_(time_us_t _period_us) {
 		#if ROBO_APP_SYSTEM_ENABLED == 1
 		system::start(_period_us);
 		#endif
 		slots_ref_.start.execute();
 	}
+	*/
 	#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 	void machine::realtime_loop_(void) {
 		tp.on(tp_verb::loop);
-		tp.on(tp_verb::priority);
+		tp.on(tp_verb::realtime);
 		fall__;
 		slots_ref_.realtime.execute();
-		tp.off(tp_verb::priority);
+		tp.off(tp_verb::realtime);
 	}
 	#endif
 
@@ -445,7 +452,7 @@ namespace mexo {
 				doIdle();
 			break;
 			case state::prepare:
-				//onPrepare(); -- ? это зачем? onPrepare уже было!
+				//onPrepare(); -- ? СЌС‚Рѕ Р·Р°С‡РµРј? onPrepare СѓР¶Рµ Р±С‹Р»Рѕ!
 			//break;
 			case state::startup:
 			case state::execute :
@@ -532,22 +539,13 @@ namespace mexo {
 }
 
 #include "mexo/mexo.h"
-void mexo_begin(void) {
-	mexo::machine::begin();
-}
-
 #ifdef ROBO_APP_MEXO_SAMPLE_US
-void mexo_start( void ) {
-	mexo::machine::start(ROBO_APP_MEXO_SAMPLE_US);
-}
-#else
-void mexo_start( void ) {
-	mexo::machine::start(0);
+void mexo_begin( void ) {
+	mexo::machine::begin(ROBO_APP_MEXO_SAMPLE_US);
 }
 #endif
-
-void mexo_start_ps(unsigned int _period_us) {
-	mexo::machine::start(_period_us);
+void mexo_begin_ps(unsigned int _period_us) {
+	mexo::machine::begin(_period_us);
 }
 void mexo_realtime_loop(void) {
 	mexo::machine::realtime_loop();
@@ -561,3 +559,4 @@ void mexo_frontend_loop() {
 void mexo_raise_fault() {
 	mexo::machine::raise_fault();
 }
+

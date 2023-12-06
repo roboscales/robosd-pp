@@ -9,7 +9,7 @@ void swt_reset(burst_swt_t * _swt, int _pwm){
 void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  int _actual){
 	int error = _requried - _actual;
 	int model;
-	if ( !( (error>0 && _swt->pwm.control == _config->pwm.max ) || (error<0 && _swt->pwm.control == 0))){
+	if ( !( (error>0 && _swt->pwm.control >= _swt->pwm.max ) || (error<0 && _swt->pwm.control <= _swt->pwm.min))){
 		int model32 = _swt->model32 + error * _config->gain.model;
 		model = model32 >> 10;
 		_swt->model = model;

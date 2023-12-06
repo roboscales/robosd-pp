@@ -4,6 +4,6 @@
 #error error of using mexo++drive.names.hpp
 #endif
 
-#ifdef MEXO_DRIVE_NUMBER_TEST
-#define MEXO_DRIVE_TUNING   "tunning/numbertest.tuning.hpp"
+#ifdef MPPD_DRIVE_NUMBER_TEST
+#define MPPD_DRIVE_TUNING   "tunning/numbertest.tuning.hpp"
 #endif

@@ -20,7 +20,7 @@
 #endif
 namespace mexo {
 	
-	struct tp_verb {		enum { frontend = 1, backend = 2, priority = 3, loop = 4 }; 	};
+	struct tp_verb {		enum { frontend = 1, backend = 2, realtime = 3, loop = 4 }; 	};
 	
 	enum class satstate_t { none, both, lo, hi };
 	

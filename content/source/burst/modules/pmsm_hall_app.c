@@ -454,7 +454,7 @@ void pmsm_hall_app_control_step_3(void){
 	burst_time_us_t now = burst_time_us();
 	if(  now - last_rpm_us  >= (1<<PMSM_HALL_RPM_PRESC)*PMSM_HALL_RPM_BASE_PERIOD_US ){
 		burst_long_signal_t pos = enco.ref.position;
-		burst_signal_t delta = pos - last_rpm_pos;
+		burst_long_signal_t delta = pos - last_rpm_pos;
 		delta_flt = delta_flt*((1<<PMSM_HALL_RPM_FILTER_GAIN_PRESC)-1) + delta*(1<<PMSM_HALL_RPM_FILTER_VALUE_PRESC);
 		delta_flt >>= PMSM_HALL_RPM_FILTER_GAIN_PRESC;
 		//60*1000000 / 256 (pp.об) / 16 = 14648

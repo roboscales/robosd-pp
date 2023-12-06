@@ -225,8 +225,8 @@ void acwc_mode_speed_start(burst_dev_ref_p _ref){
 		, &acwc->current.req
 		, 0
 		, &acwc->current.dir->satstate
-		,	&actuator->voltage.range.hi
-		, &actuator->voltage.range.lo
+		,	&acwc->current.range.hi
+		, &acwc->current.range.lo
 		, 0
 		, 0
 		, 0
