@@ -10,6 +10,90 @@ struct burst_s;
 typedef struct burst_s burst_t;
 typedef burst_t * burst_p;
 
+#ifndef BURST_CORE_DEBUG
+#define BURST_CORE_DEBUG 1
+#endif
+
+#if BURST_CORE_DEBUG ==1
+#define  BURST_CORE_ALARM( x ) burst_alarm( (x) )
+#else
+#define  BURST_CORE_ALARM(x)
+#endif
+
+
+#if BURST_QUEUE_ENABLED == 1
+#ifndef BURST_FRONT_QUEUE_SIZE_BITS
+#define BURST_FRONT_QUEUE_SIZE_BITS 2
+#endif
+#ifndef BURST_BACKEND_QUEUE_SIZE_BITS
+#define BURST_BACKEND_QUEUE_SIZE_BITS 2
+#endif
+
+#define RING_PREFIX_NAME burst_front_queue
+#define RING_SIZE_BITS BURST_FRONT_QUEUE_SIZE_BITS
+#define RING_LOCK() uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
+#define RING_DATA_T bust_request_t *
+#include "burst/burst_ring.inc.h"
+
+#define RING_PREFIX_NAME burst_backend_queue
+#define RING_SIZE_BITS BURST_BACKEND_QUEUE_SIZE_BITS
+#define RING_LOCK() uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
+#define RING_DATA_T bust_request_t *
+#include "burst/burst_ring.inc.h"
+
+void bust_post(bust_request_t * _request){
+	_request->status = bust_request_status_query;
+	if(burst_is_frontend()){
+		BURST_CORE_ALARM(burst_backend_queue_try_put(_request));
+	} else{
+		BURST_CORE_ALARM(burst_front_queue_try_put(_request));
+	}
+}
+
+void bust_front_request_perform(void){	
+	bust_request_t * r;
+	if (burst_front_queue_try_get(&r)== burst_true ){		
+		BURST_CORE_ALARM(r);
+		if(r->status == bust_request_status_query){
+			BURST_CORE_ALARM(r->query);
+			r->query(r);
+			if(r->confirm){
+				r->status = bust_request_status_confirm;
+				BURST_CORE_ALARM(burst_backend_queue_try_put(r))
+			} else{
+				r->status = bust_request_status_none;
+			}
+		}  else if(r->status == bust_request_status_confirm){
+			r->confirm(r);
+			r->status = bust_request_status_none;
+		}
+	}
+}
+void bust_backend_request_perform(void){	
+	bust_request_t * r;
+	if (burst_backend_queue_try_get(&r)== burst_true ){		
+		BURST_CORE_ALARM(r);
+		if(r->status == bust_request_status_query){
+			BURST_CORE_ALARM(r->query);
+			r->query(r);
+			if(r->confirm){
+				r->status = bust_request_status_confirm;
+				BURST_CORE_ALARM(burst_front_queue_try_put(r))
+			} else{
+				r->status = bust_request_status_none;
+			}
+		}  else if(r->status == bust_request_status_confirm){
+			r->confirm(r);
+			r->status = bust_request_status_none;
+		}
+	}
+}
+#endif
+
+
+
 
 #ifndef BURST_DEV_COUNT
 #define BURST_DEV_COUNT 0
@@ -79,6 +163,15 @@ void burst_master_alive_check(burst_dev_ref_p _ref){
 }
 #endif
 
+void burst_dev_feedback_query (bust_request_t * _req){
+	burst_dev_request_t * r = (burst_dev_request_t *)_req;
+	r->owner->update_feedback.on_run(r->owner);
+}
+
+void burst_dev_request_confirm (bust_request_t * _req){
+	burst_dev_request_t * r = (burst_dev_request_t *)_req;
+	r->on_complete(r->owner);
+}
 
 void burst_begin(void){
 	burst_sw_begin();
@@ -103,8 +196,15 @@ void burst_begin(void){
 		if((*p)->mode_count>0){
 			burst_alarm((*p)->modes);
 		}	
+		#if BURST_QUEUE_ENABLED == 1
+		(*p)->update_feedback.request.owner = *p;
+		(*p)->update_feedback.request.ref.status = bust_request_status_none;
+		(*p)->update_feedback.request.ref.query =  burst_dev_feedback_query;
+		(*p)->update_feedback.request.ref.confirm =  burst_dev_request_confirm;
+		#endif
 		(*p)->actual_mode = &burst_idle_mode;		
 		(*p)->modes_end = (*p)->modes+(*p)->mode_count;
+		
 		for(	burst_dev_mode_p  * pm = (*p)->modes; pm!=(*p)->modes_end; ++pm) {
 			burst_dev_mode_p m = *pm;
 			if(m){
@@ -406,8 +506,12 @@ void burst_backend_loop(void){
 		}
 		burst_hw_backend_loop();
 		burst_sw_backend_loop();
+		#if BURST_QUEUE_ENABLED == 1
+		bust_backend_request_perform();
+		#endif
 		debug_tp_off(VERB_BACKEND);
 		debug_tp_off(VERB_LOOP);
+
 		burst_comeback();
 	}
 
@@ -441,12 +545,14 @@ void burst_frontend_loop(void){
 			s->actual_mode->frontend_loop(s);
 		}
 	}
-	debug_tp_off(VERB_FRONTEND);
 	
 	#if BURST_BUTTON_ENABLED == 1
 	burst_btn_poll();
 	#endif
-
+	#if BURST_QUEUE_ENABLED == 1
+	bust_front_request_perform();
+	#endif
+	debug_tp_off(VERB_FRONTEND);
 }
 
 
@@ -585,15 +691,6 @@ BURST_WEAK  void burst_hw_reboot(void){}
 burst_bool_t burst_is_backend(void){
 	return (burst_bool_t) (burst_core_status_== burst_core_backend);
 }
-#ifndef BURST_CORE_DEBUG
-#define BURST_CORE_DEBUG 1
-#endif
-
-#if BURST_CORE_DEBUG ==1
-#define  BURST_CORE_ALARM( x ) burst_alarm( (x) )
-#else
-#define  BURST_CORE_ALARM(x)
-#endif
 
 void burst_fall(void){
 	BURST_CORE_ALARM( burst_is_frontend() );
@@ -718,4 +815,23 @@ void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){
 
 void burst_config_set( burst_config_t * _config){
 	 burst_config = _config;
+}
+
+
+void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complete){
+	if(_ref->update_feedback.request.ref.status == bust_request_status_none){
+		#if BURST_QUEUE_ENABLED == 0
+		if(burst_is_frontend()){
+			_ref->update_feedback.on_run(_ref);
+			if(_ref->update_feedback.on_complete){
+				_ref->update_feedback.on_complete(_ref);
+			}
+		} else{
+			_ref->update_feedback.flag.query = burst_true;
+		}
+		#else
+		_ref->update_feedback.request.on_complete = _on_complete;
+		bust_post(&(_ref->update_feedback.request.ref));
+		#endif
+	}
 }

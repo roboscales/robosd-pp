@@ -6,7 +6,7 @@
 
 #include "core/robosd_system.hpp"
 
-#include "mexo++/mexo_common.hpp"
+#include "mexo++/common.hpp"
 
 #include "mexo++/dev.front.hpp"
 

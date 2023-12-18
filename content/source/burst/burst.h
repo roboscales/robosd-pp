@@ -149,13 +149,40 @@ struct  burst_dev_mode_s{
 
 typedef void ( * burst_dev_event)(burst_dev_ref_p);
 
+#if BURST_QUEUE_ENABLED == 1
+typedef enum{bust_request_status_none = 0,bust_request_status_query=1,bust_request_status_confirm=2,bust_request_status_panic=-1} bust_request_status_t;
+typedef struct bust_request_s{
+	bust_request_status_t status;
+	void (* query)(struct bust_request_s *);
+	void (* confirm)(struct bust_request_s *);
+} bust_request_t;
+
+typedef struct burst_dev_request_s{
+	bust_request_t ref;
+	burst_dev_ref_p owner;
+	burst_dev_mode_event on_complete;
+} burst_dev_request_t;
+
+void bust_post(bust_request_t * _request);
+#endif
 
 struct burst_dev_ref_s{
 	burst_dev_event reset;
 	burst_dev_event start;
 	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
-	burst_dev_mode_event update_feedback;
+	struct{
+			burst_dev_mode_event on_run;
+		#if BURST_QUEUE_ENABLED == 0
+			burst_dev_mode_event on_complete;
+		struct{
+			burst_bool_t  complete;
+			burst_bool_t  query;			
+		} flag;
+		#else
+		burst_dev_request_t request;
+		#endif
+	} update_feedback;
 	burst_dev_event perform_panic;
 	burst_dev_config_p config;
 	burst_dev_action_p action;
@@ -254,5 +281,9 @@ int burst_board_current_get_pp(void);
 #if defined(__cplusplus)
 }
 #endif
+
+
+
+void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complete);
 
 #endif

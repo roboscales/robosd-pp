@@ -30,12 +30,14 @@ void burst_btn_begin(burst_btn_p _btn, burst_btn_mode_t _mode, burst_time_us_t _
 
 void burst_btn_poll_(burst_btn_p _btn){
 	if( _btn->phy_get() ){
+		burst_time_us_t us = burst_time_us();
 		if(_btn->status ==  BURST_BTN_RELEASED){
-			_btn->status =  BURST_BTN_PRESSED;
-			burst_btn_raise_(_btn);
-			_btn->pushdown_us = burst_time_us();
+			if(us - _btn->pushdown_us > _btn->permit_us){
+				_btn->status =  BURST_BTN_PRESSED;
+				burst_btn_raise_(_btn);
+				_btn->pushdown_us = burst_time_us();
+			}
 		}else{
-			burst_time_us_t us = burst_time_us();
 			_btn->pressed_us = us -_btn->pushdown_us;
 			if(_btn->repeate_us > 0){
 				if( us - _btn->last_repeate_us >= _btn->repeate_us ){

@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>5</Optim>
+            <Optim>1</Optim>
             <oTime>1</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -657,11 +657,6 @@
           <GroupName>mexo++</GroupName>
           <Files>
             <File>
-              <FileName>mexo_common.hpp</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\mexo_common.hpp</FilePath>
-            </File>
-            <File>
               <FileName>mexo.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\mexo.cpp</FilePath>
@@ -677,11 +672,6 @@
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\mexo.hpp</FilePath>
             </File>
             <File>
-              <FileName>mexo_math.hpp</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\mexo_math.hpp</FilePath>
-            </File>
-            <File>
               <FileName>dev.front.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\dev.front.hpp</FilePath>
@@ -690,6 +680,21 @@
               <FileName>led.hpp</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\led.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>common.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\common.hpp</FilePath>
+            </File>
+            <File>
+              <FileName>math.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\math.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>math.hpp</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\..\..\reference\robosd-ref\mexo++\math.hpp</FilePath>
             </File>
           </Files>
         </Group>
