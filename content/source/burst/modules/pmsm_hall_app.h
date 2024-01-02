@@ -18,10 +18,10 @@
 #include "burst/modules/enco_abs32.h"
 #include "burst/modules/pmsm.h"
 
-//силовой преобразователь
+//СЃРёР»РѕРІРѕР№ РїСЂРµРѕР±СЂР°Р·РѕРІР°С‚РµР»СЊ
 BURST_PS(power)
 
-//датчик скорости - фильтh Никитина
+//РґР°С‚С‡РёРє СЃРєРѕСЂРѕСЃС‚Рё - С„РёР»СЊС‚СЂ РќРёРєРёС‚РёРЅР°
 NIKITIN(speedse)
 
 ENCO_ABS32(enco)
@@ -42,6 +42,11 @@ NIKITIN(c_lat_flt)
 
 NIKITIN(c_cross_flt)
 
+//swt
+#define CLCH_NAME swt
+#define CLCH_HEADER 
+#include "burst/cliche/swt.h"
+
 extern hall_t hall;
 extern adc_t adc;
 extern pmsm_t motor;
@@ -57,6 +62,7 @@ typedef struct pmsm_hall_app_config_s {
 	nikitin_config_t lat_flt;
 	pmsm_angle_forcer_config_t angle_forcer;
 	int controlPresc;
+	int estimate_revert_count;
 } pmsm_hall_app_config_t;
 typedef  pmsm_hall_app_config_t * pmsm_hall_app_config_p;
  
@@ -73,6 +79,10 @@ void pmsm_hall_app_update_feedback(void);
 burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
+#ifndef PMSM_HAL_APP_ESTIMATE_REVERT_COUNT
+#define PMSM_HAL_APP_ESTIMATE_REVERT_COUNT 200
+#endif
+
 #define PMSM_HALL_APP_CONFIG()\
 {\
 	PMSM_CONFIG(motor)\
@@ -84,6 +94,7 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 	,NIKITIN_CONFIG(c_lat_flt)\
 	,PMSM_ANGLE_FORCER_CONFIG(angle_forcer)\
 	,motor_CONTROL_PRESC\
+	,PMSM_HAL_APP_ESTIMATE_REVERT_COUNT\
 }
 
 #ifndef hall_OFFSET_NATIVE
@@ -99,7 +110,7 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
 #ifndef adc_INDEX
-#define adc_INDEX {0,1,2,3,4}
+#define adc_INDEX {0,1,2}
 #endif
 
 #ifndef adc_SCALE
@@ -212,7 +223,10 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #endif
 
 #ifndef motor_CURRENT3PH_DEFORM
+#define motor_CURRENT3PH_DEFORM_ENABLE 0
 #define motor_CURRENT3PH_DEFORM {65536,0,0,0,65536,0,0,0,65536}
+#else
+#define motor_CURRENT3PH_DEFORM_ENABLE 1
 #endif
 
 #ifndef motor_LATERAL_CURRENT_PI_PROP_GAIN
@@ -530,5 +544,21 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 #define PMSM_HALL_APP_ANGLE_SENCE_TYPE PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL
 #endif
 
+#ifndef motor_INV3PH_PWM_FORCE
+#define motor_INV3PH_PWM_FORCE 0
+#endif
+
+#ifndef motor_FAULT_CURRENT_PANIC
+#define motor_FAULT_CURRENT_PANIC 32767
+#endif
+
+#ifndef motor_FAULT_CURRENT_LEVEL
+#define motor_FAULT_CURRENT_LEVEL 32767
+#endif
+
+#ifndef motor_FAULT_CURRENT_US
+#define motor_FAULT_CURRENT_US 0
+#endif
+extern pmsm_angle_forcer_t angle_forcer;
 
 #endif

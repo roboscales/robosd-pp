@@ -546,7 +546,8 @@ namespace mexo {
 			present.control = present.error*config.propGain;
 			
 			if(config.diffQuadrGain>0){
-				present.controlDiffQuadr = actualDiff*actualDiff;
+				signal_t tmp = actualDiff >=0?-actualDiff:actualDiff;
+				present.controlDiffQuadr = actualDiff*tmp;
 				present.controlDiffQuadr = q::round_l(present.controlDiffQuadr, config.diffQuadrShift);
 				present.controlDiffQuadr *= config.diffQuadrGain;
 			} else {

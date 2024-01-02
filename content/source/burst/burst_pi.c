@@ -26,7 +26,9 @@ void burst_pi_run_(burst_pi_p _pi){
 			if( (Error<0) && ( (control<=controlMin) || (_pi->long_model<(BURST_LONG_SIGNAL_MIN*MODEL_VALUE_MAX)) || (master_sut_flag == burst_satstate_lo)  ) ){
 					sut_flag = burst_satstate_lo;
 			}
-			else sut_flag =  master_sut_flag;
+			else {
+				sut_flag =  burst_satstate_none;
+			}
 	}
 	_pi->satstate = sut_flag;
 	if ( sut_flag == burst_satstate_none )
@@ -110,7 +112,7 @@ void burst_limiter_run(burst_limiter_p _limiter){
 void burst_limiter_reset(burst_limiter_p _limiter, burst_signal_t _def){
 	burst_pi_reset_(_limiter->r_hi,_def);
 	burst_pi_reset_(_limiter->r_low,_def);
-	*(_limiter->control_val)=_def;
+	_limiter->control_des = *(_limiter->control_val)=_def;
 }
 void burst_limiter_setup(burst_limiter_p _limiter, burst_limiter_config_p _config, burst_signal_t _def ){
 	_limiter->r_hi = _config->r_hi;

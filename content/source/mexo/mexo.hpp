@@ -185,8 +185,8 @@ namespace mexo {
 		slots& slots_ref_;
 		int slot_index_;
 		static slots& slots_(void);
-		void begin_(void);
-		void start_(time_us_t _period_us);
+//		void begin_(void);
+		void begin_(time_us_t _period_us);
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		void realtime_loop_(void);
 		#endif
@@ -197,10 +197,11 @@ namespace mexo {
 	public:
 		machine(void);
 		~machine(void);
-		static void begin(void) { instance_.begin_(); }
-		static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		//static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		static void begin(time_us_t _period_us) { instance_.begin_(_period_us); }
 		#ifdef ROBO_APP_MEXO_SAMPLE_US
-		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+//		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+			static void begin(void) { instance_.begin_(ROBO_APP_MEXO_SAMPLE_US); }
 		#endif		
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		static void realtime_loop(void) { instance_.realtime_loop_(); }
@@ -1236,7 +1237,7 @@ namespace mexo {
 		void terminate(void);
 	};	
 	
-	template< class H> class timer_t :  public H{
+	template< class H, typename ... Args> class timer_t :  public H{
 	public:
 		using tm = ::robo::time_us_t;
 	private:
@@ -1256,7 +1257,7 @@ namespace mexo {
 			}
 		}
 	public:
-		timer_t(void)
+		timer_t(Args ... args): H(args...)
 		{
 		}
 		void start(tm _period, bool _once = false){
@@ -1272,6 +1273,18 @@ namespace mexo {
 		}
 		bool started(void){ return started_; }
 	};
+
+	template< class H, typename ... Args> class timer_delegat_t :  public H{
+	public:
+		void stop(void){}
+		void start(void){}
+		timer_delegat_t(Args ... args): H(args...)
+		{
+		}
+	};
+
+	typedef ::mexo::timer_t< timer_delegat_t<::robo::delegat::owned_fabric<void>::simple, void(*)(void)>, void(*)(void) > repeat_t;
+
 	
 	class stateflow {
 	public:

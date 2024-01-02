@@ -5,7 +5,6 @@ extern "C"
 {
 #endif
 
-#include "burst/burst_common.h"
 #include "burst/modules/acwc_front.h"
 typedef struct pmsm_action_s{
 	acwc_action_t cross;
@@ -33,9 +32,15 @@ enum {
 	pmsm_mode_synchro_voltage_ix = acw_mode_count+0 //11
 	, pmsm_mode_synchro_curent_ix = acw_mode_count+1 //12
 	, pmsm_mode_estimate_ix = acw_mode_count+2 //13
-	, pmsm_mode_count = acw_mode_count+3
+	, bldc_mode_pwm_ix = acw_mode_count+3 //14
+	, bldc_mode_current_ix = acw_mode_count+4 //15
+	, pmsm_mode_synchro_hall_estimate_ix = acw_mode_count+5 //16
+	, pmsm_mode_count = acw_mode_count+6
 };
 
+enum{
+	burst_panic_pmsm_phase_break_bit= burst_panic_acwc_bits+1, burst_panic_pmsm_phase_break='O'
+};
 #if defined(__cplusplus)
 }
 #endif

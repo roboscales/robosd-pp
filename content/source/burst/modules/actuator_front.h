@@ -6,7 +6,8 @@ extern "C"
 {
 #endif
 
-#include "burst/burst_common.h"
+#include "burst/burst_front.h"
+
 
 #pragma pack(push, 1)
 
@@ -33,6 +34,13 @@ enum {
 	, actuator_mode_speed_ix = 3
 	, actuator_mode_position_ix = 4
 	, actuator_mode_count = 5
+};
+enum {
+	burst_panic_actuator_dummy = -1
+	, burst_panic_actuator_possence_bit	=	burst_panic_dev_bits + 1, burst_panic_actuator_possence='P'
+	, burst_panic_actuator_overtemp_bit = burst_panic_dev_bits + 2, burst_panic_actuator_overtemp='T'
+	, burst_panic_actuator_lotemp_bit 	=	burst_panic_dev_bits + 3, burst_panic_actuator_lotemp='t'
+	, burst_panic_actuator_bits = burst_panic_actuator_lotemp_bit
 };
 
 #pragma pack(pop)

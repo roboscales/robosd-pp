@@ -6,7 +6,7 @@
 
 #include "core/robosd_system.hpp"
 
-#include "mexo++/mexo_common.hpp"
+#include "mexo++/common.hpp"
 
 #include "mexo++/dev.front.hpp"
 
@@ -144,8 +144,8 @@ namespace mexo {
 		slots& slots_ref_;
 		int slot_index_;
 		static slots& slots_(void);
-		void begin_(void);
-		void start_(time_us_t _period_us);
+//		void begin_(void);
+		void begin_(time_us_t _period_us);
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		void realtime_loop_(void);
 		#endif
@@ -156,10 +156,11 @@ namespace mexo {
 	public:
 		machine(void);
 		~machine(void);
-		static void begin(void) { instance_.begin_(); }
-		static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		//static void start(time_us_t _period_us) { instance_.start_(_period_us); }
+		static void begin(time_us_t _period_us) { instance_.begin_(_period_us); }
 		#ifdef ROBO_APP_MEXO_SAMPLE_US
-		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+//		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
+			static void begin(void) { instance_.begin_(ROBO_APP_MEXO_SAMPLE_US); }
 		#endif		
 		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
 		static void realtime_loop(void) { instance_.realtime_loop_(); }
@@ -465,6 +466,18 @@ namespace mexo {
 		}
 		bool started(void){ return started_; }
 	};
+
+	template< class H, typename ... Args> class timer_delegat_t :  public H{
+	public:
+		void stop(void){}
+		void start(void){}
+		timer_delegat_t(Args ... args): H(args...)
+		{
+		}
+	};
+
+	typedef ::mexo::timer_t< timer_delegat_t<::robo::delegat::owned_fabric<void>::simple, void(*)(void)>, void(*)(void) > repeat_t;
+
 	
 	class stateflow {
 	public:
@@ -481,53 +494,6 @@ namespace mexo {
 		void switchto(node * _node);
 		void run(void);
 	};	
-	
-	template < class D > class clock_us_t{
-		public: 
-			typedef typename  D::tick_t tick_t;
-			typedef typename  D::us_t us_t;
-			typedef D prf;
-		private:
-			tick_t tick_ = 0;
-		public: 
-			clock_us_t(void){tick_ = D::tick();}
-			void tick(void){ tick_ = D::tick(); }
-			us_t tock(void){ return D::tick2us(D::tick() - tick_); }
-			static void delay_us(us_t _us){
-				volatile tick_t begin = D::tick();
-				volatile tick_t period = D::us2tick(_us);
-				while(D::tick() - begin < period ) D::idle();
-			}
-	
-			static us_t us(void){
-				return D::tick2us(D::tick());
-			}
-			
-	};
-	
-	template < class D > class clock_ns_t{
-		public: 
-			typedef typename  D::tick_t tick_t;
-			typedef typename  D::ns_t ns_t;
-					typedef D prf;
-		private:
-			tick_t tick_ = 0;
-		public: 
-			clock_ns_t(void){tick_ = D::tick();}
-			void tick(void){ tick_ = D::tick(); }
-			ns_t tock(void){ return D::tick2ns(D::tick() - tick_); }
-			static ns_t ns(void){
-				return D::tick2ns( D::tick());
-			}
-			static void delay_ns(ns_t _ns){
-				volatile tick_t begin = D::tick();
-				volatile tick_t period = D::ns2tick(_ns);
-				while(D::tick() - begin < period ) D::idle();
-			}
-			
-	};
-
-
 }
 #endif
 

@@ -28,6 +28,10 @@
 #define RING_SIZE_T unsigned int
 #endif
 
+#ifndef RING_ONE_DIRRECTION_PUT_GET
+#define RING_ONE_DIRRECTION_PUT_GET 0
+#endif
+
  // маска для индексов
 #define RING_SIZE (1 << RING_SIZE_BITS)
 
@@ -46,7 +50,7 @@ const RING_SIZE_T RING_PREFIX(size_) = RING_SIZE;
 #define BURST_STATIC_INLINE
 #endif
 
-BURST_STATIC_INLINE void RING_PREFIX(put_)(RING_DATA_T  _value)
+BURST_STATIC_INLINE void RING_PREFIX(put_)( RING_DATA_T  _value)
 {
 	RING_PREFIX(data)[ RING_PREFIX(writeCount) & RING_MASK] = _value;
 	RING_PREFIX(writeCount)++;
@@ -84,9 +88,9 @@ BURST_STATIC_INLINE void RING_PREFIX(clear_)()
 	RING_PREFIX(writeCount) = 0;
 }
 
-BURST_STATIC_INLINE void RING_PREFIX(buf_put_)(const RING_DATA_T * _buf, RING_SIZE_T _len){
+BURST_STATIC_INLINE void RING_PREFIX(buf_put_)(const RING_DATA_T  _buf[], RING_SIZE_T _len){
 	while( _len-- ){
-		RING_PREFIX(put_)(*_buf++);
+		RING_PREFIX(put_)((RING_DATA_T)*_buf++);
 	}
 }
 
@@ -117,7 +121,29 @@ BURST_STATIC_INLINE void RING_PREFIX(clear)()
 	RING_UNLOCK();
 }
 
+BURST_STATIC_INLINE burst_bool_t RING_PREFIX(try_put)(RING_DATA_T _buf){
+	RING_LOCK();
+	if( RING_PREFIX(count_)()>=RING_SIZE){
+		RING_UNLOCK();
+		return burst_false;
+	}else{
+		RING_PREFIX(put_)(_buf);
+		RING_UNLOCK();
+		return burst_true;
+	}
+}
 
+BURST_STATIC_INLINE burst_bool_t RING_PREFIX(try_get)(RING_DATA_T * _buf){
+	RING_LOCK();
+	if(RING_PREFIX(count_)()==0){
+		RING_UNLOCK();
+		return burst_false;
+	} else{
+		*_buf = RING_PREFIX(get_)();
+		RING_UNLOCK();
+		return burst_true;
+	}
+}
 
 
 BURST_STATIC_INLINE burst_bool_t RING_PREFIX(buf_put)(const RING_DATA_T * _buf, RING_SIZE_T _len){
@@ -127,7 +153,7 @@ BURST_STATIC_INLINE burst_bool_t RING_PREFIX(buf_put)(const RING_DATA_T * _buf, 
 		return burst_false;
 	}else{
 		while( _len-- ){
-			RING_PREFIX(put_)(*_buf++);
+			RING_PREFIX(put_)((RING_DATA_T)*_buf++);
 		}
 		RING_UNLOCK();
 		return burst_true;
@@ -139,7 +165,7 @@ BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(buf_get)(RING_DATA_T * _buf, RING_SI
 	RING_SIZE_T av;
 	RING_SIZE_T ret;
 	RING_LOCK();
-	av = RING_PREFIX(count)();
+	av = RING_PREFIX(count_)();
 	if(av>max_len){
 			av = max_len;
 	}
@@ -151,6 +177,7 @@ BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(buf_get)(RING_DATA_T * _buf, RING_SI
 	return ret;
 }
 
+#if RING_ONE_DIRRECTION_PUT_GET ==1
 BURST_STATIC_INLINE RING_DATA_T RING_PREFIX(get)()
 {
 	RING_DATA_T tmp;
@@ -166,6 +193,7 @@ BURST_STATIC_INLINE void RING_PREFIX(put)(RING_DATA_T  _value)
 	RING_PREFIX(put_)(_value);
 	RING_UNLOCK();
 }
+#endif
 
 // пуст ли буфер
 BURST_STATIC_INLINE burst_bool_t RING_PREFIX(available)()
@@ -193,5 +221,5 @@ BURST_STATIC_INLINE burst_bool_t RING_PREFIX(available)()
 #undef   RING_SIZE_T
 #undef   RING_SIZE
 #undef   RING_MASK
-
+#undef   RING_ONE_DIRRECTION_PUT_GET
 

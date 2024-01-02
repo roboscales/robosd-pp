@@ -46,7 +46,7 @@ typedef struct hall_s {
 	burst_signal_t delta_acc;
 	int true_diff;
 	int sector_prev;
-	unsigned int index;	
+	hall_pins_t pins;
 } hall_t;
 typedef hall_t * hall_p;
 

@@ -35,7 +35,7 @@ namespace robo {
 
 		template<typename T,int n> constexpr T epsilon = ::std::numeric_limits<T>::epsilon() * n; //n попугаев
 
-		template<typename T> constexpr T deg2rad = pi<T> / 180.;
+		template<typename T> constexpr T deg2rad = pi<T> / T(180.);
 		
 		template<typename T> constexpr T rad2deg = T(1.) / deg2rad<T>;
 		
@@ -567,10 +567,11 @@ namespace robo {
 				L.rotate();
 				return *this;
 			}
-			void load(cstr _path) {
-				L.load(_path);
-				r.load(_path);
+			bool load(cstr _path) {
+				ROBO_LBREAKN(L.load(_path,RT("L")));
+				ROBO_LBREAKN(r.load_raw(_path, RT("r")));
 				L.rotate();
+				return true;
 			}
 
 		};
@@ -1060,8 +1061,8 @@ namespace robo {
 
 			}
 			else {
-				_avc.yaw = atan2(_transform.yx, _transform.xx );
-				_avc.roll = atan2(_transform.zy, _transform.zz);
+			_avc.yaw = atan2(_transform.yx, _transform.xx);
+			_avc.roll = atan2(_transform.zy, _transform.zz);
 			}
 			return _avc;
 		};
@@ -1104,9 +1105,9 @@ namespace robo {
 			constexpr matrix_axis_t(const matrix_axis_t& _src)
 				: transform_(_src.transform_)
 				, offset(_src.offset) {}
-			constexpr matrix_axis_t(const matrix & _L)
+			constexpr matrix_axis_t(const matrix& _L)
 				: transform_(_L) {}
-			constexpr matrix_axis_t(const vector3_t<T>& _r) 
+			constexpr matrix_axis_t(const vector3_t<T>& _r)
 				: transform_(eye<T, 3>()), offset(_r) {}
 			constexpr matrix_axis_t(const matrix& _L, const vector3_t<T>& _r)
 				: transform_(_L), offset(_r) {}
@@ -1146,11 +1147,36 @@ namespace robo {
 				begin_update();
 				return *this;
 			}
-			void load(cstr _path) {
-				transform_.load(_path);
-				offset.load(_path);
+			enum class load_format { matrix = 0, quaternion =1, avionic = 2};
+			bool load(cstr _path) {
+				load_format format = load_format::matrix;
+				ini::try_load(_path, RT("format"), (int&)format);
+				switch (format) {
+				case load_format::matrix:
+				{
+					ROBO_LBREAKN(transform_.load_raw(_path, RT("T")));
+					break;
+				}
+				case load_format::quaternion:
+				{
+					quaternion_t<T> q;
+					ROBO_LBREAKN(q.load(_path, RT("L")));
+					transform_ = q.A();
+					break;
+				}
+				case load_format::avionic:
+				{
+					avionic_t<T> a;
+					ROBO_LBREAKN(a.load_raw(_path, RT("A")));
+					a >> transform_;
+					break;
+				}
+				}
+				offset.load_raw(_path, RT("r"));
 				begin_update();
+				return true;
 			}
+
 			void begin_update(void) {
 				inverted_exists_ = false; 
 				dirrect_exists_ = false;
@@ -1507,6 +1533,9 @@ namespace robo {
 			template<class S, typename ... Args > class payload_t : public link_s, public S {
 			public:
 				virtual void do_move(const T& _dest) {}
+				virtual void on_set_tool(void) {
+					link_s::native = link_s::local = S::tool_position();
+				}
 				payload_t(const matrix_axis_t<T>& _s, series_s & _series, Args... args) :link_s(_s, _series, link_s::types::none), S(args...) {}
 			};
 		};

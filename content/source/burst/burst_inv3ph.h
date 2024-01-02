@@ -20,6 +20,7 @@ typedef struct dq_s {
 
 typedef struct inv3ph_config_s{
 	burst_long_range_t native;
+	burst_long_signal_t pwm_force;
 } inv3ph_config_t;
 typedef inv3ph_config_t * inv3ph_config_p;
 
@@ -27,6 +28,7 @@ typedef inv3ph_config_t * inv3ph_config_p;
 #define INV3PH_CONFIG_(a)\
 {\
 	RANGE_CONFIG(a##_NATIVE_RANGE)\
+	,a##_PWM_FORCE\
 }
 
 typedef struct inv3ph_s{
@@ -42,6 +44,7 @@ typedef struct inv3ph_s{
 	burst_signal_t discret_hi;
 	burst_signal_t discret_delta_lo;
 	burst_signal_t discret_delta_hi;
+	burst_long_signal_t pwm_force;
 } inv3ph_t;
 typedef inv3ph_t * inv3ph_p;
 void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _lateral, burst_signal_t _angle);
@@ -49,7 +52,10 @@ void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config);
 
 typedef struct current3ph_config_s{
 	int adc_index[3];
-	burst_long_signal_t deform[9];
+	struct{
+		burst_long_signal_t matrix[9];
+		burst_bool_t enable;
+	} deform;
 } current3ph_config_t;
 typedef current3ph_config_t * current3ph_config_p;
 
@@ -58,7 +64,10 @@ typedef current3ph_config_t * current3ph_config_p;
 #define CURRENT3PH_CONFIG_(a)\
 {\
 	a##_ADC_INDEX\
-	, a##_DEFORM\
+	,{\
+		a##_DEFORM\
+		,a##_DEFORM_ENABLE\
+	}\
 }
 
 typedef struct current3ph_s{

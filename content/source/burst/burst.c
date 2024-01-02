@@ -10,6 +10,90 @@ struct burst_s;
 typedef struct burst_s burst_t;
 typedef burst_t * burst_p;
 
+#ifndef BURST_CORE_DEBUG
+#define BURST_CORE_DEBUG 1
+#endif
+
+#if BURST_CORE_DEBUG ==1
+#define  BURST_CORE_ALARM( x ) burst_alarm( (x) )
+#else
+#define  BURST_CORE_ALARM(x)
+#endif
+
+
+#if BURST_QUEUE_ENABLED == 1
+#ifndef BURST_FRONT_QUEUE_SIZE_BITS
+#define BURST_FRONT_QUEUE_SIZE_BITS 2
+#endif
+#ifndef BURST_BACKEND_QUEUE_SIZE_BITS
+#define BURST_BACKEND_QUEUE_SIZE_BITS 2
+#endif
+
+#define RING_PREFIX_NAME burst_front_queue
+#define RING_SIZE_BITS BURST_FRONT_QUEUE_SIZE_BITS
+#define RING_LOCK() uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
+#define RING_DATA_T bust_request_t *
+#include "burst/burst_ring.inc.h"
+
+#define RING_PREFIX_NAME burst_backend_queue
+#define RING_SIZE_BITS BURST_BACKEND_QUEUE_SIZE_BITS
+#define RING_LOCK() uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
+#define RING_DATA_T bust_request_t *
+#include "burst/burst_ring.inc.h"
+
+void bust_post(bust_request_t * _request){
+	_request->status = bust_request_status_query;
+	if(burst_is_frontend()){
+		BURST_CORE_ALARM(burst_backend_queue_try_put(_request));
+	} else{
+		BURST_CORE_ALARM(burst_front_queue_try_put(_request));
+	}
+}
+
+void bust_front_request_perform(void){	
+	bust_request_t * r;
+	if (burst_front_queue_try_get(&r)== burst_true ){		
+		BURST_CORE_ALARM(r);
+		if(r->status == bust_request_status_query){
+			BURST_CORE_ALARM(r->query);
+			r->query(r);
+			if(r->confirm){
+				r->status = bust_request_status_confirm;
+				BURST_CORE_ALARM(burst_backend_queue_try_put(r))
+			} else{
+				r->status = bust_request_status_none;
+			}
+		}  else if(r->status == bust_request_status_confirm){
+			r->confirm(r);
+			r->status = bust_request_status_none;
+		}
+	}
+}
+void bust_backend_request_perform(void){	
+	bust_request_t * r;
+	if (burst_backend_queue_try_get(&r)== burst_true ){		
+		BURST_CORE_ALARM(r);
+		if(r->status == bust_request_status_query){
+			BURST_CORE_ALARM(r->query);
+			r->query(r);
+			if(r->confirm){
+				r->status = bust_request_status_confirm;
+				BURST_CORE_ALARM(burst_front_queue_try_put(r))
+			} else{
+				r->status = bust_request_status_none;
+			}
+		}  else if(r->status == bust_request_status_confirm){
+			r->confirm(r);
+			r->status = bust_request_status_none;
+		}
+	}
+}
+#endif
+
+
+
 
 #ifndef BURST_DEV_COUNT
 #define BURST_DEV_COUNT 0
@@ -23,6 +107,7 @@ struct burst_s{
 	#endif
 	burst_dev_ref_p * devs_end;
 	int dev_count;
+	uint32_t panics;
 };
 
 burst_t burst = BURST_EMPTY_STRUCT;
@@ -59,6 +144,35 @@ void burst_dev_runC(burst_dev_ref_p _ref){
 typedef enum { burst_core_unknown=0,burst_core_backend=1,burst_core_frontend=2} burst_core_status;
 burst_core_status burst_core_status_ = burst_core_unknown;
 
+
+#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+void burst_master_alive(burst_dev_ref_p _ref){
+	if(_ref->config->alive_period_us>0){
+		_ref->master_alive_tm = burst_time_us();
+		_ref->master_exists = burst_true;
+	}
+}
+
+void burst_master_alive_check(burst_dev_ref_p _ref){
+	if(_ref->master_exists){
+		if(  burst_time_us() - _ref->master_alive_tm > _ref->config->alive_period_us) {
+			_ref->master_exists = burst_false;
+			burst_dev_raise_panic(_ref,burst_panic_dev_master_lost_bit);
+		}
+	}
+}
+#endif
+
+void burst_dev_feedback_query (bust_request_t * _req){
+	burst_dev_request_t * r = (burst_dev_request_t *)_req;
+	r->owner->update_feedback.on_run(r->owner);
+}
+
+void burst_dev_request_confirm (bust_request_t * _req){
+	burst_dev_request_t * r = (burst_dev_request_t *)_req;
+	r->on_complete(r->owner);
+}
+
 void burst_begin(void){
 	burst_sw_begin();
 	burst_dev_ref_p * p ;	
@@ -73,11 +187,24 @@ void burst_begin(void){
 		burst_alarm((*p)->config);
 		burst_alarm((*p)->action);
 		burst_alarm((*p)->feedback);
+		burst_alarm((*p)->perform_panic);		
+		#if BURST_PROTECTION_ENABLED == 1
+		burst_alarm((*p)->realtime_protection);
+		burst_alarm((*p)->frontend_protection);
+		#endif
+
 		if((*p)->mode_count>0){
 			burst_alarm((*p)->modes);
 		}	
+		#if BURST_QUEUE_ENABLED == 1
+		(*p)->update_feedback.request.owner = *p;
+		(*p)->update_feedback.request.ref.status = bust_request_status_none;
+		(*p)->update_feedback.request.ref.query =  burst_dev_feedback_query;
+		(*p)->update_feedback.request.ref.confirm =  burst_dev_request_confirm;
+		#endif
 		(*p)->actual_mode = &burst_idle_mode;		
 		(*p)->modes_end = (*p)->modes+(*p)->mode_count;
+		
 		for(	burst_dev_mode_p  * pm = (*p)->modes; pm!=(*p)->modes_end; ++pm) {
 			burst_dev_mode_p m = *pm;
 			if(m){
@@ -123,12 +250,53 @@ void burst_realtime_loop(void){
 		for( p= burst.devs; p!=burst.devs_end;p++){
 			(*p)->realtime_loop(*p);
 		}
-		burst_sw_realtime_loop();
 		burst_hw_realtime_loop();
+		burst_sw_realtime_loop();
+		#if BURST_PROTECTION_ENABLED == 1
+		for( p= burst.devs; p!=burst.devs_end;p++){
+			(*p)->realtime_protection(*p);
+			if( (*p) -> panic){
+				(*p)->perform_panic(*p);				
+			}
+		}
+		#endif
 		debug_tp_off(VERB_REALTIME);
 	}
 }
+burst_config_t burst_config_dummy = BURST_CONFIG();
+burst_config_t * burst_config = &burst_config_dummy;
 
+#if BURST_PROTECTION_ENABLED == 1
+void burst_dev_realtime_protection(burst_dev_ref_p _ref){
+	#if BURST_PANICS_BOARD_VOLTAGE_ENABLED 
+	int burst_board_voltage = burst_board_voltage_get_pp();
+	if( burst_board_voltage >= burst_config->panics.voltage_pp.overhi){
+		burst_board_raise_panic(burst_panic_board_overvoltage_bit);
+	} else if (burst_board_voltage<=burst_config->panics.voltage_pp.ultralo){
+		burst_board_raise_panic(burst_panic_board_lovoltage);
+	}
+	#endif
+
+	#if BURST_PANICS_BOARD_CURRENT_ENABLED 
+	int burst_board_current = burst_board_current_get_pp();
+	if( burst_board_current >= burst_config->panics.overcurrent_pp){
+		burst_board_raise_panic(burst_panic_board_overcurrent_bit);
+	} else if (burst_board_current<=burst_config->panics.locurrent_pp){
+		burst_board_raise_panic(burst_panic_board_locurrent);
+	}
+	#endif
+}
+void burst_dev_frontend_protection(burst_dev_ref_p _ref){
+	#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
+	int burst_board_temper = burst_board_temper_get_pp();
+	if( burst_board_temper >= burst_config->panics.temp_pp.overhi){
+		burst_board_raise_panic(burst_panic_board_overtemp_bit);
+	} else if (burst_board_temper<=burst_config->panics.temp_pp.ultralo){
+		burst_board_raise_panic(burst_panic_board_lotemp_bit);
+	}
+	#endif
+}
+#endif
 
 void burst_dev_switch_to_idle(burst_dev_ref_p _ref){
 	_ref->actual_mode = &burst_idle_mode;
@@ -250,7 +418,9 @@ BURST_SLOT_D(15)
 #endif
 
 burst_slot_f burst_slots[BURST_SLOT_COUNT]={
+	#if BURST_SLOT_COUNT > 0
 	BURST_SLOT(0)
+	#endif
 	#if BURST_SLOT_COUNT > 1
 	,BURST_SLOT(1)
 	#endif
@@ -314,15 +484,20 @@ burst_slot_f burst_slots[BURST_SLOT_COUNT]={
 burst_slot_f * burst_slot = burst_slots;
 burst_slot_f * burst_slots_end = burst_slots+BURST_SLOT_COUNT;
 
+
 void burst_backend_loop(void){
+	//todo!!! govnocod
 	if(burst_started_){
 		debug_tp_on(VERB_BACKEND);
 		#if BURST_TIMER_ENABLED == 1
 		burst_timer_poll();
 		#endif
+		#if BURST_SLOT_COUNT > 0
 		(*burst_slot)();
 		burst_slot++;
-		if(burst_slot==burst_slots_end) burst_slot = burst_slots;
+		if(burst_slot==burst_slots_end) 
+			burst_slot = burst_slots;
+		#endif
 		{
 			burst_dev_ref_p * p ;
 			for( p= burst.devs; p!=burst.devs_end;p++){
@@ -331,14 +506,29 @@ void burst_backend_loop(void){
 		}
 		burst_hw_backend_loop();
 		burst_sw_backend_loop();
+		#if BURST_QUEUE_ENABLED == 1
+		bust_backend_request_perform();
+		#endif
 		debug_tp_off(VERB_BACKEND);
 		debug_tp_off(VERB_LOOP);
+
 		burst_comeback();
 	}
+
 }
+
+
 
 void burst_frontend_loop(void){
 	debug_tp_on(VERB_FRONTEND);
+	#if BURST_PROTECTION_ENABLED == 1
+	{
+		burst_dev_ref_p * p ;
+		for( p= burst.devs; p!=burst.devs_end;p++){
+			(*p)->frontend_protection(*p);
+		}
+	}
+	#endif
 	#if BURST_TIMER_ENABLED == 1
 	burst_timer_poll();
 	#endif
@@ -348,15 +538,21 @@ void burst_frontend_loop(void){
 		burst_dev_ref_p * p ;
 		for( p= burst.devs; p!=burst.devs_end;p++){
 			burst_dev_ref_p s = *p;
+			#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+			burst_master_alive_check( s );
+			#endif
 			s->frontend_loop(s);
 			s->actual_mode->frontend_loop(s);
 		}
 	}
-	debug_tp_off(VERB_FRONTEND);
 	
 	#if BURST_BUTTON_ENABLED == 1
 	burst_btn_poll();
 	#endif
+	#if BURST_QUEUE_ENABLED == 1
+	bust_front_request_perform();
+	#endif
+	debug_tp_off(VERB_FRONTEND);
 }
 
 
@@ -495,15 +691,6 @@ BURST_WEAK  void burst_hw_reboot(void){}
 burst_bool_t burst_is_backend(void){
 	return (burst_bool_t) (burst_core_status_== burst_core_backend);
 }
-#ifndef BURST_CORE_DEBUG
-#define BURST_CORE_DEBUG 1
-#endif
-
-#if BURST_CORE_DEBUG ==1
-#define  BURST_CORE_ALARM( x ) burst_alarm( (x) )
-#else
-#define  BURST_CORE_ALARM(x)
-#endif
 
 void burst_fall(void){
 	BURST_CORE_ALARM( burst_is_frontend() );
@@ -593,3 +780,58 @@ void burst_critical_leave(uint32_t _context){
 #define CLCH_NAME burst_tp
 #include "burst/cliche/tp.h"
 #endif
+
+void burst_event_perform_panic(burst_dev_ref_p _dev){	
+	if(_dev->mode!=burst_dev_mode_idle){
+		burst_dev_mode_p actual_mode = _dev->actual_mode;
+		if (actual_mode) {
+			actual_mode->stop(_dev);
+		}
+		
+		burst_dev_switch_to_idle(_dev);
+	}
+	_dev->action->mode = burst_dev_mode_idle;
+}
+
+void burst_board_raise_panic(uint32_t _flag){
+	uint32_t mask = ( 1<< _flag );
+	if( (burst.panics & mask)  == 0){
+		burst.panics |= mask;
+	}
+	burst_dev_ref_p * p ;
+	for( p= burst.devs; p!=burst.devs_end;p++){
+		burst_dev_raise_panic(*p, burst_panic_dev_board_bit);
+	}
+	
+}
+
+void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){
+	uint32_t mask = ( 1<< _flag );
+	if( (_dev->panic & mask)  == 0){
+		_dev->panic |= mask;
+		burst_event_perform_panic(_dev);
+	}
+}
+
+void burst_config_set( burst_config_t * _config){
+	 burst_config = _config;
+}
+
+
+void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complete){
+	if(_ref->update_feedback.request.ref.status == bust_request_status_none){
+		#if BURST_QUEUE_ENABLED == 0
+		if(burst_is_frontend()){
+			_ref->update_feedback.on_run(_ref);
+			if(_ref->update_feedback.on_complete){
+				_ref->update_feedback.on_complete(_ref);
+			}
+		} else{
+			_ref->update_feedback.flag.query = burst_true;
+		}
+		#else
+		_ref->update_feedback.request.on_complete = _on_complete;
+		bust_post(&(_ref->update_feedback.request.ref));
+		#endif
+	}
+}

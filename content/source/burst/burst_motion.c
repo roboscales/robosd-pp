@@ -21,8 +21,8 @@ void burst_motion_run_(burst_motion_p _motion){
 	
 		#if BURST_MOTION_VIRTUAL_ELASTIC_ENABLED == 1
 		if (reference > reference_max) {
-				mexo_long_signal_t tmp = (reference_max - reference);
-				tmp = MEXO_RIGHT_SHIFT(tmp, s->limitGainPresc);
+				burst_long_signal_t tmp = (reference_max - reference);
+				tmp = BURST_RIGHT_SHIFT(tmp, s->limitGainPresc);
 				tmp *= (s->limitGain);
 				
 				if (tmp < 0) {
@@ -34,8 +34,8 @@ void burst_motion_run_(burst_motion_p _motion){
 		}
 		else {
 				if (reference < reference_min) {
-						mexo_long_signal_t tmp = (reference_min - reference);
-						tmp = MEXO_RIGHT_SHIFT(tmp, s->limitGainPresc);
+						burst_long_signal_t tmp = (reference_min - reference);
+						tmp = BURST_RIGHT_SHIFT(tmp, s->limitGainPresc);
 						tmp *= (s->limitGain);
 						if (tmp > 0) {
 								tmp = 0;

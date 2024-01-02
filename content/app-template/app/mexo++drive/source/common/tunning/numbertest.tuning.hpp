@@ -3,5 +3,5 @@
 #else
 #error error of using numbertest.tunning.hpp
 #endif
-#define MEXO_DRIVE_NUMBER_TEST_ENABLED 1
-#define ROBO_APP_MEXO_DEBUG_TP1_ENABLED 1
+#define MPPD_DRIVE_NUMBER_TEST_ENABLED 1
+#define MPPD_MEXO_TP1_ENABLED 1

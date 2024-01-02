@@ -2,22 +2,16 @@
 #define mexopp_drive_hpp
 #include "mexo++drive.common.hpp"
 #include "mexo++/mexo.hpp"
+#include "prf/clock_ns.hpp"
 using slot = ::mexo::machine::slot;
 namespace mppd{
-	namespace periphery{
+	namespace prf{
 		struct clock{
-			typedef uint32_t ns_t;
-			typedef uint32_t us_t;
-			typedef uint32_t tick_t;
-			static tick_t tick(void);
+			static uint32_t tick(void);
 			static void idle(void);
-			static tick_t ns2tick(ns_t _ns);
-			static ns_t tick2ns(tick_t _tick);
-			static tick_t us2tick(us_t _ns);
-			static us_t tick2us(tick_t _tick);
+			constexpr  static uint32_t clock_hz(){ return MPPD_CORE_CLOCK_HZ; }
 		};
 	}
-	typedef ::mexo::clock_us_t<periphery::clock> clock;
-
+	typedef ::robo::prf::clock_ns_t<::robo::prf::clock32_drv,prf::clock> clock;
 }
 #endif

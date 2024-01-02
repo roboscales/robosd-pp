@@ -7,8 +7,6 @@
 #endif
 
 #if BURST_TIMER_ENABLED == 1
-typedef unsigned int burst_time_us_t;
-typedef unsigned int burst_time_ms_t;
 
 typedef struct burst_timer_s {
 	burst_time_us_t last;
@@ -43,6 +41,13 @@ burst_timer_t  S={ \
 	, S##_start \
 	, S##_stop \
 };
+
+typedef struct burst_packet_s {
+	burst_time_us_t timeout;
+	burst_bool_t result;
+	uint8_t repeat_count;
+} burst_packet_t;
+typedef burst_packet_t * burst_packet_p;
 
 #endif
 #endif

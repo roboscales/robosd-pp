@@ -1,4 +1,5 @@
 #include "burst/modules/acwc.h"
+#include "burst/burst_timer.h"
 
 void acwc_mode_voltage_cl_applay_action(burst_dev_ref_p _ref){
 	acwc_action_p action =(acwc_action_p)(_ref->action);
@@ -224,8 +225,8 @@ void acwc_mode_speed_start(burst_dev_ref_p _ref){
 		, &acwc->current.req
 		, 0
 		, &acwc->current.dir->satstate
-		,	&actuator->voltage.range.hi
-		, &actuator->voltage.range.lo
+		,	&acwc->current.range.hi
+		, &acwc->current.range.lo
 		, 0
 		, 0
 		, 0
@@ -366,7 +367,10 @@ void acwc_begin (
 		, _mode_count
 		, _modes	
 	);
-
+		#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1 && 	BURST_PROTECTION_ENABLED == 1
+		burst_alarm(_acwc->current.magnitude.get);
+		#endif
+		
 		burst_limiter_config_t  cfg = {
 		_hi
 		,_lo
@@ -403,3 +407,55 @@ void acwc_event_update_feedback(burst_dev_ref_p _dev){
 	acwc_p acwc = (acwc_p)(_dev);
 	fb->current = acwc->current.flt->value;
 }
+
+#if BURST_PROTECTION_ENABLED == 1
+
+void burst_acwc_realtime_protection(burst_dev_ref_p _ref){
+	burst_actuator_realtime_protection(_ref);
+
+	#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+
+	acwc_p a = (acwc_p)_ref;
+	acwc_config_p cfg =(acwc_config_p)(_ref->config);
+	burst_signal_t magnitude = a->current.magnitude.get();
+	burst_signal_t delta = magnitude - a->current.magnitude.actual;
+	burst_time_us_t now = burst_time_us();
+	a->current.magnitude.delta = delta;
+	a->current.magnitude.actual = magnitude;
+	
+	if( 
+		magnitude > cfg->panic.overcurrent_pp
+		|| (magnitude + delta) > cfg->panic.overcurrent_pp  
+	){
+		burst_dev_raise_panic(&(a->ac.ref),burst_panic_acwc_overcurrent_bit);
+	} else {
+		if( 
+			magnitude >  cfg->panic.overpower_pp
+		){
+				if( now -  a->current.magnitude.us > cfg->panic.overpower_tm_us){
+					burst_dev_raise_panic(&(a->ac.ref),burst_panic_acwc_overcurrent_bit);
+					a->current.magnitude.us = 0;
+				}
+		} else{
+			a->current.magnitude.us = now;
+		}
+	}
+	#endif
+	
+}
+void burst_acwc_frontend_protection(burst_dev_ref_p _ref){
+	burst_actuator_frontend_protection(_ref);
+}
+
+#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+burst_signal_t burst_acwc_magnitude_get(acwc_p _acwc){
+	burst_signal_t ret = *_acwc->current.raw;
+	if(ret) ret = -ret;
+	return ret;
+}
+#endif
+
+
+#endif
+
+

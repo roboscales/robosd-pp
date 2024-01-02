@@ -21,3 +21,7 @@ NIKITIN_CREATE(c_cross_flt)
 BURST_MOTION_CREATE(motion)
 
 BURST_POSITIONER_CREATE(positioner)
+
+//swt
+#define CLCH_NAME swt
+#include "burst/cliche/swt.h"

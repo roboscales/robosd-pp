@@ -28,8 +28,9 @@ BURST_STATIC_INLINE burst_long_signal_t sum_x_ya_(burst_long_signal_t x, burst_l
 void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config) {
 	_inverter->discret_hi = _config->native.hi;
 	_inverter->discret_lo = _config->native.lo;
+	_inverter->pwm_force = _config->pwm_force;
 	burst_long_signal_t delta = _config->native.hi - _config->native.lo;
-	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo);
+	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo );
 	gain <<= 16;
 	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //округление
 	gain /= ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN);
@@ -121,16 +122,52 @@ void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _later
 	pwmA += mult_(pwmA, scale);
 	pwmB += mult_(pwmB, scale);
 	pwmC += mult_(pwmC, scale);
+	
+	burst_long_signal_t pwm_force = _inverter->pwm_force;
+	if( pwm_force > 0){
+		burst_long_signal_t lo = BURST_SIGNAL_MIN + pwm_force;
+		burst_long_signal_t hi = BURST_SIGNAL_MAX - pwm_force;
+		
+		BURST_SATURATE(pwmA,lo,hi);
+		BURST_SATURATE(pwmB,lo,hi);
+		BURST_SATURATE(pwmC,lo,hi);
+		
+		_inverter->pwm.A = (burst_signal_t)pwmA;
+		_inverter->pwm.B = (burst_signal_t)pwmB;
+		_inverter->pwm.C = (burst_signal_t)pwmC;
 
-	BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-	_inverter->pwm.A = (burst_signal_t)pwmA;
-	_inverter->pwm.B = (burst_signal_t)pwmB;
-	_inverter->pwm.C = (burst_signal_t)pwmC;
-	_inverter->duty.A = inv3ph_scale_(_inverter,_inverter->pwm.A);
-	_inverter->duty.B = inv3ph_scale_(_inverter,_inverter->pwm.B);
-	_inverter->duty.C = inv3ph_scale_(_inverter,_inverter->pwm.C);
+		if(pwmA>0){
+			pwmA+=pwm_force;
+		}
+		if(pwmB>0){
+			pwmB+=pwm_force;
+		}
+		if(pwmC>0){
+			pwmC+=pwm_force;
+		}
+		
+		if(pwmA<0){
+			pwmA -= pwm_force;
+		}
+		if(pwmB<0){
+			pwmB -= pwm_force;
+		}
+		if(pwmC<0){
+			pwmC -= pwm_force;
+		}		
+	} else{
+		BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		
+		_inverter->pwm.A = (burst_signal_t)pwmA;
+		_inverter->pwm.B = (burst_signal_t)pwmB;
+		_inverter->pwm.C = (burst_signal_t)pwmC;
+	}
+	
+	_inverter->duty.A = inv3ph_scale_(_inverter,pwmA);
+	_inverter->duty.B = inv3ph_scale_(_inverter,pwmB);
+	_inverter->duty.C = inv3ph_scale_(_inverter,pwmC);
 }
 
 void current3ph_begin(current3ph_p _sensor, current3ph_config_p _config, inv3ph_p _inverter, burst_signal_t * _raw){
@@ -138,22 +175,33 @@ void current3ph_begin(current3ph_p _sensor, current3ph_config_p _config, inv3ph_
 	_sensor->raw.A = _raw+_config->adc_index[0];
 	_sensor->raw.B = _raw+_config->adc_index[1];
 	_sensor->raw.C = _raw+_config->adc_index[2];
-	_sensor->deform = _config->deform;
+	if(_config->deform.enable){
+		_sensor->deform = _config->deform.matrix;
+	} else {
+		_sensor->deform = 0;
+	}
 }
 void current3ph_run(current3ph_p _sensor){
-	burst_signal_t A = *_sensor->raw.A;
-	burst_signal_t B = *_sensor->raw.B;
-	burst_signal_t C = *_sensor->raw.C;
 	burst_long_signal_t * R  = _sensor->deform;
-	
-	burst_long_signal_t a = (burst_signal_t)(( R[0]*A + R[1]*B + R[2]*C  )>>15);
-	burst_long_signal_t b =  (burst_signal_t)(( R[3]*A + R[4]*B + R[5]*C  )>>15);
-	burst_long_signal_t c = (burst_signal_t)(( R[6]*A + R[7]*B + R[8]*C  )>>15);
-	burst_long_signal_t ofs = ((a+b+c)*BURST_SIGNAL_T(0.33333333))>>15;
-	a-=ofs;
-	b-=ofs;
-	c-=ofs;
-
+	burst_long_signal_t a;
+	burst_long_signal_t b;
+	burst_long_signal_t c;
+	if(R){	
+		burst_signal_t A = *_sensor->raw.A;
+		burst_signal_t B = *_sensor->raw.B;
+		burst_signal_t C = *_sensor->raw.C;
+		a = (burst_signal_t)(( R[0]*A + R[1]*B + R[2]*C  )>>15);
+		b =  (burst_signal_t)(( R[3]*A + R[4]*B + R[5]*C  )>>15);
+		c = (burst_signal_t)(( R[6]*A + R[7]*B + R[8]*C  )>>15);
+		burst_long_signal_t ofs = ((a+b+c)*BURST_SIGNAL_T(0.33333333))>>15;
+		a-=ofs;
+		b-=ofs;
+		c-=ofs;
+	} else {
+		a = *_sensor->raw.A;
+		b = *_sensor->raw.B;
+		c = *_sensor->raw.C;
+	}
 	const burst_signal_t one_div_sqrt3 = BURST_SIGNAL_T(0.5773502691896258);
 	burst_long_signal_t beta = ( ( b*2 + a ) * one_div_sqrt3)>>15;
 	burst_signal_t sn = _sensor->inverter->rot.sn;

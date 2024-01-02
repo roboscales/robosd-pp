@@ -64,7 +64,7 @@ void  PREFIX(phy_read_)(uint16_t * _reg ){
 }
 
 void PREFIX(phy_write_)(uint16_t  _deseired, uint16_t * _actual){
-	int rpt =3;
+	int rpt =10;
 	do {
 
 		uint16_t dummy=0xFFF1;

@@ -204,3 +204,4 @@ burst_signal_t burst_range_apply(burst_signal_t _src, burst_range_p _lim){
 		return _src;
 	}
 }
+
