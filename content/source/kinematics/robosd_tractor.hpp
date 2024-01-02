@@ -2,6 +2,7 @@
 #define rovosd_tractor_hpp
 
 #include <cmath>
+#include <algorithm>
 #include "core/robosd_common.hpp"
 #include "core/robosd_list.hpp"
 #include "core/robosd_span.hpp"
@@ -608,20 +609,20 @@ namespace robo {
 			using vector3 = vector3_t<T>;
 			class series;
 			class body;
-			class actuator;
-			class joint;
+			class actuator_s;
+			class joint_s;
 			class point;
 			class robot;
 
 			class point : public tree::item {
-				friend class joint;
+				friend class joint_s;
 				friend class body;
-				friend class actuator;
+				friend class actuator_s;
 			public:
 				typedef ::robo::list::unsorted<point> list;
 				typedef typename list::ref ref;
 			private:
-				point * remote_ = nullptr;
+				point* remote_ = nullptr;
 				ref ref_;
 				void assign_(point& _src) {
 					local = _src.local;
@@ -636,7 +637,7 @@ namespace robo {
 			protected:
 				bool manual_arrange = false;
 				virtual bool do_load(cstr _path) {
-					if ( name != string(RT("ct")) ) {
+					if (name != string(RT("ct"))) {
 						ROBO_LBREAKN(local.L.load(_path, RT("local.L")));
 						ROBO_LBREAKN(local.r.load_raw(_path, RT("local.r")));
 					}
@@ -644,17 +645,17 @@ namespace robo {
 				}
 			};
 
-			class joint : public tree::item {
+			class joint_s : public tree::item {
 				friend class point;
 				friend class body;
 			public:
-				typedef ::robo::list::unsorted<joint> list;
+				typedef ::robo::list::unsorted<joint_s> list;
 				typedef typename list::ref ref;
 			private:
 				point& from_;
 				point& to_;
 				ref ref_;
-				void assign_(joint& _src) {
+				void assign_(joint_s& _src) {
 					deform = _src.deform;
 					ddeform = _src.ddeform;
 					guk_line = _src.guk_line;
@@ -663,15 +664,15 @@ namespace robo {
 					desep_cicle = _src.desep_cicle;
 				}
 			public:
-				body& body_ref() { return from_. tree::item:: template branch<body>(); };
+				body& body_ref() { return from_.tree::item:: template branch<body>(); };
 				axis deform;
 				axis ddeform;
 				vector3 guk_line;
 				vector3 desep_line;
 				vector3 guk_cicle;
 				vector3 desep_cicle;
-				joint(point& _from, point& _to);
-				~joint(void);
+				joint_s(point& _from, point& _to);
+				~joint_s(void);
 			protected:
 				virtual bool do_load(cstr _path) {
 					ROBO_LBREAKN(guk_line.load_raw(_path, RT("guk_line")));
@@ -683,28 +684,28 @@ namespace robo {
 			};
 
 			class body : public tree::item {
-				friend class actuator;
+				friend class actuator_s;
 				friend class point;
-				friend class joint;
-				friend class link;
+				friend class joint_s;
+				friend class link_s;
 				friend class series;
 			public:
 				typedef ::robo::list::unsorted<body> list;
 				typedef typename list::ref ref;
 			private:
 				typename point::list points_;
-				typename joint::list joints_;
+				typename joint_s::list joints_;
 				ref ref_;
 				void arrange_(void) {
-					for (typename point::list::ref  * r = points_.first()->next(); r; r = r->next()) {
+					for (typename point::list::ref* r = points_.first()->next(); r; r = r->next()) {
 						point& pt = r->owner();
 						if (!pt.manual_arrange) {
 							pt.base = ct.base * pt.local;
 						}
 					}
 				}
-				void assign_(body & _src) {
-					
+				void assign_(body& _src) {
+
 					{
 						typename point::list::ref* d = points_.first();
 						typename point::list::ref* s = _src.points_.first();
@@ -712,10 +713,10 @@ namespace robo {
 							d->owner().assign_(s->owner());
 						}
 					}
-					
+
 					{
-						typename joint::list::ref* d = joints_.first();
-						typename joint::list::ref* s = _src.joints_.first();
+						typename joint_s::list::ref* d = joints_.first();
+						typename joint_s::list::ref* s = _src.joints_.first();
 						for (; d; d = d->next(), s = s->next()) {
 							d->owner().assign_(s->owner());
 						}
@@ -727,69 +728,155 @@ namespace robo {
 				series& series_ref() { return tree::item:: template branch<series>(); };
 				point ct;
 				T mass = T(1);
-				vector3 inertion = {T(1),T(1) ,T(1) };
+				vector3 inertion = { T(1),T(1) ,T(1) };
 				body(cstr _name, series& _series);
 			};
 
-			class actuator: public point {
+			class actuator_s : public point {
 				friend class body;
 				friend class series;
 			public:
-				typedef ::robo::list::unsorted<actuator> list;
+				typedef ::robo::list::unsorted<actuator_s> list;
 				typedef typename list::ref ref;
+				virtual void rotate_rd(const T& _angle) = 0;
+				void rotate_gr(const T& _angle) {
+					rotate_rd(_angle * deg2rad<T>);
+				};
+				actuator_s(cstr _name, body& _body);
+
+				
+
+				virtual T rot_projection(const vector3 & R) = 0;/*
+				{
+					return const_cast<vector3<T>&>(R).z();
+				};*/
+
+				virtual T ro2(const vector3 & R)=0;/*
+				{
+					T x = const_cast<vector3<T>&>(R).x();
+					T y = const_cast<vector3<T>&>(R).y();
+					return x * x + y * y;
+				};*/
+
+				T inertion(const vector3& R, const T& mass) {
+					vector3 tmp = R/point::base ;
+					return ro2(tmp)/1000000. * mass;
+				}
+				T torque(const vector3 & R, const vector3 & F) {
+					vector3 tmp = R- point::base.r;
+					tmp.mult(F);
+					vector3 tq = tmp / point::base.L;
+					return rot_projection(tq)/1000.;
+				}
+				T mgtorque(const vector3 & R, const T& P) {
+					vector3 F({ T(0.), T(0.), P });
+					return torque(R, F);
+				}
+
+			protected:
+				axis position;
 			private:
 				ref ref_;
-				axis position_;
 				void arrange_(void) {
 					point::base = point::body_ref().ct.base * point::local;
-					axis S = point::base * position_;
-					point * rm = point::remote_;
+					axis S = point::base * position;
+					point* rm = point::remote_;
 					S = S / rm->local;
 					rm->body_ref().ct.base = S;
 				}
-				void assign_(const actuator& _src) {
-					position_ = _src.position_;
+				void assign_(const actuator_s& _src) {
+					position = _src.position_;
 				}
-			public:
-				void rotate_rd(T _angle) {
-					position_.L.w = cos(_angle / 2);
-					position_.L.z = sin(_angle / 2);
-					position_.L.rotate();
-				}
-				void rotate_gr(T _angle) {
-					_angle *= deg2rad<T>;
-					position_.L.w = cos(_angle / 2);
-					position_.L.z = sin(_angle / 2);
-					position_.L.rotate();
-				}
-				actuator(cstr _name, body & _body);
 			};
-			
+
+			class yaw : public actuator_s {
+			public:
+				virtual void rotate_rd(const T& _angle) {
+					actuator_s::position.L.w = cos(_angle / 2);
+					actuator_s::position.L.z = sin(_angle / 2);
+					actuator_s::position.L.rotate();
+				}
+				virtual T rot_projection(const vector3& R)
+				{
+					return R.z;
+				}
+
+				virtual T ro2(const vector3& R)
+				{
+					T x = R.x;
+					T y = R.y;
+					return x * x + y * y;
+				}
+
+				yaw(body& _body) :actuator_s(RT("A"), _body) {}
+			};
+
+			class pitch : public actuator_s {
+			public:
+				virtual void rotate_rd(const T& _angle) {
+					actuator_s::position.L.w = cos(_angle / 2);
+					actuator_s::position.L.y = sin(_angle / 2);
+					actuator_s::position.L.rotate();
+				}
+
+				virtual T rot_projection(const vector3& R) {
+					return R.y;
+				}
+
+				virtual T ro2(const vector3& R) {
+					T x = R.x;
+					T z = R.z;
+					return x * x + z * z;
+				}
+
+				pitch(body& _body) :actuator_s(RT("A"), _body) {}
+			};
+
+			class roll : public actuator_s {
+			public:
+				virtual void rotate_rd(const T& _angle) {
+					actuator_s::position.L.w = cos(_angle / 2);
+					actuator_s::position.L.x = sin(_angle / 2);
+					actuator_s::position.L.rotate();
+				}
+				virtual T rot_projection(const vector3& R) {
+					return R.x;
+				}
+
+				virtual T ro2(const vector3& R) {
+					T y = R.y;
+					T z = R.z;
+					return y * y + z * z;
+				}
+				roll(body& _body) :actuator_s(RT("A"), _body) {}
+			};
+
+
 			class series : public tree::item {
 				friend class robot;
 				friend class body;
-				friend class actuator;
+				friend class actuator_s;
 			public:
 				typedef ::robo::list::unsorted<series> list;
 				robot& robot_ref() { return tree::item:: template branch<robot>(); };
+				typename actuator_s::list actuators;
 
 			private:
 				robot& robot_;
-				typename actuator::list actuators_;
 				typename body::list bodies_;
 				typename list::ref ref_;
 				void arrange_(void) {
-					for (typename actuator::list::ref* r = actuators_.first(); r; r = r->next()) {
+					for (typename actuator_s::list::ref* r = actuators.first(); r; r = r->next()) {
 						r->owner().arrange_();
 					}
 					for (typename body::list::ref* r = bodies_.first(); r; r = r->next()) {
 						r->owner().arrange_();
 					}
 				}
-				void assign_( series & _src) {
+				void assign_(series& _src) {
 					{
-						typename actuator::list::ref* d = actuators_.first();
-						typename actuator::list::ref* s = _src.actuators_.first();
+						typename actuator_s::list::ref* d = actuators.first();
+						typename actuator_s::list::ref* s = _src.actuators.first();
 						for (; d; d = d->next(), s = s->next()) {
 							d->owner().assign_(s->owner());
 						}
@@ -806,23 +893,23 @@ namespace robo {
 				series(cstr _name, robot& _owner);
 			};
 
-			
-			class robot: public tree::item {
+
+			class robot : public tree::item {
 				friend class series;
 			public:
 			private:
 				typename series::list series_;
 			public:
-				robot(cstr _name) : tree::item(_name,nullptr) {}
+				robot(cstr _name) : tree::item(_name, nullptr) {}
 				void arrange(void) {
-					for (typename series::list::ref* r = series_.first() ; r; r = r->next()) {
+					for (typename series::list::ref* r = series_.first(); r; r = r->next()) {
 						r->owner().arrange_();
 					}
 				}
-				robot& assign ( robot& _robot) {
+				robot& assign(robot& _robot) {
 					typename series::list::ref* d = series_.first();
 					typename series::list::ref* s = _robot.series_.first();
-					for (; d; d = d->next(),s = s->next() ) {
+					for (; d; d = d->next(), s = s->next()) {
 						d->owner().assign_(s->owner());
 					}
 					arrange();
@@ -830,41 +917,58 @@ namespace robo {
 				}
 			};
 
-			class link: public body{
+			class link_s : public body {
 			public:
-				point * J;
-				actuator A;
-				joint* JA;
+				actuator_s* actuator = nullptr;
+				point* clamp;
+				joint_s* joint;
 			public:
-				link(cstr _name, link & _prev)
-					: body(_name,_prev.series_ref())
-					, A(RT("A"),*this)
+				link_s(cstr _name,  link_s & _prev)
+					: body(_name, _prev.series_ref())
 				{
-					J = new point(RT("J"), *this);
-					JA = new joint(*J, _prev.A);
+					clamp = new point(RT("C"), *this);
+					joint = new joint_s(*clamp, *_prev.actuator);
 				}
-				link(cstr _name, series & _series)
-					:  body(_name, _series)
-					, A(RT("A"), *this) {
-					J = nullptr;
-					JA = nullptr;
+				link_s(cstr _name, series& _series)
+					: body(_name, _series)
+				{
+					clamp = nullptr;
+					joint = nullptr;
 				}
-				~link(void) {
-					if (J) delete J;
-					if (JA) delete JA;
+				~link_s(void) {
+					if (actuator) delete actuator;
+					if (clamp) delete clamp;
+					if (joint) delete joint;
+				}
+				void rotate_rd(const T& _angle) {
+					actuator -> rotate_rd(_angle);
+				}
+				void rotate_dg(const T& _angle) {
+					actuator->rotate_dg(_angle);
 				}
 			};
+
+			template<class TA> class link_t : public link_s {
+			public:
+				link_t(cstr _name, link_s& _prev) :link_s(_name, _prev) {
+					link_s::actuator = new TA(*this);
+				}
+				link_t(cstr _name, series& _series) : link_s(_name, _series){
+					link_s::actuator = new TA(*this);
+				}
+			};
+
 			class payload : public body {
 			public:
-				point A;
-				point B;
-				joint AJ;
+				point clamp;
+				point target;
+				joint_s joint;
 			public:
-				payload(cstr _name, link& _prev)
+				payload(cstr _name, link_s& _prev)
 					: body(_name, _prev.series_ref())
-					, A(RT("A"), *this)
-					, B(RT("B"), *this) 
-					, AJ(A, _prev.A) {
+					, clamp(RT("C"), *this)
+					, target(RT("T"), *this)
+					, joint(clamp,*_prev.actuator) {
 				}
 			};
 
@@ -878,7 +982,7 @@ namespace robo {
 		}
 
 
-		template<typename T> scene_t<T>::joint::joint(point& _from, point& _to)
+		template<typename T> scene_t<T>::joint_s::joint_s(point& _from, point& _to)
 			: tree::item( string(RT("%s-%s.%s")
 								, _from.name.c_str()
 								, _to.body_ref().name.c_str()
@@ -891,7 +995,7 @@ namespace robo {
 			to_.remote_ = &from_;
 			ref_.attach_to(_from.body_ref().joints_);
 		}
-		template<typename T> scene_t<T>::joint::~joint(void) {
+		template<typename T> scene_t<T>::joint_s::~joint_s(void) {
 			from_.remote_ = nullptr;
 			to_.remote_ = nullptr;
 		}
@@ -905,12 +1009,12 @@ namespace robo {
 			ct.manual_arrange = true;;
 		}
 
-		template<typename T> scene_t<T>::actuator::actuator(cstr _name, body& _body)
+		template<typename T> scene_t<T>::actuator_s::actuator_s(cstr _name, body& _body)
 			: point(_name, _body)
 			, ref_(*this)
 		{
 			point::manual_arrange = true;
-			ref_.attach_to(_body.series_ref().actuators_);
+			ref_.attach_to(_body.series_ref().actuators);
 		};
 
 		template<typename T> scene_t<T>::series::series(cstr _name, robot& _robot)
@@ -1226,6 +1330,7 @@ namespace robo {
 		template<typename T> vector3_t<T> operator / ( vector3_t<T>& b, matrix_axis_t<T>& a) {
 			return a.itransform() *(b - a.offset);
 		}
+		
 		template<typename T> class kinematic_t {
 		public:
 			static inline const T pi = ::robo::pi<T>;
@@ -1539,6 +1644,7 @@ namespace robo {
 				payload_t(const matrix_axis_t<T>& _s, series_s & _series, Args... args) :link_s(_s, _series, link_s::types::none), S(args...) {}
 			};
 		};
+		
 	};
 }
 #endif

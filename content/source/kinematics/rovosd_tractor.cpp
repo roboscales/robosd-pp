@@ -76,7 +76,6 @@ namespace robo {
 				auto ma5 = ma4 / ma1 ;
 				
 				//quaternion_t<float>  q4(q3, quaternion_t<float>  { cos(-0.5 * pi<float> / 2),0,0,sin(-0.5 * pi<float> / 2) });
-				
 
 			}
 		} test_;
