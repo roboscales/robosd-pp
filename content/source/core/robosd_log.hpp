@@ -259,6 +259,8 @@ if ( !( x ) ){\
 #define ROBO_ASSERT_F(x,f,...) if( !(x)) ROBO_APP_CRASH();
 #endif
 
+#define ROBO_ASSERT(x) if( !(x)) ROBO_APP_CRASH();
+
 #if ROBO_APP_DEBUG_LOG_ENABLED == 1
 namespace robo{
 	namespace log{
