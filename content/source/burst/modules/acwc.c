@@ -351,7 +351,7 @@ void acwc_begin (
 	){
 	_acwc->current.flt = _curf;
 	_acwc->current.raw = _current_raw;
-	_acwc->ac.ref.update_feedback = acwc_event_update_feedback;
+	_acwc->ac.ref.update_feedback.on_run = acwc_event_update_feedback;
 	_curf->setup(	_acwc->current.raw,0);
 
 		actuator_begin(
@@ -437,7 +437,9 @@ void burst_acwc_realtime_protection(burst_dev_ref_p _ref){
 					a->current.magnitude.us = 0;
 				}
 		} else{
-			a->current.magnitude.us = now;
+			if( magnitude <  cfg->panic.normpower_pp ){
+				a->current.magnitude.us = now;
+			}
 		}
 	}
 	#endif

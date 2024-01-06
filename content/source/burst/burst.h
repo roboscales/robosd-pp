@@ -11,7 +11,7 @@ extern "C"
 #include "burst/burst_signal.h"
 
 /**
-@brief  Структура - описатель режима работы
+@brief  РЎС‚СЂСѓРєС‚СѓСЂР° - РѕРїРёСЃР°С‚РµР»СЊ СЂРµР¶РёРјР° СЂР°Р±РѕС‚С‹
 */
 
 struct burst_dev_mode_s;
@@ -126,7 +126,7 @@ typedef burst_dev_config_t * burst_dev_config_p;
 
 
 /**
-@brief Структура. Базовое устройство.
+@brief РЎС‚СЂСѓРєС‚СѓСЂР°. Р‘Р°Р·РѕРІРѕРµ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ.
 */
 struct burst_dev_ref_s;
 typedef struct burst_dev_ref_s burst_dev_ref_t;
@@ -149,8 +149,8 @@ struct  burst_dev_mode_s{
 
 typedef void ( * burst_dev_event)(burst_dev_ref_p);
 
-#if BURST_QUEUE_ENABLED == 1
 typedef enum{bust_request_status_none = 0,bust_request_status_query=1,bust_request_status_confirm=2,bust_request_status_panic=-1} bust_request_status_t;
+#if BURST_QUEUE_ENABLED == 1
 typedef struct bust_request_s{
 	bust_request_status_t status;
 	void (* query)(struct bust_request_s *);
@@ -172,13 +172,10 @@ struct burst_dev_ref_s{
 	burst_dev_event realtime_loop;
 	burst_dev_event frontend_loop;
 	struct{
-			burst_dev_mode_event on_run;
+		burst_dev_mode_event on_run;
 		#if BURST_QUEUE_ENABLED == 0
-			burst_dev_mode_event on_complete;
-		struct{
-			burst_bool_t  complete;
-			burst_bool_t  query;			
-		} flag;
+		burst_dev_mode_event on_complete;
+		bust_request_status_t status ;
 		#else
 		burst_dev_request_t request;
 		#endif
@@ -231,6 +228,8 @@ void burst_hw_reboot(void);
 void burst_event_perform_panic(burst_dev_ref_p _dev);
 void burst_board_raise_panic(uint32_t flag);
 void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t flag);
+uint32_t burst_core_panics(void);
+void burst_core_reset_panics(void);
 
 #if BURST_PANICS_MASTER_LOST_ENABLED == 1
 void burst_master_alive(burst_dev_ref_p _ref);

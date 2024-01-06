@@ -6,7 +6,11 @@ adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
 burst_long_signal_t RPM = 0;
+#ifndef BURST_APP_PMSM_BLDC_ENABLED
+#define BURST_APP_PMSM_BLDC_ENABLED 1
+#endif
 
+#if BURST_APP_PMSM_BLDC_ENABLED
 void bldc_mode_pwm_applay_action(burst_dev_ref_p _ref){		
 }
 
@@ -64,6 +68,7 @@ burst_dev_mode_t bldc_mode_current = {
 	,&burst_dev_idle_event
 	,&burst_dev_idle_event
 };
+#endif
 
 #ifndef PMSM_MODE_SYNCHRO_CURRENT_BUFFER_BITS
 #define PMSM_MODE_SYNCHRO_CURRENT_BUFFER_BITS 10
@@ -297,10 +302,16 @@ burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	, &acwc_mode_position
 	, &pmcm_synchro_voltage
 	, &pmcm_synchro_current
-	, &burst_idle_mode
+	, 0
+	#if BURST_APP_PMSM_BLDC_ENABLED
 	, &bldc_mode_pwm
 	, &bldc_mode_current
 	, &pmcm_synchro_hall_statistic_current
+	#else
+	,0
+	,0
+	,0
+	#endif
 };
 
 
@@ -379,9 +390,11 @@ void pmsm_hall_app_start(void){
 }
 
 void pmsm_hall_app_realtime_loop(void){	
+	#if BURST_APP_PMSM_BLDC_ENABLED
 	if(motor.cross.ac.ref.mode == bldc_mode_pwm_ix){
 			swt_pwm_run();
 	}
+	#endif
 	enco.ref.run();
 	pmsm_angle_forcer_run(&angle_forcer);
 	pmsm_sence_run(&motor);
@@ -406,7 +419,7 @@ void pmsm_hall_app_frontend_loop(void){
 }
 void pmsm_hall_app_update_feedback(void){
 	burst_dev_ref_p r = (burst_dev_ref_p)&motor;
-	r->update_feedback(r);
+	r->update_feedback.on_run(r);
 }
 static int pmsm_hall_app_presc = 0;
 void pmsm_hall_app_control_step_1(void){

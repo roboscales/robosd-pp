@@ -32,7 +32,7 @@ void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config) {
 	burst_long_signal_t delta = _config->native.hi - _config->native.lo;
 	burst_long_signal_t gain = (burst_long_signal_t)(_config->native.hi - _config->native.lo );
 	gain <<= 16;
-	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //округление
+	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //РѕРєСЂСѓРіР»РµРЅРёРµ
 	gain /= ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN);
 	_inverter->scale_gain = gain;
 	_inverter->discret_delta_lo = -_config->native.lo;

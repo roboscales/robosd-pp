@@ -50,7 +50,7 @@ void pmsm_begin (
 	_pmsm->lateral.current.pi = _lateral_pi;
 	_pmsm->estimate = _estimate;
 	
-	_pmsm->cross.ac.ref.update_feedback = pmsm_event_update_feedback;
+	_pmsm->cross.ac.ref.update_feedback.on_run = pmsm_event_update_feedback;
 	_pmsm->lateral.current.flt->setup(_pmsm->lateral.current.raw,0);
 
 	_lateral_pi->setup(

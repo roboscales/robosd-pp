@@ -244,7 +244,7 @@ void actuator_begin (
 	_actuator->ref.start = burst_dev_idle_event;
 	_actuator->ref.realtime_loop = burst_dev_idle_event;
 	_actuator->ref.frontend_loop = burst_dev_idle_event;
-	_actuator->ref.update_feedback = actuator_event_update_feedback;
+	_actuator->ref.update_feedback.on_run = actuator_event_update_feedback;
 	_actuator->ref.perform_panic =  actuator_event_perform_panic;
 	_actuator->ref.config = &(_config->ref);
 	_actuator->ref.action = &(_action->ref);

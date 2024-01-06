@@ -30,6 +30,7 @@ typedef struct acwc_config_s{
 	struct{
 		burst_signal_t  overcurrent_pp;
 		burst_signal_t  overpower_pp;
+		burst_signal_t  normpower_pp;
 		burst_time_us_t  overpower_tm_us;
 	} panic;
 	#endif
@@ -43,6 +44,7 @@ typedef acwc_config_t * acwc_config_p;
 ,{\
 	a##_PANICS_ACWC_OWERCURRENT_PP\
 	, a##_PANICS_ACWC_OWERPOWER_PP\
+	, a##_PANICS_ACWC_NORMPOWER_PP\
 	, a##_PANICS_ACWC_OWERPOWER_TM_US\
 }
 #else

@@ -42,10 +42,12 @@ NIKITIN(c_lat_flt)
 
 NIKITIN(c_cross_flt)
 
+#ifndef BURST_APP_PMSM_BLDC_ENABLED
 //swt
 #define CLCH_NAME swt
 #define CLCH_HEADER 
 #include "burst/cliche/swt.h"
+#endif
 
 extern hall_t hall;
 extern adc_t adc;

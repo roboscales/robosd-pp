@@ -112,6 +112,12 @@ struct burst_s{
 
 burst_t burst = BURST_EMPTY_STRUCT;
 
+uint32_t burst_core_panics(void){
+	return burst.panics;
+}
+void burst_core_reset_panics(void){
+	burst.panics = 0;
+}
 void burst_dev_idle_event(burst_dev_ref_p _dev){
 		BURST_UNUSED(_dev);
 }
@@ -163,6 +169,7 @@ void burst_master_alive_check(burst_dev_ref_p _ref){
 }
 #endif
 
+#if BURST_QUEUE_ENABLED == 1
 void burst_dev_feedback_query (bust_request_t * _req){
 	burst_dev_request_t * r = (burst_dev_request_t *)_req;
 	r->owner->update_feedback.on_run(r->owner);
@@ -172,6 +179,7 @@ void burst_dev_request_confirm (bust_request_t * _req){
 	burst_dev_request_t * r = (burst_dev_request_t *)_req;
 	r->on_complete(r->owner);
 }
+#endif
 
 void burst_begin(void){
 	burst_sw_begin();
@@ -217,7 +225,7 @@ void burst_begin(void){
 				burst_alarm(m->frontend_loop);
 			}
 		}
-		//ñáðîñ â íà÷àëüíîå ñîñòîÿíèå
+		//ÑÐ±Ñ€Ð¾Ñ Ð² Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ
 		(*p)->reset((*p));
 	}
 	
@@ -338,6 +346,12 @@ void burst_dev_backend_loop(burst_dev_ref_p _ref){
 				action->actual = 0;
 			}
 		}
+		#if BURST_QUEUE_ENABLED == 0
+		if(_ref->update_feedback.status == bust_request_status_query){
+			_ref->update_feedback.on_run(_ref);
+			_ref->update_feedback.status = bust_request_status_confirm;
+		}
+		#endif
 	}
 }
 
@@ -543,6 +557,14 @@ void burst_frontend_loop(void){
 			#endif
 			s->frontend_loop(s);
 			s->actual_mode->frontend_loop(s);
+			#if BURST_QUEUE_ENABLED == 0
+			if(s->update_feedback.status == bust_request_status_confirm){
+				if(s->update_feedback.on_complete){
+					s->update_feedback.on_complete(s);
+				}
+				s->update_feedback.status = bust_request_status_none;
+			}
+			#endif
 		}
 	}
 	
@@ -762,7 +784,7 @@ void burst_guard_leave(uint32_t _context){
 }
 	
 uint32_t burst_critical_enter(void){
-	//áûñòðûì ïðîöåññàì ñäåñü äåëàòü íå÷åãî - ýòî ðàçáîðêè ìåæäó ïîòîêàìè "ôðîíòêíä"
+	//Ð±Ñ‹ÑÑ‚Ñ€Ñ‹Ð¼ Ð¿Ñ€Ð¾Ñ†ÐµÑÑÐ°Ð¼ ÑÐ´ÐµÑÑŒ Ð´ÐµÐ»Ð°Ñ‚ÑŒ Ð½ÐµÑ‡ÐµÐ³Ð¾ - ÑÑ‚Ð¾ Ñ€Ð°Ð·Ð±Ð¾Ñ€ÐºÐ¸ Ð¼ÐµÐ¶Ð´Ñƒ Ð¿Ð¾Ñ‚Ð¾ÐºÐ°Ð¼Ð¸ "Ñ„Ñ€Ð¾Ð½Ñ‚ÐºÐ½Ð´"
 	#if BURST_CORE_DEBUG == 1
 	burst_alarm(burst_is_frontend());
 	#endif
@@ -819,19 +841,22 @@ void burst_config_set( burst_config_t * _config){
 
 
 void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complete){
-	if(_ref->update_feedback.request.ref.status == bust_request_status_none){
-		#if BURST_QUEUE_ENABLED == 0
-		if(burst_is_frontend()){
-			_ref->update_feedback.on_run(_ref);
-			if(_ref->update_feedback.on_complete){
-				_ref->update_feedback.on_complete(_ref);
-			}
-		} else{
-			_ref->update_feedback.flag.query = burst_true;
+	#if BURST_QUEUE_ENABLED == 0
+	/*if(burst_is_frontend()){
+		_ref->update_feedback.on_run(_ref);
+		if(_ref->update_feedback.on_complete){
+			_ref->update_feedback.on_complete(_ref);
 		}
-		#else
+	} else{
+		_ref->update_feedback.flag.query = burst_true;
+	}*/
+	if(_ref->update_feedback.status == bust_request_status_none  || _ref->update_feedback.status == bust_request_status_panic ){
+		_ref->update_feedback.status = bust_request_status_query;
+	}
+	#else
+	if(_ref->update_feedback.request.ref.status == bust_request_status_none){
 		_ref->update_feedback.request.on_complete = _on_complete;
 		bust_post(&(_ref->update_feedback.request.ref));
-		#endif
 	}
+	#endif
 }
