@@ -285,7 +285,7 @@ namespace robo {
 			}
 			virtual bool put(const uint8_t* _data, size_t _size) {
 				bool tmp = bridge::B.put(_data, _size);
-				try_send_();
+				D::try_send(bridge::A);
 				return tmp;
 			}
 			virtual size_t get(uint8_t & _data) {
@@ -296,16 +296,16 @@ namespace robo {
 					return 0;
 				}
 			}
-			void try_send_(){
+			/*void try_send_(){				
 				uint8_t * buffer = D::tx_buffer;
 				size_t sz = bridge::A.get(buffer,D::buffer_size);
 				if(sz>0){
 					D::try_send(buffer, sz);
 				}
-			}
+			}*/
 			virtual bool  put(uint8_t _data) {
 				bool tmp = bridge::B.put(_data);
-				try_send_();
+				D::try_send(bridge::A);
 				if(!tmp){
 					reset();
 					//D::fault(); to do крепко подумать
@@ -313,7 +313,7 @@ namespace robo {
 				return tmp;
 			}
 			void on_confirm(void){
-				try_send_();
+				D::try_send(bridge::A);
 			}
 			void on_refuse(void){
 				reset();
