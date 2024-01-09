@@ -1260,6 +1260,15 @@ namespace mexo {
 		timer_t(Args ... args): H(args...)
 		{
 		}
+		timer_t(tm _period,Args ... args): H(args...)
+		{
+				static ::mexo::machine::slot::lambda start(
+				::mexo::machine::slot::kind::start
+				, [this,_period] {
+						this->start(_period);
+				}
+			);
+		}
 		void start(tm _period, bool _once = false){
 			period_ = _period;			
 			once_ = _once;
