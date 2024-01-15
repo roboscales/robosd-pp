@@ -209,14 +209,14 @@ namespace robo{
 
 						switch (actuator->state) {
 						case iactuator::istate::blocked:
-						switch (run_(rest)) {
-						case result::STOP:
-						break;
-						case result::START:
-						case result::RUN:
-						actuator->state = iactuator::istate::start;
-						break;
-						}
+							switch (run_(rest)) {
+								case result::STOP:
+								break;
+								case result::START:
+								case result::RUN:
+								actuator->state = iactuator::istate::start;
+								break;
+							}
 						break;
 
 						case iactuator::istate::start:
