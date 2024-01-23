@@ -11,6 +11,17 @@ typedef struct hall_config_s {
 } hall_config_t;
 typedef hall_config_t * hall_config_p;
 
+#define HALL_VAR_REG(t,h,n) HALL_VAR_REG_(t,h,n)
+#define HALL_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+BURST_VAR_PUSH(t, "ofs")\
+BURST_VAR_REG(t,h->offset.native,"native",burst_signal_var)\
+BURST_VAR_REG(t,h->offset.native,"dynamic",burst_signal_var)\
+BURST_VAR_POP(t )\
+BURST_VAR_REG(t,h->inv,"inv",int8)\
+BURST_VAR_POP(t )
+
+
 #define HALL_CONFIG(h) HALL_CONFIG_(h)
 #define HALL_CONFIG_(h)\
 {\

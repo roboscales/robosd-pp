@@ -23,6 +23,15 @@ typedef  uint32_t burst_ulong_signal_t;
 #define BURST_ULONG_SIGNAL_HALF_NEG 0xC0000001L 
 #endif
 
+#ifndef burst_signal_var
+#define burst_signal_var int16
+#endif
+
+
+#ifndef burst_long_signal_var
+#define burst_long_signal_var int32
+#endif
+
 
 #ifndef burst_frac4_t
 #define burst_frac4_t uint8_t
@@ -40,6 +49,11 @@ typedef  uint32_t burst_ulong_signal_t;
 #define burst_parametr_t int16_t
 #endif
 #define burst_parametr_p burst_parametr_t *
+
+#ifndef burst_parametr_var
+#define burst_parametr_var int16
+#endif
+
 
 #define BURST_ROUND_POS(f) ((f<BURST_SIGNAL_MAX)?(f+0.5):BURST_SIGNAL_MAX)
 #define BURST_ROUND_NEG(f) ((f>BURST_SIGNAL_MIN)?(f-0.5):BURST_SIGNAL_MIN)
@@ -205,3 +219,17 @@ burst_signal_t burst_range_apply(burst_signal_t _src, burst_range_p _lim);
 	a##_LO\
 	, a##_HI\
 }
+
+#define RANGE_VAR_REG(t,h,n) RANGE_VAR_REG_(t,h,n)
+#define RANGE_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+BURST_VAR_REG(t,h->lo,"lo",burst_signal_var)\
+BURST_VAR_REG(t,h->hi,"hi",burst_signal_var)\
+BURST_VAR_POP(t)
+
+#define LONG_RANGE_VAR_REG(t,h,n) LONG_RANGE_VAR_REG_(t,h,n)
+#define LONG_RANGE_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+BURST_VAR_REG(t,h->lo,"lo",burst_long_signal_var)\
+BURST_VAR_REG(t,h->hi,"hi",burst_long_signal_var)\
+BURST_VAR_POP(t)

@@ -67,6 +67,13 @@ typedef struct pmsm_hall_app_config_s {
 	int estimate_revert_count;
 } pmsm_hall_app_config_t;
 typedef  pmsm_hall_app_config_t * pmsm_hall_app_config_p;
+
+#define PMSM_HALL_APP_VAR_REG(t,h,n) PMSM_HALL_APP_VAR_REG_(t,h,n)
+#define PMSM_HALL_APP_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+PMSM_VAR_REG(t,(&(h->pmsm)),"pmsm")\
+HALL_VAR_REG(t,(&(h->hall)),"hall")\
+BURST_VAR_POP(t )
  
 void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, pmsm_feedback_p _feedback );
 void pmsm_hall_app_start(void);

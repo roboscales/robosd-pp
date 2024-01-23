@@ -39,6 +39,51 @@ typedef struct actuator_config_s{
 } actuator_config_t;
 typedef actuator_config_t * actuator_config_p;
 
+#define ACTUATOR_VAR_REG(t,h,n) ACTUATOR_VAR_REG_(t,h,n)
+
+#if BURST_PROTECTION_ENABLED == 1
+#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+#define ACTUATOR_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+	BURST_VAR_PUSH(t, "enco_fault_ticks")\
+		BURST_VAR_REG(t,h->enco_fault_ticks.reset,"reset",uint32)\
+		BURST_VAR_REG(t,h->enco_fault_ticks.set,"set",uint32)\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "range")\
+		RANGE_VAR_REG(t,(&(h->voltage)),"voltage")\
+		RANGE_VAR_REG(t,(&(h->speed)),"speed")\
+		LONG_RANGE_VAR_REG(t,(&(h->position)),"position")\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "modes")\
+		MOTION_VAR_REG(t,(&(h->modes.motion)),"mo")\
+		POSITIONER_VAR_REG(t,(&(h->modes.positioner)),"po")\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "panic")\
+		burst_hyst_t temper_pp;		
+	BURST_VAR_POP(t)\
+BURST_VAR_POP(t)
+#endif
+#endif
+
+#ifndef ACTUATOR_VAR_REG_
+#define ACTUATOR_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+	BURST_VAR_PUSH(t, "eft")\
+		BURST_VAR_REG(t,h->enco_fault_ticks.reset,"reset",uint32)\
+		BURST_VAR_REG(t,h->enco_fault_ticks.set,"set",uint32)\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "r")\
+		RANGE_VAR_REG(t,(&(h->range.voltage)),"v")\
+		RANGE_VAR_REG(t,(&(h->range.speed)),"sp")\
+		LONG_RANGE_VAR_REG(t,(&(h->range.position)),"po")\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "modes")\
+		MOTION_VAR_REG(t,(&(h->modes.motion)),"mo")\
+		POSITIONER_VAR_REG(t,(&(h->modes.positioner)),"po")\
+	BURST_VAR_POP(t)\
+BURST_VAR_POP(t)
+#endif
+
 #if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
 
 #define BURST_PANICS_ACTUATOR_TEMPER_CO(a)\

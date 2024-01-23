@@ -285,4 +285,11 @@ int burst_board_current_get_pp(void);
 
 void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complete);
 
+#ifndef BURST_STRING_HASH_ENABLED
+#define BURST_STRING_HASH_ENABLED 0
+#endif
+#if BURST_STRING_HASH_ENABLED
+int32_t burst_string_hash(const char * _str, int _start);
+#endif
+
 #endif

@@ -27,6 +27,18 @@ typedef burst_pi_config_t * burst_pi_config_p;
 	,a##_RAMP\
 }
 
+#define PI_VAR_REG(t,h,n) PI_VAR_REG_(t,h,n)
+#define PI_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+BURST_VAR_REG(t,h->propGain,"prop",burst_parametr_var)\
+BURST_VAR_REG(t,h->modelGain,"model",burst_parametr_var)\
+BURST_VAR_REG(t,h->diffGain,"diff",burst_parametr_var)\
+BURST_VAR_REG(t,h->forceGain,"force",burst_parametr_var)\
+BURST_VAR_REG(t,h->controlShift,"cs",uint8)\
+BURST_VAR_REG(t,h->modelShift,"ms",uint8)\
+BURST_VAR_REG(t,h->ramp,"ramp",burst_parametr_var)\
+BURST_VAR_POP(t)
+
 typedef struct {
 	burst_pi_config_p config;
 	burst_signal_p			signal_req;

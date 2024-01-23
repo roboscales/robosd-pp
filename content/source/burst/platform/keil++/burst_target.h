@@ -9,9 +9,8 @@
 #define BURST_PROC_LINE __LINE__
 #define BURST_UNUSED(x) ((void)(x))
 #define BURST_EMPTY_STRUCT {0}
-#define BURST_WEAK __weak
+#define BURST_WEAK __attribute__((weak))
 #define BURST_STATIC_INLINE static inline
 #define BURST_NOP() asm("nop")
 #define BURST_ZEROS_STRUCT( x ) { uint8_t * p = (uint8_t *) (x); for(int i=0;i<sizeof(*(x)),++i,++x) *x = 0; }
 
-#define BURST_STD_SNPRINTF snprintf

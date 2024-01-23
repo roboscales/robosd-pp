@@ -38,6 +38,29 @@ typedef struct acwc_config_s{
 } acwc_config_t;
 typedef acwc_config_t * acwc_config_p;
 
+#define ACWC_VAR_REG(t,h,n) ACWC_VAR_REG_(t,h,n)
+#define ACWC_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+	ACTUATOR_VAR_REG(t,(&(h->ac)),"ac")\
+	BURST_VAR_PUSH(t, "c")\
+		PI_VAR_REG(t,(&(h->current.pi)),"pi")\
+		RANGE_VAR_REG(t,(&(h->current.range)),"range")\
+	BURST_VAR_POP(t)\
+	BURST_VAR_PUSH(t, "modes")\
+		BURST_VAR_PUSH(t, "c")\
+			MOTION_VAR_REG(t,(&(h->modes.current.motion)),"mo")\
+			POSITIONER_VAR_REG(t,(&(h->modes.current.positioner)),"po")\
+		BURST_VAR_POP(t)\
+		BURST_VAR_PUSH(t, "cl")\
+			MOTION_VAR_REG(t,(&(h->modes.voltage_cl.motion)),"mo")\
+			POSITIONER_VAR_REG(t,(&(h->modes.voltage_cl.positioner)),"po")\
+		BURST_VAR_POP(t)\
+	BURST_VAR_POP(t)\
+BURST_VAR_POP(t)
+
+//			POSITIONER_VAR_RERG(t,(&(h->modes.current.positioner)),"po")\
+	//		MOTION_VAR_RERG(t,(&(h->modes.current.motion)),"mo")\
+
 #if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1 && 	BURST_PROTECTION_ENABLED == 1
 
 #define BURST_PANICS_ACWC_OVERCURRENT_CO(a)\

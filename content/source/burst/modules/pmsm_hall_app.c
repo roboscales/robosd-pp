@@ -7,7 +7,7 @@ pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
 burst_long_signal_t RPM = 0;
 #ifndef BURST_APP_PMSM_BLDC_ENABLED
-#define BURST_APP_PMSM_BLDC_ENABLED 1
+#define BURST_APP_PMSM_BLDC_ENABLED 0
 #endif
 
 #if BURST_APP_PMSM_BLDC_ENABLED
@@ -385,7 +385,7 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 
 void pmsm_hall_app_start(void){
 	while( adc.ready == burst_false ){
-		BURST_NOP();
+		//BURST_NOP();
 	}	
 }
 

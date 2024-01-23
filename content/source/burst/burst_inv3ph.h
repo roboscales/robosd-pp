@@ -66,7 +66,7 @@ typedef current3ph_config_t * current3ph_config_p;
 	a##_ADC_INDEX\
 	,{\
 		a##_DEFORM\
-		,a##_DEFORM_ENABLE\
+		,(burst_bool_t)a##_DEFORM_ENABLE\
 	}\
 }
 

@@ -49,5 +49,7 @@ typedef struct burst_packet_s {
 } burst_packet_t;
 typedef burst_packet_t * burst_packet_p;
 
+#else
+extern burst_time_us_t burst_time_us(void);
 #endif
 #endif

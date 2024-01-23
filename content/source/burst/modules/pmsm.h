@@ -27,6 +27,24 @@ typedef struct pmsm_config_s{
 } pmsm_config_t;
 typedef pmsm_config_t * pmsm_config_p;
 
+#define PMSM_VAR_REG(t,h,n) PMSM_VAR_REG_(t,h,n)
+#define PMSM_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+ACWC_VAR_REG(t, (&(h->cross)),"cross")\
+BURST_VAR_PUSH(t, "lat")\
+BURST_VAR_PUSH(t, "c")\
+PI_VAR_REG(t,(&(h->lateral.current.pi)),"pi")\
+RANGE_VAR_REG(t,(&(h->lateral.current.range)),"range")\
+BURST_VAR_POP(t )\
+BURST_VAR_PUSH(t, "v")\
+RANGE_VAR_REG(t,(&(h->lateral.voltage.range)),"range")\
+BURST_VAR_POP(t )\
+BURST_VAR_POP(t )\
+BURST_VAR_POP(t )
+
+ 
+/*PI_VAR_REG(r,(&(h->lateral.pi)),"pi")*/
+
 #if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
 #define PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)\
 	a##_PANICS_PMSM_CURRENT_MISSALIGMENT_PP
@@ -77,6 +95,7 @@ typedef struct pmsm_angle_forcer_config_s{
 	burst_signal_t angle_lim;
 } pmsm_angle_forcer_config_t;
 typedef pmsm_angle_forcer_config_t * pmsm_angle_forcer_config_p;
+
 
 #define PMSM_ANGLE_FORCER_CONFIG(a) PMSM_ANGLE_FORCER_CONFIG_(a)
 #define PMSM_ANGLE_FORCER_CONFIG_(a)\

@@ -19,6 +19,24 @@ typedef struct {
 
 typedef burst_motion_config_t * burst_motion_config_p;
 
+#define MOTION_VAR_REG(t,h,n) MOTION_VAR_REG_(t,h,n)
+#define MOTION_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+	BURST_VAR_REG(t,h->propGain,"prop",burst_parametr_var)\
+	BURST_VAR_REG(t,h->modelGain,"model",burst_parametr_var)\
+	BURST_VAR_REG(t,h->diffGain,"diff",burst_parametr_var)\
+	BURST_VAR_PUSH(t, "force")\
+		BURST_VAR_REG(t,h->forceGain,"gain",burst_parametr_var)\
+		BURST_VAR_REG(t,h->forceMax,"max",burst_signal_var)\
+	BURST_VAR_POP(t)\
+	BURST_VAR_REG(t,h->controlShift,"cs",uint8)\
+	BURST_VAR_REG(t,h->modelShift,"ms",uint8)\
+	BURST_VAR_PUSH(t, "limit")\
+		BURST_VAR_REG(t,h->limitGain,"gain",burst_parametr_var)\
+		BURST_VAR_REG(t,h->limitGainPresc,"presc",uint8)\
+	BURST_VAR_POP(t)\
+BURST_VAR_POP(t)
+
 #define MOTION_CONFIG(a) MOTION_CONFIG_(a)
 #define MOTION_CONFIG_(a)\
 {\

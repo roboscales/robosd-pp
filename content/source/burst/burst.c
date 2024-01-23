@@ -860,3 +860,17 @@ void burst_query_feedback(burst_dev_ref_p _ref, burst_dev_mode_event _on_complet
 	}
 	#endif
 }
+
+#if BURST_STRING_HASH_ENABLED
+int32_t burst_string_hash(const char * _str, int _start){
+	int32_t x = _start;
+	const char * c;
+	for (c = _str; *c; ++c) {
+		x += 0x990C9AB5 * (*c);
+		x = x ^  (x >> 16);
+	}
+	return x;
+}
+
+#endif
+

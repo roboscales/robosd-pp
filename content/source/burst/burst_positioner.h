@@ -14,6 +14,17 @@ typedef struct {
 
 typedef burst_positioner_config_t * burst_positioner_config_p;
 
+#define POSITIONER_VAR_REG(t,h,n) POSITIONER_VAR_REG_(t,h,n)
+#define POSITIONER_VAR_REG_(t,h,n)\
+BURST_VAR_PUSH(t, n)\
+	BURST_VAR_REG(t,h->propGain,"prop",burst_parametr_var)\
+	BURST_VAR_REG(t,h->diffGain,"diff",burst_parametr_var)\
+	BURST_VAR_REG(t,h->diffQuardGain,"quard",burst_parametr_var)\
+	BURST_VAR_REG(t,h->controlShift,"cs",uint8)\
+	BURST_VAR_REG(t,h->deadZone,"dz",burst_signal_var)\
+	BURST_VAR_REG(t,h->crawlSpeed,"craw",burst_signal_var)\
+BURST_VAR_POP(t)
+
 #define POSITIONER_CONFIG(a) POSITIONER_CONFIG_(a)
 #define POSITIONER_CONFIG_(a)\
 {\
