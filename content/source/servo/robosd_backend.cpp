@@ -714,7 +714,7 @@ namespace robo {
 			ROBO_LBREAKN(app::node::do_start());
 			if ( port_name_.length() != 0 ) {
 				port_ = robo::net::iserial::query<robo::net::iserial>(port_name_);
-				ROBO_LBREAKN(port_ != nullptr);
+				ROBO_LBREAKN_F(port_ != nullptr,RT("port %s is't found"), port_name_.c_str());
 			}
 			return true;
 		}
