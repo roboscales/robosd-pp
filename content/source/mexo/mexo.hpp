@@ -1282,7 +1282,58 @@ namespace mexo {
 		}
 		bool started(void){ return started_; }
 	};
+	
+	template< class H, class D, typename ... Args> class timer_delegat_t :  public H, public D{
+	public:
+		using tm = ::robo::time_us_t;
+	private:
+		tm last_= tm(0);
+		tm period_ = tm(0);
+		bool once_;
+		bool started_;
+	protected:
+		virtual void operator ()(void){
+			::robo::time_us_t now = ::robo::system::time_us();
+			if(now - last_ > period_){
+				last_ = now;
+				D::operator () ();
+				if(once_){
+				 H::stop();
+				}
+			}
+		}
+	public:
+		timer_delegat_t(Args ... args): D(args...)
+		{
+		}
+		timer_delegat_t(tm _period,Args ... args): D(args...)
+		{
+				static ::mexo::machine::slot::lambda start(
+				::mexo::machine::slot::kind::start
+				, [this,_period] {
+						this->start(_period);
+				}
+			);
+		}
+		void start(tm _period, bool _once = false){
+			period_ = _period;			
+			once_ = _once;
+			last_ = ::robo::system::time_us();
+			H::start();
+			started_ = true;
+		}
+		void stop(void ){
+			H::stop();
+			started_ = false;
+		}
+		bool started(void){ return started_; }
+	};
+	
+	typedef ::mexo::timer_delegat_t< ::mexo::frontend_task, ::robo::delegat::owned_fabric<void>::simple, void(*)(void) > frontend_repeat_t;
 
+		
+	//class ::mexo::timer_delegat_t< frontend_task, ::robo::delegat::owned_fabric<void>::simple, void(*)(void) > frontend_repeat_t;
+	/*
 	template< class H, typename ... Args> class timer_delegat_t :  public H{
 	public:
 		void stop(void){}
@@ -1293,7 +1344,7 @@ namespace mexo {
 	};
 
 	typedef ::mexo::timer_t< timer_delegat_t<::robo::delegat::owned_fabric<void>::simple, void(*)(void)>, void(*)(void) > repeat_t;
-
+	*/
 	
 	class stateflow {
 	public:

@@ -265,12 +265,12 @@ namespace robo {
 		public:
 			void on_receive(uint8_t _data){
 				if( ! bridge::A.put(_data)){
-					//D::fault(); to do крепко подумать
+					//D::fault(); to do РєСЂРµРїРєРѕ РїРѕРґСѓРјР°С‚СЊ
 				}
 			}
 			void on_receive(const uint8_t* _data, size_t _max_size){
 				if( ! bridge::A.put(_data,_max_size) ){
-					//D::fault(); to do крепко подумать
+					//D::fault(); to do РєСЂРµРїРєРѕ РїРѕРґСѓРјР°С‚СЊ
 				}
 			}
 			
@@ -308,7 +308,7 @@ namespace robo {
 				D::try_send(bridge::A);
 				if(!tmp){
 					reset();
-					//D::fault(); to do крепко подумать
+					//D::fault(); to do РєСЂРµРїРєРѕ РїРѕРґСѓРјР°С‚СЊ
 				}
 				return tmp;
 			}
@@ -318,7 +318,7 @@ namespace robo {
 			void on_refuse(void){
 				reset();
 //				D::try_send(bridge::A);
-				//D::fault(); to do крепко подумать
+				//D::fault(); to do РєСЂРµРїРєРѕ РїРѕРґСѓРјР°С‚СЊ
 			}
 			virtual void reset(void){
 				bridge::A.reset();
