@@ -8,8 +8,10 @@ burst_long_signal_t RPM = 0;
 #ifndef BURST_APP_PMSM_BLDC_ENABLED
 #define BURST_APP_PMSM_BLDC_ENABLED 0
 #endif
-
 #if BURST_APP_PMSM_BLDC_ENABLED
+#define CLCH_NAME swt
+#define 	CLCH_HEADER
+#include "burst\cliche\swt.h"
 void bldc_mode_pwm_applay_action(burst_dev_ref_p _ref){		
 }
 
