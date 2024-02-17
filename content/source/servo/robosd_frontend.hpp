@@ -18,6 +18,9 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_autonum.hpp"
 #include "core/robosd_app.hpp"
+
+#include "core/robosd_tree.hpp"
+
 namespace robo {
 	class ROBO_EXPORT dev_id_t {
 	public:
@@ -341,7 +344,31 @@ namespace robo {
 			const cstr u16 = RT("u16");
 			const cstr u32 = RT("u32");
 		} type_names;*/
+		namespace varindex {
+			
+			class node : public ::robo::tree::item {
+			public:
+				node(::robo::cstr _name, node* _branch) : ::robo::tree::item(_name, _branch) {}
+				node* branch(void) { return ::robo::tree::item::pbranch<node>(); }
+			};
 
+			class record : public node {
+				static node*& current_();
+			public:
+				const void* addr = nullptr;
+				uint32_t size;
+				template<typename T>	record(
+					const T& _var
+					, ::robo::cstr _name
+				) : node (_name, current_()){
+					size = sizeof(T);
+					addr = &_var;
+				};
+				static node& root();
+				static void push(::robo::cstr _name);
+				static void pop(void);
+			};
+		}
 
 		#if ROBO_APP_MODULE_ENABLED  == 1
 		class ROBO_EXPORT vartable :public app::node {

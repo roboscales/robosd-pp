@@ -42,6 +42,23 @@ namespace robo {
 			}
 			return true;
 		}
+		/*
+		bool item::forall(char_t* _beg_path, char_t* _end_path, size_t  _path_size, bool (*_fun)(item& _item, char_t* _beg_path)) {
+			size_t n = name.length() + 1;
+			ROBO_APP_ASSERT(_path_size >= n + 1);
+			n = system::sprintf(_end_path, _path_size, RT(".%s"), name.c_str());
+			_end_path[n] = 0;
+			_end_path += n;
+			_path_size -= n;
+			ROBO_LBREAKN(_fun(*this, _beg_path));
+			if (childs_ != nullptr) {
+				for (list::ref* r = childs_->first(); r; r = r->next()) {
+					ROBO_LBREAKN(r->owner().forall(_beg_path, _end_path, _path_size, _fun));
+				}
+			}
+			return true;
+		}
+		*/
 		void item::clean(void) {
 			if (childs_ != nullptr) {
 				for (list::ref* r = childs_->first(); r; r = r->next()) {

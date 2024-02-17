@@ -1,7 +1,6 @@
 #include "burst\modules\pmsm_hall_app.h"
 #include "burst\burst_timer.h"
 hall_t hall={};
-hall_extra_t hall_extra ={};
 adc_t adc={};
 pmsm_angle_forcer_t angle_forcer={};
 pmsm_t motor={};
@@ -289,29 +288,28 @@ burst_dev_mode_t pmcm_synchro_hall_statistic_current = {
 };
 
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
-	&burst_idle_mode
-	, &actuator_mode_fault
-	, &actuator_mode_voltage
-	, &actuator_mode_speed
-	, &actuator_mode_position
-	, &acwc_mode_voltage_cl
-	, &acwc_mode_cl_speed
-	, &acwc_mode_cl_position
-	, &acwc_mode_current
-	, &acwc_mode_speed
-	, &acwc_mode_position
-	, &pmcm_synchro_voltage
-	, &pmcm_synchro_current
-	, 0
+	&burst_idle_mode//0
+	, &actuator_mode_fault//1
+	, &actuator_mode_voltage//3
+	, &actuator_mode_speed//3
+	, &actuator_mode_position//4
+	, &acwc_mode_voltage_cl//5
+	, &acwc_mode_cl_speed//6
+	, &acwc_mode_cl_position//7
+	, &acwc_mode_current//8
+	, &acwc_mode_speed//9
+	, &acwc_mode_position//10
+	, &pmcm_synchro_voltage//11
+	, &pmcm_synchro_current//12
+	, 0//13
 	#if BURST_APP_PMSM_BLDC_ENABLED
-	, &bldc_mode_pwm
-	, &bldc_mode_current
-	, &pmcm_synchro_hall_statistic_current
+	, &bldc_mode_pwm//14
+	, &bldc_mode_current//15
 	#else
 	,0
 	,0
-	,0
 	#endif
+	, &pmcm_synchro_hall_statistic_current//16
 };
 
 
@@ -358,17 +356,13 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 	nikitin_begin(&c_lat_flt,&_config->lat_flt);
 	burst_ps_begin(&power, 0);
 	
-	hall_extra.hall.pactual = &hall.angle;
-	hall_extra.lost = burst_true;
-	//angle_forcer.angle.raw = &hall_extra.angle;
-	//angle_forcer.speed = &speedse.ref.value;
 	
 	enco_abs32_begin(&enco, &_config->enco);
 	#if PMSM_HALL_APP_ANGLE_SENCE_TYPE == PMSM_HALL_APP_ANGLE_SENCE_TYPE_EXTERN
 	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,pmsm_hall_app_rotor_pos(),  &speedse.ref.value, 0);
 	#endif
 	#if PMSM_HALL_APP_ANGLE_SENCE_TYPE == PMSM_HALL_APP_ANGLE_SENCE_TYPE_HALL
-	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,&hall_extra.angle,  &speedse.ref.value, 0);
+	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,&hall.extra_angle,  &speedse.ref.value, 0);
 	#endif
 	
 	#if BURST_PROTECTION_ENABLED == 1 
@@ -404,18 +398,12 @@ void pmsm_hall_app_realtime_loop(void){
 
 void pmsm_hall_app_backend_loop(void){		
 	burst_dev_runA(&motor.cross.ac.ref);	
-	#if PMSM_HALL_APP_EXTRA_TYPE == PMSM_HALL_APP_EXTRA_TYPE_NONE
-	hall_dummy_interp(&hall_extra);
-	#else
-	hall_qubic_interp(&hall_extra);
-	#endif
+	hall_interp(&hall);
 	pmsm_inverter_run(&motor);
 	power.run();
 }
 void pmsm_hall_app_frontend_loop(void){
-	#if PMSM_HALL_APP_EXTRA_TYPE == PMSM_HALL_APP_EXTRA_TYPE_REGRESS
-	hall_regres_poll(&hall_extra);
-	#endif
+	hall_poll(&hall);
 }
 void pmsm_hall_app_update_feedback(void){
 	burst_dev_ref_p r = (burst_dev_ref_p)&motor;
@@ -442,9 +430,6 @@ void pmsm_hall_app_control_step_2(void){
 #ifndef PMSM_HALL_RPM_VALUE_TOTAL_PRESC
 #define PMSM_HALL_RPM_VALUE_TOTAL_PRESC 10
 #endif
-#ifndef PMSM_HALL_RPM_ENCODER_DEFRES 
-#define PMSM_HALL_RPM_ENCODER_DEFRES 8
-#endif
 
 #ifndef PMSM_HALL_RPM_BASE_PERIOD_US 
 #define PMSM_HALL_RPM_BASE_PERIOD_US BURST_TIMER_TICK_US
@@ -456,7 +441,7 @@ void pmsm_hall_app_control_step_2(void){
 
 #define PMSM_HALL_RPM_GAIN ( ((int32_t)( (60000000./PMSM_HALL_RPM_BASE_PERIOD_US))>>enco_RESOLUTION_ACTUAL))
 
-#define PMSM_HALL_RPM_PRESC (PMSM_HALL_RPM_VALUE_TOTAL_PRESC - PMSM_HALL_RPM_FILTER_VALUE_PRESC + PMSM_HALL_RPM_ENCODER_DEFRES - enco_RESOLUTION_ACTUAL) 
+#define PMSM_HALL_RPM_PRESC (PMSM_HALL_RPM_VALUE_TOTAL_PRESC - PMSM_HALL_RPM_FILTER_VALUE_PRESC ) 
 
 
 
@@ -464,11 +449,13 @@ void pmsm_hall_app_control_step_3(void){
 	static burst_time_us_t last_rpm_us = 0;
 	static burst_long_signal_t last_rpm_pos = 0;
 	static burst_long_signal_t delta_flt = 0;
-	burst_time_us_t now = burst_time_us();
-	if(  now - last_rpm_us  >= (1<<PMSM_HALL_RPM_PRESC)*PMSM_HALL_RPM_BASE_PERIOD_US ){
+	static int rpm_period_us = (1<<PMSM_HALL_RPM_PRESC)*PMSM_HALL_RPM_BASE_PERIOD_US ;
+	static burst_long_signal_t rpm_pos_delta=0;
+	burst_time_us_t now = burst_time_us();	
+	if(  now - last_rpm_us  >= rpm_period_us){
 		burst_long_signal_t pos = enco.ref.position;
-		burst_long_signal_t delta = pos - last_rpm_pos;
-		delta_flt = delta_flt*((1<<PMSM_HALL_RPM_FILTER_GAIN_PRESC)-1) + delta*(1<<PMSM_HALL_RPM_FILTER_VALUE_PRESC);
+		rpm_pos_delta = pos - last_rpm_pos;
+		delta_flt = delta_flt*((1<<PMSM_HALL_RPM_FILTER_GAIN_PRESC)-1) + rpm_pos_delta*(1<<PMSM_HALL_RPM_FILTER_VALUE_PRESC);
 		delta_flt >>= PMSM_HALL_RPM_FILTER_GAIN_PRESC;
 		//60*1000000 / 256 (pp.об) / 16 = 14648
 		

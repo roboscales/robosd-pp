@@ -42,7 +42,7 @@ NIKITIN(c_lat_flt)
 
 NIKITIN(c_cross_flt)
 
-#ifndef BURST_APP_PMSM_BLDC_ENABLED
+#if BURST_APP_PMSM_BLDC_ENABLED == 1
 //swt
 #define CLCH_NAME swt
 #define CLCH_HEADER 
@@ -116,6 +116,10 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 
 #ifndef hall_INV
 #define hall_INV burst_false
+#endif
+
+#ifndef hall_EXTRA_MODE
+#define hall_EXTRA_MODE hall_extra_mode_none
 #endif
 
 #ifndef adc_INDEX

@@ -740,5 +740,21 @@ namespace robo {
 		tmp->release();
 	}
 
+	frontend::varindex::node& frontend::varindex::record::root() {
+		static node root__("", nullptr);
+		return root__;
+	}
+	frontend::varindex::node*& frontend::varindex::record::current_() {
+		static node* current__ = &root();
+		return current__;
+	}
+	void frontend::varindex::record::push(::robo::cstr _name) {
+		current_() = new node(_name, current_());
+	}
+	void frontend::varindex::record::pop(void) {
+		ROBO_VBREAKN_F(current_()->branch(), RT("the current node has no parent "))
+		current_() = current_()->branch();
+	}
+
 }
 
