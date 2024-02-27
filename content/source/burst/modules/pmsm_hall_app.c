@@ -292,7 +292,7 @@ burst_dev_mode_t pmcm_synchro_hall_statistic_current = {
 burst_dev_mode_p pmsm_hall_app_modes[ pmsm_mode_count] = {
 	&burst_idle_mode//0
 	, &actuator_mode_fault//1
-	, &actuator_mode_voltage//3
+	, &actuator_mode_voltage//2
 	, &actuator_mode_speed//3
 	, &actuator_mode_position//4
 	, &acwc_mode_voltage_cl//5

@@ -441,7 +441,7 @@ namespace mexo {
 				void run_(void) {
 					switch (status_) {
 					case status::none:
-						if (!begin_(RT("common_startup"))) {
+						if (!begin_(section_common_sturtup_)) {
 							refuse_();
 							break;
 						}
