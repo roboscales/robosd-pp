@@ -36,10 +36,11 @@ typedef struct burst_config_s{
 	int vercion;
 	struct{
 		#if BURST_PROTECTION_ENABLED == 1
+		burst_time_us_t reset_us;
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
 		burst_hyst_t temp_pp;
 		#endif
-		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
+		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
 		burst_hyst_t voltage_pp;
 		#endif
 		#endif
@@ -56,7 +57,7 @@ typedef struct burst_config_s{
 
 #if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
 #define BURST_PANICS_BOARD_TEMPER_CO()\
-{\
+,{\
 	BURST_PANICS_BOARD_TEMPER_OVERHI_PP\
 	, BURST_PANICS_BOARD_TEMPER_HI_PP\
 	, BURST_PANICS_BOARD_TEMPER_LO_PP\
@@ -93,6 +94,7 @@ typedef struct burst_config_s{
 #define BURST_CONFIG() {\
 	BURST_VERCION\
 	,{\
+		BURST_PANICS_BOARD_RESET_PP\
 		BURST_PANICS_BOARD_TEMPER_CO()\
 		BURST_PANICS_BOARD_VOLTAGE_CO()\
 		BURST_PANICS_BOARD_CURRENT_CO()\
@@ -228,6 +230,7 @@ void burst_hw_reboot(void);
 void burst_event_perform_panic(burst_dev_ref_p _dev);
 void burst_board_raise_panic(uint32_t flag);
 void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t flag);
+void burst_dev_reset_panic(burst_dev_ref_p _dev, uint32_t flag);
 uint32_t burst_core_panics(void);
 void burst_core_reset_panics(void);
 
