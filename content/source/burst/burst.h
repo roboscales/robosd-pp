@@ -36,7 +36,7 @@ typedef struct burst_config_s{
 	int vercion;
 	struct{
 		#if BURST_PROTECTION_ENABLED == 1
-		burst_time_us_t reset_us;
+		burst_time_us_t reset_timeout_us;
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
 		burst_hyst_t temp_pp;
 		#endif
@@ -94,7 +94,7 @@ typedef struct burst_config_s{
 #define BURST_CONFIG() {\
 	BURST_VERCION\
 	,{\
-		BURST_PANICS_BOARD_RESET_PP\
+		BURST_PANICS_BOARD_RESET_TIMEOUT_PP\
 		BURST_PANICS_BOARD_TEMPER_CO()\
 		BURST_PANICS_BOARD_VOLTAGE_CO()\
 		BURST_PANICS_BOARD_CURRENT_CO()\

@@ -307,8 +307,8 @@ void burst_dev_frontend_protection(burst_dev_ref_p _ref){
 		burst_board_raise_panic(burst_panic_board_lotemp_bit);
 	}
 	#endif
-	if(burst.panics && burst_config->panics.reset_us){ 
-		if( burst_time_us() - burst.last_panic_us > burst_config->panics.reset_us)
+	if(burst.panics && burst_config->panics.reset_timeout_us){ 
+		if( burst_time_us() - burst.last_panic_us > burst_config->panics.reset_timeout_us)
 		{
 			burst.panics = 0;
 			burst_dev_ref_p * p ;
