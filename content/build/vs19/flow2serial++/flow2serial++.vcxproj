@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_convert.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_tree.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can_module.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_convert.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_delegat.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system_native.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_tree.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\can\sysworxx\robosd_sysworxx_can.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\platform\serial\win_com.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\net\robosd_can.hpp" />

@@ -394,8 +394,8 @@ void pmsm_hall_app_realtime_loop(void){
 	enco.ref.run();
 	pmsm_angle_forcer_run(&angle_forcer);
 	pmsm_sence_run(&motor);
-	c_cross_flt.ref.run();
-	c_lat_flt.ref.run();
+	//c_cross_flt.ref.run();
+	//c_lat_flt.ref.run();
 }
 
 void pmsm_hall_app_backend_loop(void){		

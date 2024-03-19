@@ -6,7 +6,7 @@ typedef struct burst_net_flow_buf_s{
 burst_net_flow_buf_t burst_net_flow_buffers[16];
 
 void burst_net_flow_receive(uint16_t _id, const uint8_t * _data, uint8_t _sz){
-	fb3_proto_id_t id;
+	burst_net_flow_id_t id;
 	id.value = _id;
 	if(id.slave) return;
 	if(id.request){

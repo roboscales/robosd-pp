@@ -285,7 +285,7 @@ void burst_dev_realtime_protection(burst_dev_ref_p _ref){
 	if( burst_board_voltage >= burst_config->panics.voltage_pp.overhi){
 		burst_board_raise_panic(burst_panic_board_overvoltage_bit);
 	} else if (burst_board_voltage<=burst_config->panics.voltage_pp.ultralo){
-		burst_board_raise_panic(burst_panic_board_lovoltage);
+		burst_board_raise_panic(burst_panic_board_lovoltage_bit);
 	}
 	#endif
 
@@ -294,27 +294,42 @@ void burst_dev_realtime_protection(burst_dev_ref_p _ref){
 	if( burst_board_current >= burst_config->panics.overcurrent_pp){
 		burst_board_raise_panic(burst_panic_board_overcurrent_bit);
 	} else if (burst_board_current<=burst_config->panics.locurrent_pp){
-		burst_board_raise_panic(burst_panic_board_locurrent);
+		burst_board_raise_panic(burst_panic_board_locurrent_bit);
 	}
 	#endif
 }
 void burst_dev_frontend_protection(burst_dev_ref_p _ref){
 	#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
-	int burst_board_temper = burst_board_temper_get_pp();
-	if( burst_board_temper >= burst_config->panics.temp_pp.overhi){
+	int burst_board_temper_hi = burst_board_temper_get_hi_pp();
+	int burst_board_temper_lo = burst_board_temper_get_lo_pp();
+	if( burst_board_temper_hi >= burst_config->panics.temp_pp.overhi){
 		burst_board_raise_panic(burst_panic_board_overtemp_bit);
-	} else if (burst_board_temper<=burst_config->panics.temp_pp.ultralo){
+	} else if (burst_board_temper_hi < burst_config->panics.temp_pp.hi){
+		if( burst.panics){
+			burst_board_reset_panic(burst_panic_board_overtemp_bit);
+		}
+	}
+	
+	if (burst_board_temper_lo<=burst_config->panics.temp_pp.ultralo){
 		burst_board_raise_panic(burst_panic_board_lotemp_bit);
+	} else if(burst_board_temper_lo > burst_config->panics.temp_pp.lo){
+		if( burst.panics){
+			burst_board_reset_panic(burst_panic_board_lotemp_bit);
+		}
 	}
 	#endif
 	if(burst.panics && burst_config->panics.reset_timeout_us){ 
 		if( burst_time_us() - burst.last_panic_us > burst_config->panics.reset_timeout_us)
 		{
-			burst.panics = 0;
-			burst_dev_ref_p * p ;
-			for( p= burst.devs; p!=burst.devs_end;p++){
-				if( (*p) -> panic){
-					(*p) -> panic &= ~(1<<burst_panic_dev_board_bit);				
+			uint32_t mask = burst.panics;
+			mask &= ~(burst_panic_board_overtemp_bit|burst_panic_board_lotemp_bit);
+			burst.panics &= ~(mask);
+			if(burst.panics == 0){
+				burst_dev_ref_p * p ;
+				for( p= burst.devs; p!=burst.devs_end;p++){
+					if( (*p) -> panic){
+						(*p) -> panic &= ~(1<<burst_panic_dev_board_bit);				
+					}
 				}
 			}
 		}
@@ -820,7 +835,7 @@ void burst_critical_leave(uint32_t _context){
 #endif
 
 void burst_event_perform_panic(burst_dev_ref_p _dev){	
-	if(_dev->mode!=burst_dev_mode_idle){
+	if(_dev->mode!=burst_dev_mode_idle ){
 		burst_dev_mode_p actual_mode = _dev->actual_mode;
 		if (actual_mode) {
 			actual_mode->stop(_dev);
@@ -840,8 +855,20 @@ void burst_board_raise_panic(uint32_t _flag){
 	burst_dev_ref_p * p ;
 	for( p= burst.devs; p!=burst.devs_end;p++){
 		burst_dev_raise_panic(*p, burst_panic_dev_board_bit);
+	}	
+}
+
+void burst_board_reset_panic(uint32_t _flag){
+	uint32_t mask = ( 1<< _flag );
+	if( (burst.panics & mask)  != 0){
+		burst.panics &= ~mask;
+		if(burst.panics == 0){
+			burst_dev_ref_p * p ;
+			for( p= burst.devs; p!=burst.devs_end;p++){
+				burst_dev_reset_panic(*p, burst_panic_dev_board_bit);
+			}
+		}	
 	}
-	
 }
 
 void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){

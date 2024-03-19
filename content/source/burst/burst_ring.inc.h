@@ -44,7 +44,7 @@ RING_SIZE_T RING_PREFIX(readCount);
 // количество записей
 RING_SIZE_T RING_PREFIX(writeCount);
 
-const RING_SIZE_T RING_PREFIX(size_) = RING_SIZE;
+enum{  RING_PREFIX(size_) = RING_SIZE };
 
 #ifndef BURST_STATIC_INLINE
 #define BURST_STATIC_INLINE
@@ -73,6 +73,11 @@ BURST_STATIC_INLINE burst_bool_t RING_PREFIX(available_)()
 BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(count_)()
 {
 	return ( RING_PREFIX(writeCount) - RING_PREFIX(readCount)) & ((RING_MASK<<1)+1); //как это раньше работало?
+}
+
+BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(space_)()
+{
+	return RING_SIZE-  RING_PREFIX(count_)();
 }
 
 // полон ли буфер
@@ -109,6 +114,15 @@ BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(count)()
 	RING_SIZE_T ret;
 	RING_LOCK();
 	ret = RING_PREFIX(count_)();
+	RING_UNLOCK();
+	return ret;
+}
+
+BURST_STATIC_INLINE RING_SIZE_T RING_PREFIX(space)()
+{
+	RING_SIZE_T ret;
+	RING_LOCK();
+	ret = RING_PREFIX(space_)();
 	RING_UNLOCK();
 	return ret;
 }
@@ -190,7 +204,29 @@ BURST_STATIC_INLINE RING_DATA_T RING_PREFIX(get)()
 BURST_STATIC_INLINE void RING_PREFIX(put)(RING_DATA_T  _value)
 {
 	RING_LOCK();
-	RING_PREFIX(put_)(_value);
+	if(RING_PREFIX(space_)() ){
+		RING_PREFIX(put_)(_value);
+	}
+	RING_UNLOCK();
+}
+#else
+BURST_STATIC_INLINE RING_DATA_T RING_PREFIX(get)()
+{
+	RING_DATA_T tmp;
+	RING_LOCK();
+	if(RING_PREFIX(available_)() ){
+		tmp = RING_PREFIX(get_)();
+	}
+	RING_UNLOCK();
+	return tmp;	
+}
+
+BURST_STATIC_INLINE void RING_PREFIX(put)(RING_DATA_T  _value)
+{
+	RING_LOCK();
+	if(RING_PREFIX(count_)() < RING_SIZE){
+		RING_PREFIX(put_)(_value);
+	}
 	RING_UNLOCK();
 }
 #endif

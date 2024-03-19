@@ -229,17 +229,20 @@ void burst_sw_on_crash(const char * _file, const char * _function, int _line);
 void burst_hw_reboot(void);
 void burst_event_perform_panic(burst_dev_ref_p _dev);
 void burst_board_raise_panic(uint32_t flag);
+void burst_board_reset_panic(uint32_t _flag);
 void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t flag);
 void burst_dev_reset_panic(burst_dev_ref_p _dev, uint32_t flag);
 uint32_t burst_core_panics(void);
 void burst_core_reset_panics(void);
 
+	
 #if BURST_PANICS_MASTER_LOST_ENABLED == 1
 void burst_master_alive(burst_dev_ref_p _ref);
 #endif
 
 #if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
-int burst_board_temper_get_pp(void);
+int burst_board_temper_get_lo_pp(void);
+int burst_board_temper_get_hi_pp(void);
 #endif
 
 #if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 

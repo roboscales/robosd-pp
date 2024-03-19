@@ -9,13 +9,15 @@ typedef struct burst_serial_s {
 	burst_bool_t (*putb)(const uint8_t*, burst_size_t);
 	uint8_t (*get)(void);
 	void (*put)(uint8_t _data);
-	burst_bool_t (*begin)(void);
-	burst_bool_t (*start)(void);
+	void (*begin)(void);
+	void (*start)(void);
 	void (*reset)(void);
 	void (*finish)(void);
 } burst_serial_t;
 
 typedef burst_serial_t * burst_serial_p;
+
+
 
 #define BURST_SERIAL( S ) BURST_SERIAL_( S )
 #define BURST_SERIAL_( S ) \
@@ -39,11 +41,9 @@ BURST_WEAK  uint8_t S##_get(void){ return 0; }\
 BURST_WEAK  void S##_put(uint8_t _data){\
 	BURST_UNUSED(_data);\
 }\
-BURST_WEAK  burst_bool_t S##_begin(void){\
-	return 	burst_true;\
+BURST_WEAK  void S##_begin(void){\
 }\
-BURST_WEAK  burst_bool_t S##_start(void){\
-	return 	burst_true;\
+BURST_WEAK  void S##_start(void){\
 }\
 BURST_WEAK  void S##_reset(void){}\
 BURST_WEAK  void S##_finish(void){}\
@@ -62,3 +62,4 @@ burst_serial_t  S ={ \
 
 BURST_SERIAL(burst_serial_dummy)
 #endif
+

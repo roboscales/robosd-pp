@@ -1,16 +1,17 @@
 #include "flow_serial.h"
+#include "burst/burst_app.h"
 #define RING_PREFIX_NAME fsincom
 #define RING_ONE_DIRRECTION_PUT_GET 1
-#define RING_SIZE_BITS 7
-#define RING_LOCK() burst_bool_t context = burst_net_flow_serial_prf_lock();
-#define RING_UNLOCK() burst_net_flow_serial_prf_unlock(context);
+#define RING_SIZE_BITS fsincom_RING_SIZE_BITS
+#define RING_LOCK() uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
 #include "burst/burst_ring.inc.h"
 
 #define RING_PREFIX_NAME fsoutcom
 #define RING_ONE_DIRRECTION_PUT_GET 1
-#define RING_SIZE_BITS 7
-#define RING_LOCK() burst_bool_t context = burst_net_flow_serial_prf_lock();
-#define RING_UNLOCK() burst_net_flow_serial_prf_unlock(context);
+#define RING_SIZE_BITS fsoutcom_RING_SIZE_BITS
+#define RING_LOCK()  uint32_t context = burst_guard_enter();
+#define RING_UNLOCK() burst_guard_leave(context);
 #include "burst/burst_ring.inc.h"
 
 burst_size_t  burst_net_flow_serial_available(void){
@@ -37,11 +38,9 @@ burst_size_t burst_net_flow_serial_getb(uint8_t* _buf, burst_size_t _max_sz){
 burst_bool_t burst_net_flow_serial_putb(const uint8_t* _buf, burst_size_t _sz){
 	return  fsoutcom_buf_put(_buf, _sz);
 }
-burst_bool_t burst_net_flow_serial_begin(void){
-	return burst_true;
+void burst_net_flow_serial_begin(void){
 }
-burst_bool_t burst_net_flow_serial_start(void){
-	return burst_true;
+void burst_net_flow_serial_start(void){
 }
 void burst_net_flow_serial_finish(void){
 }

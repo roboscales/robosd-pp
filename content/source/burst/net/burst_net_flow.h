@@ -1,7 +1,7 @@
 #ifndef burst_net_flow_h
 #define burst_net_flow_h
 #include <stdint.h>
-typedef union fb3_proto_id_s{
+typedef union burst_net_flow_id_s{
 	struct{
 		uint16_t suba:4;
 		uint16_t addr:5;
@@ -9,7 +9,7 @@ typedef union fb3_proto_id_s{
 		uint16_t slave:1;
 	};
 	uint16_t value;
-} fb3_proto_id_t;
+} burst_net_flow_id_t;
 
 void burst_net_flow_receive(uint16_t _id, const uint8_t * _data, uint8_t _sz);
 void burst_net_flow_prf_sent(uint16_t _id, const uint8_t * _data, uint8_t _sz);
