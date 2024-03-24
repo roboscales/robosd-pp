@@ -35,8 +35,11 @@ void inv3ph_begin(inv3ph_p _inverter, inv3ph_config_p _config) {
 	gain += ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN) / 2; //округление
 	gain /= ((burst_long_signal_t)BURST_SIGNAL_MAX - BURST_SIGNAL_MIN);
 	_inverter->scale_gain = gain;
-	_inverter->discret_delta_lo = -_config->native.lo;
+	_inverter->discret_delta_lo = 0;//-_config->native.lo;
 	_inverter->discret_delta_hi = delta;
+
+	_inverter->deform = &(_config->deform);
+
 }
 
 burst_signal_t inv3ph_scale_(inv3ph_p _inverter,burst_signal_t _signal) {
@@ -52,7 +55,15 @@ burst_signal_t inv3ph_scale_(inv3ph_p _inverter,burst_signal_t _signal) {
 		return  _inverter->discret_lo +  tmp;
 	}
 }
-
+burst_signal_t inv3ph_deform_pwm( burst_signal_t _src, inv3ph_deform_p _deform){
+	if( _src>_deform->level  ){
+		return  (burst_signal_t)((_deform->lo_gain_16 *_src + _deform->lo_bevel_16)>>16);
+	} else if( _src < -_deform->level) {
+		return  -(burst_signal_t)((_deform->lo_gain_16 *(-_src) + _deform->lo_bevel_16)>>16);
+	} else {
+		return  (burst_signal_t)( _deform->hi_gain_16 *_src >> 16);
+	}
+}
 void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _lateral, burst_signal_t _angle){
 	rotcalc( &(_inverter->rot), _angle );
 	_inverter->angle = _angle;
@@ -122,47 +133,63 @@ void inv3ph_run(inv3ph_p _inverter, burst_signal_t _cross, burst_signal_t _later
 	pwmA += mult_(pwmA, scale);
 	pwmB += mult_(pwmB, scale);
 	pwmC += mult_(pwmC, scale);
-	
-	burst_long_signal_t pwm_force = _inverter->pwm_force;
-	if( pwm_force > 0){
-		burst_long_signal_t lo = BURST_SIGNAL_MIN + pwm_force;
-		burst_long_signal_t hi = BURST_SIGNAL_MAX - pwm_force;
-		
-		BURST_SATURATE(pwmA,lo,hi);
-		BURST_SATURATE(pwmB,lo,hi);
-		BURST_SATURATE(pwmC,lo,hi);
-		
-		_inverter->pwm.A = (burst_signal_t)pwmA;
-		_inverter->pwm.B = (burst_signal_t)pwmB;
-		_inverter->pwm.C = (burst_signal_t)pwmC;
-
-		if(pwmA>0){
-			pwmA+=pwm_force;
-		}
-		if(pwmB>0){
-			pwmB+=pwm_force;
-		}
-		if(pwmC>0){
-			pwmC+=pwm_force;
-		}
-		
-		if(pwmA<0){
-			pwmA -= pwm_force;
-		}
-		if(pwmB<0){
-			pwmB -= pwm_force;
-		}
-		if(pwmC<0){
-			pwmC -= pwm_force;
-		}		
-	} else{
+	if(_inverter->deform->enabled){
 		BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
 		BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
 		BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
-		
 		_inverter->pwm.A = (burst_signal_t)pwmA;
 		_inverter->pwm.B = (burst_signal_t)pwmB;
 		_inverter->pwm.C = (burst_signal_t)pwmC;
+		pwmA = inv3ph_deform_pwm(pwmA, _inverter->deform);
+		pwmB = inv3ph_deform_pwm(pwmB, _inverter->deform);
+		pwmC = inv3ph_deform_pwm(pwmC, _inverter->deform);
+		BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+		BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+	} else {
+		burst_long_signal_t pwm_force = _inverter->pwm_force;
+		if( pwm_force > 0){
+			burst_long_signal_t lo = BURST_SIGNAL_MIN + pwm_force;
+			burst_long_signal_t hi = BURST_SIGNAL_MAX - pwm_force;
+			
+			BURST_SATURATE(pwmA,lo,hi);
+			BURST_SATURATE(pwmB,lo,hi);
+			BURST_SATURATE(pwmC,lo,hi);
+			
+			_inverter->pwm.A = (burst_signal_t)pwmA;
+			_inverter->pwm.B = (burst_signal_t)pwmB;
+			_inverter->pwm.C = (burst_signal_t)pwmC;
+
+			if(pwmA>0){
+				pwmA+=pwm_force;
+			}
+			if(pwmB>0){
+				pwmB+=pwm_force;
+			}
+			if(pwmC>0){
+				pwmC+=pwm_force;
+			}
+			
+			if(pwmA<0){
+				pwmA -= pwm_force;
+			}
+			if(pwmB<0){
+				pwmB -= pwm_force;
+			}
+			if(pwmC<0){
+				pwmC -= pwm_force;
+			}		
+
+		} else{
+			
+			BURST_SATURATE(pwmA,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+			BURST_SATURATE(pwmB,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+			BURST_SATURATE(pwmC,BURST_SIGNAL_MIN,BURST_SIGNAL_MAX);
+			
+			_inverter->pwm.A = (burst_signal_t)pwmA;
+			_inverter->pwm.B = (burst_signal_t)pwmB;
+			_inverter->pwm.C = (burst_signal_t)pwmC;
+		}
 	}
 	
 	_inverter->duty.A = inv3ph_scale_(_inverter,pwmA);
@@ -181,6 +208,8 @@ void current3ph_begin(current3ph_p _sensor, current3ph_config_p _config, inv3ph_
 		_sensor->deform = 0;
 	}
 }
+
+
 void current3ph_run(current3ph_p _sensor){
 	burst_long_signal_t * R  = _sensor->deform;
 	burst_long_signal_t a;

@@ -166,19 +166,19 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 		if(sectror_change){\
 			PREFIX(phy_##A##_off)();\
 			PREFIX(phy_##C##_set_lo)();\
-			PREFIX(phy_##B##_on)((uint16_t)pwm);\
+			PREFIX(phy_##B##_on)((uint16_t)pwm  );\
 		} else{\
-			PREFIX(phy_##B##_set_pwm)(pwm);\
+			PREFIX(phy_##B##_set_pwm)(pwm  );\
 		}
 
 	#define SWT_PHASE_VOLTAGE_REVERT(A,B,C) _SWT_PHASE_VOLTAGE_REVERT(A,B,C)
 	#define _SWT_PHASE_VOLTAGE_REVERT(A,B,C)\
 		if(sectror_change){\
 			PREFIX(phy_##C##_off)();\
-			PREFIX(phy_##A##_on)(PREFIX(config).pwm.max-pwm);\
+			PREFIX(phy_##A##_on)(PREFIX(config).pwm.max-pwm-PREFIX(config).pwm.min);\
 			PREFIX(phy_##B##_on)(PREFIX(config).pwm.max);\
 		} else{\
-			PREFIX(phy_##A##_set_pwm)(PREFIX(config).pwm.max-pwm);\
+			PREFIX(phy_##A##_set_pwm)(PREFIX(config).pwm.max-pwm-PREFIX(config).pwm.min);\
 		}		
 
 	void PREFIX(pwm_run_)(int sector){
@@ -187,9 +187,14 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 		PREFIX(sector_actual) = sector;
 		PREFIX(voltage_dir_actual) = voltage_dir_actual;
 		uint16_t pwm = (uint16_t)( CLCH_NAME.pwm.actual >= 0 ? CLCH_NAME.pwm.actual : -CLCH_NAME.pwm.actual );
-		if(pwm>70){
-			if( pwm <85 ) pwm = 85;
+		if( pwm>0 ){
+			pwm+=PREFIX(config).pwm.min;
+			if(pwm > PREFIX(config).pwm.max){
+				pwm = PREFIX(config).pwm.max;
+			}
 		}
+		
+
 		if(voltage_dir_actual){
 			switch(sector){
 				case 0: //A
@@ -237,6 +242,8 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 			}
 		}
 	}
+	uint8_t PREFIX(sector) = -1;
+	
 	void PREFIX(pwm_run)(void){
 		
 		if(CLCH_NAME.pwm.requried>PREFIX(config).pwm.max){
@@ -260,11 +267,11 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 			}
 		}
 		
-		int sector = PREFIX(phy_sector_get)() + PREFIX(config).sector_offset;
-		if (sector >=6){
-			sector = sector-6;
+		PREFIX(sector) = PREFIX(phy_sector_get)() + PREFIX(config).sector_offset;
+		if (PREFIX(sector) >=6){
+			PREFIX(sector) = PREFIX(sector)-6;
 		}
-		PREFIX(pwm_run_)(sector);
+		PREFIX(pwm_run_)(PREFIX(sector));
 		
 		//CLCH_NAME.pwm.actual = CLCH_NAME.pwm.requried;
 		

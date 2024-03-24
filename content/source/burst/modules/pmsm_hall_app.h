@@ -575,3 +575,23 @@ burst_signal_t * pmsm_hall_app_rotor_pos(void);
 extern pmsm_angle_forcer_t angle_forcer;
 
 #endif
+
+#ifndef motor_INV3PH_DEFORM_ENABLED
+#define motor_INV3PH_DEFORM_ENABLED burst_false
+#ifndef motor_INV3PH_DEFORM_LEVEL
+#define motor_INV3PH_DEFORM_LEVEL 0
+#endif
+
+#ifndef motor_INV3PH_DEFORM_HI_GAIN_16
+#define motor_INV3PH_DEFORM_HI_GAIN_16 0
+#endif
+
+#ifndef motor_INV3PH_DEFORM_LO_GAIN_16
+#define motor_INV3PH_DEFORM_LO_GAIN_16 0
+#endif
+
+#ifndef motor_INV3PH_DEFORM_LO_BEVEL_16
+#define motor_INV3PH_DEFORM_LO_BEVEL_16 0
+#endif
+#endif
+

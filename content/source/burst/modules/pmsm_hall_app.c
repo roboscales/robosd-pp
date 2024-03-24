@@ -332,6 +332,18 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 	pmsm_hall_app_config = _config;
 	hall_begin(&hall, &_config->hall);
 	adc_begin(&adc, &_config->adc);
+	
+	#if BURST_PROTECTION_ENABLED == 1 
+	motor.cross.ac.ref.realtime_protection = burst_pmsm_realtime_protection;
+	motor.cross.ac.ref.frontend_protection = burst_pmsm_frontend_protection;
+	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+	motor.cross.ac.temper_pp = pmsm_hall_app_motor_temp;
+	#endif
+	#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+	motor.cross.current.magnitude.get = pmsm_hall_app_motor_current_magnitude;
+	#endif
+	#endif
+	
 	pmsm_begin(
 		&motor//pmsm_p _pmsm
 		, &(_config->pmsm)//pmsm_config_p _config
@@ -367,16 +379,7 @@ void pmsm_hall_app_begin(pmsm_hall_app_config_p _config, pmsm_action_p _action, 
 	pmsm_angle_forcer_begin(&angle_forcer, &_config->angle_forcer,&hall.extra_angle,  &speedse.ref.value, 0);
 	#endif
 	
-	#if BURST_PROTECTION_ENABLED == 1 
-	motor.cross.ac.ref.realtime_protection = burst_pmsm_realtime_protection;
-	motor.cross.ac.ref.frontend_protection = burst_pmsm_frontend_protection;
-	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
-	motor.cross.ac.temper_pp = pmsm_hall_app_motor_temp;
-	#endif
-	#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-	motor.cross.current.magnitude.get = pmsm_hall_app_motor_current_magnitude;
-	#endif
-	#endif
+	
 }
 
 void pmsm_hall_app_start(void){

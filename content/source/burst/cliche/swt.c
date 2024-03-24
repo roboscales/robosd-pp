@@ -18,8 +18,8 @@ void swt_run(burst_swt_t * _swt, burst_swt_config_t * _config,int _requried,  in
 		model = _swt->model32 >> 10;
 	}
 	int pwm = ((error  - _actual) * _config->gain.prop + model ) >> 7;
-	if( pwm < _swt->pwm.min) {
-		pwm = _swt->pwm.min;
+	if( pwm < 0/*_swt->pwm.min*/) {
+		pwm = 0/*_swt->pwm.min*/;
 	} else if ( pwm > _swt->pwm.max) {
 		pwm = _swt->pwm.max;
 	}
