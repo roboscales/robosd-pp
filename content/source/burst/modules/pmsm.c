@@ -60,8 +60,8 @@ void pmsm_begin (
 		, &_pmsm->lateral.voltage.req				//burst_signal_p			  _control
 		, 0														//burst_signal_t 				_start_control
 		, &_ps->satstate							//burst_satstate_t *		_master_sut_flag
-		, 0														//burst_signal_p				_controlMax
-		, 0														//burst_signal_p				_controlMin
+		, &_pmsm->lateral.voltage.range.hi														//burst_signal_p				_controlMax
+		, &_pmsm->lateral.voltage.range.lo														//burst_signal_p				_controlMin
 		, 0														//burst_signal_p				_signal_diff
 		, 0														//burst_signal_p				_signal_force
 	);

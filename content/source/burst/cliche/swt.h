@@ -201,22 +201,22 @@ void swt_set_control(burst_swt_t * _swt, burst_swt_config_t * _config);
 					SWT_PHASE_VOLTAGE_DIRECT(A,B,C)
 					break;
 				case 1://-C
-					SWT_PHASE_VOLTAGE_REVERT(A,B,C)
-					//SWT_PHASE_VOLTAGE_DIRECT(C,B,A)
+					//SWT_PHASE_VOLTAGE_REVERT(A,B,C)
+					SWT_PHASE_VOLTAGE_DIRECT(C,B,A)
 					break;
 				case 2://B
 					SWT_PHASE_VOLTAGE_DIRECT(B,C,A)
 					break;
 				case 3://-A
-					SWT_PHASE_VOLTAGE_REVERT(B,C,A)
-					//SWT_PHASE_VOLTAGE_DIRECT(A,C,B)
+					//SWT_PHASE_VOLTAGE_REVERT(B,C,A)
+					SWT_PHASE_VOLTAGE_DIRECT(A,C,B)
 					break;
 				case 4://C
 					SWT_PHASE_VOLTAGE_DIRECT(C,A,B)
 					break;
 				case 5: //-B
-					SWT_PHASE_VOLTAGE_REVERT(C,A,B)
-					//SWT_PHASE_VOLTAGE_DIRECT(B,A,C)
+					//SWT_PHASE_VOLTAGE_REVERT(C,A,B)
+					SWT_PHASE_VOLTAGE_DIRECT(B,A,C)
 					break;
 			}
 		} else {
