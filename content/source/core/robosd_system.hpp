@@ -276,11 +276,12 @@ namespace robo {
 			 */
 			static bool is_backend(void);
 
+			#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE 
 			/*!
 			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
 			 */
 			static void abort(void);
-
+			#endif
 		private:
 			/*!
 			 *  Begins the env. Вызывается автоматически, когда перед стартом frontend и backend
@@ -417,6 +418,7 @@ namespace robo {
 #endif
 
 #if ROBO_APP_SYSTEM_ENABLED == 1
+#define guard_t ::robo::system::guard
 #define guard__ ::robo::system::guard g__
 #define fall__ ::robo::system::fall f__
 #define critical__ ::robo::system::critical c__
@@ -428,7 +430,9 @@ namespace robo {
 #define is_backend__ true
 #endif
 #else
-#define guard__
+class guard_dummy {};
+#define guard__ 
+#define guard_t  guard_dummy
 #define fall__ 
 #define is_frontend__ true
 #define is_backend__ true

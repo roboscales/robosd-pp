@@ -215,6 +215,8 @@ namespace robo {
 	void system::env::finish(void) {
 	}
 	void system::env::frontend_loop(void) {}
+	bool system::env::start(unsigned int & /*_tmp*/ ) { return true; }
+	void system::env::stop(void) {  }
 	void system::env::backend_loop(void) {
 #if ROBO_APP_MODULE_ENABLED == 1
 		if (++step_show_tick_ == step_show_period_) {
@@ -266,10 +268,11 @@ namespace robo {
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-
+	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE
 	void system::env::abort(void) {
 		::abort();
 	}
+	#endif
 
 	time_us_t system::env::realtime_us(void) {
 		std::chrono::steady_clock::time_point now_ = std::chrono::steady_clock::now();

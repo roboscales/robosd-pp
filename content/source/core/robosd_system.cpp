@@ -65,18 +65,19 @@ namespace robo {
 	}
 	char const* fault_file_ = nullptr;
 	char const* fault_function_ = nullptr;
-	int fault_line = 0;
-
+	int fault_line_ = 0;
+	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE && ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE
 	void crash(char const* _file, char const* _function, int _line) {
 		fault_file_ = _file;
 		fault_function_ = _function;
-		fault_line = _line;
+		fault_line_ = _line;
 		#if ROBO_APP_ENV_ENABLED == 1
 		system::env::abort();
 		#else
 		while (true) {}
 		#endif
 	}
+	#endif
 }
 
 #if ROBO_APP_SYSTEM_ENABLED == 1
@@ -576,6 +577,7 @@ void* operator new(size_t size) {
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	tmp = robo::system::mem::alloc(size);
 	#else
+	ROBO_APP_ASSERT(is_frontend__);
 	tmp = malloc(size);
 	#endif
 	ROBO_APP_ASSERT(tmp != nullptr)
@@ -586,6 +588,7 @@ void operator delete(void* ptr) {
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	robo::system::mem::free(ptr);
 	#else
+	ROBO_APP_ASSERT(is_frontend__);
 	free(ptr);
 	#endif
 

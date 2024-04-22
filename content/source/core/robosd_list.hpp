@@ -328,65 +328,196 @@ namespace robo {
 			}
 
 		};
-			
-
-		template <typename T,  typename...Arg> class ROBO_EXPORT unidir_t{
-			public:
-				class ROBO_EXPORT item : public T{
-					friend class unidir_t;
-					item * next_ = nullptr;				
-				public:
-					item* next(void) { return next_;  }
-					item(Arg... arg):T(arg...){};
-					~item(void){  }
-				};	
+		
+		namespace unidir {
+			template <typename T, typename I> class ROBO_EXPORT base_t {
 			private:
-				item * first_ = nullptr;
-				item * last_ = nullptr;				
+				I* first_ = nullptr;
+				I* last_ = nullptr;
 				int count_ = 0;
 			public:
-				item* first(void) { return first_; };
-				item* last(void) { return last_; };
+				I* first(void) { return first_; };
+				I* last(void) { return last_; };
 				int count(void) { return count_; }
-				unidir_t(void){
-				}
-				~unidir_t(void){
-				}
-				void push(item & _item) {
-					ROBO_APP_ASSERT(_item.next_==nullptr);
-					if(last_==nullptr){
-						last_= first_ = &_item;
-					} else{
-						last_ = (last_->next_ = &_item);						
+				base_t(void) {}
+				virtual ~base_t(void) {}
+			private:
+				void extract_(I* _prev, I* _it) {
+					if (_it) {
+						if (_prev) {
+							_prev->next_ = _it->next_;
+							if (last_ == _it) {
+								last_ = _prev;
+							}
+						}
+						else {
+							first_ = _it->next_;
+							if (first_ == nullptr) {
+								last_ = nullptr;
+							}
+						}
+						count_--;
 					}
-					count_ ++;
 				}
-				item * pop(void) {
-					if(first_!= nullptr){
-						item * tmp = first_;
-						if( tmp->next_ == nullptr ){
+			protected:
+				void push(I& _item) {
+					ROBO_APP_ASSERT(_item.next_ == nullptr);
+					if (last_ == nullptr) {
+						last_ = first_ = &_item;
+					}
+					else {
+						last_ = (last_->next_ = &_item);
+					}
+					count_++;
+				}
+
+				I* extract(const T& _t) {
+					I* prev = nullptr;
+					for (I* it = first_; it; it = it->next_) {
+						if ( it->eq(_t) ) {
+							extract_(prev, it);
+							return it;
+						}
+						prev = it;
+					}
+					return nullptr;
+				}
+				I* extract(const T* _t) {
+					I* prev = nullptr;
+					for (I* it = first_; it; it = it->next_) {
+						if ( it->eq(_t) ) {
+							extract_(prev, it);
+							return it;
+						}
+						prev = it;
+					}
+					return nullptr;
+				}
+				I* pop(void) {
+					if (first_ != nullptr) {
+						I* tmp = first_;
+						if (tmp->next_ == nullptr) {
 							first_ = last_ = nullptr;
-						} else {
+						}
+						else {
 							first_ = tmp->next_;
 						}
-						ROBO_APP_ASSERT( count_ > 0 );						
+						ROBO_APP_ASSERT(count_ > 0);
 						return tmp;
-					}	else {
+					}
+					else {
 						return nullptr;
 					}
 				}
-				void reset(void){
-					while(first_){
-						first_->pop();
+			public:
+				/*			void reset(void) {
+								while (first_) {
+									first_->pop();
+								}
+							}
+							void free(void) {
+								while (first_) {
+									I * tmp = pop();
+									delete tmp;
+								}
+							}*/
+			};
+			template <typename T, typename...Arg> class ROBO_EXPORT store_t;
+			template <typename T, typename...Arg> class ROBO_EXPORT store_item_t  {
+				T t_;
+				friend class store_t<T, Arg...>;
+				friend class base_t<T, store_item_t>;
+				store_item_t* next_ = nullptr;
+				bool eq(const T* _t) {
+					return _t == &t_;
+				}
+				bool eq(const T& _t) {
+					return _t == t_;
+				}
+				store_item_t(Arg... arg) :t_(arg...) {};
+				virtual ~store_item_t(void) {}
+			public:
+				store_item_t* next(void) { return next_; }
+			};
+
+			template <typename T,typename...Arg> class ROBO_EXPORT store_t :
+				public base_t< T, store_item_t<T, Arg...> > {
+			public:
+				using B = base_t< T, store_item_t<T, Arg...> >;
+				typedef store_item_t<T, Arg...> item;
+				T& push(Arg... arg) {
+					item* it = new item(arg...);
+					B::push(*it);
+					return it->t_;
+				}
+				/*void remove(T* _t) {
+					item* it = B::extract(_t);
+					if (it) {
+						delete it;
+					}
+				}*/
+				void remove(const T & _t) {
+					item* it = B::extract(_t);
+					if (it) {
+						delete it;
 					}
 				}
-				void free(void){
-					while(first_){
-						item * tmp = pop();
+				void remove(const T * _t) {
+					item* it = B::extract(_t);
+					if (it) {
+						delete it;
+					}
+				}
+				void free(void) {
+					while (B::first()) {
+						item* tmp = B::pop();
 						delete tmp;
 					}
 				}
-		};
+				virtual ~store_t(void) {
+					free();
+				}
+			};
+
+			/*template <typename T, typename...Arg> class ROBO_EXPORT container_item_t {
+				using L = unidir_base_t< T, container_item_t >;
+				friend class L;
+				container_item_t* next_ = nullptr;
+
+			public:
+				container_item_t(Arg... arg) :T(arg...) {};
+				virtual ~container_item_t(void) {}
+				container_item_t* next(void) { return next_; }
+			};*/
+			template <typename T, typename...Arg> class ROBO_EXPORT stack_t;
+			template <typename T, typename...Arg> class ROBO_EXPORT wrapper_item_t : public T {
+				friend class base_t< T, wrapper_item_t >;
+				friend class stack_t< T, Arg...>;
+			public:
+				wrapper_item_t* next_ = nullptr;
+				wrapper_item_t(Arg... arg) :T(arg...) {};
+				virtual ~wrapper_item_t(void) {}
+				wrapper_item_t* next(void) { return next_; }
+			};
+			template <typename T, typename...Arg> class ROBO_EXPORT stack_t :
+				public base_t< T, wrapper_item_t<T, Arg...> > {
+				using B = base_t< T, wrapper_item_t<T, Arg...> >;
+			public:
+				typedef wrapper_item_t<T, Arg...> item;
+				void push(item* _it) {
+					ROBO_APP_ASSERT(_it)
+						B::push(_it);
+				}
+				item* pop(void) {
+					return B::pop();
+				}
+				item* extract(const item* _t) {
+					return B::extract(_t);
+				}
+			};
+		}
+
+		
 	}
 	namespace queue {
 		template<typename T, typename L> class ROBO_EXPORT base
