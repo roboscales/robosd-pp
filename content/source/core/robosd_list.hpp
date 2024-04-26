@@ -393,7 +393,7 @@ namespace robo {
 					}
 					return nullptr;
 				}
-				I* pop(void) {
+				I* pop_first(void) {
 					if (first_ != nullptr) {
 						I* tmp = first_;
 						if (tmp->next_ == nullptr) {
@@ -499,6 +499,22 @@ namespace robo {
 				virtual ~wrapper_item_t(void) {}
 				wrapper_item_t* next(void) { return next_; }
 			};
+			template <typename T, typename...Arg> class ROBO_EXPORT queue_t :
+				public base_t< T, wrapper_item_t<T, Arg...> > {
+				using B = base_t< T, wrapper_item_t<T, Arg...> >;
+			public:
+				typedef wrapper_item_t<T, Arg...> item;
+				void push(item* _it) {
+					ROBO_APP_ASSERT(_it)
+						B::push(_it);
+				}
+				item* pop(void) {
+					return B::pop_first();
+				}
+				item* extract(const item* _t) {
+					return B::extract(_t);
+				}
+			};
 			template <typename T, typename...Arg> class ROBO_EXPORT stack_t :
 				public base_t< T, wrapper_item_t<T, Arg...> > {
 				using B = base_t< T, wrapper_item_t<T, Arg...> >;
@@ -509,7 +525,7 @@ namespace robo {
 						B::push(_it);
 				}
 				item* pop(void) {
-					return B::pop();
+					return B::pop_last();
 				}
 				item* extract(const item* _t) {
 					return B::extract(_t);

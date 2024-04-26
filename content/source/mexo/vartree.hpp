@@ -115,8 +115,8 @@ namespace mexo {
 			size_t sprintf(::robo::char_t* buf, size_t _max_sz);
 			#endif
 
-			typedef ::robo::list::unidir_t<record>::item  ref;
-			typedef ::robo::list::unidir_t<record> list;
+			typedef ::robo::list::unidir::queue_t<record>::item  ref;
+			typedef ::robo::list::unidir::queue_t<record> list;
 
 			template<typename T>	static ref* create(
 				types _type
