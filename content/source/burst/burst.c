@@ -214,6 +214,9 @@ void burst_begin(void){
 		(*p)->update_feedback.request.ref.query =  burst_dev_feedback_query;
 		(*p)->update_feedback.request.ref.confirm =  burst_dev_request_confirm;
 		#endif
+
+		(*p)-> panics_none_reset = (1<<burst_panic_dev_master_lost_bit);
+
 		(*p)->actual_mode = &burst_idle_mode;		
 		(*p)->modes_end = (*p)->modes+(*p)->mode_count;
 		
@@ -318,17 +321,29 @@ void burst_dev_frontend_protection(burst_dev_ref_p _ref){
 		}
 	}
 	#endif
-	if(burst.panics && burst_config->panics.reset_timeout_us){ 
+	if(burst_config->panics.reset_timeout_us){ 
 		if( burst_time_us() - burst.last_panic_us > burst_config->panics.reset_timeout_us)
 		{
-			uint32_t mask = burst.panics;
-			mask &= ~(burst_panic_board_overtemp_bit|burst_panic_board_lotemp_bit);
-			burst.panics &= ~(mask);
+			if(burst.panics){
+				uint32_t mask = burst.panics;
+				mask &= ~( (1<<burst_panic_board_overtemp_bit)| (1<<burst_panic_board_lotemp_bit) );
+				burst.panics &= ~(mask);
+				if(burst.panics == 0){
+					burst_dev_ref_p * p ;
+					for( p= burst.devs; p!=burst.devs_end;p++){
+						if( (*p) -> panic){
+							(*p) -> panic &= ~(1<<burst_panic_dev_board_bit);				
+						}
+					}
+				}
+			}		
 			if(burst.panics == 0){
 				burst_dev_ref_p * p ;
 				for( p= burst.devs; p!=burst.devs_end;p++){
-					if( (*p) -> panic){
-						(*p) -> panic &= ~(1<<burst_panic_dev_board_bit);				
+					uint32_t mask  = (*p) -> panic;
+					if( mask ){
+						mask &= ~(*p)->panics_none_reset;
+						(*p) -> panic &= ~(mask);
 					}
 				}
 			}
@@ -872,6 +887,7 @@ void burst_board_reset_panic(uint32_t _flag){
 }
 
 void burst_dev_raise_panic(burst_dev_ref_p _dev, uint32_t _flag){
+	burst.last_panic_us = burst_time_us();
 	uint32_t mask = ( 1<< _flag );
 	if( (_dev->panic & mask)  == 0){
 		_dev->panic |= mask;

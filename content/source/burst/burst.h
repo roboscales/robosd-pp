@@ -55,6 +55,12 @@ typedef struct burst_config_s{
 #define BURST_VERCION 0
 #endif
 
+#if BURST_PROTECTION_ENABLED == 1
+#define BURST_PANICS_BOARD_RESET_TIMEOUT_CO() BURST_PANICS_BOARD_RESET_TIMEOUT_US
+#else
+#define BURST_PANICS_BOARD_RESET_TIMEOUT_CO()
+#endif
+
 #if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
 #define BURST_PANICS_BOARD_TEMPER_CO()\
 ,{\
@@ -94,7 +100,7 @@ typedef struct burst_config_s{
 #define BURST_CONFIG() {\
 	BURST_VERCION\
 	,{\
-		BURST_PANICS_BOARD_RESET_TIMEOUT_PP\
+		BURST_PANICS_BOARD_RESET_TIMEOUT_CO()\
 		BURST_PANICS_BOARD_TEMPER_CO()\
 		BURST_PANICS_BOARD_VOLTAGE_CO()\
 		BURST_PANICS_BOARD_CURRENT_CO()\
@@ -200,6 +206,7 @@ struct burst_dev_ref_s{
 	burst_time_us_t master_alive_tm;
 	burst_bool_t master_exists;
 	#endif
+	uint32_t panics_none_reset;
 
 };
 

@@ -261,6 +261,7 @@ void actuator_begin (
 	_spf->setup(&_enco->delta_acc,1);
 	
 	#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
+	_actuator->ref.panics_none_reset |=  ( (1<<burst_panic_actuator_overtemp_bit) | (1<<burst_panic_actuator_lotemp_bit) );
 	burst_alarm( _actuator->temper_pp() );
 	#endif
 }

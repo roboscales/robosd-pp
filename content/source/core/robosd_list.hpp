@@ -393,7 +393,7 @@ namespace robo {
 					}
 					return nullptr;
 				}
-				I* pop(void) {
+				I* pop_first(void) {
 					if (first_ != nullptr) {
 						I* tmp = first_;
 						if (tmp->next_ == nullptr) {
@@ -489,10 +489,10 @@ namespace robo {
 				virtual ~container_item_t(void) {}
 				container_item_t* next(void) { return next_; }
 			};*/
-			template <typename T, typename...Arg> class ROBO_EXPORT queue_t;
+			template <typename T, typename...Arg> class ROBO_EXPORT stack_t;
 			template <typename T, typename...Arg> class ROBO_EXPORT wrapper_item_t : public T {
 				friend class base_t< T, wrapper_item_t >;
-				friend class queue_t< T, Arg...>;
+				friend class stack_t< T, Arg...>;
 			public:
 				wrapper_item_t* next_ = nullptr;
 				wrapper_item_t(Arg... arg) :T(arg...) {};
@@ -509,7 +509,23 @@ namespace robo {
 						B::push(_it);
 				}
 				item* pop(void) {
-					return B::pop();
+					return B::pop_first();
+				}
+				item* extract(const item* _t) {
+					return B::extract(_t);
+				}
+			};
+			template <typename T, typename...Arg> class ROBO_EXPORT stack_t :
+				public base_t< T, wrapper_item_t<T, Arg...> > {
+				using B = base_t< T, wrapper_item_t<T, Arg...> >;
+			public:
+				typedef wrapper_item_t<T, Arg...> item;
+				void push(item* _it) {
+					ROBO_APP_ASSERT(_it)
+						B::push(_it);
+				}
+				item* pop(void) {
+					return B::pop_last();
 				}
 				item* extract(const item* _t) {
 					return B::extract(_t);
