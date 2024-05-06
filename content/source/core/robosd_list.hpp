@@ -489,17 +489,17 @@ namespace robo {
 				virtual ~container_item_t(void) {}
 				container_item_t* next(void) { return next_; }
 			};*/
-			template <typename T, typename...Arg> class ROBO_EXPORT stack_t;
+			template <typename T, typename...Arg> class ROBO_EXPORT queue_t;
 			template <typename T, typename...Arg> class ROBO_EXPORT wrapper_item_t : public T {
 				friend class base_t< T, wrapper_item_t >;
-				friend class stack_t< T, Arg...>;
+				friend class queue_t< T, Arg...>;
 			public:
 				wrapper_item_t* next_ = nullptr;
 				wrapper_item_t(Arg... arg) :T(arg...) {};
 				virtual ~wrapper_item_t(void) {}
 				wrapper_item_t* next(void) { return next_; }
 			};
-			template <typename T, typename...Arg> class ROBO_EXPORT stack_t :
+			template <typename T, typename...Arg> class ROBO_EXPORT queue_t :
 				public base_t< T, wrapper_item_t<T, Arg...> > {
 				using B = base_t< T, wrapper_item_t<T, Arg...> >;
 			public:

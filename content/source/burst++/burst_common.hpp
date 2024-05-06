@@ -11,39 +11,44 @@
 
 namespace burst {
 	typedef robo::time_us_t time_us_t;
-	typedef BURST_SIGNAL_T signal_t;
-	typedef BURST_LONG_SIGNAL_T long_signal_t;
-	enum class satstate_t { none, both, low, up };
+
+	enum class satstates { none, both, low, up };
 	template <typename A> struct range_s {
-		A low;
+		A lo;
 		A hi;
 	};
-	struct  hyst_s {
-		signal_t overhi;
-		signal_t hi;
-		signal_t lo;
-		signal_t ultralo;
+	#define BURST_RANGE_CONFIG(a) BURST_RANGE_CONFIG_(a)
+	#define BURST_RANGE_CONFIG_(a) \
+	{\
+		a##_LO\
+		, a##_HI\
+	}
+	template<typename R> struct  hyst_t {
+		R overhi;
+		R hi;
+		R lo;
+		R ultralo;
 	};
 }
 
 #ifndef BURST_PROTECTION_ENABLED
-#define BURST_PROTECTION_ENABLED 1
+#define BURST_PROTECTION_ENABLED 0
 #endif
 
 #ifndef BURST_PANICS_MASTER_LOST_ENABLED
-#define BURST_PANICS_MASTER_LOST_ENABLED 1
+#define BURST_PANICS_MASTER_LOST_ENABLED 0
 #endif
 
 #ifndef BURST_PANICS_BOARD_TEMPER_ENABLED
-#define BURST_PANICS_BOARD_TEMPER_ENABLED 1
+#define BURST_PANICS_BOARD_TEMPER_ENABLED 0
 #endif
 
 #ifndef BURST_PANICS_BOARD_VOLTAGE_ENABLED
-#define BURST_PANICS_BOARD_VOLTAGE_ENABLED 1
+#define BURST_PANICS_BOARD_VOLTAGE_ENABLED 0
 #endif
 
 #ifndef BURST_PANICS_BOARD_CURRENT_ENABLED
-#define BURST_PANICS_BOARD_CURRENT_ENABLED 1
+#define BURST_PANICS_BOARD_CURRENT_ENABLED 0
 #endif
 
 #ifndef BURST_QUEUE_ENABLED
@@ -55,7 +60,7 @@ namespace burst {
 #endif
 
 #ifndef BURST_DEBUG_TP_ENABLED
-#define BURST_DEBUG_TP_ENABLED 1
+#define BURST_DEBUG_TP_ENABLED 0
 #endif
 
 #ifndef BURST_CORE_DEBUG
@@ -82,5 +87,7 @@ namespace burst {
 #ifndef ROBO_APP_BURST_PARANOIC_ENABLE
 #define ROBO_APP_BURST_PARANOIC_ENABLE 0
 #endif
+
+
 
 #endif

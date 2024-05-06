@@ -66,7 +66,7 @@ namespace robo {
 	char const* fault_file_ = nullptr;
 	char const* fault_function_ = nullptr;
 	int fault_line_ = 0;
-	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE && ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE
+	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE && ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_SPECIFIC
 	void crash(char const* _file, char const* _function, int _line) {
 		fault_file_ = _file;
 		fault_function_ = _function;

@@ -22,6 +22,7 @@ namespace robo {
 			virtual void reset(void) = 0;
 			virtual ~iserial(void){};
 			iserial(void):link(){};
+			virtual bool  puts(const char *_s);
 			
 		};
 
@@ -446,6 +447,88 @@ namespace robo {
 			}
 
 		};
+		
+		
+		template <typename D,unsigned SA, unsigned SB, typename G > class hardware_serial_t: protected bridge_t<SA,SB,G>, public net::iserial{
+		typedef bridge_t<SA,SB,G> bridge;
+			enum { rx_buffer_size =  1<<SA };
+			enum { tx_buffer_size =  1<<SB };
+			static inline uint8_t tx_buffer[tx_buffer_size] = {};
+			static inline uint8_t rx_buffer[rx_buffer_size] = {};
+
+		public:
+			void begin_receive(void){
+				D::begin_receive(rx_buffer,rx_buffer_size);
+			}
+			void on_receive(size_t _size){
+				bridge::A.put(rx_buffer,_size);
+				D::begin_receive(rx_buffer,rx_buffer_size);
+			}
+			void try_send(void){
+				size_t sz = bridge::A.get(tx_buffer,tx_buffer_size);
+				if(sz>0){
+					D::send(tx_buffer,sz);
+				} 
+			}
+			void on_confirm(void){
+				try_send();
+			}
+			void on_refuse(void){
+				//todo подумать
+				reset();
+				D::begin_receive(rx_buffer,rx_buffer_size);
+			}
+
+			virtual void reset(void){
+				bridge::A.reset();
+				bridge::B.reset();
+			}
+			
+			virtual size_t available(void) {
+				return bridge::B.available();
+			}
+			virtual size_t space(void) {
+				return bridge::B.space();
+			}
+			virtual size_t get(uint8_t* _data, size_t _max_size) {
+				return bridge::B.get(_data, _max_size);
+			}
+			virtual bool put(const uint8_t* _data, size_t _size) {
+				bool tmp = bridge::B.put(_data, _size);
+				try_send();
+				return tmp;
+			}
+			virtual bool  puts(const char *_s){
+				bool tmp = bridge::B.puts(_s);
+				try_send();
+				return tmp;
+			}
+			
+			virtual size_t get(uint8_t & _data) {
+				if (bridge::B.get(_data) > 0) {
+					return 1;					
+				}
+				else {
+					return 0;
+				}
+			}
+			
+			virtual bool  put(uint8_t _data) {
+				bool tmp = bridge::B.put(_data);
+				if(!tmp){
+					reset();
+				} else {
+					try_send();
+				}
+				return tmp;
+			}
+			
+			virtual size_t space_max(void){
+				return bridge::A.space_max();
+			}
+
+		};
+		
 	}
 }
 

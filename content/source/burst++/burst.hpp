@@ -9,6 +9,9 @@
 #include "core/robosd_delegat.hpp"
 //#include "burst++/burst_signal.hpp"
 namespace burst {
+	#ifndef temper_t
+	#define temper_t short
+	#endif
 	/**
 	@brief  Структура - описатель режима работы
 	*/
@@ -188,16 +191,16 @@ namespace burst {
 				#if BURST_PROTECTION_ENABLED == 1
 				time_us_t reset_timeout_us;
 				#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
-				hyst_s temp_pp;
+				hyst_t<temper_t> temp_pp;
 				#endif
 				#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
-				signal_t overvoltage_pp;
-				signal_t lovoltage_pp;
+				temper_t overvoltage_pp;
+				temper_t lovoltage_pp;
 				#endif
 				#endif
 				#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
-				signal_t overcurrent_pp;
-				signal_t locurrent_pp;
+				temper_t overcurrent_pp;
+				temper_t locurrent_pp;
 				#endif
 			} panics;
 		} * config_;
@@ -229,11 +232,15 @@ namespace burst {
 		#else
 		#define BURST_PANICS_BOARD_CURRENT_CO()
 		#endif
-
+		#if BURST_PROTECTION_ENABLED == 1
+		#define BURST_PANICS_BOARD_RESET_TIMEOUT_CO() BURST_PANICS_BOARD_RESET_TIMEOUT_PP
+		#else
+		#define BURST_PANICS_BOARD_RESET_TIMEOUT_CO()
+		#endif
 		#define BURST_CONFIG() {\
 				BURST_VERCION\
 				,{\
-					BURST_PANICS_BOARD_RESET_TIMEOUT_PP\
+					BURST_PANICS_BOARD_RESET_TIMEOUT_CO()\
 					BURST_PANICS_BOARD_TEMPER_CO()\
 					BURST_PANICS_BOARD_VOLTAGE_CO()\
 					BURST_PANICS_BOARD_CURRENT_CO()\

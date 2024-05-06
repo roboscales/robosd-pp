@@ -26,7 +26,7 @@
 #ifndef ROBO_APP_MODULE_ENABLED
 #define ROBO_APP_MODULE_ENABLED 0
 #endif
-//ROBO_APP_CRASH_TYPE лучше определять всегда отдельно
+//ROBO_APP_CRASH_TYPE Р»СѓС‡С€Рµ РѕРїСЂРµРґРµР»СЏС‚СЊ РІСЃРµРіРґР° РѕС‚РґРµР»СЊРЅРѕ
 #ifndef ROBO_APP_CRASH_TYPE
 #define ROBO_APP_CRASH_TYPE ROBO_APP_TYPE_SPECIFIC
 #endif
