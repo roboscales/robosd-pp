@@ -470,7 +470,7 @@ namespace robo {
 				}
 				void free(void) {
 					while (B::first()) {
-						item* tmp = B::pop();
+						item* tmp = B::pop_first();
 						delete tmp;
 					}
 				}

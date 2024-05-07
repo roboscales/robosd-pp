@@ -1,5 +1,5 @@
-#ifndef pi_hpp
-#define pi_hpp
+#ifndef burst_pi_hpp
+#define burst_pi_hpp
 #include "burst++/modules/actor.hpp"
 namespace burst{
 	template <class number> class pi_t : public actor{
@@ -16,7 +16,6 @@ namespace burst{
 				parametr_t	forceGain;
 				uint8_t			controlShift;
 				uint8_t			modelShift;
-				parametr_t	ramp;
 			};
 			
 			#define PI_CONFIG(a) PI_CONFIG_(a)
@@ -29,7 +28,6 @@ namespace burst{
 				,a##_FORCE_GAIN\
 				,a##_CONTROL_SHIFT\
 				,a##_MODEL_SHIFT\
-				,a##_RAMP\
 			}
 			const signal_t &	signal_req;
 			const signal_t &	signal;
@@ -84,14 +82,14 @@ namespace burst{
 				satstates sut_flag;
 
 				#ifndef MODEL_VALUE_MAX
-				#define MODEL_VALUE_MAX 0.9
+				#define MODEL_VALUE_MAX number::long_frac(0.9)
 				#endif
 
 				Error = signal_req - signal;
-				if( (Error>0) && ( (control>=controlMax) || (p.long_model>(number::long_max*MODEL_VALUE_MAX)) || (master_sut_flag == satstates::up) ) ){
+				if( (Error>0) && ( (control>=controlMax) || (p.long_model>MODEL_VALUE_MAX) || (master_sut_flag == satstates::up) ) ){
 					sut_flag = satstates::up;
 				} else {
-					if( (Error<0) && ( (control<=controlMin) || (p.long_model<(number::long_min*MODEL_VALUE_MAX)) || (master_sut_flag == satstates::low)  ) ){
+					if( (Error<0) && ( (control<=controlMin) || (p.long_model<-MODEL_VALUE_MAX) || (master_sut_flag == satstates::low)  ) ){
 							sut_flag = satstates::low;
 						}
 						else {
@@ -118,9 +116,9 @@ namespace burst{
 					p.force = force;
 				}
 
-				if (p.signal_diff != 0) {
-					long_signal_t diff = *(p.signal_diff) * (s->diffGain);
-					controlLong -= diff;
+				if (signal_diff != 0) {
+					p.diff =  - *(signal_diff) * s.diffGain;
+					controlLong += p.diff;
 				}
 
 				controlLong = number::fast::rsh(controlLong, s.controlShift);

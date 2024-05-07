@@ -45,6 +45,14 @@ namespace burst {
 				return (int15::signal_t)(_x - 0.5);
 			}
 		}
+		static constexpr int15::long_signal_t long_round(double _x) {
+			if (_x > 0) {
+				return (int15::long_signal_t)(_x + 0.5);
+			}
+			else {
+				return (int15::long_signal_t)(_x - 0.5);
+			}
+		}
 		static signal_t sin(signal_t _angle);
 		static signal_t cos(signal_t _angle);
 	};
@@ -205,6 +213,9 @@ namespace burst {
 			return digit::round(_x);
 		}
 		
+		static constexpr typename digit::long_signal_t long_round(double _x) {
+			return digit::long_round(_x);
+		}
 
 		static constexpr signal_t s_sat(long_signal_t _x) {
 			if ( _x > digit::max) {
@@ -218,9 +229,14 @@ namespace burst {
 			}
 		}
 
-		static constexpr int15::signal_t frac(double _x) {
+		static constexpr typename digit::signal_t frac(double _x) {
 			return round(_x* digit::max);
 		}
+
+		static constexpr typename digit::long_signal_t long_frac(double _x) {
+			return long_round(_x* digit::long_max);
+		}
+
 		/*/constexpr static signal_t one_div_2 = digit::round(0.5 * max);
 		constexpr static signal_t one_div_3 = digit::round( (1.0/3.0) * max);
 		constexpr static signal_t two_div_3 = digit::round((2.0 / 3.0) * max);
