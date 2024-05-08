@@ -88,6 +88,8 @@ namespace burst {
 #define ROBO_APP_BURST_PARANOIC_ENABLE 0
 #endif
 
-
+#ifndef BURST_VAR_ENABLED
+#define BURST_VAR_ENABLED 1
+#endif
 
 #endif

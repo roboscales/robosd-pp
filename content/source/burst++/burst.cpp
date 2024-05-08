@@ -144,6 +144,7 @@ namespace burst {
 			node::create_vars();
 			#endif
 			#if ROBO_APP_SYSTEM_ENABLED
+			varreg();
 			::robo::system::start(_period_us);
 			#endif
 			ROBO_ASSERT(config_);
@@ -458,6 +459,44 @@ namespace burst {
 		}
 	}
 #endif
+	#if BURST_VAR_ENABLED == 1
+	void board::varreg(void) {
+		using namespace burst::var;
+		push("board");
+		push("cfg");
+		reg(types::int32, (instance_.config_->vercion), "ver");
+		push("panics");
+
+		#if BURST_PROTECTION_ENABLED == 1
+		reg(types::uint32, (instance_.config_->panics.reset_timeout_us), "reset_tm_us");
+		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
+		push("temper");
+		reg(types::int16, (instance_.config_->panics.temp_pp.overhi), "overhi");
+		reg(types::int16, (instance_.config_->panics.temp_pp.hi), "hi");
+		reg(types::int16, (instance_.config_->panics.temp_pp.lo), "lo");
+		reg(types::int16, (instance_.config_->panics.temp_pp.ultralo), "ultralo");
+		pop();
+		#endif
+		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
+		reg(types::int16, (instance_.config_->panics.overvoltage_pp), "overvolt");
+		reg(types::int16, (instance_.config_->panics.lovoltage_pp), "lovolt");
+		#endif
+		#endif
+		#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
+		reg(types::int16, (instance_.config_->panics.overcurrent_pp), "overcur");
+		reg(types::int16, (instance_.config_->panics.locurrent_pp), "locur");
+		#endif
+
+		pop();
+		pop();
+		pop();
+
+		for (dev::ref* p = instance_.devs_ref_.first(); p; p = p->next()) {
+			p->owner().varreg();
+		}
+	}
+	#endif
+
 }
 
 #include "burst++/burst.h"

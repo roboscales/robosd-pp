@@ -290,10 +290,10 @@ namespace robo{
 
 		void win_com::reset(void){
 			guard __g(*this);
-			stop();
+			//stop();
 			outcomQueue.clear();
 			incomQueue.clear();
-			connect(comm);
+			//connect(comm);
 		}
 		bool win_com::wait(void){
 			HANDLE ev[2] = { hReceiveComplete, hTerminate };

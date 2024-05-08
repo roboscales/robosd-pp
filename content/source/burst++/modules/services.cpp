@@ -10,8 +10,7 @@
 #include "terminal/robosd_termo.hpp"
 #endif
 
-
-//#include "mexo/vartree.hpp"
+#include "burst++/vartree.hpp"
 
 
 #if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT
@@ -222,7 +221,7 @@ namespace burst{
 				case	MEMO:
 					{
 						#if ROBO_APP_ALLOC_ENABLED ==1							
-						const ::system::mem::stat & ms = ::system::get_mem_statistic();
+						const robo::system::mem::stat & ms = robo::system::get_mem_statistic();
 							
 						::robo::termo::itf::printf(RT8("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
 						::robo::termo::itf::printf(RT8("total: %d payload: %d (%d)\n\r"), ms.total.size,ms.total.payload,ms.total.count);
@@ -375,11 +374,9 @@ namespace burst{
 		};
 		#endif
 			
-		#ifndef ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 
-		#define ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE 50
-		#endif
-		#if ROBO_APP_MEXO_VAR_ENABLED == 1
-		namespace vartree{
+
+		#if BURST_VAR_ENABLED == 1
+		namespace var{
 			::robo::termo::node root(
 				RT8("vt")
 				, RT8("vartree commands set")
@@ -388,59 +385,101 @@ namespace burst{
 			);
 
 			class show :public ::robo::termo::command{
-				::mexo::node * current_node_ = nullptr;
-				char_t * path_ptr_ = nullptr;
-				size_t path_sz_ = 0;					
+				robo::char_t* path_ = nullptr;
+				robo::char_t* path_ptr_ = nullptr;
+				int* path_stack_buffer_ = nullptr;
+				int path_sz_ = 0;					
+				int * path_stack_top_ = 0;
+				int path_stack_level_ = 0;
+				void end_(void ) {
+					if (path_) {
+						delete[] path_;
+						path_ = nullptr;
+					}
+					if (path_stack_buffer_) {
+						delete[] path_stack_buffer_;
+						path_stack_buffer_ = nullptr;
+					}
+				}
 			protected:
-				static inline char_t path[ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE];
-				::mexo::var::record::ref *  current_var = nullptr;
-				virtual void printf(void) = 0;
-					/*{						
-					::robo::termo::itf::printf(RT("%s%s\t%p\t%d\t%d-%d\n\r")
-						,path_,current_var_->name
-					,current_var_->addr
-					, (int)current_var_->desc.len
-					, current_var_->key
-					);
-				}*/
-				virtual bool begin(void){
-					path_ptr_ = path;
-					path_sz_ = ROBO_TERMO_VT_SHOW_PATH_BUFFER_SIZE;
-					current_node_ = ::mexo::node::root().first_on_path(path_ptr_, path_sz_);
-					if(current_node_){
-						current_var = current_node_->vars.first();
-						::robo::termo::itf::printf(RT8("vartree\n\r"));
-						if(current_var){
-							printf();
-							current_var=current_var->next();
+				burst::var::ref_s** pref = nullptr;
+				burst::var::ref_s* ref = nullptr;
+				void perform(void) {
+					using namespace burst::var;
+					int sz;
+					ref = *pref;
+					switch (ref->tag) {
+					case burst::var::tags::push:
+						if (path_sz_) {
+							if (path_stack_level_ < stack_size) {
+								sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+								*(path_stack_top_) = sz;
+								path_ptr_[sz] = 0;
+								path_ptr_ += sz;
+								path_sz_ -= sz;
+								path_stack_top_++;
+								path_stack_level_++;
+							}
+							else {
+								end_();
+								return;
+							}
 						}
-						return true;
+						break;
+					case tags::pop:
+						path_stack_top_--;
+						path_stack_level_--;
+						sz = *(path_stack_top_);
+						path_ptr_ -= sz;
+						*(path_ptr_) = 0;
+						path_sz_ += sz;
+						break;
+					default:
+						sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+						*(path_stack_top_) = sz;
+						path_ptr_[sz] = 0;	
+						printf((burst::var::record_s*)ref,path_+1);
+					}
+				}
+
+				virtual void printf( burst::var::record_s* _rec, robo::cstr _path) = 0;
+
+				virtual bool begin(void){
+					using namespace burst::var;
+					pref = burst::var::first();
+					if (pref) {
+						path_ = new robo::char_t[path_size + 1];
+						path_stack_buffer_ = new int[stack_size];
+
+						path_ptr_ = path_;
+						path_sz_ = path_size;
+						path_stack_top_ = path_stack_buffer_;
+						path_stack_level_ = 0;
+
+						perform();
+						if (pref != burst::var::last()) {
+							return true;
+						}
+						else {
+							end_();
+							return false;
+						}
 					}	else {
 						return false;
 					}							
 				}
 				virtual bool loop(void){
-					if(::robo::termo::itf::busy()) {
+					if( ::robo::termo::itf::busy() ) {
 						return true;
 					}
-					if(current_node_){
-						if(current_var){
-							printf();
-							current_var=current_var->next();
-							return true;
-						}else {
-							current_node_ = current_node_->next_on_path(path_ptr_, path_sz_);
-							if (current_node_) {
-								current_var = current_node_->vars.first();
-								return true;
-							}
-							else {
-								return false;
-							}
-						}
-					}			
-												
-					return false;
+					pref++;
+					perform();
+					if ( pref != burst::var::last() ) {
+						return true;
+					} else{
+						end_();
+						return false;
+					}
 				}
 				bool parse_long_arg(const char * _arg, const char * _val){
 					::robo::termo::itf::printf(RT8("argument ""%s"" is not support"), _arg);
@@ -469,19 +508,19 @@ namespace burst{
 			};
 			class show_fml:public show{
 			protected:
-				virtual void printf(void){
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path){
 					#if ROBO_UNICODE_ENABLED == 1
 					robo::string nm;
-					nm.format(RT("%s%s\t%d\t%x\n\r")
-							  , path, current_var->name
-							  , (int)current_var->desc.len
-							  , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr) - FMSTR_ADDRESS_OFFSET));
+					nm.format(RT("%s\t%d\t%x\n\r")
+							  , _path
+							  , (int)_rec->desc.len
+							  , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
 					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
-					::robo::termo::itf::printf(RT8("%s%s\t%d\t%x\n\r")
-											   , path, current_var->name
-											   , (int)current_var->desc.len
-											   , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)current_var->addr) - FMSTR_ADDRESS_OFFSET)
+					::robo::termo::itf::printf(RT8("%s\t%d\t%x\n\r")
+											   , _path
+											   , (int)_rec->desc.len
+											   , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET)
 					);
 					#endif
 				}
@@ -497,21 +536,21 @@ namespace burst{
 			}show_fm_;
 			class show_val:public show{
 			protected:
-				virtual void printf(void){				
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path){
 					#if ROBO_UNICODE_ENABLED == 1
-					char_t tmp[20];
-					current_var->sprintf(tmp,20);
+					robo::char_t tmp[20];
+					sprintf(*_rec, tmp, 20);
 					robo::string nm;
-					nm.format(RT("%30s%-10s%s\n\r")
-						,path,current_var->name
+					nm.format(RT("%30s\t%s\n\r")
+						,_path
 						,tmp
 					);
 					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
-					char_t tmp[20];
-					current_var->sprintf(tmp, 20);
-					::robo::termo::itf::printf(RT8("%30s%-10s%s\n\r")
-											   , path, current_var->name
+					robo::char_t tmp[20];
+					sprintf(*_rec,tmp, 20);
+					::robo::termo::itf::printf(RT8("%30s\t%s\n\r")
+											   , _path
 											   , tmp
 					);
 					#endif
@@ -529,28 +568,28 @@ namespace burst{
 				
 			class show_records:public show{
 			protected:
-				virtual void printf(void){						
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path){
 					#if ROBO_UNICODE_ENABLED == 1
 					robo::string nm;
-					nm.format(RT("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
-						,path,current_var->name
-						,current_var->addr
-						, (unsigned int)current_var->key
-						, (int)current_var->desc.len
-						, (int)current_var->desc.bsign
-						, (int)current_var->desc.bconst
-						, (int)current_var->desc.real
+					nm.format(RT("%20s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
+						,_path
+						,_rec->addr
+						, (unsigned int)_rec->key
+						, (int)_rec->desc.len
+						, (int)_rec->desc.bsign
+						, (int)_rec->desc.bconst
+						, (int)_rec->desc.real
 					);
 					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
 					#else
-					::robo::termo::itf::printf(RT8("%20s%10s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
-											   , path, current_var->name
-											   , current_var->addr
-											   , (unsigned int)current_var->key
-											   , (int)current_var->desc.len
-											   , (int)current_var->desc.bsign
-											   , (int)current_var->desc.bconst
-											   , (int)current_var->desc.real
+					::robo::termo::itf::printf(RT8("%20s\t%p\t%8x\t%d\t%d\t%d\t%d\n\r")
+											   , _path 
+											   , _rec->addr
+											   , (unsigned int)_rec->key
+											   , (int)_rec->desc.len
+											   , (int)_rec->desc.bsign
+											   , (int)_rec->desc.bconst
+											   , (int)_rec->desc.real
 					);
 					#endif
 				}

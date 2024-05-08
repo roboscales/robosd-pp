@@ -276,10 +276,8 @@ void system::env::unlock(void) {
 }
 #endif
 
-#if ROBO_APP_LIB_TYPE == ROBO_APP_TYPE_WIN
 #include <windows.h>
 #include <cstdlib>
-#endif
 
 namespace robo {
 	bool file_exists_(cstr _file_name) {

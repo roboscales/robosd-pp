@@ -7,11 +7,9 @@
 #include "core/robosd_system.hpp"
 #include "prf/led.hpp"
 #include "core/robosd_delegat.hpp"
+#include "burst++/vartree.hpp"
 //#include "burst++/burst_signal.hpp"
 namespace burst {
-	#ifndef temper_t
-	#define temper_t short
-	#endif
 	/**
 	@brief  Структура - описатель режима работы
 	*/
@@ -66,13 +64,16 @@ namespace burst {
 			bool master_exists;
 			#endif
 		};
-	public:
+				
 		struct config_s {
 			int tag;
 			#if BURST_PANICS_MASTER_LOST_ENABLED == 1
 			time_us_t alive_period_us;
 			#endif
 		};
+		#if BURST_VAR_ENABLED == 1
+		virtual void varreg(void) {};
+		#endif
 
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
 		#define 	BURST_PANICS_MASTER_LOST_CO(a) ,a##_ALIVE_PERIOD_US 
@@ -90,6 +91,9 @@ namespace burst {
 		/**
 		@brief Структура. Базовое устройство.
 		*/
+		
+
+
 
 		class  mode {
 			friend class dev;
@@ -110,6 +114,7 @@ namespace burst {
 		public:
 			mode(int _id, dev& _dev);
 		};
+		
 		friend class mode;
 		class request : public ::burst::request {
 		protected:
@@ -149,6 +154,12 @@ namespace burst {
 		template <typename T> typename T::feedback_s& feedback(void) {
 			return reinterpret_cast <typename T::feedback_s&>(feedback_);
 		}
+		
+		#define DEV_ALIEN_PRESENT_S(T,d,s) typename T::present_s& s = d.dev::template present<typename  T::present_s>()
+		#define DEV_PRESENT_S(p) present_s& p= dev::template present<present_s>()
+		#define DEV_CONFIG_S(c) const config_s& c= dev::template config<config_s>()
+		#define DEV_ACTION_S(a) action_s& a= dev::template action<action_s>()
+		#define DEV_FEEDBACK_S(f) feedback_s& f= dev::template feedback<feedback_s>()
 
 		#if BURST_PROTECTION_ENABLED == 1
 		virtual void realtime_protection(void) = 0;
@@ -191,19 +202,23 @@ namespace burst {
 				#if BURST_PROTECTION_ENABLED == 1
 				time_us_t reset_timeout_us;
 				#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
-				hyst_t<temper_t> temp_pp;
+				hyst_t<short> temp_pp;
 				#endif
 				#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
-				temper_t overvoltage_pp;
-				temper_t lovoltage_pp;
+				short overvoltage_pp;
+				short lovoltage_pp;
 				#endif
 				#endif
 				#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
-				temper_t overcurrent_pp;
-				temper_t locurrent_pp;
+				short overcurrent_pp;
+				short locurrent_pp;
 				#endif
 			} panics;
 		} * config_;
+
+		#if BURST_VAR_ENABLED == 1
+		static void varreg(void);
+		#endif
 
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
 		#define BURST_PANICS_BOARD_TEMPER_CO()\
@@ -453,16 +468,16 @@ namespace burst {
 
 	public:
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
-		int temper_get_lo_pp(void);
-		int temper_get_hi_pp(void);
+		short temper_get_lo_pp(void);
+		short temper_get_hi_pp(void);
 		#endif
 
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
-		int voltage_get_pp(void);
+		short voltage_get_pp(void);
 		#endif
 
 		#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1
-		int current_get_pp(void);
+		short current_get_pp(void);
 		#endif
 	};
 	#if BURST_DEBUG_TP_ENABLED == 1
@@ -525,6 +540,7 @@ namespace burst {
 
 	//template< class K, class D> class box_t : public D
 
+
 };
 
 #if BURST_DEBUG_TP_ENABLED == 1
@@ -537,5 +553,6 @@ namespace burst {
 #define debug_tp_off(n)
 #define debug_set_verb(n) 
 #endif
+
 
 #endif
