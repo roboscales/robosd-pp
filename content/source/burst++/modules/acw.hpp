@@ -1,93 +1,84 @@
 #ifndef burst_actuator_hpp
 #define burst_actuator_hpp
-#include "burst++/burst.hpp"
-#include "burst++/math.hpp"
-#include "burst++/modules/filter.hpp"
-#include "burst++/modules/ps.hpp"
-#include "burst++/modules/enco.hpp"
-#include "burst++/modules/motion.hpp"
-#include "burst++/modules/positioner.hpp"
-#include "burst++/modules/actuator.front.hpp"
 
-#ifndef BURST_PANICS_ACTUATOR_TEMPER_ENABLED
-#define BURST_PANICS_ACTUATOR_TEMPER_ENABLED 0
-#endif
-
+#include "burst++/modules/actuator.hpp"
+#include "burst++/modules/acw.hpp"
+#include "burst++/modules/pi.hpp"
 namespace burst{
-	template <class number> class actuator_t: public dev{
+	template <class number> class acw_t: public actuator_t<number>{
+		using B = actuator_t<number>;
 		public:
 		using parameter_t = typename number::parameter_t;
 		using signal_t = typename number::signal_t;
 		using long_signal_t = typename number::long_signal_t;
-		typedef front::actuator::action_s<number>  action_s;
-		typedef front::actuator::feedback_s<number>  feedback_s;
+		typedef front::acw::action_s<number>  action_s;
+		typedef front::acw::feedback_s<number>  feedback_s;
+
 		struct config_s{
-			burst::dev::config_s ref;
-			struct{
-				time_us_t reset;
-				time_us_t set;
-			} enco_fault_ticks;
+			B::config_s actuator;
 			struct {
-				range_s<signal_t> voltage;
-				range_s<signal_t> speed;
-				range_s<long_signal_t> position;
-			} range;
+				pi_t<number>::config_s pi;
+				range_s<signal_t> range;
+			} current;
 			struct {
-				typename motion_t<number>::config_s motion;
-				typename positioner_t<number>::config_s positioner;
+				struct {
+					typename motion_t<number>::config_s motion;
+					typename positioner_t<number>::config_s positioner;
+				} voltage_cl;
+				struct {
+					typename motion_t<number>::config_s motion;
+					typename positioner_t<number>::config_s positioner;
+				} current;
 			} modes;
+			#if BURST_PROTECTION_ENABLED == 1
+			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 			struct {
-				#if BURST_PROTECTION_ENABLED == 1
-				#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
-				hyst_t<signal_t> temper_pp;
-				#endif
-				#endif
+				signal_t  overcurrent_pp;
+				signal_t  overpower_pp;
+				signal_t  normpower_pp;
+				time_us_t  overpower_tm_us;
 			} panic;
+			#endif
+			#endif
 		};
 	
-		#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
-		#define BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
-		{\
-			a##_PANICS_ACTUATOR_TEMPER_OVERHI_PP\
-			, a##_PANICS_ACTUATOR_TEMPER_HI_PP\
-			, a##_PANICS_ACTUATOR_TEMPER_LO_PP\
-			, a##_PANICS_ACTUATOR_TEMPER_ULTRALO_PP\
+		#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1 && 	BURST_PROTECTION_ENABLED == 1
+
+		#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
+		,{\
+			a##_PANICS_ACWC_OWERCURRENT_PP\
+			, a##_PANICS_ACWC_OWERPOWER_PP\
+			, a##_PANICS_ACWC_NORMPOWER_PP\
+			, a##_PANICS_ACWC_OWERPOWER_TM_US\
 		}
 		#else
-		#define BURST_PANICS_ACTUATOR_TEMPER_CO(a)
+		#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)
 		#endif
 
-		#define ACTUATOR_CONFIG(a) ACTUATOR_CONFIG_(a)
-		#define ACTUATOR_CONFIG_(a)\
+		#define ACWC_CONFIG(a,b) ACWC_CONFIG_(a,b)
+		#define ACWC_CONFIG_(a,b)\
 		{\
-			DEV_CONFIG(a##_REF)\
+			ACTUATOR_CONFIG(a)\
 			,{\
-				a##_ENCO_FAULT_TICKS_RESET\
-				,a##_ENCO_FAULT_TICKS_SET\
+				PI_CONFIG(b##_CURRENT_PI)\
+				, RANGE_CONFIG(b##_CURRENT_RANGE)\
 			}\
 			,{\
-				RANGE_CONFIG(a##_RANGE_VOLTAGE)\
-				, RANGE_CONFIG(a##_RANGE_SPEED)\
-				, RANGE_CONFIG(a##_RANGE_POSITION)\
+				{\
+					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
+					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE_CL)\
+				}\
+				,{\
+					MOTION_CONFIG(a##_MOTION_OV_CURRENT)\
+					,POSITIONER_CONFIG(a##_POSITIONER_OV_CURRENT)\
+				}\
 			}\
-			,{\
-					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
-					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE)\
-			}\
-			,{\
-				BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
-			}\
+			BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
 		}
 		
-		int def_mode;
-		
-		ps::control & psc;	
-		#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
-		signal_t& temper;
-		#endif
-		motion_t<number> motion;
-		positioner_t<number> positioner;
-		
+		pi_t<number> dir;
+		limiter_t<number> limiter;
+
 		struct present_s {		
 			dev::present_s ref;
 			struct {

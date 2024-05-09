@@ -71,8 +71,11 @@ namespace burst {
 			time_us_t alive_period_us;
 			#endif
 		};
-		#if BURST_VAR_ENABLED == 1
-		virtual void varreg(void) {};
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		void regvar_present(robo::cstr _name);
+		virtual void do_regvar_present(void);
+		void regvar_conf(robo::cstr _name);
+		virtual void do_regvar_conf(void);
 		#endif
 
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
@@ -113,6 +116,9 @@ namespace burst {
 			dev& dev_;
 		public:
 			mode(int _id, dev& _dev);
+			template <typename T> typename T& owner(void) {
+				return dynamic_cast <typename T &>(dev_);
+			}
 		};
 		
 		friend class mode;
@@ -126,19 +132,18 @@ namespace burst {
 		ref ref_;
 		mode* actual_mode_ = nullptr;
 		mode::map modes_;
-		config_s& config_;
+		const config_s& config_;
 		action_s& action_;
 		feedback_s& feedback_;
 		present_s& present_;
 	protected:
 		dev(
 			int _dev_id
-			, config_s& _config
+			, const config_s& _config
 			, present_s& _present
 			, action_s& _action
 			, feedback_s& _feedback
 		);
-
 		template <typename T> typename T::action_s& action(void) {
 			return reinterpret_cast <typename T::action_s&>(action_);
 		}
@@ -147,8 +152,8 @@ namespace burst {
 			return reinterpret_cast <typename T::present_s&>(present_);
 		}
 
-		template <typename T> typename T::config_s& config(void) {
-			return reinterpret_cast <typename T::config_s&>(config_);
+		template <typename T> const  typename T::config_s& config(void) {
+			return reinterpret_cast < const typename T::config_s&>(config_);
 		}
 
 		template <typename T> typename T::feedback_s& feedback(void) {
@@ -162,22 +167,26 @@ namespace burst {
 		#define DEV_FEEDBACK_S(f) feedback_s& f= dev::template feedback<feedback_s>()
 
 		#if BURST_PROTECTION_ENABLED == 1
-		virtual void realtime_protection(void) = 0;
-		virtual void frontend_protection(void) = 0;
+		virtual void realtime_protection(void) {};
+		virtual void frontend_protection(void) ;
 		#endif
 		void raise_panic(uint32_t _flag);
 		void reset_panic(uint32_t _flag);
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
 		void master_alive(void);
 		#endif
-		virtual void reset(void) = 0;
-		virtual void start(void) = 0;
-		virtual void realtime_loop(void) = 0;
-		virtual void frontend_loop(void) = 0;
-		virtual void  on_perform_panic(void) {}
+		//virtual void reset(void) {};
+		//virtual void start(void) {};
+		//virtual void realtime_loop(void) {};
+
 		void  perform_panic(void);
-		private:
-			void switch_to_idle_(void);
+	private:
+		void switch_to_idle_(void);
+	public:
+		void loopA(void);
+		void loopB(void);
+		void loopC(void);
+		void frontend_loop(void);
 	};
 	
 
@@ -216,8 +225,8 @@ namespace burst {
 			} panics;
 		} * config_;
 
-		#if BURST_VAR_ENABLED == 1
-		static void varreg(void);
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		static void regvar_conf(void);
 		#endif
 
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
@@ -420,24 +429,23 @@ namespace burst {
 		static dev::map& devs_(void);
 		//		void begin_(void);
 		void begin_(time_us_t _period_us);
-		#if ROBO_APP_MEXO_REALTIME_SLOT_ENABLE == 1
-		void realtime_loop_(void);
-		#endif
+
 		void realtime_loop_(void);
 		void backend_loop_(void);
 		void frontend_loop_(void);
 		void raise_fault_(void);
 		void setup_(config_s& _config) { config_ = &_config; }
-		void reset_(void);
+		//void reset_(void);
 		static board instance_;
 	public:
 		board(void);
 		~board(void);
 		//static void start(time_us_t _period_us) { instance_.start_(_period_us); }
-		static void begin(time_us_t _period_us) { instance_.begin_(_period_us); }
-		#ifdef ROBO_APP_MEXO_SAMPLE_US
+		#ifdef ROBO_APP_BURST_SAMPLE_US
 		//		static void start(void) { instance_.start_(ROBO_APP_MEXO_SAMPLE_US); }
-		static void begin(void) { instance_.begin_(ROBO_APP_MEXO_SAMPLE_US); }
+		static void begin(void) { instance_.begin_(ROBO_APP_BURST_SAMPLE_US); }
+		#else
+		static void begin(time_us_t _period_us) { instance_.begin_(_period_us); }
 		#endif		
 		#if ROBO_APP_BURST_REALTIME_SLOT_ENABLE == 1
 		static void realtime_loop(void) { instance_.realtime_loop_(); }
@@ -447,7 +455,7 @@ namespace burst {
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
 		static int slot_index(void) { return instance_.slot_index_; }
 		static void raise_fault(void) { instance_.raise_fault_(); }
-		static void reset(void) { instance_.reset_(); }
+		//static void reset(void) { instance_.reset_(); }
 
 		
 		struct present_s {

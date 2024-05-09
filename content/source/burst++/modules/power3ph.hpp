@@ -62,7 +62,7 @@ namespace burst {
 			typedef actor::config_s config_s;
 			#define POWER3PH_ROTATOR_CONFIG(a) ACTOR_CONFIG(a)
 
-		struct present_s {
+			struct present_s {
 				actor::present_s tag;
 				rot_s rot;
 				signal_t angle;
@@ -73,6 +73,21 @@ namespace burst {
 			rotator_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 				: actor(_config, _present.tag, _subsystem) {
 			};
+
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				using namespace burst::var;
+				if (actual_mode >= mode::full) {
+					ACTOR_PRESENT_S(p);
+					push(RT("rot"));
+					reg(number::var::const_signal, p.rot.sn, RT("sn"));
+					reg(number::var::const_signal, p.rot.cs, RT("cs"));
+					pop();
+					reg(number::var::const_signal, p.angle, RT("angle"));
+				}
+			}
+			virtual void do_regvar_conf(void) {}
+			#endif	
 		};
 
 		class enco32_adapter_t : public rotator_t {
@@ -117,6 +132,26 @@ namespace burst {
 				p.rot.sn = number::sin(tmp);
 				p.rot.cs = number::cos(tmp);
 			}
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				rotator_t::do_regvar_present();
+			}
+
+			
+
+			virtual void do_regvar_conf(void) {
+				using namespace burst::var;
+				rotator_t::do_regvar_conf();
+				if (actual_mode >= mode::tuning) {
+					ACTOR_CONFIG_S(p);
+					reg( number::var::signal, p.offset, RT("offset"));
+					if (actual_mode >= mode::config) {
+						reg(types::uint8, p.inverce, RT("inv"));
+						reg(types::uint8, p.pole_count, RT("pole"));
+					}
+				}
+			}
+			#endif	
 		};
 
 		class inverter : public actor {
@@ -135,8 +170,8 @@ namespace burst {
 
 			struct config_s {
 				actor::config_s tag;
-				range_s<long_signal_t> native;
-				long_signal_t pwm_force;
+				range_s<signal_t> native;
+				signal_t pwm_force;
 				deform_s deform;
 			};
 
@@ -171,8 +206,58 @@ namespace burst {
 			signal_t discret_delta_lo;
 			signal_t discret_delta_hi;
 			long_signal_t pwm_force;
-			const deform_s* deform;
-
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				using namespace burst::var;
+				ACTOR_PRESENT_S(p);
+				if (actual_mode >= mode::full) {
+					//abc_s duty;
+					push(RT("duty"));
+					reg(number::var::const_signal, p.pwm.A, RT("A"));
+					reg(number::var::const_signal, p.pwm.B, RT("B"));
+					reg(number::var::const_signal, p.pwm.C, RT("C"));
+					pop();
+					//abc_s pwm;
+					push(RT("pwm"));
+					reg(number::var::const_signal, p.pwm.A, RT("A"));
+					reg(number::var::const_signal, p.pwm.B, RT("B"));
+					reg(number::var::const_signal, p.pwm.C, RT("C"));
+					pop();
+					//ab_s ab;
+					push(RT("ab"));
+					reg(number::var::const_signal, p.ab.alfa, RT("alfa"));
+					reg(number::var::const_signal, p.ab.beta, RT("beta"));
+					pop();
+					//dq_s dq;
+					push(RT("dq"));
+					reg(number::var::const_signal, p.dq.lateral, RT("lat"));
+					reg(number::var::const_signal, p.dq.cross, RT("cross"));
+					pop();
+					//uint8_t swm;
+					reg(types::const_uint8, p.swm, RT("swm"));
+				}
+			}
+			virtual void do_regvar_conf(void) {
+				using namespace burst::var;
+				if (actual_mode >= mode::tuning) {
+					ACTOR_CONFIG_S(c);
+					if (actual_mode >= mode::config) {
+						reg(number::var::signal, c.pwm_force, RT("force"));
+						push(RT("deform"));
+						reg(types::uint8, c.deform.enabled, RT("en"));
+						reg(number::var::signal, c.deform.level, RT("lvl"));
+						reg(number::var::long_signal, c.deform.hi_gain_16, RT("hi_g"));
+						reg(number::var::long_signal, c.deform.lo_gain_16, RT("lo_g"));
+						reg(number::var::long_signal, c.deform.lo_bevel_16, RT("lo_b"));
+						pop();
+						push(RT("native"));
+						reg(number::var::signal, c.native.lo, RT("lo"));
+						reg(number::var::signal, c.native.hi, RT("hi"));
+						pop();
+					}
+				}
+			}
+			#endif
 			signal_t scale_(signal_t _signal) {
 				long_signal_t tmp = scale_gain * ((long_signal_t)_signal - number::min);
 				tmp += (1 << 15);
@@ -190,17 +275,19 @@ namespace burst {
 			}
 
 			long_signal_t deform_pwm_(signal_t _src) {
-				if (_src > deform->level) {
-					return (fast::rsh((deform->lo_gain_16 * _src + deform->lo_bevel_16), 16));
+				ACTOR_CONFIG_S(c);
+				if (_src > c.deform.level) {
+					return (fast::rsh((c.deform.lo_gain_16 * _src + c.deform.lo_bevel_16), 16));
 				}
-				else if (_src < -deform->level) {
-					return  -(fast::rsh((deform->lo_gain_16 * (-_src) + deform->lo_bevel_16), 16));
+				else if (_src < -c.deform.level) {
+					return  -(fast::rsh((c.deform.lo_gain_16 * (-_src) + c.deform.lo_bevel_16), 16));
 				}
 				else {
-					return  (fast::rsh(deform->hi_gain_16 * _src, 16));
+					return  (fast::rsh(c.deform.hi_gain_16 * _src, 16));
 				}
 			}
 			virtual void run(void) {
+				ACTOR_CONFIG_S(c);
 				ACTOR_PRESENT_S(p);
 				p.dq.lateral = *lateral;
 				p.dq.cross = *cross;
@@ -270,7 +357,7 @@ namespace burst {
 				pwmB += mult_(pwmB, scale);
 				pwmC += mult_(pwmC, scale);
 
-				if (deform->enabled) {
+				if (c.deform.enabled) {
 					pwmA = l_sat_s(pwmA);
 					pwmB = l_sat_s(pwmB);
 					pwmC = l_sat_s(pwmC);
@@ -348,7 +435,6 @@ namespace burst {
 				scale_gain = gain;
 				discret_delta_lo = 0;//-_config->native.lo;
 				discret_delta_hi = delta;
-				deform = &cfg.deform;
 			}
 			virtual void finish(void) {}
 
@@ -401,8 +487,55 @@ namespace burst {
 				signal_t* B = &standby;
 				signal_t* C = &standby;
 			} raw;
-			const long_signal_t* deform = nullptr;
-
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				using namespace burst::var;
+				ACTOR_PRESENT_S(p);
+				if (actual_mode >= mode::full) {
+					push(RT("abc"));
+					reg(number::var::const_signal, p.abc.A, RT("A"));
+					reg(number::var::const_signal, p.abc.B, RT("B"));
+					reg(number::var::const_signal, p.abc.C, RT("C"));
+					pop();
+					//ab_s ab;
+					push(RT("ab"));
+					reg(number::var::const_signal, p.ab.alfa, RT("alfa"));
+					reg(number::var::const_signal, p.ab.beta, RT("beta"));
+					pop();
+					//dq_s dq;
+					push(RT("dq"));
+					reg(number::var::const_signal, p.dq.lateral, RT("lat"));
+					reg(number::var::const_signal, p.dq.cross, RT("cross"));
+					pop();
+				}
+			}
+			virtual void do_regvar_conf(void) {
+				using namespace burst::var;
+				ACTOR_CONFIG_S(c);
+				if (actual_mode >= mode::config) {
+					push(RT("adc_ix"));
+					reg(types::uint8, c.adc_index[0], RT("0"));
+					reg(types::uint8, c.adc_index[1], RT("1"));
+					reg(types::uint8, c.adc_index[2], RT("2"));
+					pop();
+					push(RT("deform"));
+					reg(types::uint8, c.deform.enable, RT("en"));
+					push(RT("matrix"));
+					reg(number::var::long_signal, c.deform.matrix[0], RT("0"));
+					reg(number::var::long_signal, c.deform.matrix[1], RT("1"));
+					reg(number::var::long_signal, c.deform.matrix[2], RT("2"));
+					reg(number::var::long_signal, c.deform.matrix[3], RT("3"));
+					reg(number::var::long_signal, c.deform.matrix[4], RT("4"));
+					reg(number::var::long_signal, c.deform.matrix[5], RT("5"));
+					reg(number::var::long_signal, c.deform.matrix[6], RT("6"));
+					reg(number::var::long_signal, c.deform.matrix[7], RT("7"));
+					reg(number::var::long_signal, c.deform.matrix[8], RT("8"));
+					pop();
+					pop();
+				}
+			}
+			#endif
+			const typename number::long_signal_t* deform = nullptr;
 			virtual void begin(void) {
 				ACTOR_CONFIG_S(cfg);
 				if (cfg.deform.enable) {
@@ -423,6 +556,7 @@ namespace burst {
 				connectto(raw.C , _adc + cfg.adc_index[2]);
 			}
 			virtual void run(void) {
+				ACTOR_CONFIG_S(cfg);
 				long_signal_t a;
 				long_signal_t b;
 				long_signal_t c;

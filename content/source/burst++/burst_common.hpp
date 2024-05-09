@@ -2,12 +2,6 @@
 #define burst_common_hpp
 #include "core/robosd_common.hpp"
 
-#ifndef BURST_SIGNAL_T 
-#define BURST_SIGNAL_T int16_t
-#endif
-#ifndef BURST_LONG_SIGNAL_T 
-#define BURST_LONG_SIGNAL_T int32_t
-#endif
 
 namespace burst {
 	typedef robo::time_us_t time_us_t;
@@ -80,16 +74,14 @@ namespace burst {
 #define ROBO_APP_BURST_REALTIME_SLOT_ENABLE 1
 #endif
 
-#ifndef ROBO_APP_BURST_VARTABLE_ENABLE
-#define ROBO_APP_BURST_VARTABLE_ENABLE 0
-#endif
 
 #ifndef ROBO_APP_BURST_PARANOIC_ENABLE
 #define ROBO_APP_BURST_PARANOIC_ENABLE 0
 #endif
 
-#ifndef BURST_VAR_ENABLED
-#define BURST_VAR_ENABLED 1
+#ifndef ROBO_APP_BURST_VARTREE_ENABLED
+#define ROBO_APP_BURST_VARTREE_ENABLED 1
 #endif
+
 
 #endif

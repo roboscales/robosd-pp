@@ -4,20 +4,18 @@
 namespace burst{
 	template < class number > class motion_t {
 		public:
-			using parametr_t = typename number::parametr_t;
+			using parameter_t = typename number::parameter_t;
 			using signal_t = typename number::signal_t;
-			using long_min = typename number::long_min;
 			using long_signal_t = typename number::long_signal_t;
 			struct config_s{
-				actor::config_s tag;
-				parametr_t	propGain;
-				parametr_t	modelGain;
-				parametr_t	diffGain;
-				parametr_t	forceGain;
+				parameter_t	propGain;
+				parameter_t	modelGain;
+				parameter_t	diffGain;
+				parameter_t	forceGain;
 				signal_t		forceMax;
 				uint8_t			controlShift;
 				uint8_t			modelShift;
-				parametr_t	limitGain;
+				parameter_t	limitGain;
 				uint8_t			limitGainPresc;
 				bool 				elasticLimmiterEnabled;
 			} ;
@@ -36,8 +34,27 @@ namespace burst{
 				, a##_LIMIT_GAIN_PRESC\
 				, a##_ELASTIC_LIMMITER_ENABLED\
 			}
-			
-				//satstate_t		satstate;
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			static void regvar_config(robo::cstr _name, const config_s & _config) {
+				var::push(_name);
+				var::reg(number::var::parameter, _config.propGain, RT("prop"));
+				var::reg(number::var::parameter, _config.modelGain, RT("model"));
+				var::reg(number::var::parameter, _config.diffGain, RT("diff"));
+				var::push(RT("force"));
+				var::reg(number::var::parameter, _config.forceGain, RT("gain"));
+				var::reg(number::var::signal, _config.forceMax, RT("max"));
+				var::pop();
+				var::reg(var::types::uint8, _config.controlShift, RT("csh"));
+				var::reg(var::types::uint8, _config.modelShift, RT("msh"));
+				var::push(RT("limit"));
+				var::reg(number::var::parameter, _config.limitGain, RT("gain"));
+				var::reg(var::types::uint8, _config.limitGainPresc, RT("presc"));
+				var::reg(var::types::uint8, _config.elasticLimmiterEnabled, RT("elst"));
+				var::pop();
+				var::pop();
+			}
+			#endif
+			//satstate_t		satstate;
 	//motion_config_p config;
 	//signal_p			signal_req;
 	//signal_p			signal;
@@ -68,14 +85,23 @@ namespace burst{
 		public:
 
 			struct present_s{
-				actor::present_s tag;
 				long_signal_t model;
 				long_signal_t long_model;
 				long_signal_t diff;
 				long_signal_t force;
 				satstates		satstate;
 			} & present;
-			
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			static void regvar_present(robo::cstr _name, present_s& _present) {
+				var::push(_name);
+				var::reg(number::var::const_long_signal, _present.model, RT("model"));
+				var::reg(number::var::const_long_signal, _present.long_model, RT("lmodel"));
+				var::reg(number::var::const_long_signal, _present.diff, RT("diff"));
+				var::reg(number::var::const_long_signal, _present.diff, RT("force"));
+				var::reg(var::types::const_uint8, _present.satstate, RT("satstate"));
+				var::pop();
+			}
+			#endif
 			virtual void run(void){
 				//ACTOR_CONFIG_S(s);
 				//ACTOR_PRESENT_S(p);
@@ -85,7 +111,7 @@ namespace burst{
 				
 				signal_t controlMax = *controlMax_;
 				signal_t controlMin = *controlMin_;
-				
+				signal_t sr = signal_req;
 				satstates sut_flag;
 				if ( reference_ != 0) {
 					long_signal_t r_max = *reference_max_;
@@ -95,33 +121,33 @@ namespace burst{
 					if (config_->elasticLimmiterEnabled) {
 						if (r > r_max) {
 								long_signal_t tmp = (r_max - r);
-								tmp = number::fast::rsh( tmp, config_->limitGainPresc );
+								tmp = fast::rsh( tmp, config_->limitGainPresc );
 								tmp *= config_->limitGain;
 								if (tmp < 0) {
 										tmp = 0;
 								}
-								if (signal_req > tmp) {
-										signal_req = tmp;
+								if (sr > tmp) {
+									sr = tmp;
 								}            
 						}	else {
 								if (r < r_min) {
 										long_signal_t tmp = (r_min - r);
-										tmp = number::fast::rsh( tmp, config_->limitGainPresc );
+										tmp = fast::rsh( tmp, config_->limitGainPresc );
 										tmp *= config_->limitGain;
 										if (tmp > 0) {
 												tmp = 0;
 										}
-										if (signal_req < tmp) {
-												signal_req = tmp;
+										if (sr < tmp) {
+											sr = tmp;
 										}
 								}
 						}
 					} else {
 						if (r > r_max) {
 							long_signal_t tmp = (r_max - r);
-							tmp = number::fast::rsh( tmp, config_->limitGainPresc );
+							tmp = fast::rsh( tmp, config_->limitGainPresc );
 							tmp *= config_->limitGain;
-							controlMax = controlMax + number::fast::rsh( tmp, config_->controlShift);
+							controlMax = controlMax + fast::rsh( tmp, config_->controlShift);
 							if (controlMax < 0) {
 									controlMax = 0;
 							}
@@ -129,9 +155,9 @@ namespace burst{
 						else {
 							if (r < r_min) {
 								long_signal_t tmp = (r_min - r);
-								tmp = number::fast::rsh( tmp, config_->limitGainPresc );
+								tmp = fast::rsh( tmp, config_->limitGainPresc );
 								tmp *= config_->limitGain;
-								controlMin = controlMin +number::fast::rsh(tmp, config_->controlShift);
+								controlMin = controlMin +fast::rsh(tmp, config_->controlShift);
 								if (controlMin > 0)
 										controlMin = 0;
 							}
@@ -143,7 +169,7 @@ namespace burst{
 				#define MODEL_VALUE_MAX number::long_frac(0.9)
 				#endif
 				signal_t control = * control_;
-				Error = signal_req - signal;
+				Error = sr - signal;
 				if( (Error>0) && ( (control>=controlMax) || (present.long_model> MODEL_VALUE_MAX) || (*master_sut_flag_ == satstates::up) ) ){
 						sut_flag = satstates::up;
 				} else {
@@ -157,17 +183,17 @@ namespace burst{
 				{
 					long_signal_t tmp;
 					tmp = (present.long_model += (Error* config_->modelGain) );
-					tmp = number::fast::rsh( tmp, config_->modelShift );
-					present.model = tmp = number::saturate(tmp, number::min, number::max );
+					tmp = fast::rsh( tmp, config_->modelShift );
+					present.model = tmp = saturate(tmp, number::min, number::max );
 
 					if (  signal ==0 ){
 						if(Error>0){
-							parametr_t fm = config_->forceMax;
+							parameter_t fm = config_->forceMax;
 							present.force+=config_->forceGain;
 							if(present.force>fm)
 									present.force=fm;
 						}else if (Error<0){
-							parametr_t fm = -config_->forceMax;
+							parameter_t fm = -config_->forceMax;
 							present.force-=config_->forceGain;
 							if(present.force<fm)
 									present.force=fm;
@@ -179,15 +205,15 @@ namespace burst{
 				
 				tmp = Error+ present.model - signal;
 				
-				if (signal_diff_ != 0) {
-					present.diff =  - *(signal_diff_) * config_->diffGain;
-					controlLong += present.diff;
-				}
 				
 				controlLong = tmp* config_->propGain;
-				controlLong = number::fast::rsh(controlLong, config_->controlShift) + present.force;
-				controlLong = number::saturate(controlLong, controlMin,controlMax );
-				 * control_ = number::s_extract(controlLong);				
+				if (signal_diff_ != 0) {
+					present.diff = -*(signal_diff_)*config_->diffGain;
+					controlLong += present.diff;
+				}
+				controlLong = fast::rsh(controlLong, config_->controlShift) + present.force;
+				controlLong = saturate(controlLong, controlMin,controlMax );
+				 * control_ = (signal_t)controlLong;				
 			}
 			
 			motion_t(
@@ -224,7 +250,7 @@ namespace burst{
 					connectto(control_,_control);
 					connectto(master_sut_flag_,_master_sut_flag);
 			}
-			virtual void begin(void){
+			void reset(void){
 				present = {};
 			}
 	};

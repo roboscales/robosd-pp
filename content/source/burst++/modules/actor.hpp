@@ -5,11 +5,14 @@
 
 #include "core/robosd_list.hpp"
 
+#include "burst++/vartree.hpp"
+
 namespace burst {
 	class subsystem;
 	class actor {
 	public:
-		struct config_s {};
+		struct config_s {
+		};
 		#define ACTOR_CONFIG(a) ACTOR_CONFIG_(a)
 		#define ACTOR_CONFIG_(a)\
 		{\
@@ -21,13 +24,18 @@ namespace burst {
 		const config_s& config_;
 		present_s& present_;
 		ref ref_;
+	protected:
 	public:
 		virtual void begin(void) {};
 		virtual void finish(void) {};
 		virtual void run(void) {};
-		#if ROBO_APP_BURST_VARTABLE_ENABLE
-		virtual void regvar(void) = 0;
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		void regvar_present(robo::cstr _name);
+		virtual void do_regvar_present(void) = 0;
+		void regvar_conf(robo::cstr _name);
+		virtual void do_regvar_conf(void) = 0;
 		#endif
+
 		actor(const config_s& _config, present_s& _present);
 		actor(const config_s& _config, present_s& _present, subsystem& _subsystem);
 		void add(subsystem& _subsystem);
@@ -108,7 +116,7 @@ namespace burst {
 		present_s & present_;
 	public:
 		virtual void reset(void) {};
-		#if ROBO_APP_BURST_VARTABLE_ENABLE
+		#if ROBO_APP_BURST_VARTREE_ENABLE
 		virtual void regvar(void) = 0;
 		#endif
 		actor(const config_s& _config, present_s& _present);

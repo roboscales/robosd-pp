@@ -3,34 +3,16 @@
 
 #ifdef ROBO_APP_BURST_SERVO_SIDE
 #include "servo/robosd_proto.hpp"
-#define mexo_proto_signal_t float
-#define mexo_proto_long_signal_t double
 #endif
 #ifdef ROBO_APP_BURST_SIDE
-#define mexo_proto_signal_t typename types::signal_t
-#define mexo_proto_long_signal_t typename types::long_signal_t
 #endif
 
 #include <stdint.h>
 
 namespace burst {
 	namespace front {
-		struct panics {
-			struct dev {
-				struct bits {
-					enum {
-						master_lost = 0
-						, board = 1
-					};
-				};
-				struct masks {
-					enum {
-						master_lost = 1 << bits::master_lost
-						, board = 1 << bits::board
-					};
-				};
-			};
-			struct board {
+		namespace board {
+			namespace panics {
 				struct bits {
 					enum {
 						overvoltage = 0
@@ -51,8 +33,8 @@ namespace burst {
 						, lotemp = 1 << bits::lotemp
 					};
 				};
-			};
-		};
+			}
+		}
 		struct tp_verb {
 			enum {
 				realtime = 1
@@ -62,6 +44,21 @@ namespace burst {
 			};
 		};
 		namespace dev {
+			namespace panics {
+				struct bits {
+					enum {
+						master_lost = 0
+						, board = 1
+						, last = board
+					};
+				};
+				struct masks {
+					enum {
+						master_lost = 1 << bits::master_lost
+						, board = 1 << bits::board
+					};
+				};
+			}
 			struct modes { enum { idle = 0 }; };
 			struct action_s {
 				#ifdef ROBO_APP_BURST_SERVO_SIDE

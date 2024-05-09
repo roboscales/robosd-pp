@@ -19,7 +19,16 @@ namespace burst {
 			typename B::present_s tag;
 			typename number::signal_t value;
 		} ;
-		
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		virtual void do_regvar_present(void) {
+			using namespace burst::var;
+			if (actual_mode >= mode::full) {
+				ACTOR_PRESENT_S(p);
+				reg(number::var::signal, p.value, RT("val"));
+			}
+		}
+		virtual void do_regvar_conf(void) {}
+		#endif	
 		filter_t(const config_s& _config, present_s& _present)
 			: B(_config.tag, _present.tag) {};
 		filter_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
@@ -58,7 +67,29 @@ namespace burst {
 			typename B::present_s flt;
 			typename number::long_signal_t long_value;
 		};
-		
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		virtual void do_regvar_present(void) {
+			B::do_regvar_present();
+			using namespace burst::var;
+			if (actual_mode >= mode::full) {
+				ACTOR_PRESENT_S(p);
+				reg(number::var::const_long_signal, p.long_value, RT("lval"));
+			}
+		}
+		virtual void do_regvar_conf(void) {
+			B::do_regvar_conf();
+			using namespace burst::var;
+			if (actual_mode >= mode::config) {
+				ACTOR_CONFIG_S(s);
+				push(RT("shift"));
+				reg(types::int8, s.shift, RT("flt"));
+				reg(types::int8, s.presc_shift, RT("presc"));
+				reg(types::int8, s.value_shift, RT("val"));
+				pop();
+			}
+		}
+		#endif	
+
 		nikitin_t(const config_s& _config, present_s& _present)
 			: B(_config.flt, _present.flt) {};
 		nikitin_t(const config_s& _config, present_s& _present, subsystem& _subsystem)

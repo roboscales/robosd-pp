@@ -4,21 +4,36 @@
 namespace burst{
 	template < class number > class positioner_t {
 		public:
-			using parametr_t = typename number::parametr_t;
+			using parameter_t = typename number::parameter_t;
 			using signal_t = typename number::signal_t;
-			using long_min = typename number::long_min;
 			using long_signal_t = typename number::long_signal_t;
 			struct config_s{
-				actor::config_s tag;
-				parametr_t	propGain;
-				parametr_t	diffGain;
-				parametr_t diffQuardGain;
+				parameter_t	propGain;
+				parameter_t	diffGain;
+				parameter_t diffQuardGain;
 				uint8_t			diffQuardPreShift;
 				uint8_t			controlShift;
 				signal_t deadZone;
 				signal_t crawlSpeed;
 			};
-			
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			static void regvar_config(robo::cstr _name, const config_s& _config) {
+				var::push(_name);
+
+				var::reg(number::var::parameter, _config.propGain, RT("prop"));
+				var::reg(number::var::parameter, _config.diffGain, RT("diff"));
+				var::push(RT("quard"));
+				var::reg(number::var::parameter, _config.diffQuardGain, RT("gain"));
+				var::reg(var::types::uint8, _config.diffQuardPreShift, RT("sh"));
+				var::pop();
+				
+				var::reg(number::var::signal, _config.deadZone, RT("dz"));
+				var::reg(number::var::signal, _config.crawlSpeed, RT("cs"));
+
+				var::pop();
+			}
+			#endif
+
 			#define POSITIONER_CONFIG(a) POSITIONER_CONFIG_(a)
 			#define POSITIONER_CONFIG_(a)\
 			{\
@@ -32,11 +47,17 @@ namespace burst{
 			}
 			
 			struct present_s{
-				actor::present_s tag;
 				long_signal_t diff;
 				long_signal_t quadDiff;
 			};
-			
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			static void regvar_present(robo::cstr _name, present_s& _present) {
+				var::push(_name);
+				var::reg(number::var::const_long_signal, _present.diff, RT("diff"));
+				var::reg(number::var::const_long_signal, _present.diff, RT("quad"));
+				var::pop();
+			}
+			#endif
 			present_s & 			present;
 			const long_signal_t &	signal_req;
 			const long_signal_t &	signal;
@@ -131,7 +152,7 @@ namespace burst{
 						control_val += present.diff;
 						if(config_->diffQuardGain && d != 0){
 							long_signal_t d2 = d*d;							
-							d2 = number::fast::rsh(d2, config_->diffQuardPreShift);
+							d2 = fast::rsh(d2, config_->diffQuardPreShift);
 							d2*=config_->diffQuardGain;
 							if(d>0){
 								present.quadDiff =  -d2;
@@ -141,10 +162,10 @@ namespace burst{
 							control_val += present.quadDiff;
 						}
 					}
-					control_val = number::fast::rsh(control_val, config_->controlShift);
+					control_val = fast::rsh(control_val, config_->controlShift);
 					
 					if (forceControl_) control_val += *(forceControl_);
-					control_val = number::saturate(control_val, number::min, number::max );
+					control_val = saturate(control_val, number::min, number::max );
 					if(control_val == 0 && config_->crawlSpeed >0 ){
 						if(err>config_->deadZone){
 							control_val =   config_->crawlSpeed;				
@@ -158,3 +179,4 @@ namespace burst{
 			}
 	};
 }
+#endif

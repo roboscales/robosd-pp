@@ -1,6 +1,7 @@
 #ifndef burst_math_hpp
 #define burst_math_hpp
 #include "burst++/burst.hpp" 
+#include "burst++/vartree.hpp"
 #include <limits>  
 #include <math.h>
 namespace burst {
@@ -19,7 +20,7 @@ namespace burst {
 		constexpr static int bits = 15;
 		constexpr static int long_bits = 31;
 
-		#if ROBO_APP_BURST_VARTABLE_ENABLE == 1
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		struct var{
 			constexpr static ::burst::var::types discret = ::burst::var::types::int16;
 			constexpr static ::burst::var::types long_discret = ::burst::var::types::int32;
@@ -68,7 +69,7 @@ namespace burst {
 		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
 		constexpr static int discret_bits = 15;
-		#if ROBO_APP_BURST_VARTABLE_ENABLE == 1
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		struct var{
 			constexpr static ::burst::var::types discret = ::burst::var::types::int16;
 			constexpr static ::burst::var::types long_discret = ::burst::var::types::int32;
@@ -199,7 +200,7 @@ namespace burst {
 		typedef typename  digit::long_signal_t long_signal_t;
 		typedef typename  digit::parameter_t parameter_t;
 
-		#if ROBO_APP_MEXO_VAR_ENABLED == 1
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		typedef typename  digit::var var;
 		#endif
 		constexpr static signal_t max = digit::max;
@@ -1047,6 +1048,41 @@ namespace burst {
 		return round(_fraq * digit::max);
 	}
 	*/
+	template <typename T> void range_set(range_s<T>& _dst, const T & __src, const range_s<T> &_lim) {
+
+		auto _src = __src < T(0) ? T(0) : __src;
+		if (_src > _lim.hi) {
+			_dst.hi = _lim.hi;
+		}
+		else if (_src < _lim.lo) {
+			_dst.hi = _lim.lo;
+		}
+		else {
+			_dst.hi = _src;
+		}
+		_src = -_src;
+		if (_src > _lim.hi) {
+			_dst.lo = _lim.hi;
+		}
+		else if (_src < _lim.lo) {
+			_dst.lo = _lim.lo;
+		}
+		else {
+			_dst.lo = _src;
+		}
+	}
+
+	template <typename T> T  range_apply( const T & _src, const range_s<T> & _lim) {
+		if (_src > _lim.hi) {
+			return _lim.hi;
+		}
+		else if (_src < _lim.lo) {
+			return _lim.lo;
+		}
+		else {
+			return _src;
+		}
+	}
 }
 
 #endif

@@ -2,27 +2,25 @@
 #define burst_pi_hpp
 #include "burst++/modules/actor.hpp"
 namespace burst{
-	template <class number> class pi_t : public actor{
+	template <class number> class pi_t {
 		public:
 			using parametr_t = typename number::parametr_t;
 			using signal_t = typename number::signal_t;
 			using long_min = typename number::long_min;
 			using long_signal_t = typename number::long_signal_t;
 			struct config_s{
-				actor::config_s tag;
 				parametr_t	propGain;
 				parametr_t	modelGain;
 				parametr_t	diffGain;
 				parametr_t	forceGain;
 				uint8_t			controlShift;
 				uint8_t			modelShift;
-			};
+			} & config ;
 			
 			#define PI_CONFIG(a) PI_CONFIG_(a)
 			#define PI_CONFIG_(a)\
 			{\
-				ACTOR_CONFIG(a)\
-				, a##_PROP_GAIN\
+				a##_PROP_GAIN\
 				,a##_MODEL_GAIN\
 				,a##_DIFF_GAIN\
 				,a##_FORCE_GAIN\
@@ -39,13 +37,12 @@ namespace burst{
 			const satstates &	master_sut_flag;
 
 			struct present_s{
-				actor::present_s tag;
 				long_signal_t model;
 				long_signal_t long_model;
 				long_signal_t diff;
 				long_signal_t force;
 				satstates		satstate;
-			};
+			} & present;
 			
 			pi_t(
 				const config_s & _config
@@ -59,7 +56,8 @@ namespace burst{
 				, signal_t &	_control
 				, const satstates &	_master_sut_flag
 			)
-				: actor(_config.tag,_present.tag)
+				: config(_config)
+				, present(_present)
 				, signal_req(_signal_req)
 				, signal(_signal)
 				, signal_diff(_signal_diff)
@@ -73,8 +71,6 @@ namespace burst{
 			
 
 			virtual void run(void){
-				ACTOR_CONFIG_S(s);
-				ACTOR_PRESENT_S(p);
 				long_signal_t Error;
 				long_signal_t tmp;
 				long_signal_t controlLong;
@@ -127,11 +123,10 @@ namespace burst{
 			}
 			
 			virtual void begin(void){
-				ACTOR_PRESENT_S(p);
-				p = {};
+				present = {};
 			}
 	};
-	template <class number> class limiter_t : public actor{
+	template <class number> class limiter_t {
 		public:
 			using parametr_t = typename number::parametr_t;
 			using signal_t = typename number::signal_t;
@@ -139,7 +134,6 @@ namespace burst{
 			using long_signal_t = typename number::long_signal_t;
 			signal_t zero_signal = 0;
 			struct present_s{
-				actor::present_s tag;
 				typename pi_t<number>::present_s r_hi;
 				typename pi_t<number>::present_s r_low;
 				signal_t signal_hi;
@@ -176,7 +170,8 @@ namespace burst{
 				, const range_s< signal_t >  & _signalRange
 				, const range_s< signal_t >  & _controlRange
 			)
-				: actor(_config.tag, _present.tag)
+				: config(_config)
+				, present(_present)
 				, r_hi(
 					_pi_config
 					,_present.r_hi

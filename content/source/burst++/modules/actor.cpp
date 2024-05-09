@@ -21,6 +21,21 @@ namespace burst{
 		ref_.dettach();
 	}
 
+	#if ROBO_APP_BURST_VARTREE_ENABLED
+	void actor::regvar_present(robo::cstr _name) {
+		using namespace burst::var;
+		push(_name);
+		do_regvar_present();
+		pop();
+	}
+	void actor::regvar_conf(robo::cstr _name) {
+		using namespace burst::var;
+		push(_name);
+		do_regvar_conf();
+		pop();
+	}
+	#endif
+
 	subsystem::subsystem(void): ref_(*this) {
 	}
 

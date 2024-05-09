@@ -2,7 +2,7 @@
 #define burst_vartree_hpp
 #include "burst++/burst_common.hpp"
 
-#if BURST_VAR_ENABLED == 1
+#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 
 #ifndef BURST_VAR_BUFFER_SIZE 
 #define BURST_VAR_BUFFER_SIZE 50
@@ -17,6 +17,10 @@ namespace burst {
 			uint8_t tag : 2;
 			uint8_t reserv : 6;
 		};
+		#ifndef ROBO_APP_BURST_VARTREE_MODE
+		#define ROBO_APP_BURST_VARTREE_MODE full
+		#endif
+		constexpr enum class mode { none = 0, tuning = 1, action = 2, config = 3, full = 4 } actual_mode = mode::ROBO_APP_BURST_VARTREE_MODE;
 
 		#ifndef BURST_VAR_POOL_SIZE
 		#define BURST_VAR_POOL_SIZE 20
@@ -60,6 +64,7 @@ namespace burst {
 			, int64 = descriptor_enco(8, true, false, false)
 			, real = descriptor_enco(4, true, false, true)
 			, ext = descriptor_enco(8, true, false, true)
+			, time_us = descriptor_enco(sizeof(time_us_t),false,false,false)
 			, const_uint8 = descriptor_enco(1, false, true, false)
 			, const_int8 = descriptor_enco(1, true, true, false)
 			, const_uint16 = descriptor_enco(2, false, true, false)
@@ -70,6 +75,7 @@ namespace burst {
 			, const_int64 = descriptor_enco(8, true, true, false)
 			, const_real = descriptor_enco(4, true, true, true)
 			, const_ext = descriptor_enco(8, true, true, true)
+			, const_time_us = descriptor_enco(sizeof(time_us_t), false, true, false)
 		} types;
 
 		static inline robo::cstr type_name(const descriptor & d) {
@@ -147,6 +153,20 @@ namespace burst {
 		#endif
 		ref_s** first(void);
 		ref_s** last(void);
+		template<typename R > void varreg(robo::cstr _name, const types& t, const range_s<R>& _range) {
+			push(_name);
+			reg(t, _range.hi, RT("hi"));
+			reg(t, _range.lo, RT("lo"));
+			pop();
+		}
+		template<typename R > void varreg(robo::cstr _name, const types& t, const hyst_t<R>& _hyst) {
+			push(_name);
+			reg(t, _hyst.overhi, RT("overhi"));
+			reg(t, _hyst.hi, RT("hi"));
+			reg(t, _hyst.lo, RT("lo"));
+			reg(t, _hyst.ultralo, RT("ultralo"));
+			pop();
+		}
 	}
 }
 #endif

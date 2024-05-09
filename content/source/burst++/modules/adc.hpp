@@ -17,10 +17,66 @@ namespace burst {
 		};
 		struct present_s {
 			actor::present_s tag;
-			R raw[N];
-			signal_t values[N];
+			R raw[count];
+			signal_t values[count];
 			bool ready;
 		};
+		
+		#define reg_arr(t,x,n) if(n < count) reg(t, x[n], RT(#n));
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		virtual void do_regvar_present(void) {
+			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
+			if (actual_mode >= mode::full) {
+				reg(types::const_uint8, p.ready, RT("ready"));
+				push(RT("raw"));
+				auto t = (types)descriptor_enco(sizeof(R), false, false, false);
+
+				reg_arr(t, p.raw, 0);
+				reg_arr(t, p.raw, 1);
+				reg_arr(t, p.raw, 2);
+				reg_arr(t, p.raw, 3);
+				reg_arr(t, p.raw, 4);
+				reg_arr(t, p.raw, 5);
+				reg_arr(t, p.raw, 6);
+				reg_arr(t, p.raw, 7);
+				reg_arr(t, p.raw, 8);
+				reg_arr(t, p.raw, 10);
+				reg_arr(t, p.raw, 11);
+				reg_arr(t, p.raw, 12);
+				reg_arr(t, p.raw, 13);
+				reg_arr(t, p.raw, 14);
+				reg_arr(t, p.raw, 15);
+				pop();
+				push(RT("val"));
+				reg_arr(number::var::signal, p.raw, 0);
+				reg_arr(number::var::signal, p.raw, 1);
+				reg_arr(number::var::signal, p.raw, 2);
+				reg_arr(number::var::signal, p.raw, 3);
+				reg_arr(number::var::signal, p.raw, 4);
+				reg_arr(number::var::signal, p.raw, 5);
+				reg_arr(number::var::signal, p.raw, 6);
+				reg_arr(number::var::signal, p.raw, 7);
+				reg_arr(number::var::signal, p.raw, 8);
+				reg_arr(number::var::signal, p.raw, 10);
+				reg_arr(number::var::signal, p.raw, 11);
+				reg_arr(number::var::signal, p.raw, 12);
+				reg_arr(number::var::signal, p.raw, 13);
+				reg_arr(number::var::signal, p.raw, 14);
+				reg_arr(number::var::signal, p.raw, 15);
+				pop();
+			}
+		}
+
+		virtual void do_regvar_conf(void) {
+			using namespace burst::var;
+			ACTOR_CONFIG_S(c);
+			if (actual_mode >= mode::config) {
+				reg(types::uint8, c.init_count_bits, RT("icb"));
+			}			
+		}
+		#endif
+
 		R offset[N] = {};
 		R acc[N] = {};
 		int init_count = 0;

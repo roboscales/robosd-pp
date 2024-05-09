@@ -2,6 +2,7 @@
 #define burst_sp_hpp
 
 #include "burst++/modules/actor.hpp"
+#include "burst++/vartree.hpp"
 
 namespace burst {
 	namespace ps {
@@ -34,14 +35,37 @@ namespace burst {
 			bool active(void) {
 				return present<present_s>().status == statuses::on;
 			}
-
-			virtual void begin(void) {
-				actor::template present<present_s>().status = statuses::off;
+			const satstates& satstate(void) {
+				return present<present_s>().satstate;
+			}
+			void on(void) {
+				present<present_s>().command = commands::on;
+			}
+			void off(void) {
+				present<present_s>().command = commands::off;
 			}
 
 			virtual void finish(void) {
 				present<present_s>().status = statuses::unknown;
 			}
+			virtual void begin(void) {
+				actor::template present<present_s>().status = statuses::off;
+			}
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				using namespace burst::var;
+				if (actual_mode >= mode::action) {
+					ACTOR_PRESENT_S(p);
+					reg(types::uint8, p.command, RT("cmd"));
+					if (actual_mode >= mode::full) {
+						reg(types::const_uint8, p.status, RT("stat"));
+						reg(types::const_uint8, p.satstate, RT("sat"));
+					}
+				}
+			}
+			virtual void do_regvar_conf(void) {
+			}
+			#endif		
 		};
 		template< typename A >  struct dummy_driver_t {
 			static void boot_begin() {};

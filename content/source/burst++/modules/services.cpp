@@ -375,7 +375,7 @@ namespace burst{
 		#endif
 			
 
-		#if BURST_VAR_ENABLED == 1
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		namespace var{
 			::robo::termo::node root(
 				RT8("vt")

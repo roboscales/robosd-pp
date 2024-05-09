@@ -3,7 +3,7 @@
 #include "core/robosd_ring_buf.hpp"
 #include "core/robosd_common.hpp"
 
-#if BURST_VAR_ENABLED
+#if ROBO_APP_BURST_VARTREE_ENABLED
 #include <algorithm>
 namespace burst {
 	namespace var {
