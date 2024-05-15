@@ -591,15 +591,13 @@ namespace robo {
 
 		};
 
-
-		#endif
-
 		class ROBO_EXPORT servo : public robo::app::node {
 		public:
 			servo(robo::cstr _name, robo::app::module& _module)
 				: robo::app::node(_name, &_module) {}
 		};
 
+		#endif
 	}
 	//todo 
 	class ROBO_EXPORT quest :  protected signal::performer {

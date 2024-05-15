@@ -131,7 +131,7 @@ namespace mexo {
 				ref* r = new ref;
 				ROBO_APP_ASSERT(r != nullptr);
 				r->setup_(_type, (void*)&_addr, _name, _master_key);
-				_list.push(*r);
+				_list.push(r);
 				return r;
 			}
 			static int root_key(void);

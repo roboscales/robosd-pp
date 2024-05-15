@@ -506,7 +506,7 @@ namespace robo {
 				typedef wrapper_item_t<T, Arg...> item;
 				void push(item* _it) {
 					ROBO_APP_ASSERT(_it)
-						B::push(_it);
+						B::push(*_it);
 				}
 				item* pop(void) {
 					return B::pop_first();

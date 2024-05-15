@@ -83,7 +83,7 @@ namespace robo{
             typedef ::robo::delegat::ref<void, const uint8_t*, size_t > reader;
         private:
             reader* reader_ = nullptr;
-            ::robo::string alias_;
+            //::robo::string alias_;
         protected:
 
             void receive(const uint8_t* _data, size_t _len);

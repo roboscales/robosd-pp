@@ -58,6 +58,8 @@ namespace burst {
 		};
 
 		class rotator_t : public actor {
+		protected:
+			signal_t* synchro_anglee = nullptr;
 		public:
 			typedef actor::config_s config_s;
 			#define POWER3PH_ROTATOR_CONFIG(a) ACTOR_CONFIG(a)
@@ -65,14 +67,26 @@ namespace burst {
 			struct present_s {
 				actor::present_s tag;
 				rot_s rot;
-				signal_t angle;
+				signal_t electro_angle;
+				bool synchro;
 			};
+			void switch_to_synchro(void) {
+				ACTOR_PRESENT_S(p);
+				p.synchro = true;
+			}
+			void switch_to_enco(void) {
+				ACTOR_PRESENT_S(p);
+				p.synchro = false;
+			}
 			rotator_t(const config_s& _config, present_s& _present)
 				: actor(_config, _present.tag) {
 			};
 			rotator_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 				: actor(_config, _present.tag, _subsystem) {
 			};
+			void connect(signal_t* _synchro) {
+				connectto(synchro_anglee, _synchro);
+			}
 
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
@@ -80,10 +94,11 @@ namespace burst {
 				if (actual_mode >= mode::full) {
 					ACTOR_PRESENT_S(p);
 					push(RT("rot"));
+					reg(var::types::const_uint8, p.synchro, RT("synchro"));
 					reg(number::var::const_signal, p.rot.sn, RT("sn"));
 					reg(number::var::const_signal, p.rot.cs, RT("cs"));
 					pop();
-					reg(number::var::const_signal, p.angle, RT("angle"));
+					reg(number::var::const_signal, p.electro_angle, RT("eangle"));
 				}
 			}
 			virtual void do_regvar_conf(void) {}
@@ -109,28 +124,33 @@ namespace burst {
 				,a##_POLE_COUNT\
 			}
 			typedef typename rotator_t::present_s present_s;
-
 			enco32_adapter_t(const config_s& _config, present_s& _present)
 				: rotator_t(_config.tag, _present) {
 				connect(nullptr);
 			};
 			enco32_adapter_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 				: rotator_t(_config.tag, _present, _subsystem) {
-				connect(nullptr);
+				connect(nullptr, nullptr);
 			};
-			virtual void connect(uint32_t* _angle) {
+			void connect(uint32_t* _angle, signal_t * _synchro) {
 				connectto(angle, _angle);
+				rotator_t::connect(_synchro);
 			}
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
-				ACTOR_CONFIG_S(c);
-				long_signal_t tmp = (long_signal_t)*angle;
-				if (c.inverce) tmp = -tmp;
-				tmp *= c.pole_count;
-				tmp -= c.offset;
-				p.angle = tmp;
-				p.rot.sn = number::sin(tmp);
-				p.rot.cs = number::cos(tmp);
+				if (p.synchro) {
+					p.electro_angle = *rotator_t::synchro_anglee;
+				} else {
+					ACTOR_CONFIG_S(c);
+					signal_t tmp = (signal_t) fast::rsh((long_signal_t)*angle,16);
+					if (c.inverce) tmp = -tmp;
+
+					tmp *= c.pole_count;
+					tmp -= c.offset;
+					p.electro_angle = tmp;
+				}
+				p.rot.sn = number::sin(p.electro_angle);
+				p.rot.cs = number::cos(p.electro_angle);
 			}
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {

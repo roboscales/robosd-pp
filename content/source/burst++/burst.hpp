@@ -182,11 +182,17 @@ namespace burst {
 		void  perform_panic(void);
 	private:
 		void switch_to_idle_(void);
+		bool action_enabled_ = true;
 	public:
-		void loopA(void);
+		virtual void switch_to_mode(int _mode);
+		virtual void loopA(void);
 		void loopB(void);
 		void loopC(void);
 		void frontend_loop(void);
+		void action_enable(void) { action_enabled_ = true; }
+		void action_disable(void) { action_enabled_ = false; }
+		void action_update(void) { present_.action_actual = true; }
+
 	};
 	
 
@@ -219,7 +225,7 @@ namespace burst {
 				#endif
 				#endif
 				#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
-				short overcurrent_pp;
+				short overcurrent;
 				short locurrent_pp;
 				#endif
 			} panics;

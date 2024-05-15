@@ -230,6 +230,20 @@ namespace burst {
 			}
 		}
 
+		static constexpr signal_t s_inc(signal_t val, signal_t x, signal_t _min, signal_t _max) {
+			long_signal_t val32 = val;
+			val32 += x;
+			if (val32 > _max) {
+				val32 = _max;
+			}
+			else {
+				if (val32 < _min) {
+					val32 = _min;
+				}
+			}
+			return (signal_t)val32;
+		}
+
 		static constexpr typename digit::signal_t frac(double _x) {
 			return round(_x* digit::max);
 		}
@@ -633,6 +647,7 @@ namespace burst {
 				}
 			}
 		}
+		
 	};
 
 	#if 0
@@ -1048,6 +1063,8 @@ namespace burst {
 		return round(_fraq * digit::max);
 	}
 	*/
+
+
 	template <typename T> void range_set(range_s<T>& _dst, const T & __src, const range_s<T> &_lim) {
 
 		auto _src = __src < T(0) ? T(0) : __src;

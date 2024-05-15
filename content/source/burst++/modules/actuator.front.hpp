@@ -10,14 +10,14 @@ namespace burst {
 			#pragma pack(push, 1)
 
 			template<typename number> struct action_s {
-				dev::action_s ref;
+				dev::action_s dev;
 				typename number::signal_t voltage;
 				typename number::signal_t speed;
 				typename number::long_signal_t position;
 			};
 
 			template<typename number> struct feedback_s {
-				dev::feedback_s ref;
+				dev::feedback_s dev;
 				typename number::signal_t voltage;
 				typename number::signal_t speed;
 				typename number::long_signal_t position;
@@ -30,7 +30,7 @@ namespace burst {
 					, voltage = 2
 					, speed = 3
 					, position = 4
-					, mode_count = 5
+					, last = position
 				};
 			};
 			namespace panics {

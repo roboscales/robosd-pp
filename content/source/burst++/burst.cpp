@@ -360,8 +360,38 @@ namespace burst {
 	}
 	*/
 	void dev::switch_to_idle_(void) {
-		actual_mode_ = nullptr;
-		present_.mode = front::dev::modes::idle;
+		switch_to_mode(front::dev::modes::idle);
+	}
+
+
+
+	void dev::switch_to_mode(int _mode_id) {
+		ROBO_APP_ASSERT(is_backend__);
+		if (_mode_id != present_.mode) {
+			if (present_.mode != front::dev::modes::idle) {
+				actual_mode_->stop();
+			}
+
+			if (_mode_id == front::dev::modes::idle) {
+				actual_mode_ = nullptr;
+				present_.mode = front::dev::modes::idle;
+			}
+			else {
+				mode* m = modes_.find(_mode_id);
+				if (m == nullptr ) {
+					actual_mode_ = nullptr;
+					present_.mode = front::dev::modes::idle;
+				}
+				else {
+					actual_mode_ = m;
+					present_.mode = _mode_id;
+					m->start();
+					if (action_enabled_) {
+						m->applay_action();
+					}
+				}
+			}
+		}
 	}
 
 	void dev::perform_panic(void) {
@@ -371,7 +401,34 @@ namespace burst {
 		}
 		action_.mode = front::dev::modes::idle;
 	}
+
 	void dev::loopA(void) {
+
+		ROBO_APP_ASSERT(is_backend__);
+		if (action_.mode != present_.mode) {
+			guard__;
+			if (present_.panic != 0) {
+				action_.mode = front::dev::modes::idle;
+				switch_to_idle_();
+			}
+			else {
+				switch_to_mode(action_.mode);
+			}
+		}
+		if (present_.action_actual) {
+			guard__;
+			present_.action_actual = false;
+			if (action_enabled_) {
+				actual_mode_->applay_action();
+			}
+		}
+		#if 0
+		if (wait_feedback_) {
+			do_update_feedback();
+			wait_feedback_ = false;
+		}
+		#endif
+		
 		if (actual_mode_) {
 			actual_mode_->loopA();
 		}
@@ -447,7 +504,7 @@ namespace burst {
 
 		#if BURST_PANICS_BOARD_CURRENT_ENABLED 
 		int burst_board_current = current_get_pp();
-		if (burst_board_current >= config_->panics.overcurrent_pp) {
+		if (burst_board_current >= config_->panics.overcurrent) {
 			raise_panic(front::board::panics::bits::overcurrent);
 		}
 		else if (burst_board_current <= config_->panics.locurrent_pp) {
@@ -517,7 +574,7 @@ namespace burst {
 			#endif
 			#endif
 			#if BURST_PANICS_BOARD_CURRENT_ENABLED == 1 
-			reg(types::int16, (instance_.config_->panics.overcurrent_pp), RT("overcur"));
+			reg(types::int16, (instance_.config_->panics.overcurrent), RT("overcur"));
 			reg(types::int16, (instance_.config_->panics.locurrent_pp), RT("locur"));
 			#endif
 

@@ -1,5 +1,5 @@
-#ifndef burst_actuator_hpp
-#define burst_actuator_hpp
+#ifndef burst_modules_actuator_hpp
+#define burst_modules_actuator_hpp
 #include "burst++/burst.hpp"
 #include "burst++/math.hpp"
 #include "burst++/modules/filter.hpp"
@@ -21,8 +21,10 @@ namespace burst{
 		using long_signal_t = typename number::long_signal_t;
 		typedef front::actuator::action_s<number>  action_s;
 		typedef front::actuator::feedback_s<number>  feedback_s;
+		typedef motion_t<number>  motion_t;
+		typedef positioner_t<number>  positioner_t;
 		struct config_s{
-			burst::dev::config_s ref;
+			burst::dev::config_s dev;
 			struct{
 				time_us_t reset;
 				time_us_t set;
@@ -33,13 +35,13 @@ namespace burst{
 				range_s<long_signal_t> position;
 			} range;
 			struct {
-				typename motion_t<number>::config_s motion;
-				typename positioner_t<number>::config_s positioner;
+				typename motion_t::config_s motion;
+				typename positioner_t::config_s positioner;
 			} modes;
 			struct {
 				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
-				hyst_t<signal_t> temper_pp;
+				hyst_t<signal_t> temper;
 				#endif
 				#endif
 			} panic;
@@ -78,18 +80,19 @@ namespace burst{
 				BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
 			}\
 		}
-		
-		int def_mode;
+	protected:
+		//int def_mode;
 		
 		ps::control & psc;	
 		#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
-		signal_t& temper;
+		const signal_t& temper;
 		#endif
-		motion_t<number> motion;
-		positioner_t<number> positioner;
-		
+	private:
+		motion_t motion_;
+		positioner_t positioner_;
+	public:
 		struct present_s {		
-			dev::present_s ref;
+			dev::present_s dev;
 			struct {
 				signal_t des;
 				signal_t req;
@@ -103,16 +106,11 @@ namespace burst{
 				long_signal_t req;
 				range_s<long_signal_t> range;
 			} position;
-			typename motion_t<number>::present_s motion;
-			typename positioner_t<number>::present_s positioner;		
+			typename motion_t::present_s motion;
+			typename positioner_t::present_s positioner;
 		};
 		
 		
-		#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
-		virtual signal_t temper_pp() {
-			return temper;
-		};
-		#endif
 		void set_voltage_range(void) {
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);
@@ -132,24 +130,35 @@ namespace burst{
 			set_voltage_range();
 			p.speed.req = range_apply(a.speed, p.speed.range);
 		}
-		void mode_speed_start(void) {
+		void mode_speed_ov_voltage_start(void) {
+			DEV_CONFIG_S(c);
+			DEV_PRESENT_S(p);
+			mode_speed_start(c.modes.motion, p.voltage.req, p.voltage.range, psc.satstate());
+		}
+
+		void mode_speed_start(
+			const typename motion_t::config_s& _motion
+			, signal_t& _control
+			, const range_s<signal_t>& _control_range
+			, const satstates& _master_sut_flag
+		) {
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);
 			p.speed.range = c.range.speed;
 			p.position.range = c.range.position;
-			motion.setup(
-				&c.modes.motion
+			motion_.setup(
+				&_motion
 				, nullptr
 				, nullptr
-				, &p.voltage.range.lo
-				, &p.voltage.range.hi
+				, &_control_range.lo
+				, &_control_range.hi
 				, nullptr
 				, nullptr
 				, nullptr
-				, &p.voltage.req
-				, &psc.satstate()
+				, &_control
+				, &_master_sut_flag
 			);
-			motion.reset();
+			motion_.begin();
 			psc.on();
 		}
 
@@ -158,7 +167,7 @@ namespace burst{
 		}
 
 		void mode_speed_runB(void) {
-			motion.run();
+			motion_.run();
 		}
 		private:
 		class speed_ov_voltage_mode : public dev::mode {
@@ -167,7 +176,7 @@ namespace burst{
 			: dev::mode(front::actuator::modes::speed, _actuator) {}
 		protected:
 			virtual void	applay_action(void) { owner<actuator_t>().mode_speed_applay_action(); }
-			virtual void	start(void) { owner<actuator_t>().mode_speed_start(); }
+			virtual void	start(void) { owner<actuator_t>().mode_speed_ov_voltage_start(); }
 			virtual void	stop(void) { owner<actuator_t>().mode_speed_stop(); }
 			virtual void	loopA(void) {  }
 			virtual void	loopB(void) { owner<actuator_t>().mode_speed_runB(); }
@@ -213,32 +222,45 @@ namespace burst{
 			set_speed_range();
 			p.position.req = range_apply(a.position, p.position.range);
 		}
-		void mode_position_start(void) {
+
+		void mode_position_ov_voltage_start(void) {
+			DEV_CONFIG_S(c);
+			DEV_PRESENT_S(p);
+			mode_position_start(c.modes.motion, c.modes.positioner, p.voltage.req, p.voltage.range, psc.satstate());
+		}
+
+		void mode_position_start(
+			const typename motion_t::config_s & _motion
+			, const typename positioner_t::config_s& _positioner
+			, signal_t & _control
+			, const range_s<signal_t> & _control_range
+			, const satstates & _master_sut_flag
+		) {
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);
 			DEV_ACTION_S(a);
 			p.position.range = c.range.position;
-			motion.setup(
-				&c.modes.motion
+			motion_.setup(
+				&_motion
 				, nullptr
 				, nullptr
-				, &p.voltage.range.lo
-				, &p.voltage.range.hi
+				, &_control_range.lo
+				, &_control_range.hi
 				, nullptr
 				, nullptr
 				, nullptr
-				, &p.voltage.req
-				, &psc.satstate()
+				, &_control
+				, &_master_sut_flag
 			);
-			positioner.setup(
-				&c.modes.positioner
+			positioner_.setup(
+				&_positioner
 				, nullptr
 				, nullptr
 				, &p.speed.range.lo
 				, &p.speed.range.hi
 				, &p.speed.req
 			);
-			motion.reset();
+			motion_.begin();
 			//positioner.reset();
 			psc.on();
 		}
@@ -248,7 +270,8 @@ namespace burst{
 		}
 
 		void mode_position_runB(void) {
-			motion.run();
+			motion_.run();
+			positioner_.run();
 		}
 		private:
 		class position_ov_voltage_mode : public dev::mode {
@@ -257,7 +280,7 @@ namespace burst{
 				: dev::mode(front::actuator::modes::position, _actuator) {}
 		protected:
 			virtual void	applay_action(void) { owner<actuator_t>().mode_position_applay_action(); }
-			virtual void	start(void) { owner<actuator_t>().mode_position_start(); }
+			virtual void	start(void) { owner<actuator_t>().mode_position_ov_voltage_start(); }
 			virtual void	stop(void) { owner<actuator_t>().mode_position_stop(); }
 			virtual void	loopA(void) {}
 			virtual void	loopB(void) { owner<actuator_t>().mode_position_runB(); }
@@ -272,18 +295,18 @@ namespace burst{
 			, action_s & _action
 			, feedback_s & _feedback
 			, ps::control & _ps
-			, signal_t& _speed
-			, long_signal_t& _position
+			, const signal_t& _speed
+			, const long_signal_t& _position
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
-			, signal_t & _temper
+			, const signal_t & _temper
 			#endif
-		) : dev(_dev_id, _config.ref, _present.ref, _action.ref, _feedback.ref)
+		) : dev(_dev_id, _config.dev, _present.dev, _action.dev, _feedback.dev)
 			, psc(_ps)
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
 			, temper(_temper)
 			#endif
-			, motion(_present.motion, _present.speed.req, _speed)
-			, positioner(_present.positioner, _present.position.req, _position)
+			, motion_(_present.motion, _present.speed.req, _speed)
+			, positioner_(_present.positioner, _present.position.req, _position)
 			, speed_ov_voltage_mode_(*this)
 			, voltage_mode_(*this) 
 			, position_ov_voltage_mode_(*this) 
@@ -296,23 +319,21 @@ namespace burst{
 			dev::do_regvar_present();
 			using namespace burst::var;
 			if (actual_mode >= var::mode::full) {
-				push(RT("voltage"));
+				push(RT("v"));
 				reg(number::var::const_signal, p.voltage.des, RT("des"));
 				reg(number::var::const_signal, p.voltage.req, RT("req"));
 				varreg(RT("range"), number::var::const_signal, p.voltage.range);
 				pop();
-				push(RT("speed"));
+				push(RT("sp"));
 				reg(number::var::const_signal, p.speed.req, RT("req"));
 				varreg(RT("range"), number::var::const_signal, p.speed.range);
 				pop();
-				push(RT("position"));
+				push(RT("po"));
 				reg(number::var::const_long_signal, p.position.req, RT("req"));
 				varreg(RT("range"), number::var::const_long_signal, p.position.range);
 				pop();
-
-				motion_t<number>::regvar_present("motion", p.motion);
-				positioner_t<number>::regvar_present("positioner", p.positioner);
-
+				motion_t::regvar_present(RT("motion"), p.motion);
+				positioner_t::regvar_present(RT("positioner"), p.positioner);
 			}
 		}
 
@@ -327,25 +348,27 @@ namespace burst{
 				pop();
 
 				push(RT("range"));
-				varreg(RT("voltage"), number::var::signal, c.range.voltage);
-				varreg(RT("speed"), number::var::signal, c.range.speed);
-				varreg(RT("position"), number::var::long_signal, c.range.position);
+				varreg(RT("v"), number::var::signal, c.range.voltage);
+				varreg(RT("sp"), number::var::signal, c.range.speed);
+				varreg(RT("po"), number::var::long_signal, c.range.position);
 				pop();
 
 				push(RT("modes"));
-				motion_t<number>::regvar_config("mo_ov_v", c.modes.motion);
-				positioner_t<number>::regvar_config("po_ov_v", c.modes.positioner);
-				pop();
+				{
+					push(RT("v"));
+					motion_t::regvar_config(RT("mo"), c.modes.motion);
+					positioner_t::regvar_config(RT("po"), c.modes.positioner);
+					pop();
+				} pop();
 
 				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
 				push(RT("panic"));
-				varreg(RT("temper_pp"), number::var::signal, c.panic.temper_pp);
+				reg( number::var::signal, c.panic.temper, RT("temper"));
 				pop();
 				#endif
 				#endif
 
-				pop();
 			}
 		}
 		#endif
@@ -360,23 +383,22 @@ namespace burst{
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);
-			signal_t temper = temper_pp();
-			if (temper >= c.panic.temper_pp.overhi) {
+			if (temper >= c.panic.temper.overhi) {
 				raise_panic(bits::overtemp);
 			}
 			else {
-				if (temper <= c.panic.temper_pp.hi) {
-					if ( (p.ref.panic & masks::overtemp) == masks::overtemp) {
+				if (temper <= c.panic.temper.hi) {
+					if ( (p.dev.panic & masks::overtemp) == masks::overtemp) {
 						reset_panic(bits::overtemp);
 					}
 				}
 			}
-			if (temper <= c.panic.temper_pp.ultralo) {
+			if (temper <= c.panic.temper.ultralo) {
 				raise_panic(bits::lotemp);
 			}
 			else {
-				if (temper >= c.panic.temper_pp.lo) {
-					if ( (p.ref.panic & masks::lotemp) == masks::lotemp) {
+				if (temper >= c.panic.temper.lo) {
+					if ( (p.dev.panic & masks::lotemp) == masks::lotemp) {
 						reset_panic(bits::lotemp);
 					}
 				}

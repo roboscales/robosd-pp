@@ -24,7 +24,7 @@ namespace burst {
 			long_signal_t position;
 			bool ready;
 		};
-
+		
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		virtual void do_regvar_present(void) {
 			using namespace burst::var;

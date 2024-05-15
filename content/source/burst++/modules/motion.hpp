@@ -77,9 +77,9 @@ namespace burst{
 			const signal_t *	signal_force_;
 			const signal_t *	controlMin_;
 			const signal_t *	controlMax_;
-			long_signal_t * reference_;
-			long_signal_t * reference_max_;
-			long_signal_t * reference_min_;
+			const long_signal_t * reference_;
+			const long_signal_t * reference_max_;
+			const long_signal_t * reference_min_;
 			signal_t *	control_;
 			const satstates *	master_sut_flag_;
 		public:
@@ -233,9 +233,9 @@ namespace burst{
 				, const signal_t *	_signal_force
 				, const signal_t *	_controlMin
 				, const signal_t *	_controlMax
-				, long_signal_t * _reference
-				, long_signal_t * _reference_max
-				, long_signal_t * _reference_min
+				, const long_signal_t * _reference
+				, const long_signal_t * _reference_max
+				, const long_signal_t * _reference_min
 				, signal_t *	_control
 				, const satstates *	_master_sut_flag){
 					
@@ -250,7 +250,7 @@ namespace burst{
 					connectto(control_,_control);
 					connectto(master_sut_flag_,_master_sut_flag);
 			}
-			void reset(void){
+			void begin(void){
 				present = {};
 			}
 	};
