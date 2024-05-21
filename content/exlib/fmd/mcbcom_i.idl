@@ -1,0 +1,53 @@
+/*******************************************************************************
+*
+* Copyright 2004-2015 Freescale Semiconductor, Inc.
+*
+* This software is owned or controlled by Freescale Semiconductor.
+* Use of this software is governed by the Freescale FreeMASTER License
+* distributed with this Material.
+* See the LICENSE file distributed for more details.
+* 
+********************************************************************************
+*
+* Description: FreeMASTER communication plug-in interface
+*
+*******************************************************************************/
+
+//
+// Interface descriptions
+//
+import "oaidl.idl"; 
+import "ocidl.idl";
+import "objidl.idl";
+
+// the communication plugin interface
+
+[
+	object, 
+	uuid(48A185C1-FFDB-11d3-80E3-00C04F176153)
+]
+interface IMcbCommPlugin : IUnknown
+{
+	HRESULT Configure([in] HWND hwndParent, [in, string] LPCOLESTR orgString, [out, string] LPOLESTR* pNewString);
+
+	HRESULT OpenPort([in, string] LPCOLESTR connectString);
+	HRESULT ClosePort();
+
+	HRESULT SendRecvPacket([in] BYTE cmd, [in, size_is(cmdSize)] const BYTE* cmdBuff, [in] WORD cmdSize,
+						   [out, size_is(respSize)] BYTE* respBuff, [in] WORD respSize, 
+						   [in] BYTE featureId);
+
+	HRESULT LockFeature([in] BYTE featureId);
+	HRESULT UnlockFeature([in] BYTE featureId);
+};
+
+[
+	object, 
+	uuid(48A185C2-FFDB-11d3-80E3-00C04F176153)
+]
+interface IMcbCommPluginInfo : IUnknown
+{
+	HRESULT FormatErrorMessage([in] DWORD errCode, [out, string] LPOLESTR* pErrText);
+};
+
+

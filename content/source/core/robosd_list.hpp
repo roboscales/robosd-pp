@@ -438,6 +438,7 @@ namespace robo {
 				virtual ~store_item_t(void) {}
 			public:
 				store_item_t* next(void) { return next_; }
+				T& value() { return t_; }
 			};
 
 			template <typename T,typename...Arg> class ROBO_EXPORT store_t :
