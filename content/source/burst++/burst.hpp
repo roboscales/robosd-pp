@@ -57,7 +57,6 @@ namespace burst {
 
 		struct present_s {
 			uint32_t mode;
-			bool action_actual;
 			uint32_t panic;
 			#if BURST_PANICS_MASTER_LOST_ENABLED == 1
 			time_us_t master_alive_tm;
@@ -72,10 +71,15 @@ namespace burst {
 			#endif
 		};
 		#if ROBO_APP_BURST_VARTREE_ENABLED
-		void regvar_present(robo::cstr _name);
-		virtual void do_regvar_present(void);
-		void regvar_conf(robo::cstr _name);
-		virtual void do_regvar_conf(void);
+	public:
+		void regvar(robo::cstr _name) {
+			regvar_conf(_name);
+			regvar_action(_name);
+			regvar_present(_name);
+		}
+		virtual void regvar_present(robo::cstr _name);
+		virtual void regvar_conf(robo::cstr _name);
+		virtual void regvar_action(robo::cstr _name);
 		#endif
 
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
@@ -94,8 +98,6 @@ namespace burst {
 		/**
 		@brief Структура. Базовое устройство.
 		*/
-		
-
 
 
 		class  mode {
@@ -191,7 +193,7 @@ namespace burst {
 		void frontend_loop(void);
 		void action_enable(void) { action_enabled_ = true; }
 		void action_disable(void) { action_enabled_ = false; }
-		void action_update(void) { present_.action_actual = true; }
+		void action_update(void) { action_.action_actual = true; }
 
 	};
 	

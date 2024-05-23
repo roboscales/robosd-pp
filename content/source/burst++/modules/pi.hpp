@@ -188,8 +188,7 @@ namespace burst{
 		#define LIMMITER_CONFIG(a) LIMMITER_CONFIG_(a)
 		#define LIMMITER_CONFIG_(a)\
 		{\
-			ACTOR_CONFIG(a)\
-			, a##_RAMP\
+			a##_RAMP\
 		}
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		static void regvar_config(robo::cstr _name, const config_s& _config) {

@@ -65,6 +65,7 @@ namespace burst {
 				robo::common::devagent::action_s agent;
 				#endif
 				uint32_t mode;
+				bool action_actual;
 			};
 			struct feedback_s {
 				#ifdef ROBO_APP_BURST_SERVO_SIDE

@@ -7,7 +7,9 @@
 namespace burst {
 	template<typename number> struct powe3ph {
 		using signal_t = typename number::signal_t;
+		using usignal_t = typename number::usignal_t;
 		using long_signal_t = typename number::long_signal_t;
+		using ulong_signal_t = typename number::ulong_signal_t;
 		constexpr static signal_t sqrt3_div_2 = number::frac( robo::csqrt<double>(3.0) / 2);// number::round(robo::csqrt<double>(3.0) / 2 * number::max);
 		constexpr static signal_t scale = number::frac( robo::csqrt<double>(2.0) -1 );
 		constexpr static signal_t sqrt2_div_2 = number::frac( robo::csqrt<double>(2.0) / 2 );
@@ -67,7 +69,10 @@ namespace burst {
 			struct present_s {
 				actor::present_s tag;
 				rot_s rot;
-				signal_t electro_angle;
+				struct {
+					signal_t electro;
+					signal_t mechanic;
+				} angle;
 				bool synchro;
 			};
 			void switch_to_synchro(void) {
@@ -94,11 +99,16 @@ namespace burst {
 				if (actual_mode >= mode::full) {
 					ACTOR_PRESENT_S(p);
 					push(RT("rot"));
-					reg(var::types::const_uint8, p.synchro, RT("synchro"));
-					reg(number::var::const_signal, p.rot.sn, RT("sn"));
-					reg(number::var::const_signal, p.rot.cs, RT("cs"));
-					pop();
-					reg(number::var::const_signal, p.electro_angle, RT("eangle"));
+					{
+						reg(var::types::const_uint8, p.synchro, RT("synchro"));
+						reg(number::var::const_signal, p.rot.sn, RT("sn"));
+						reg(number::var::const_signal, p.rot.cs, RT("cs"));
+					} pop();
+					push(RT("angle"));
+					{
+						reg(number::var::const_signal, p.angle.electro, RT("electro"));
+						reg(number::var::const_signal, p.angle.mechanic, RT("mechanic"));
+					} pop();
 				}
 			}
 			virtual void do_regvar_conf(void) {}
@@ -138,19 +148,21 @@ namespace burst {
 			}
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
-				if (p.synchro) {
-					p.electro_angle = *rotator_t::synchro_anglee;
-				} else {
-					ACTOR_CONFIG_S(c);
-					signal_t tmp = (signal_t) fast::rsh((long_signal_t)*angle,16);
-					if (c.inverce) tmp = -tmp;
+				ACTOR_CONFIG_S(c);
+				signal_t tmp = (signal_t)fast::rsh((long_signal_t)*angle, 16);
+				if (c.inverce) tmp = -tmp;
 
-					tmp *= c.pole_count;
-					tmp -= c.offset;
-					p.electro_angle = tmp;
+				tmp *= c.pole_count;
+				tmp -= c.offset;
+				p.angle.mechanic = tmp;
+
+				if (p.synchro) {
+					p.angle.electro = *rotator_t::synchro_anglee;
+				} else {
+					p.angle.electro = p.angle.mechanic;
 				}
-				p.rot.sn = number::sin(p.electro_angle);
-				p.rot.cs = number::cos(p.electro_angle);
+				p.rot.sn = number::sin(p.angle.electro);
+				p.rot.cs = number::cos(p.angle.electro);
 			}
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
@@ -233,9 +245,9 @@ namespace burst {
 				if (actual_mode >= mode::full) {
 					//abc_s duty;
 					push(RT("duty"));
-					reg(number::var::const_signal, p.pwm.A, RT("A"));
-					reg(number::var::const_signal, p.pwm.B, RT("B"));
-					reg(number::var::const_signal, p.pwm.C, RT("C"));
+					reg(number::var::const_signal, p.duty.A, RT("A"));
+					reg(number::var::const_signal, p.duty.B, RT("B"));
+					reg(number::var::const_signal, p.duty.C, RT("C"));
 					pop();
 					//abc_s pwm;
 					push(RT("pwm"));
@@ -501,6 +513,7 @@ namespace burst {
 				abc_s abc;
 				ab_s ab;
 				dq_s dq;
+				usignal_t magnitude;
 			};
 			struct {
 				signal_t* A = &standby;
@@ -603,13 +616,17 @@ namespace burst {
 				signal_t sn = rot.rot.sn;
 				signal_t cs = rot.rot.cs;
 				ACTOR_PRESENT_S(p);
-				p.dq.lateral = dot_(cs, a, sn, beta);
-				p.dq.cross = dot_(-sn, a, cs, beta);
+				signal_t dql = dot_(cs, a, sn, beta);
+				signal_t dqc = dot_(-sn, a, cs, beta);
+				p.dq.lateral = dql;
+				p.dq.cross = dqc;
 				p.ab.alfa = a;
 				p.ab.beta = beta;
 				p.abc.A = a;
 				p.abc.B = b;
 				p.abc.C = c;
+
+				p.magnitude = number::sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
 
 			}
 		};

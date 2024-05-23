@@ -48,10 +48,10 @@ namespace burst {
 			,{\
 				{\
 					PI_CONFIG(a##_LATERAL_CURRENT_PI)\
-					, RANGE_CONFIG(a##_LATERAL_CURRENT_RANGE)\
+					, BURST_RANGE_CONFIG(a##_LATERAL_CURRENT_RANGE)\
 				}\
 				,{\
-					RANGE_CONFIG(a##_LATERAL_VOLTAGE_RANGE)\
+					BURST_RANGE_CONFIG(a##_LATERAL_VOLTAGE_RANGE)\
 				}\
 			}\
 			,{\
@@ -78,11 +78,8 @@ namespace burst {
 				signal_t angle;
 			} synchro;
 		};
-	private:
-		const signal_t& current_lateral_;
-		signal_t  current_mag_ = 0;
-
 	public:
+		const signal_t& current_lateral;
 		pi_t<number> lpi;
 		typename powe3ph<number>::rotator_t& rotator;
 		typename powe3ph<number>::inverter& inverter;
@@ -102,6 +99,7 @@ namespace burst {
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
 			, signal_t& _temper
 			#endif
+			, const signal_t& _current_mag
 		) : B(
 			_dev_id
 			, _config.cross
@@ -110,14 +108,14 @@ namespace burst {
 			, _feedback.cross
 			, _ps
 			, _current_cross
-			, current_mag_
+			, _current_mag
 			, _speed
 			, _position
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
 			, _temper
 			#endif
 		)
-			, current_lateral_(_current_lateral)
+			, current_lateral(_current_lateral)
 			
 			, lpi(
 				_config.lateral.current.pi //const config_s& _config
@@ -160,6 +158,7 @@ namespace burst {
 			psc.off();
 		}
 		void mode_synchro_voltage_runA(void) {
+			DEV_PRESENT_S(p);
 			p.synchro.angle32 += p.synchro.freq;
 			p.synchro.angle = (signal_t)fast::rsh(p.synchro.angle32, 16);
 		}
@@ -167,12 +166,12 @@ namespace burst {
 		class synchro_voltage_mode : public dev::mode {
 			friend class pmsm_t;
 			synchro_voltage_mode(actuator_t& _actuator)
-				: dev::mode(front::actuator::modes::speed, _actuator) {}
+				: dev::mode(front::pmsm::modes::synchro_voltage, _actuator) {}
 		protected:
 			virtual void	applay_action(void) { owner<pmsm_t>().mode_synchro_voltage_applay_action(); }
 			virtual void	start(void) { owner<pmsm_t>().mode_synchro_voltage_start(); }
 			virtual void	stop(void) { owner<pmsm_t>().mode_synchro_voltage_stop(); }
-			virtual void	loopA(void) {}
+			virtual void	loopA(void) { owner<pmsm_t>().mode_synchro_voltage_runA(); }
 			virtual void	loopB(void) {}
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
@@ -210,6 +209,7 @@ namespace burst {
 			B::psc.off();
 		}
 		void mode_synchro_current_runA(void) {
+			DEV_PRESENT_S(p);
 			lpi.run();
 			B::cpi.run();
 			p.synchro.angle32 += p.synchro.freq;
@@ -219,12 +219,12 @@ namespace burst {
 			class synchro_current_mode : public dev::mode {
 				friend class pmsm_t;
 				synchro_current_mode(actuator_t& _actuator)
-					: dev::mode(front::actuator::modes::speed, _actuator) {}
+					: dev::mode(front::pmsm::modes::synchro_current, _actuator) {}
 			protected:
 				virtual void	applay_action(void) { owner<pmsm_t>().mode_synchro_current_applay_action(); }
 				virtual void	start(void) { owner<pmsm_t>().mode_synchro_current_start(); }
 				virtual void	stop(void) { owner<pmsm_t>().mode_synchro_current_stop(); }
-				virtual void	loopA(void) {}
+				virtual void	loopA(void) { owner<pmsm_t>().mode_synchro_current_runA(); }
 				virtual void	loopB(void) { }
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
@@ -233,7 +233,7 @@ namespace burst {
 		virtual void switch_to_mode(int _mode) {
 			DEV_PRESENT_S(p);
 			dev::switch_to_mode(_mode);
-			if (p.cross.ac.dev.mode > front::dev::modes::idle && p.cross.ac.dev.mode <= front::acw::modes::last) {
+			if (p.cross.ac.dev.mode > front::actuator::modes::voltage && p.cross.ac.dev.mode <= front::acw::modes::last) {
 				DEV_CONFIG_S(cfg);
 				//резетим контур продольного тока
 				p.lateral.current.req = 0;
@@ -246,120 +246,86 @@ namespace burst {
 		{
 			DEV_PRESENT_S(p);
 			dev::loopA();
-			if (p.cross.ac.dev.mode > front::dev::modes::idle && p.cross.ac.dev.mode <= front::acw::modes::last) {
+			if (p.cross.ac.dev.mode > front::actuator::modes::voltage && p.cross.ac.dev.mode <= front::acw::modes::last) {
 				lpi.run();
 			}
 		}
-
-	#if 0
-		
-
-		#if ROBO_APP_BURST_VARTREE_ENABLED
-		virtual void do_regvar_present(void) {
-			DEV_PRESENT_S(p);
-			B::do_regvar_present();
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		virtual void regvar_action(robo::cstr _name) {
 			using namespace burst::var;
-			if (actual_mode >= var::mode::full) {
-				push(RT("c"));
-				{
-					pi_t<number>::regvar_present(RT("pi"), p.current.pi);
-					limiter_t<number>::regvar_present(RT("lim"), p.current.limiter);
-					reg(number::var::const_signal, p.current.req, RT("req"));
-					push(RT("mag"));
-					{
-						reg(number::var::const_signal, p.current.magnitude.actual, RT("actual"));
-						reg(number::var::const_signal, p.current.magnitude.delta, RT("delta"));
+			DEV_ACTION_S(a);
+			push(_name);
+			{
+				B::regvar_action(RT("cross"));
+				if (actual_mode >= burst::var::mode::action) {
+					push(RT("lat"));{
+						reg(number::var::signal, a.lateral.current, RT("c"));
+						reg(number::var::signal, a.lateral.voltage, RT("v"));
 					} pop();
-					varreg(RT("range"), number::var::const_signal, p.current.range);
-				} pop();
-			}
+					push(RT("synchro"));
+					{
+						reg(number::var::long_signal, a.synchro.freq, RT("freq"));
+						reg(number::var::long_signal, a.synchro.angle, RT("angle"));
+					} pop();
+				}
+			} pop();
 		}
 
-		virtual void do_regvar_conf(void) {
+		virtual void regvar_present(robo::cstr _name) {
+			DEV_PRESENT_S(p);
+			using namespace burst::var;
+			push(_name);{				
+				B::regvar_present(RT("cross"));
+				if (actual_mode >= var::mode::full) {
+					push(RT("lat"));{
+						push(RT("c"));{
+							reg(number::var::signal, p.lateral.current.req, RT("req"));
+							pi_t<number>::regvar_present(RT("pi"), p.lateral.current.pi);
+							varreg(RT("range"), number::var::const_signal, p.lateral.current.range);
+						}pop();
+						push(RT("v"));{
+							reg(number::var::signal, p.lateral.voltage.req, RT("req"));
+							varreg(RT("range"), number::var::const_signal, p.lateral.voltage.range);
+						}pop();
+					}pop();
+					push(RT("synchro"));{
+						reg(number::var::long_signal, p.synchro.freq, RT("freq"));
+						reg(number::var::long_signal, p.synchro.angle32, RT("angle32"));
+						reg(number::var::const_signal, p.synchro.angle, RT("angle"));
+					} pop();
+				};
+			} pop();
+		}
+
+		virtual void regvar_conf(robo::cstr _name) {
 			DEV_CONFIG_S(c);
-			B::do_regvar_conf();
 			using namespace burst::var;
-			if (actual_mode >= var::mode::tuning) {
-
-				push(RT("c"));
-				pi_t<number>::regvar_config(RT("pi"), c.current.pi);
-				limiter_t<number>::regvar_config(RT("lim"), c.current.limiter);
-				varreg(RT("range"), number::var::signal, c.current.range);
-				pop();
-
-				push(RT("modes"));
-				{
-					push(RT("cl"));
-					motion_t::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
-					positioner_t::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
-					pop();
-
-					push(RT("c"));
-					motion_t::regvar_config(RT("mo"), c.modes.current.motion);
-					positioner_t::regvar_config(RT("po"), c.modes.current.positioner);
-					pop();
-
-				} pop();
-
-				#if BURST_PROTECTION_ENABLED == 1
-				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-				push(RT("panic"));
-				{
-					reg(number::var::signal, c.panic.overcurrent, RT("overcur"));
-					push(RT("power"));
+			push(_name);{
+				B::regvar_conf(RT("cross"));			
+				if (actual_mode >= var::mode::tuning) {
+					push(RT("lat"));
 					{
-						reg(number::var::signal, c.panic.overpower, RT("over"));
-						reg(number::var::signal, c.panic.normpower, RT("norm"));
-						reg(types::time_us, c.panic.normpower, RT("tm"));
+						push(RT("c"));
+						{
+							pi_t<number>::regvar_config(RT("pi"), c.lateral.current.pi);
+							varreg(RT("range"), number::var::signal, c.lateral.current.range);
+						} pop();
+						push(RT("v"));
+						{
+							varreg(RT("range"), number::var::signal, c.lateral.current.range);
+						} pop();
 					} pop();
-				} pop();
-				#endif
-				#endif
-			}
-		}
-		#endif
-		#if BURST_PROTECTION_ENABLED == 1
-		virtual void realtime_protection(void) {
-			B::realtime_protection();
 
-			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-
-			DEV_CONFIG_S(cfg);
-			DEV_PRESENT_S(p);
-
-			signal_t magnitude = current_mag_;
-			signal_t delta = magnitude - p.current.magnitude.actual;
-			time_us_t now = time_us();
-			p.current.magnitude.delta = delta;
-			p.current.magnitude.actual = magnitude;
-
-			if (
-				magnitude > cfg.panic.overcurrent
-				|| (magnitude + delta) > cfg.panic.overcurrent
-				) {
-				B::raise_panic(front::acw::panics::bits::overcurrent);
-			}
-			else {
-				if (
-					magnitude > cfg.panic.overpower
-					) {
-					if (now - p.current.magnitude.us > cfg.panic.overpower_tm_us) {
-						B::raise_panic(front::acw::panics::bits::overcurrent);
-						p.current.magnitude.us = 0;
-					}
+					#if BURST_PROTECTION_ENABLED == 1
+					push(RT("panic"));{				
+						#if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
+						reg(number::var::signal, c.panic.overpower, RT("misalignment_lim"));
+						#endif
+					} pop();
+					#endif
 				}
-				else {
-					if (magnitude < cfg.panic.normpower) {
-						p.current.magnitude.us = now;
-					}
-				}
-			}
-			#endif
-		}
-		virtual void frontend_protection(void) {
-			B::frontend_protection();
-		}
-		#endif 
+			}pop();
+		} 
 		#endif
 	};
 }

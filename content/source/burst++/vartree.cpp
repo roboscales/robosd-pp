@@ -43,7 +43,7 @@ namespace burst {
 			int* path_stack_top = path_stack_buffer;
 			int path_stack_level = 0;
 
-			for (uint8_t i = 0; i < count; ++i, ++index_ptr) {
+			for (int i = 0; i < count; ++i, ++index_ptr) {
 				if ((*index_ptr)->tag == tags::var ) {
 					((record_s *)*index_ptr)->key = 0xFFFF;
 				}
@@ -56,25 +56,19 @@ namespace burst {
 				index_count--;
 				switch (ref->tag) {
 				case tags::push:
-				if (psz) {
-					if (path_stack_level < stack_size) {
-						sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
-						*(path_stack_top) = sz;
-						path_ptr[sz] = 0;
-						path_ptr += sz;
-						psz -= sz;
-						path_stack_top++;
-						path_stack_level++;
-					}
-					else {
-						delete[] path;
-						delete[] path_stack_buffer;
-						return;
-					}
-				}
+				ROBO_ASSERT(psz>sizeof(robo::char_t))
+				ROBO_ASSERT(path_stack_level < stack_size)
+				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				*(path_stack_top) = sz;
+				path_ptr[sz] = 0;
+				path_ptr += sz;
+				psz -= sz;
+				path_stack_top++;
+				path_stack_level++;
 				break;
 				case tags::pop:
 				path_stack_top--;
+				ROBO_ASSERT(path_stack_level>0)
 				path_stack_level--;
 				sz = *(path_stack_top);
 				path_ptr -= sz;
@@ -82,7 +76,9 @@ namespace burst {
 				psz += sz;
 				break;
 				default:
+				ROBO_ASSERT(psz > std::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t))
 				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				//sz = 0;
 				*(path_stack_top) = sz;
 				path_ptr[sz] = 0;
 				((record_s *)(ref))->key = robo::hash(path + 1, 0);

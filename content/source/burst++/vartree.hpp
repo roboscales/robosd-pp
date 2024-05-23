@@ -5,7 +5,7 @@
 #if ROBO_APP_BURST_VARTREE_ENABLED == 1
 
 #ifndef BURST_VAR_BUFFER_SIZE 
-#define BURST_VAR_BUFFER_SIZE 50
+#define BURST_VAR_BUFFER_SIZE 70
 #endif
 
 #include "core/robosd_string.hpp"

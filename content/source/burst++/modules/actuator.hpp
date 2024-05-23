@@ -68,9 +68,9 @@ namespace burst{
 				,a##_ENCO_FAULT_TICKS_SET\
 			}\
 			,{\
-				RANGE_CONFIG(a##_RANGE_VOLTAGE)\
-				, RANGE_CONFIG(a##_RANGE_SPEED)\
-				, RANGE_CONFIG(a##_RANGE_POSITION)\
+				BURST_RANGE_CONFIG(a##_RANGE_VOLTAGE)\
+				, BURST_RANGE_CONFIG(a##_RANGE_SPEED)\
+				, BURST_RANGE_CONFIG(a##_RANGE_POSITION)\
 			}\
 			,{\
 					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
@@ -313,63 +313,81 @@ namespace burst{
 		{
 
 		}
-		#if ROBO_APP_BURST_VARTREE_ENABLED
-		virtual void do_regvar_present(void) {
-			DEV_PRESENT_S(p);
-			dev::do_regvar_present();
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		virtual void regvar_action(robo::cstr _name) {
 			using namespace burst::var;
-			if (actual_mode >= var::mode::full) {
-				push(RT("v"));
-				reg(number::var::const_signal, p.voltage.des, RT("des"));
-				reg(number::var::const_signal, p.voltage.req, RT("req"));
-				varreg(RT("range"), number::var::const_signal, p.voltage.range);
-				pop();
-				push(RT("sp"));
-				reg(number::var::const_signal, p.speed.req, RT("req"));
-				varreg(RT("range"), number::var::const_signal, p.speed.range);
-				pop();
-				push(RT("po"));
-				reg(number::var::const_long_signal, p.position.req, RT("req"));
-				varreg(RT("range"), number::var::const_long_signal, p.position.range);
-				pop();
-				motion_t::regvar_present(RT("motion"), p.motion);
-				positioner_t::regvar_present(RT("positioner"), p.positioner);
-			}
+			DEV_ACTION_S(a);
+			push(_name);{
+				dev::regvar_action(RT("dev"));
+				if (actual_mode >= burst::var::mode::action) {
+					reg(number::var::signal, a.voltage, RT("v"));
+					reg(number::var::signal, a.speed, RT("sp"));
+					reg(number::var::long_signal, a.position, RT("po"));				
+				}
+			} pop();
+		}
+		virtual void regvar_present(robo::cstr _name) {
+			DEV_PRESENT_S(p);
+			DEV_ACTION_S(a);
+			using namespace burst::var;
+			push(_name);
+			{
+				dev::regvar_present(RT("dev"));
+				if (actual_mode >= var::mode::full) {
+					push(RT("v"));
+					reg(number::var::const_signal, p.voltage.des, RT("des"));
+					reg(number::var::signal, p.voltage.req, RT("req"));
+					varreg(RT("range"), number::var::const_signal, p.voltage.range);
+					pop();
+					push(RT("sp"));
+					reg(number::var::signal, p.speed.req, RT("req"));
+					varreg(RT("range"), number::var::const_signal, p.speed.range);
+					pop();
+					push(RT("po"));
+					reg(number::var::long_signal, p.position.req, RT("req"));
+					varreg(RT("range"), number::var::const_long_signal, p.position.range);
+					pop();
+					motion_t::regvar_present(RT("motion"), p.motion);
+					positioner_t::regvar_present(RT("positioner"), p.positioner);
+				}
+			} pop();
 		}
 
-		virtual void do_regvar_conf(void) {
+		virtual void regvar_conf(robo::cstr _name) {
 			DEV_CONFIG_S(c);
-			dev::do_regvar_conf();
 			using namespace burst::var;
-			if (actual_mode >= var::mode::tuning) {
-				push(RT("enco_fault_ticks"));
-				reg(types::time_us, c.enco_fault_ticks.reset, RT("reset"));
-				reg(types::time_us, c.enco_fault_ticks.set, RT("set"));
-				pop();
-
-				push(RT("range"));
-				varreg(RT("v"), number::var::signal, c.range.voltage);
-				varreg(RT("sp"), number::var::signal, c.range.speed);
-				varreg(RT("po"), number::var::long_signal, c.range.position);
-				pop();
-
-				push(RT("modes"));
-				{
-					push(RT("v"));
-					motion_t::regvar_config(RT("mo"), c.modes.motion);
-					positioner_t::regvar_config(RT("po"), c.modes.positioner);
+			push(_name); {
+				dev::regvar_conf(RT("dev"));
+				if (actual_mode >= var::mode::tuning) {
+					push(RT("enco_fault_ticks"));
+					reg(types::time_us, c.enco_fault_ticks.reset, RT("reset"));
+					reg(types::time_us, c.enco_fault_ticks.set, RT("set"));
 					pop();
-				} pop();
 
-				#if BURST_PROTECTION_ENABLED == 1
-				#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
-				push(RT("panic"));
-				reg( number::var::signal, c.panic.temper, RT("temper"));
-				pop();
-				#endif
-				#endif
+					push(RT("range"));
+					varreg(RT("v"), number::var::signal, c.range.voltage);
+					varreg(RT("sp"), number::var::signal, c.range.speed);
+					varreg(RT("po"), number::var::long_signal, c.range.position);
+					pop();
 
-			}
+					push(RT("modes"));
+					{
+						push(RT("v"));
+						motion_t::regvar_config(RT("mo"), c.modes.motion);
+						positioner_t::regvar_config(RT("po"), c.modes.positioner);
+						pop();
+					} pop();
+
+					#if BURST_PROTECTION_ENABLED == 1
+					#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
+					push(RT("panic"));
+					reg(number::var::signal, c.panic.temper, RT("temper"));
+					pop();
+					#endif
+					#endif
+
+				}
+			} pop();
 		}
 		#endif
 

@@ -91,7 +91,7 @@ namespace burst {
 
 
 	dev::mode::mode(int _id, dev & _dev):ref_(*this, _id), dev_(_dev) {
-		ref_.attach_to(dev_.modes_);
+		ROBO_ASSERT(ref_.attach_to(dev_.modes_));
 	}
 
 	void dev::raise_panic(uint32_t _flag) {
@@ -415,9 +415,9 @@ namespace burst {
 				switch_to_mode(action_.mode);
 			}
 		}
-		if (present_.action_actual) {
+		if (action_.action_actual) {
 			guard__;
-			present_.action_actual = false;
+			action_.action_actual = false;
 			if (action_enabled_) {
 				actual_mode_->applay_action();
 			}
@@ -588,40 +588,44 @@ namespace burst {
 	#if ROBO_APP_BURST_VARTREE_ENABLED
 	void dev::regvar_present(robo::cstr _name) {
 		using namespace burst::var;
-		push(_name);
-		do_regvar_present();
-		pop();
-	}
-	void dev::do_regvar_present(void) {
-		using namespace burst::var;
 		DEV_PRESENT_S(p);
 		if (actual_mode >= burst::var::mode::action) {
-			reg(types::uint32, p.action_actual, RT("action_actual"));
-			if (actual_mode >= burst::var::mode::full) {
-				reg(types::const_uint32, p.mode, RT("mode"));
-				reg(types::uint32, p.panic, RT("panic"));
-				#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-				reg(types::const_time_us, p.master_alive_tm, RT("master_alive_tm"));
-				reg(types::const_uint8, p.master_exists, RT("master_exists"));
-				#endif
-			}
+			push(_name);
+			{
+				if (actual_mode >= burst::var::mode::full) {
+					reg(types::const_uint32, p.mode, RT("mode"));
+					reg(types::uint32, p.panic, RT("panic"));
+					#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+					reg(types::const_time_us, p.master_alive_tm, RT("master_alive_tm"));
+					reg(types::const_uint8, p.master_exists, RT("master_exists"));
+					#endif
+				}
+			} pop();
 		}
-	};
-	void dev::regvar_conf(robo::cstr _name) {
-		using namespace burst::var;
-		push(_name);
-		do_regvar_conf();
-		pop();
 	}
-	void dev::do_regvar_conf(void) {
+	void dev::regvar_action(robo::cstr _name) {
+		using namespace burst::var;
+		DEV_ACTION_S(a);
+		if (actual_mode >= burst::var::mode::action) {
+			push(_name);
+			{
+				reg(types::uint8, a.action_actual, RT("action_actual"));
+				reg(types::const_uint32, a.mode, RT("mode"));
+			} pop();
+		}
+	}
+	void dev::regvar_conf(robo::cstr _name) {
 		DEV_CONFIG_S(c);
 		using namespace burst::var;
 		if (actual_mode >= burst::var::mode::tuning) {
-			#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-			reg(types::time_us, c.alive_period_us, RT("alive_period_us"));
-			#endif
+			push(_name);
+			{
+				#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+				reg(types::time_us, c.alive_period_us, RT("alive_period_us"));
+				#endif
+			} pop();
 		}
-	};
+	}
 	#endif
 
 }

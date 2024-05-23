@@ -62,7 +62,8 @@ namespace burst{
 			ACTUATOR_CONFIG(a)\
 			,{\
 				PI_CONFIG(b##_CURRENT_PI)\
-				, RANGE_CONFIG(b##_CURRENT_RANGE)\
+				, LIMMITER_CONFIG(b##_LIMMITER)\
+				, BURST_RANGE_CONFIG(b##_CURRENT_RANGE)\
 			}\
 			,{\
 				{\
@@ -76,18 +77,19 @@ namespace burst{
 			}\
 			BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
 		}
+
 		pi_t<number> cpi;
 	private:
 		limiter_t<number> limiter_;
-		const signal_t & current_;
 		#if BURST_PROTECTION_ENABLED == 1
 		#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-		const signal_t& current_mag_;
 		#endif
 		#endif
 
 	public:
-		struct present_s {		
+		const signal_t& current;
+		const signal_t& current_mag;
+		struct present_s {
 			typename B::present_s ac;
 			struct {
 				typename pi_t<number>::present_s pi;
@@ -351,10 +353,10 @@ namespace burst{
 				, _temper
 				#endif
 			)
-			, current_(_current)
+			, current(_current)
 			#if BURST_PROTECTION_ENABLED == 1
 			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-			, current_mag_(_current_mag)
+			, current_mag(_current_mag)
 			#endif
 			#endif
 			, speed_ov_voltage_cl_mode_(*this)
@@ -388,68 +390,84 @@ namespace burst{
 		{
 		}
 
-		#if ROBO_APP_BURST_VARTREE_ENABLED
-		virtual void do_regvar_present(void) {
-			DEV_PRESENT_S(p);
-			B::do_regvar_present();
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		virtual void regvar_action(robo::cstr _name) {
 			using namespace burst::var;
-			if (actual_mode >= var::mode::full) {				
-				push(RT("c"));
-				{
-					pi_t<number>::regvar_present(RT("pi"), p.current.pi);
-					limiter_t<number>::regvar_present(RT("lim"), p.current.limiter);
-					reg(number::var::const_signal, p.current.req, RT("req"));
-					push(RT("mag"));
+			DEV_ACTION_S(a);
+			push(_name);
+			{
+				B::regvar_action(RT("ac"));
+				if (actual_mode >= burst::var::mode::action) {
+					reg(number::var::signal, a.current, RT("c"));
+				}
+			} pop();
+		}
+		virtual void regvar_present(robo::cstr _name) {
+			using namespace burst::var;
+			DEV_PRESENT_S(p);
+			push(_name);
+			{
+				B::regvar_present(RT("ac"));
+				if (actual_mode >= var::mode::full) {
+					push(RT("c"));
 					{
-						reg(number::var::const_signal, p.current.magnitude.actual, RT("actual"));
-						reg(number::var::const_signal, p.current.magnitude.delta, RT("delta"));
+						pi_t<number>::regvar_present(RT("pi"), p.current.pi);
+						limiter_t<number>::regvar_present(RT("lim"), p.current.limiter);
+						reg(number::var::signal, p.current.req, RT("req"));
+						varreg(RT("range"), number::var::const_signal, p.current.range);
+						push(RT("mag"));
+						{
+							reg(number::var::const_signal, p.current.magnitude.actual, RT("actual"));
+							reg(number::var::const_signal, p.current.magnitude.delta, RT("delta"));
+						} pop();
 					} pop();
-					varreg(RT("range"), number::var::const_signal, p.current.range);
-				} pop();
-			}
+				}
+			}pop();
 		}
 
-		virtual void do_regvar_conf(void) {
+		virtual void regvar_conf(robo::cstr _name) {
 			DEV_CONFIG_S(c);
-			B::do_regvar_conf();
 			using namespace burst::var;
-			if (actual_mode >= var::mode::tuning) {
-
-				push(RT("c"));
-				pi_t<number>::regvar_config(RT("pi"), c.current.pi);
-				limiter_t<number>::regvar_config(RT("lim"), c.current.limiter);
-				varreg(RT("range"), number::var::signal, c.current.range);
-				pop();
-
-				push(RT("modes"));
-				{
-					push(RT("cl"));
-					motion_t::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
-					positioner_t::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
-					pop();
+			push(_name);{
+				B::regvar_conf(RT("ac"));
+				if (actual_mode >= var::mode::tuning) {
 
 					push(RT("c"));
-					motion_t::regvar_config(RT("mo"), c.modes.current.motion);
-					positioner_t::regvar_config(RT("po"), c.modes.current.positioner);
+					pi_t<number>::regvar_config(RT("pi"), c.current.pi);
+					limiter_t<number>::regvar_config(RT("lim"), c.current.limiter);
+					varreg(RT("range"), number::var::signal, c.current.range);
 					pop();
 
-				} pop();
-				
-				#if BURST_PROTECTION_ENABLED == 1
-				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-				push(RT("panic"));
-				{
-					reg(number::var::signal, c.panic.overcurrent, RT("overcur"));
-					push(RT("power"));
+					push(RT("modes"));
 					{
-						reg(number::var::signal, c.panic.overpower, RT("over"));
-						reg(number::var::signal, c.panic.normpower, RT("norm"));
-						reg(types::time_us, c.panic.normpower, RT("tm"));
+						push(RT("cl"));
+						motion_t::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
+						positioner_t::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
+						pop();
+
+						push(RT("c"));
+						motion_t::regvar_config(RT("mo"), c.modes.current.motion);
+						positioner_t::regvar_config(RT("po"), c.modes.current.positioner);
+						pop();
+
 					} pop();
-				} pop();
-				#endif
-				#endif
-			}
+
+					#if BURST_PROTECTION_ENABLED == 1
+					#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+					push(RT("panic"));
+					{
+						reg(number::var::signal, c.panic.overcurrent, RT("overcur"));
+						push(RT("power"));
+						{
+							reg(number::var::signal, c.panic.overpower, RT("over"));
+							reg(number::var::signal, c.panic.normpower, RT("norm"));
+							reg(types::time_us, c.panic.overpower_tm_us, RT("tm"));
+						} pop();
+					} pop();
+					#endif
+					#endif
+				}
+			}pop();
 		}
 		#endif
 		#if BURST_PROTECTION_ENABLED == 1
@@ -461,7 +479,7 @@ namespace burst{
 			DEV_CONFIG_S(cfg);
 			DEV_PRESENT_S(p);
 
-			signal_t magnitude = current_mag_;
+			signal_t magnitude = current_mag;
 			signal_t delta = magnitude - p.current.magnitude.actual;
 			time_us_t now = time_us();
 			p.current.magnitude.delta = delta;

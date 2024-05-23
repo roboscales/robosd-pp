@@ -146,12 +146,16 @@ fmd::var_t<int16_t, types::int16> rowCurrent_(RT("current.raw"));
 
 
 
-int voltage_min = 50;
-int voltage = voltage_min;
+int voltage_min = 100;
+int voltage = 350;
 int voltage_max = 5000;
 int payload_current_min = 50;
 int payload_current_max = 1000;
-int payload_current_ = 250;
+int payload_current_ = 700;
+
+int helicon_pwm_min = 1;
+int helicon_pwm_max = 1560;
+int helicon_pwm_ = 190;
 
 robo::time_us_t pause_us = 0;
 
@@ -277,7 +281,7 @@ void inverter_run(void) {
     }
 
     std::ofstream ofs("result.txt", std::ios_base::out | std::ios_base::app);
-    robo_infolog(RT("%f %d %f %d"),voltage_real, rowVoltage_.value, current_real, rowCurrent_.value);
+    robo_infolog(RT("%f %d %f %d"),pwm_, voltage_real, rowVoltage_.value, current_real, rowCurrent_.value);
     ofs << voltage_real << ";" << rowVoltage_.value << ";" << current_real << ";" << rowCurrent_.value << "\n";
 
     //читаем ток
@@ -290,15 +294,118 @@ void inverter_run(void) {
         while (!actual_.write());
         Sleep(10000);
         payload_current_ = payload_current_ + 50;
-        payload_value_set(1, payload_current_);
-        Sleep(1000);
         if (payload_current_ > payload_current_max) {
             payload_current_ = payload_current_min;
         }
+        payload_value_set(1, payload_current_);
+        Sleep(1000);
     }
 
 
 }
+
+void inverter_run_pwm(void) {
+    robo::time_us_t now = 0;
+    mode_.value = 1;
+    voltageVx10_.value = 1200;
+    powerWtX100_.value = 100000;
+    currentMAx10_.value = 12000;
+    pwm_.value = helicon_pwm_;
+    actual_.value = 1;
+    while (!voltageVx10_.write());
+    while (!currentMAx10_.write());
+    while (!powerWtX100_.write());
+    while (!pwm_.write());
+    while (!mode_.write());
+    while (!actual_.write());
+    //пишем ток нагрузки
+    uint8_t tmp[] = { 1,2,3 };
+    uint16_t r = crc16_modbus_by_table(tmp, 3);
+
+
+    delay(50000);
+    voltage_stable = false;
+    current_stable = false;    
+    static double rowVoltage__ = 0.;
+    static double rowCurrent__ = 0.;
+    int n = 0;
+    while (!(voltage_stable && current_stable) || n<32) {
+        n++;
+        rowVoltage_.read();
+        rowCurrent_.read();
+        rowVoltage__ = (15. * rowVoltage__ + rowVoltage_.value)/16.;
+        rowCurrent__ = (15. * rowCurrent__ + rowCurrent_.value)/16.;
+        Sleep(0);
+    }
+
+    std::ofstream ofs("result-pwm.txt", std::ios_base::out | std::ios_base::app);
+    robo_infolog(RT("%d %f %d %f %f %d %f"), helicon_pwm_, voltage_real, rowVoltage_.value, rowVoltage__, current_real, rowCurrent_.value, rowCurrent__);
+    ofs << helicon_pwm_ << ";" << voltage_real << ";"  << rowVoltage_.value << ";" << rowVoltage__<<";"  << current_real << ";" << rowCurrent_.value << ";" << rowCurrent__<< "\n";
+
+    helicon_pwm_++;
+    if ( ( helicon_pwm_ > helicon_pwm_max ) || (voltage_real>497.f) || (current_real > 1.f ) ) {
+        helicon_pwm_ = helicon_pwm_min;
+        pwm_.value = helicon_pwm_;
+        while (!pwm_.write());
+        while (!actual_.write());
+        Sleep(10000);
+        payload_current_ = payload_current_ + 50;
+        if (payload_current_ > payload_current_max) {
+            payload_current_ = payload_current_min;
+        }
+        payload_value_set(1, payload_current_);
+        Sleep(1000);
+    }
+
+
+}
+
+
+void inverter_run_on_R(void) {
+    robo::time_us_t now = 0;
+    mode_.value = 2;
+    voltageVx10_.value = voltage;
+    powerWtX100_.value = 100000;
+    currentMAx10_.value = 12000;
+    pwm_.value = helicon_pwm_max;
+    actual_.value = 1;
+    while (!voltageVx10_.write());
+    while (!currentMAx10_.write());
+    while (!powerWtX100_.write());
+    while (!pwm_.write());
+    while (!mode_.write());
+    while (!actual_.write());
+    //пишем ток нагрузки
+    delay(50000);
+    voltage_stable = false;
+    current_stable = false;
+    static double rowVoltage__ = 0.;
+    static double rowCurrent__ = 0.;
+    int n = 0;
+    while (!(voltage_stable && current_stable) || n < 32) {
+        n++;
+        rowVoltage_.read();
+        rowCurrent_.read();
+        rowVoltage__ = (15. * rowVoltage__ + rowVoltage_.value) / 16.;
+        rowCurrent__ = (15. * rowCurrent__ + rowCurrent_.value) / 16.;
+        Sleep(0);
+    }
+
+    std::ofstream ofs("result-R.txt", std::ios_base::out | std::ios_base::app);
+    robo_infolog(RT("%f %d %f %f %d %f"), voltage_real, rowVoltage_.value, rowVoltage__, current_real, rowCurrent_.value, rowCurrent__);
+    ofs << voltage_real << ";" << rowVoltage_.value << ";" << rowVoltage__ << ";" << current_real << ";" << rowCurrent_.value << ";" << rowCurrent__ << "\n";
+
+    voltage = voltage + 1;
+    if ((voltage >= voltage_max) || (voltage_real > 497.f) ) {
+        voltage = voltage_min;
+        while (!voltageVx10_.write());
+        while (!actual_.write());
+        Sleep(10000);
+    }
+
+
+}
+
 
 fmd::fmd(void) {
     //   src_comm_.events.connected = [] { robo_infolog(RT("%s connected"), src_comm_.alias().c_str()); };
@@ -387,7 +494,10 @@ bool fmd::poll(void) {
         while (!mode_.write());
         payload_off();
         payload_on();
-        payload_value_set(1, payload_current_);
+
+        //payload_value_set(1, payload_current_);
+        payload_value_set(2, 1000);
+
         state = states::run;
     break;
     case states::run:
@@ -403,7 +513,7 @@ bool fmd::poll(void) {
         scope . show();
     }
     #endif
-    inverter_run();
+    inverter_run_on_R();
     break;
 
     }

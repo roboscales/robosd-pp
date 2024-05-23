@@ -12,6 +12,8 @@ namespace burst {
 		typedef discret_t signal_t;
 		typedef discret_t parameter_t;
 		typedef int32_t long_signal_t;
+		typedef uint16_t usignal_t;
+		typedef uint32_t ulong_signal_t;
 		constexpr static signal_t max = std::numeric_limits<signal_t>::max() ;
 		constexpr static signal_t min = -max;
 		constexpr static signal_t ones = max;
@@ -56,6 +58,7 @@ namespace burst {
 		}
 		static signal_t sin(signal_t _angle);
 		static signal_t cos(signal_t _angle);
+		static  signal_t sqrt(ulong_signal_t _value);
 	};
 
 	struct real15 {
@@ -197,6 +200,8 @@ namespace burst {
 		typedef typename  digit::discret_t discret_t;
 		typedef typename  digit::long_discret_t long_discret_t;
 		typedef typename  digit::signal_t signal_t;
+		typedef typename  digit::usignal_t usignal_t;
+		typedef typename  digit::ulong_signal_t ulong_signal_t;
 		typedef typename  digit::long_signal_t long_signal_t;
 		typedef typename  digit::parameter_t parameter_t;
 
@@ -228,6 +233,10 @@ namespace burst {
 			else {
 				return _x;
 			}
+		}
+
+		static  signal_t sqrt(ulong_signal_t _value) {
+			return digit::sqrt(_value);
 		}
 
 		static constexpr signal_t s_inc(signal_t val, signal_t x, signal_t _min, signal_t _max) {

@@ -30,7 +30,7 @@ namespace burst {
 			struct modes {
 				enum {
 					synchro_voltage = acw::modes::last+1 //11
-					, synchro_curent = acw::modes::last + 2//12
+					, synchro_current = acw::modes::last + 2//12
 					, synchro_hall_estimate = acw::modes::last + 3 //14
 					, mode_count = synchro_hall_estimate
 				};
