@@ -1,4 +1,5 @@
 #include "burst/burst_pi.h"
+#include "burst/burst_app.h"
 
 void burst_pi_run_(burst_pi_p _pi){
   burst_pi_config_p s =_pi->config;
@@ -74,6 +75,53 @@ void burst_pi_reset_(burst_pi_p _pi, burst_signal_t _start_control){
 	_pi->satstate=burst_satstate_both;
 }
 
+void burst_pi_gain_update_gain_(burst_pi_p _pi, burst_signal_t _gain){
+			//controlLong = ( Error+ _pi->model1 - signal )* (s->propGain1)  >>   s->controlShift
+			//controlLong = ( Error+ _pi->model2 - signal )* (s->propGain2)  >>   s->controlShift
+			//( Error+ _pi->model1 - signal )* (s->propGain1) = ( Error+ _pi->model2 - signal )* (s->propGain2)
+			//Error * dp +pi->model1*g1 + pi->model2*g2 -signal*dp = 0;
+			//pi->model2 = (signal*dp - pi->model1*g1 - Error * dp)/g2;
+			
+			//controlLong = ( Error+ _pi->model2 - signal )* (s->propGain2)  >>   s->controlShift
+			// _pi->model2  = ((controlLong <<  s->controlShift)/s->propGain2) + 2* signal- req
+			burst_signal_t diff = 0;
+			burst_signal_t signal;
+			burst_signal_t force = 0;
+			burst_signal_t req;
+			burst_signal_t control;
+			{
+				uint32_t ctx = burst_guard_enter();
+				signal = *(_pi->signal);
+				control = *(_pi->control);
+				req = *(_pi->signal_req);
+				if (_pi->signal_force != 0) {
+					force = *(_pi->signal_force);
+				}
+				if (_pi->signal_diff != 0) {
+					diff = *(_pi->signal_diff);
+				}
+				burst_guard_leave(ctx);
+			}
+			burst_long_signal_t model = ((burst_long_signal_t)control) << _pi->config->controlShift;
+			model+=diff;
+			model-= force;
+			// ну без этого ни как....
+			model /=  _gain;
+			model += (2* signal);
+			model -= req;
+			burst_long_signal_t model32 = model << _pi->config->modelShift;
+			
+			
+			{
+				uint32_t ctx = burst_guard_enter();
+				_pi->config->propGain = _gain;
+				_pi->model = model;
+				_pi->long_model = model32;
+				burst_guard_leave(ctx);
+			}
+			
+			
+}
 
 void burst_limiter_run(burst_limiter_p _limiter){
 	burst_long_signal_t test_lim_control;

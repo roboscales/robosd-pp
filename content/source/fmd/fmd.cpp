@@ -146,16 +146,16 @@ fmd::var_t<int16_t, types::int16> rowCurrent_(RT("current.raw"));
 
 
 
-int voltage_min = 100;
-int voltage = 350;
-int voltage_max = 5000;
-int payload_current_min = 50;
+int voltage_min = 4000;
+int voltage = 4450;
+int voltage_max = 4990;
+int payload_current_min = 800;
 int payload_current_max = 1000;
-int payload_current_ = 700;
+int payload_current_ = 990;
 
 int helicon_pwm_min = 1;
 int helicon_pwm_max = 1560;
-int helicon_pwm_ = 190;
+int helicon_pwm_ = 1560;
 
 robo::time_us_t pause_us = 0;
 
@@ -227,7 +227,7 @@ static std::thread rdv([&] {
                 auto delta = voltage_real - voltage_real_prev;
                 if(delta<0.f) delta = -delta;
                 if (!voltage_stable) {
-                    voltage_stable = delta < 0.02f;
+                    voltage_stable = delta < 0.1f;
                 }
                 voltage_real_prev = voltage_real;
             }
@@ -243,7 +243,7 @@ static std::thread rdc([&] {
                 auto delta = current_real - current_real_prev;
                 if (delta < 0.f) delta = -delta;
                 if (!current_stable) {
-                    current_stable = delta < 1.f;
+                    current_stable = delta < 0.001f;
                 }
                 current_real_prev = current_real;
             }
@@ -258,7 +258,7 @@ void inverter_run(void) {
     voltageVx10_.value = voltage;
     powerWtX100_.value = 100000;
     currentMAx10_.value = 12000;
-    pwm_.value = 1560;
+    pwm_.value = 1640;
     actual_.value = 1;
     while (!voltageVx10_.write());
     while (!currentMAx10_.write());
@@ -274,26 +274,33 @@ void inverter_run(void) {
     delay(300000);
     voltage_stable = false;
     current_stable = false;
-    while (!(voltage_stable && current_stable)) {
+    static double rowVoltage__ = 0.;
+    static double rowCurrent__ = 0.;
+    int n = 0;
+    while (!(voltage_stable && current_stable) || n < 32) {
+        n++;
         rowVoltage_.read();
         rowCurrent_.read();
+        rowVoltage__ = (15. * rowVoltage__ + rowVoltage_.value) / 16.;
+        rowCurrent__ = (15. * rowCurrent__ + rowCurrent_.value) / 16.;
         Sleep(0);
     }
 
-    std::ofstream ofs("result.txt", std::ios_base::out | std::ios_base::app);
-    robo_infolog(RT("%f %d %f %d"),pwm_, voltage_real, rowVoltage_.value, current_real, rowCurrent_.value);
-    ofs << voltage_real << ";" << rowVoltage_.value << ";" << current_real << ";" << rowCurrent_.value << "\n";
+    std::ofstream ofs("result+finall-m2.txt", std::ios_base::out | std::ios_base::app);
+    robo_infolog(RT("%d %f %f %f %f"), voltage, voltage_real, rowVoltage__, current_real, rowCurrent__);
+    ofs << voltage << ";" <<voltage_real << ";" << rowVoltage__ << ";" << current_real << ";" << rowCurrent__ << "\n";
 
     //читаем ток
     //читаем ацп
-    voltage = voltage + 10;
+    voltage = voltage + 5;
+    if (abs(voltage - 500) < 10) voltage = 499;
     if (voltage > voltage_max) {
         voltage = voltage_min;
         voltageVx10_.value = voltage;
         while (!voltageVx10_.write());
         while (!actual_.write());
         Sleep(10000);
-        payload_current_ = payload_current_ + 50;
+        payload_current_ = payload_current_ + 10;
         if (payload_current_ > payload_current_max) {
             payload_current_ = payload_current_min;
         }
@@ -338,9 +345,9 @@ void inverter_run_pwm(void) {
         Sleep(0);
     }
 
-    std::ofstream ofs("result-pwm.txt", std::ios_base::out | std::ios_base::app);
-    robo_infolog(RT("%d %f %d %f %f %d %f"), helicon_pwm_, voltage_real, rowVoltage_.value, rowVoltage__, current_real, rowCurrent_.value, rowCurrent__);
-    ofs << helicon_pwm_ << ";" << voltage_real << ";"  << rowVoltage_.value << ";" << rowVoltage__<<";"  << current_real << ";" << rowCurrent_.value << ";" << rowCurrent__<< "\n";
+    std::ofstream ofs("result-pwm-m2.txt", std::ios_base::out | std::ios_base::app);
+    robo_infolog(RT("%d %f %f %f %f"), helicon_pwm_, voltage_real, rowVoltage__, current_real, rowCurrent__);
+    ofs << helicon_pwm_ << ";" << voltage_real  << ";" << rowVoltage__<<";"  << current_real <<  ";" << rowCurrent__<< "\n";
 
     helicon_pwm_++;
     if ( ( helicon_pwm_ > helicon_pwm_max ) || (voltage_real>497.f) || (current_real > 1.f ) ) {
@@ -495,8 +502,8 @@ bool fmd::poll(void) {
         payload_off();
         payload_on();
 
-        //payload_value_set(1, payload_current_);
-        payload_value_set(2, 1000);
+        payload_value_set(1, payload_current_);
+        //payload_value_set(2, 1000);
 
         state = states::run;
     break;
@@ -513,7 +520,7 @@ bool fmd::poll(void) {
         scope . show();
     }
     #endif
-    inverter_run_on_R();
+    inverter_run();
     break;
 
     }
