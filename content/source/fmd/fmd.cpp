@@ -146,12 +146,12 @@ fmd::var_t<int16_t, types::int16> rowCurrent_(RT("current.raw"));
 
 
 
-int voltage_min = 4000;
-int voltage = 4450;
-int voltage_max = 4990;
-int payload_current_min = 800;
+int voltage_min = 100;
+int voltage = 4940;
+int voltage_max = 4991;
+int payload_current_min = 10;
 int payload_current_max = 1000;
-int payload_current_ = 990;
+int payload_current_ = 500;
 
 int helicon_pwm_min = 1;
 int helicon_pwm_max = 1560;
@@ -286,21 +286,20 @@ void inverter_run(void) {
         Sleep(0);
     }
 
-    std::ofstream ofs("result+finall-m2.txt", std::ios_base::out | std::ios_base::app);
+    std::ofstream ofs("result+finall-m1-ext.txt", std::ios_base::out | std::ios_base::app);
     robo_infolog(RT("%d %f %f %f %f"), voltage, voltage_real, rowVoltage__, current_real, rowCurrent__);
     ofs << voltage << ";" <<voltage_real << ";" << rowVoltage__ << ";" << current_real << ";" << rowCurrent__ << "\n";
 
     //читаем ток
     //читаем ацп
-    voltage = voltage + 5;
-    if (abs(voltage - 500) < 10) voltage = 499;
-    if (voltage > voltage_max) {
+    voltage = voltage + 55;
+    if (voltage >= voltage_max ) {
         voltage = voltage_min;
         voltageVx10_.value = voltage;
         while (!voltageVx10_.write());
         while (!actual_.write());
         Sleep(10000);
-        payload_current_ = payload_current_ + 10;
+        payload_current_ = payload_current_ + 50;
         if (payload_current_ > payload_current_max) {
             payload_current_ = payload_current_min;
         }
@@ -356,7 +355,7 @@ void inverter_run_pwm(void) {
         while (!pwm_.write());
         while (!actual_.write());
         Sleep(10000);
-        payload_current_ = payload_current_ + 50;
+        payload_current_ = payload_current_ + 400;
         if (payload_current_ > payload_current_max) {
             payload_current_ = payload_current_min;
         }
@@ -477,9 +476,9 @@ bool fmd::begin(cstr _alias) {
     /*comm_2.begin("COM106");
     comm_3.begin("COM100");*/
 
-    comms::payload.connect("\\\\.\\COM43");
-    comms::voltage.connect("\\\\.\\COM44",9600);
-    comms::current.connect("\\\\.\\COM41", 9600);
+    comms::payload.connect("\\\\.\\COM33");
+    comms::voltage.connect("\\\\.\\COM47",9600);
+    comms::current.connect("\\\\.\\COM44", 9600);
 
     /*comm_2.connect("\\\\.\\COM106");
     comm_3.connect("\\\\.\\COM100");*/
