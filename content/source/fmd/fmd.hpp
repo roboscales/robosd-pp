@@ -241,6 +241,13 @@ public:
         virtual bool write(void) {
             ROBO_LRET(write_value(&value, addr, type.len));
         }
+        virtual bool writen(int _n) {
+            for (int i = 0; i < _n; i++) {
+                if(write_value(&value, addr, type.len)) return true;
+            }
+            robo_errlog( RT("error write var %s"),name.c_str() );
+            return false;
+        }
     };
     fmd(void);
     ~fmd(void);
