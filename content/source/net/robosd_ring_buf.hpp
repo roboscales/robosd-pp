@@ -5,7 +5,7 @@
 // принимает два параметра:
 // размер буфера - должен быть степенью двойки,
 // тип элементов хранящихся в буфере, по умолчанию unsigned char
-template< uint8_t BITS, class DATA_T = uint8_t> class ring_t
+template< uint8_t BITS, class DATA_T = uint8_t> class ROBO_EXPORT ring_t
 {
 public:
 	// определяем псевдоним для индексов

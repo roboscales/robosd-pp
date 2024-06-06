@@ -244,7 +244,7 @@ public:
     };
     fmd(void);
     ~fmd(void);
-    bool begin(cstr _alias);
+    bool begin(cstr _alias, int _port = -1);
     bool start(void);
     void stop(void);
     void finish(void);
@@ -252,7 +252,7 @@ public:
     bool select_scope(cstr _name);
     enum class states { begin, startup, run, none} state = states::none;
     bool poll(void);
-    
+    bool connected(void);
 };
  
 #endif

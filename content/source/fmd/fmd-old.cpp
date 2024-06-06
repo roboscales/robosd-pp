@@ -1,131 +1,146 @@
 #include "core/robosd_log.hpp"
 #include "core/robosd_ini.hpp"
 #include "fmd/fmd.hpp"
+#include "net/platform/serial/win_com.hpp"
 #include <iostream>
 #include <windows.h>
 #include "mcbcom.h"
-
-fmd::fmd(void) {
-    //   src_comm_.events.connected = [] { robo_infolog(RT("%s connected"), src_comm_.alias().c_str()); };
-    //src_comm_.events.disconnected = [] { robo_infolog(RT("%s disconected"), src_comm_.alias().c_str()); };
-    //src_comm_.events.reconnect = [] { robo_infolog(RT("%s reconnect"), src_comm_.alias().c_str()); };
-}
-
-HMCBCOM hCom;
-MCB_RESP_GETINFO info;
-
-fmd::~fmd(void) {
-}
-
-bool fmd::write_value(const void* _src, uint32_t _addr, uint16_t _sz) {
-    ROBO_LRET(SUCCEEDED(McbWriteVar(
-        hCom,       // board handle
-        _src,        // source buffer
-        _addr,         // variable address
-        _sz           // variable size
-    )));
-}
-
-bool fmd::read_value(void* _dst, uint32_t _addr, uint16_t _sz) {
-    ROBO_LRET(SUCCEEDED(McbReadVar(
-        hCom,       // board handle
-        _dst,        // destination buffer
-        _addr,         // variable address
-        _sz           // variable size
-    )));
-}
-
-bool fmd::start(void) {
-    ROBO_LBREAKN(SUCCEEDED(McbAttachThread(hCom)));
-    //src_comm_.connect( src_comm_.alias() );
-
-
-    //MCBCOM_API DWORD 
-    //uint32_t var=-1;
-    //McbReadVar(hCom, &var, 0x20001D34, 4);
-    return true;
-}
-void fmd::stop(void) {
-    //src_comm_.connect(src_comm_.alias());
-    McbDetachThread(hCom);
-}
-void fmd::finish(void) {
-    if (hCom) {
-        McbCloseCom(hCom);
-        hCom = 0;
+#include <process.h>
+#include "core/robosd_crc.hpp"
+#include <thread>
+#include <fstream>  
+struct tty {
+    HANDLE m_Handle;
+    tty(void) {
+        m_Handle = INVALID_HANDLE_VALUE;
     }
-}
-bool fmd::connected(void) {
-    return hCom != 0;
-}
-
-bool fmd::begin(cstr _alias, int _port) {
-    int portnum;
-    int bitrate;
-    if (_port < 0) {
-        ROBO_LBREAKN(ini::load(_alias, string(RT("%s.%s"), _alias, RT("com")), RT("portnumber"), portnum));
-    }
-    else {
-        portnum = _port;
-    }
-    ROBO_LBREAKN(ini::load(_alias, string(RT("%s.%s"), _alias, RT("com")), RT("bitrate"), bitrate));
-    // ROBO_LRET(src_comm_.begin(alias));
-    DWORD hr = 0;
-    wchar_t buffer[50];
-    buffer[_swprintf(buffer, L"RS232;COM%d;speed=%d", portnum, bitrate)] = 0;
-    hr = McbOpenComEx(&hCom, buffer);
-    if (!SUCCEEDED(hr)) {
-        robo_errlog("com errpr %u %d", hr, GetLastError());
+    virtual ~tty() {
+        disconnect();
     }
 
-    ROBO_LBREAKN(vref::load_all());
-    state = states::begin;
-    return true;
-}
+    bool isok(void) const;
+    static inline const int TIMEOUT = 1000;
+    bool connect(cstr  _port, int _baudrate) {
+        disconnect();
 
-bool fmd::poll(void) {    
-    return true;
-}
+        m_Handle =
+            CreateFile(
+                _port,
+                GENERIC_READ | GENERIC_WRITE,
+                0,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL);
 
-bool fmd::startup(void) {
-    return true;
-}
+        if (m_Handle == INVALID_HANDLE_VALUE) {
+            return false;
+        }
 
-fmd::vref::list& fmd::vref::list_(void) {
-    static list list__;
-    return list__;
-}
+        SetCommMask(m_Handle, EV_RXCHAR);
+        SetupComm(m_Handle, 1500, 1500);
 
-bool fmd::vref::read_all(void) {
-    for (auto* i = list_().first(); i; i = i->next()) {
-        ROBO_LBREAKN(i->owner().read());
+        COMMTIMEOUTS CommTimeOuts;
+        CommTimeOuts.ReadIntervalTimeout = 0xFFFFFFFF;
+        CommTimeOuts.ReadTotalTimeoutMultiplier = 0;
+        CommTimeOuts.ReadTotalTimeoutConstant = TIMEOUT;
+        CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
+        CommTimeOuts.WriteTotalTimeoutConstant = TIMEOUT;
+
+        if (!SetCommTimeouts(m_Handle, &CommTimeOuts)) {
+            CloseHandle(m_Handle);
+            m_Handle = INVALID_HANDLE_VALUE;
+            return false;
+        }
+
+        DCB ComDCM;
+
+        memset(&ComDCM, 0, sizeof(ComDCM));
+        ComDCM.DCBlength = sizeof(DCB);
+        GetCommState(m_Handle, &ComDCM);
+        ComDCM.BaudRate = DWORD(_baudrate);
+        ComDCM.ByteSize = 8;
+        ComDCM.Parity = NOPARITY;
+        ComDCM.StopBits = ONESTOPBIT;
+        ComDCM.fAbortOnError = TRUE;
+        ComDCM.fDtrControl = DTR_CONTROL_DISABLE;
+        ComDCM.fRtsControl = RTS_CONTROL_DISABLE;
+        ComDCM.fBinary = TRUE;
+        ComDCM.fParity = FALSE;
+        ComDCM.fInX = FALSE;
+        ComDCM.fOutX = FALSE;
+        ComDCM.XonChar = 0;
+        ComDCM.XoffChar = (unsigned char)0xFF;
+        ComDCM.fErrorChar = FALSE;
+        ComDCM.fNull = FALSE;
+        ComDCM.fOutxCtsFlow = FALSE;
+        ComDCM.fOutxDsrFlow = FALSE;
+        ComDCM.XonLim = 128;
+        ComDCM.XoffLim = 128;
+
+        if (!SetCommState(m_Handle, &ComDCM)) {
+            CloseHandle(m_Handle);
+            m_Handle = INVALID_HANDLE_VALUE;
+            return false;
+        }
+        return true;
     }
-    return true;
-}
-
-bool fmd::vref::load_all(void) {
-    for (auto* i = list_().first(); i; i = i->next()) {
-        ROBO_LBREAKN(i->owner().load());
+    void disconnect() {
+        if (m_Handle != INVALID_HANDLE_VALUE) {
+            CloseHandle(m_Handle);
+            m_Handle = INVALID_HANDLE_VALUE;
+        }
     }
-    return true;
+    char data[255];
+    char* buf = nullptr;
+    size_t sz = 255;
+
+    virtual bool readln(void) {
+        if (m_Handle == INVALID_HANDLE_VALUE) {
+            return false;
+        }
+
+        DWORD ReadBytes;
+        char BufferSerial[2];
+        unsigned int CharCount = 0;
+
+        while (CharCount < 254) {
+            if (ReadFile(m_Handle, &BufferSerial, 1, &ReadBytes, NULL)) {
+                if ((ReadBytes > 0) && (BufferSerial[0] != '\n') && (BufferSerial[0] != '\r')) {
+                    data[CharCount] = BufferSerial[0];
+                    CharCount++;
+                }
+                else if (BufferSerial[0] == '\r' || BufferSerial[0] == '\n') {
+                    data[CharCount] = '\0';
+                    if (CharCount > 0) {
+                        return  true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+
+};
+
+
+namespace comms {
+    tty current;
+    tty voltage;
+    net::win_com payload;
 }
 
-fmd::vref::vref(void) : ref_(*this) {
-    ref_.attach_to(list_());
-}
+fmd::content_t<MCB_SCOPE> content_;
 
-fmd::vref::~vref(void) {
-    ref_.dettach();
-}
-
-
-#if 0
 fmd::var_t<uint32_t, types::uint32> mode_(RT("mode"));
 fmd::var_t<uint32_t, types::uint32> actual_(RT("actual"));
 fmd::var_t<int16_t, types::int16> pwm_(RT("pwm"));
 fmd::var_t<int16_t, types::int16> voltageVx10_(RT("voltageVx10"));
 fmd::var_t<int16_t, types::int16> currentMAx10_(RT("currentMAx10"));
 fmd::var_t<int32_t, types::int32> powerWtX100_(RT("powerWtX100"));
+
 fmd::var_t<int16_t, types::int16> rowVoltage_(RT("voltage.raw"));
 fmd::var_t<int16_t, types::int16> rowCurrent_(RT("current.raw"));
 
@@ -134,7 +149,6 @@ fmd::var_t<int16_t, types::int16> rowCurrent_(RT("current.raw"));
 int voltage_min = 100;
 int voltage = 4940;
 int voltage_max = 4991;
-
 int payload_current_min = 10;
 int payload_current_max = 1000;
 int payload_current_ = 500;
@@ -399,12 +413,151 @@ void inverter_run_on_R(void) {
 }
 
 
+fmd::fmd(void) {
+    //   src_comm_.events.connected = [] { robo_infolog(RT("%s connected"), src_comm_.alias().c_str()); };
+    //src_comm_.events.disconnected = [] { robo_infolog(RT("%s disconected"), src_comm_.alias().c_str()); };
+    //src_comm_.events.reconnect = [] { robo_infolog(RT("%s reconnect"), src_comm_.alias().c_str()); };
+}
+
+HMCBCOM hCom;
+MCB_RESP_GETINFO info;
 
 
 net::win_com bridge;
 
 
+fmd::~fmd(void) {
+    content_.scops.free();
+}
 
+
+bool fmd::write_value(const void* _src, uint32_t _addr, uint16_t _sz) {
+    ROBO_LRET(SUCCEEDED(McbWriteVar(
+        hCom,       // board handle
+        _src,        // source buffer
+        _addr,         // variable address
+        _sz           // variable size
+    )));
+}
+
+bool fmd::read_value(void* _dst, uint32_t _addr, uint16_t _sz) {
+    ROBO_LRET(SUCCEEDED(McbReadVar(
+        hCom,       // board handle
+        _dst,        // destination buffer
+        _addr,         // variable address
+        _sz           // variable size
+    )));
+}
+
+bool fmd::begin(cstr _alias) {
+    int portnum;
+    int bitrate;
+
+    ROBO_LBREAKN(ini::load(_alias, string(RT("%s.%s"), _alias, RT("com")),RT("portnumber"), portnum));
+    ROBO_LBREAKN(ini::load(_alias, string(RT("%s.%s"), _alias, RT("com")), RT("bitrate"), bitrate));
+    // ROBO_LRET(src_comm_.begin(alias));
+    DWORD hr = 0;
+    wchar_t buffer[50];
+    buffer[_swprintf(buffer, L"RS232;COM%d;speed=%d", portnum, bitrate)] = 0;
+    hr = McbOpenComEx(&hCom, buffer);
+    if (!SUCCEEDED(hr)) {
+        robo_errlog("com errpr %u %d", hr, GetLastError());
+    }
+
+    ROBO_LBREAKN(content_.load("scops"));
+    ROBO_LBREAKN(vref::load_all());
+    state = states::begin;
+    //bridge.begin("COM39");
+    // bridge.connect("\\\\.\\COM39");
+    
+    comms::payload.begin("COM43");
+    //comms::voltage.begin("COM44");
+    //comms::current.begin("COM41");
+    /*comm_2.begin("COM106");
+    comm_3.begin("COM100");*/
+
+    comms::payload.connect("\\\\.\\COM33");
+    comms::voltage.connect("\\\\.\\COM47",9600);
+    comms::current.connect("\\\\.\\COM44", 9600);
+
+    /*comm_2.connect("\\\\.\\COM106");
+    comm_3.connect("\\\\.\\COM100");*/
+    return true;
+}
+bool fmd::poll(void) {
+    switch (state) {
+    case states::none:
+    return false;
+    break;
+    case states::begin:
+    //ждем коннекцию, переподключаемся - но это потом
+        state = states::startup;
+    break;
+    case states::startup:
+        ROBO_LBREAKN(startup());
+        ROBO_LBREAKN(vref::read_all());
+        mode_.value = 0;
+        while (!mode_.write());
+        payload_off();
+        payload_on();
+
+        payload_value_set(1, payload_current_);
+        //payload_value_set(2, 1000);
+
+        state = states::run;
+    break;
+    case states::run:
+    time_us_t now = system::time_us();
+    if (now - scope_query_last_us > scope_query_period_us) {
+        scope_query_last_us = now;
+        ROBO_ALARMN(SUCCEEDED(McbReadScope(hCom)));
+    }
+    #if 0
+    if (now - scope_show_last_us > scope_show_period_us) {
+        scope_show_last_us = now;
+        auto& scope = content_.scops.first()->value();
+        scope . show();
+    }
+    #endif
+    inverter_run();
+    break;
+
+    }
+    return true;
+}
+
+bool fmd::startup(void) {
+    //todo govnocod
+    /*
+    */
+    auto& scope = content_.scops.first()->value();
+    ROBO_LBREAKN(SUCCEEDED(McbSetupScope(hCom, scope.count, scope.ps)));
+    return true;
+}
+
+fmd::vref::list& fmd::vref::list_(void) {
+    static list list__;
+    return list__;
+}
+bool fmd::vref::read_all(void) {
+    for (auto* i = list_().first(); i; i = i->next()) {
+        ROBO_LBREAKN(i->owner().read());
+    }
+    return true;
+}
+bool fmd::vref::load_all(void) {
+    for (auto* i = list_().first(); i; i = i->next()) {
+        ROBO_LBREAKN(i->owner().load());
+    }
+    return true;
+}
+
+fmd::vref::vref(void): ref_(*this) {
+    ref_.attach_to(list_());
+}
+fmd::vref::~vref(void) {
+    ref_.dettach();
+}
 
 
 #if 0
@@ -501,5 +654,21 @@ net::win_com bridge;
     #endif
 
 
+bool fmd::start(void) {
+    ROBO_LBREAKN(SUCCEEDED(McbAttachThread(hCom)));
+    //src_comm_.connect( src_comm_.alias() );
 
-#endif
+
+    //MCBCOM_API DWORD 
+    //uint32_t var=-1;
+    //McbReadVar(hCom, &var, 0x20001D34, 4);
+    return true;
+}
+void fmd::stop(void) {
+    //src_comm_.connect(src_comm_.alias());
+    McbDetachThread(hCom);
+}
+void fmd::finish(void) {
+    McbCloseCom(hCom);
+
+}

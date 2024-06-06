@@ -3,7 +3,13 @@
 #include "core/robosd_log.hpp"
 #include "core/robosd_ini.hpp"
 //todo подумать
+#ifndef ROBO_APP_SERVO_ENABLED
+#define ROBO_APP_SERVO_ENABLED 0
+#endif
+
+#if ROBO_APP_SERVO_ENABLED == 1
 #include "servo/robosd_backend.hpp"
+#endif 
 
 #ifndef ROBO_APP_TRACE_ENABLED
 #define ROBO_APP_TRACE_ENABLED 0
@@ -471,7 +477,9 @@ namespace robo {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->frontend_loop();
 				}
+				#if ROBO_APP_SERVO_ENABLED == 1
 				frontend::queue::poll();
+				#endif
 			}
 		}
 
@@ -483,10 +491,14 @@ namespace robo {
 				for (wrapper::ref* r = wrappers_.first(); r; r = r->next()) {
 					r->owner().module_->backend_loop();
 				}
+				#if ROBO_APP_SERVO_ENABLED == 1
 				backend::bus::perform();
+				#endif
 			}
+			#if ROBO_APP_SERVO_ENABLED == 1
 			backend::queue::poll();
 			backend::task::machine::execute();
+			#endif
 		}
 
 		machine& machine::root() {

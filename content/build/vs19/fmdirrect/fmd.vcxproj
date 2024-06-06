@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_crc.cpp" />
-    <ClCompile Include="..\..\..\robosd-ref\fmd\fmd.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\fmd\fmd-old.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_net_link.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_serial.cpp" />
