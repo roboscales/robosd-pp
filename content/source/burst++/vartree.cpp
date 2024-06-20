@@ -33,6 +33,7 @@ namespace burst {
 		#endif
 		
 		void reindex(void) {
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
 			//todo посчитать
 			robo::char_t * path = new robo::char_t [path_size + 1];
 			int * path_stack_buffer = new int [stack_size];
@@ -86,6 +87,7 @@ namespace burst {
 			}
 			delete[] path;
 			delete[] path_stack_buffer;
+			#endif
 		}
 		burst::board::slot::simple start(
 			burst::board::slot::kind::start

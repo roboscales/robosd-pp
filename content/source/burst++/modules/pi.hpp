@@ -239,7 +239,7 @@ namespace burst{
 				, nullptr
 				, nullptr
 				, zero_signal
-				, controlRange_.hi
+				, _controlRange.hi
 				,_present.control_low
 				,_present.sut_flag
 			)

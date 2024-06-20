@@ -513,7 +513,11 @@ namespace burst {
 				abc_s abc;
 				ab_s ab;
 				dq_s dq;
+				#if BURST_PROTECTION_ENABLED == 1
+				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 				usignal_t magnitude;
+				#endif
+				#endif
 			};
 			struct {
 				signal_t* A = &standby;
@@ -625,9 +629,11 @@ namespace burst {
 				p.abc.A = a;
 				p.abc.B = b;
 				p.abc.C = c;
-
+				#if BURST_PROTECTION_ENABLED == 1
+				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 				p.magnitude = number::sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
-
+				#endif
+				#endif
 			}
 		};
 

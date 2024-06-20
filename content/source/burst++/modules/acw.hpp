@@ -23,12 +23,12 @@ namespace burst{
 			} current;
 			struct {
 				struct {
-					typename motion_t::config_s motion;
-					typename positioner_t::config_s positioner;
+					typename motion_t<number>::config_s motion;
+					typename positioner_t<number>::config_s positioner;
 				} voltage_cl;
 				struct {
-					typename motion_t::config_s motion;
-					typename positioner_t::config_s positioner;
+					typename motion_t<number>::config_s motion;
+					typename positioner_t<number>::config_s positioner;
 				} current;
 			} modes;
 			#if BURST_PROTECTION_ENABLED == 1
@@ -88,7 +88,11 @@ namespace burst{
 
 	public:
 		const signal_t& current;
+		#if BURST_PROTECTION_ENABLED == 1
+		#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 		const signal_t& current_mag;
+		#endif
+		#endif
 		struct present_s {
 			typename B::present_s ac;
 			struct {
@@ -161,7 +165,7 @@ namespace burst{
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);
 			p.ac.voltage.range = c.ac.range.voltage;
-			psc.on();
+			B::psc.on();
 			limiter_.begin();
 		}
 		void mode_voltage_cl_stop(void) {
@@ -260,7 +264,7 @@ namespace burst{
 			void mode_current_applay_action(void) {
 				DEV_PRESENT_S(p);
 				DEV_ACTION_S(a);
-				set_voltage_range();
+				B::set_voltage_range();
 				p.current.req = range_apply(a.current, p.current.range);
 			}
 
@@ -334,7 +338,11 @@ namespace burst{
 			, feedback_s & _feedback
 			, ps::control & _ps
 			, const signal_t& _current
+			#if BURST_PROTECTION_ENABLED == 1
+			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 			, const signal_t& _current_mag
+			#endif
+			#endif
 			, const signal_t& _speed
 			, const long_signal_t& _position
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
@@ -441,13 +449,13 @@ namespace burst{
 					push(RT("modes"));
 					{
 						push(RT("cl"));
-						motion_t::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
-						positioner_t::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
+						motion_t<number>::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
+						positioner_t<number>::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
 						pop();
 
 						push(RT("c"));
-						motion_t::regvar_config(RT("mo"), c.modes.current.motion);
-						positioner_t::regvar_config(RT("po"), c.modes.current.positioner);
+						motion_t<number>::regvar_config(RT("mo"), c.modes.current.motion);
+						positioner_t<number>::regvar_config(RT("po"), c.modes.current.positioner);
 						pop();
 
 					} pop();

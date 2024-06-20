@@ -80,7 +80,7 @@ namespace burst {
 #endif
 
 #ifndef ROBO_APP_BURST_VARTREE_ENABLED
-#define ROBO_APP_BURST_VARTREE_ENABLED 1
+#define ROBO_APP_BURST_VARTREE_ENABLED 0
 #endif
 
 

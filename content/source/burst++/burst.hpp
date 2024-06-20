@@ -118,8 +118,8 @@ namespace burst {
 			dev& dev_;
 		public:
 			mode(int _id, dev& _dev);
-			template <typename T> typename T& owner(void) {
-				return dynamic_cast <typename T &>(dev_);
+			template <typename T>  T& owner(void) {
+				return dynamic_cast < T &>(dev_);
 			}
 		};
 		
@@ -146,20 +146,20 @@ namespace burst {
 			, action_s& _action
 			, feedback_s& _feedback
 		);
-		template <typename T> typename T::action_s& action(void) {
-			return reinterpret_cast <typename T::action_s&>(action_);
+		template <typename T>  T& action(void) {
+			return reinterpret_cast < T&>(action_);
 		}
 
-		template <typename T> typename T::present_s& present(void) {
-			return reinterpret_cast <typename T::present_s&>(present_);
+		template <typename T>  T& present(void) {
+			return reinterpret_cast <T&>(present_);
 		}
 
-		template <typename T> const  typename T::config_s& config(void) {
-			return reinterpret_cast < const typename T::config_s&>(config_);
+		template <typename T> const  T & config(void) {
+			return reinterpret_cast < const  T &>(config_);
 		}
 
-		template <typename T> typename T::feedback_s& feedback(void) {
-			return reinterpret_cast <typename T::feedback_s&>(feedback_);
+		template <typename T>  T & feedback(void) {
+			return reinterpret_cast < T&>(feedback_);
 		}
 		
 		#define DEV_ALIEN_PRESENT_S(T,d,s) typename T::present_s& s = d.dev::template present<typename  T::present_s>()

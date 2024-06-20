@@ -99,7 +99,11 @@ namespace burst {
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
 			, signal_t& _temper
 			#endif
+			#if BURST_PROTECTION_ENABLED == 1
+			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 			, const signal_t& _current_mag
+			#endif
+			#endif
 		) : B(
 			_dev_id
 			, _config.cross
@@ -108,7 +112,11 @@ namespace burst {
 			, _feedback.cross
 			, _ps
 			, _current_cross
-			, _current_mag
+			#if BURST_PROTECTION_ENABLED == 1
+			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
+			, _current_mag			
+			#endif
+			#endif
 			, _speed
 			, _position
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1 && BURST_PROTECTION_ENABLED == 1
@@ -151,11 +159,11 @@ namespace burst {
 			p.cross.ac.voltage.range = cfg.cross.ac.range.voltage;
 			p.lateral.voltage.range = cfg.lateral.voltage.range;
 			rotator.switch_to_synchro();
-			psc.on();
+			B::psc.on();
 		}
 		void mode_synchro_voltage_stop(void) {
 			rotator.switch_to_enco();
-			psc.off();
+			B::psc.off();
 		}
 		void mode_synchro_voltage_runA(void) {
 			DEV_PRESENT_S(p);
@@ -165,7 +173,7 @@ namespace burst {
 	private:
 		class synchro_voltage_mode : public dev::mode {
 			friend class pmsm_t;
-			synchro_voltage_mode(actuator_t& _actuator)
+			synchro_voltage_mode(pmsm_t& _actuator)
 				: dev::mode(front::pmsm::modes::synchro_voltage, _actuator) {}
 		protected:
 			virtual void	applay_action(void) { owner<pmsm_t>().mode_synchro_voltage_applay_action(); }
@@ -218,7 +226,7 @@ namespace burst {
 		private:
 			class synchro_current_mode : public dev::mode {
 				friend class pmsm_t;
-				synchro_current_mode(actuator_t& _actuator)
+				synchro_current_mode(pmsm_t& _actuator)
 					: dev::mode(front::pmsm::modes::synchro_current, _actuator) {}
 			protected:
 				virtual void	applay_action(void) { owner<pmsm_t>().mode_synchro_current_applay_action(); }
@@ -245,6 +253,7 @@ namespace burst {
 		virtual void loopA(void)
 		{
 			DEV_PRESENT_S(p);
+			
 			dev::loopA();
 			if (p.cross.ac.dev.mode > front::actuator::modes::voltage && p.cross.ac.dev.mode <= front::acw::modes::last) {
 				lpi.run();
