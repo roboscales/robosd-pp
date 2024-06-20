@@ -165,7 +165,7 @@ namespace robo {
 			base_ref<T>* last = nullptr;
 		public:
 			/**  оличество элементов списка */
-			int count(void) { return count_; }
+			int count(void) const { return count_; }
 
 			T* pop(void) {
 				base_ref<T>* r = first;
@@ -178,6 +178,9 @@ namespace robo {
 				}
 			}
 
+			void clean(void) {
+				while (pop());
+			}
 			base_ref<T> * locate(T * _own) {
 				for (base_ref<T>* p = first; p != nullptr; p = p->next) {
 					if (&(p->owner()) == _own) {

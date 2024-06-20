@@ -28,7 +28,7 @@
 #endif
 //ROBO_APP_CRASH_TYPE лучше определять всегда отдельно
 #ifndef ROBO_APP_CRASH_TYPE
-#define ROBO_APP_CRASH_TYPE ROBO_APP_TYPE_SPECIFIC
+#define ROBO_APP_CRASH_TYPE ROBO_APP_TYPE_STD
 #endif
 
 #if ROBO_UNICODE_ENABLED == 1

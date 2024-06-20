@@ -44,6 +44,7 @@ namespace robo {
 		SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));
 	}
 	void system::env::print(robo::log::verb _verb, cstr _format, va_list _args) {
+		system::guard g__;
 		switch (_verb) {
 		case robo::log::verb::error:
 		set_win_consol_color_(LightRed, Black);

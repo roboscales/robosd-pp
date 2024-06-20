@@ -276,7 +276,7 @@ namespace robo {
 			 */
 			static bool is_backend(void);
 
-			#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE 
+			#if ROBO_APP_CRASH_TYPE != ROBO_APP_STD_TYPE 
 			/*!
 			 *  Aborts the env. Просто вырубаем прилрожение, где бы оно не работало
 			 */

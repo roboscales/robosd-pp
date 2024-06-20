@@ -106,7 +106,7 @@ BURST_WEAK  void S##_setup(\
 	S.controlMin = _controlMin?_controlMin:&S##_def_control_min;\
 	S.signal_diff = _signal_diff;\
 	S.signal_force = _signal_force;\
-	burst_pi_reset_(&S,_start_control); \
+	burst_pi_reset_(&S,_start_control);\
 }\
 BURST_WEAK  void S##_reset(burst_signal_t _start_control){\
 	return burst_pi_reset_(&S,_start_control);\
@@ -169,4 +169,5 @@ typedef struct burst_limiter_config_s{
 } burst_limiter_config_t;
 typedef burst_limiter_config_t * burst_limiter_config_p;
 void burst_limiter_setup(burst_limiter_p _limiter, burst_limiter_config_p _config, burst_signal_t _def );
+void burst_pi_gain_update_gain_(burst_pi_p _pi, burst_signal_t _gain);
 #endif

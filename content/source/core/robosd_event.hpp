@@ -62,7 +62,7 @@ namespace robo {
 				void value(void) {}
 			};
 	public:
-		inline bool used(void) { return performers.count() > 0; }
+		inline bool used(void) { return performers_.count() > 0; }
 
 		event_t(void) {
 
@@ -71,7 +71,7 @@ namespace robo {
 			typename event_t::performer::ref* _ref = performers_.first();
 			result<R> res;
 			while (_ref) {
-				performer::ref* tmp = _ref;
+				typename performer::ref* tmp = _ref;
 				performer* p = &(tmp->owner());
 				_ref = _ref->next();
 				res.run(p, _arg...);
@@ -82,8 +82,13 @@ namespace robo {
 			}
 			return res.value();
 		}
-		using owned = ::robo::delegat::owned::fabric < performer, void>;
-		using autonum = ::robo::delegat::autonum::fabric<performer, void>;
+		typedef ::robo::delegat::owned::fabric < performer, R, Args...> owned;
+		typedef ::robo::delegat::autonum::fabric<performer, R, Args...> autonum;
 	};
+
+	namespace events {
+		typedef event_t<void, const uint8_t*, size_t > on_receive;
+		typedef event_t<void> on_panic;
+	}
 }
 #endif

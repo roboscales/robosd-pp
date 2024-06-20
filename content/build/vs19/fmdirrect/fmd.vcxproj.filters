@@ -21,7 +21,7 @@
     <ClCompile Include="..\..\..\robosd-ref\net\robosd_serial.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\fmd\fmd.cpp">
+    <ClCompile Include="..\..\..\robosd-ref\fmd\fmd-old.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\net\platform\serial\win_com.cpp">

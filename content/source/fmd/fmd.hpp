@@ -241,10 +241,17 @@ public:
         virtual bool write(void) {
             ROBO_LRET(write_value(&value, addr, type.len));
         }
+        virtual bool writen(int _n) {
+            for (int i = 0; i < _n; i++) {
+                if(write_value(&value, addr, type.len)) return true;
+            }
+            robo_errlog( RT("error write var %s"),name.c_str() );
+            return false;
+        }
     };
     fmd(void);
     ~fmd(void);
-    bool begin(cstr _alias);
+    bool begin(cstr _alias, int _port = -1);
     bool start(void);
     void stop(void);
     void finish(void);
@@ -252,7 +259,7 @@ public:
     bool select_scope(cstr _name);
     enum class states { begin, startup, run, none} state = states::none;
     bool poll(void);
-    
+    bool connected(void);
 };
  
 #endif

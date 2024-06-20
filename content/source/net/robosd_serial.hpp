@@ -48,12 +48,104 @@ namespace robo {
 			virtual size_t get_send_buf(uint8_t* _data, size_t _size) = 0;
 		};*/
 
-		template <unsigned SA, unsigned SB, typename G > class bridge_t {
+		template <class D, unsigned S, class G > class ROBO_EXPORT receiver_t : public  iserial, public D {
+			ring_t<S> ring_;
+		public:
+
+			virtual size_t available(void) {
+				G g__;
+				return ring_.count();
+			}
+			virtual size_t space_max(void) {
+				return ring_.size();
+			}
+			virtual size_t space(void) {
+				G g__;
+				return ring_.space();
+			}
+			virtual size_t get(uint8_t* _data, size_t _max_size) {
+				G g__;
+				return ring_.get(_data, _max_size);
+			}
+			virtual bool put(const uint8_t* _data, size_t _size) {
+				return false;
+			}
+			virtual size_t get(uint8_t& _data) {
+				G g__;
+				return ring_.get(&_data,1);
+			}
+			virtual bool  put(uint8_t _data) {				
+				return false;
+			}
+			virtual void reset(void) {
+				G g__;
+				ring_.clear();
+			}
+			void on_receive(const uint8_t* _data, size_t _size) {
+				G g__;
+				if (!ring_.put(_data, _size)) {
+					//D::fault(); to do крепко подумать
+				}
+			}
+		};
+		#if 0
+		template <class D, unsigned SB, typename G > class ROBO_EXPORT sender_t: private D {
+			ring_t<SB> ring_;
+		public:
+			virtual size_t available(void) {
+				return G g__;
+				return ring_.available();
+			}
+			virtual size_t space(void) {
+				G g__;
+				return ring_.space();
+			}
+			virtual size_t space_max(void) {
+				return ring_.size();
+			}
+			virtual size_t get(uint8_t* _data, size_t _max_size) {
+				G g__;
+				return ring_.get(_data, _max_size);
+			}
+			virtual bool put(const uint8_t* _data, size_t _size) {
+				bool tmp;
+				{
+					G g__;
+					tmp = ring_.put(_data, _size);
+					D::try_send(*this);
+					return tmp;
+				}
+			}
+
+			virtual size_t get(uint8_t& _data) {
+				G g__;
+				return ring_.get(_data);
+			}
+
+			virtual bool  put(uint8_t _data) {
+				bool tmp; 
+				{
+					G g__;
+					if (ring_.space() > 0) {
+						ring_.put(_data);
+						tmp = true;
+					}
+					else {
+						tmp = false;
+					}
+					D::try_send(*this);
+					return tmp;
+				}
+			}
+		};
+		#endif
+
+		template <unsigned SA, unsigned SB, typename G > class ROBO_EXPORT bridge_t {
 			ring_t<SA> ring_a_;
 			ring_t<SB> ring_b_;
 
 		public:
-			class incomm : public  iserial {
+			class ROBO_EXPORT incomm : public  iserial {
 				bridge_t& owner_;
 			public:
 				virtual size_t space_max(void) {
@@ -102,7 +194,7 @@ namespace robo {
 				}
 			} A;
 
-			class outcomm : public  iserial {
+			class ROBO_EXPORT outcomm : public  iserial {
 				bridge_t& owner_;
 			public:
 				virtual size_t available(void) {
@@ -159,7 +251,7 @@ namespace robo {
 
 		};
 
-		template <unsigned SA, unsigned SB > class bridge_t<SA,SB,void> {
+		template <unsigned SA, unsigned SB > class ROBO_EXPORT bridge_t<SA,SB,void> {
 			ring_t<SA> ring_a_;
 			ring_t<SB> ring_b_;
 		protected:
@@ -261,7 +353,7 @@ namespace robo {
 
 		};
 		
-		template <typename D,unsigned SA, unsigned SB, typename G > class hardware_bridge_t: protected bridge_t<SA,SB,G>, public net::iserial{
+		template <typename D,unsigned SA, unsigned SB, typename G > class ROBO_EXPORT hardware_bridge_t: protected bridge_t<SA,SB,G>, public net::iserial, private D {
 		typedef bridge_t<SA,SB,G> bridge;
 		public:
 			void on_receive(uint8_t _data){
@@ -332,7 +424,7 @@ namespace robo {
 		};
 		
 
-		template <typename D,unsigned SA, unsigned SB, typename G > class half_duplex_t: protected bridge_t<SA,SB,G>, public net::iserial{
+		template <typename D,unsigned SA, unsigned SB, typename G > class ROBO_EXPORT half_duplex_t: protected bridge_t<SA,SB,G>, public net::iserial{
 		typedef bridge_t<SA,SB,G> bridge;
 		public:
 			enum class panic{ rx_overflow, tx_refuse};
@@ -449,7 +541,7 @@ namespace robo {
 		};
 		
 		
-		template <typename D,unsigned SA, unsigned SB, typename G > class hardware_serial_t: protected bridge_t<SA,SB,G>, public net::iserial{
+		template <typename D,unsigned SA, unsigned SB, typename G > class ROBO_EXPORT hardware_serial_t: protected bridge_t<SA,SB,G>, public net::iserial{
 		typedef bridge_t<SA,SB,G> bridge;
 			enum { rx_buffer_size =  1<<SA };
 			enum { tx_buffer_size =  1<<SB };
