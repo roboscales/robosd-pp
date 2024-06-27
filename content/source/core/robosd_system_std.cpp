@@ -268,7 +268,7 @@ namespace robo {
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE
+	#if ROBO_APP_CRASH_TYPE != ROBO_APP_STD_TYPE
 	void system::env::abort(void) {
 		::abort();
 	}
