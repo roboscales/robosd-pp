@@ -26,13 +26,13 @@ namespace burst {
 				} voltage;
 			} lateral;
 			
-			#if BURST_PROTECTION_ENABLED == 1
 			struct {
+				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
 				signal_t  current_misalignment_lim;
 				#endif
+				#endif
 			} panic;
-			#endif
 		};
 		#if BURST_PANICS_PMSM_MISSALIGMENT_ENABLED == 1 &&  BURST_PROTECTION_ENABLED == 1
 		#define PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)\
@@ -132,8 +132,8 @@ namespace burst {
 				, _current_lateral
 				, nullptr
 				, nullptr
-				, _present.lateral.current.range.lo
-				, _present.lateral.current.range.hi
+				, _present.lateral.voltage.range.lo
+				, _present.lateral.voltage.range.hi
 				, _present.lateral.voltage.req
 				, _ps.satstate()
 			)

@@ -77,7 +77,7 @@ namespace burst {
 				psz += sz;
 				break;
 				default:
-				ROBO_ASSERT(psz > std::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t))
+				ROBO_ASSERT(psz > (int)(std::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t)))
 				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
 				//sz = 0;
 				*(path_stack_top) = sz;

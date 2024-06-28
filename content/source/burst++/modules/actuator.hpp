@@ -254,7 +254,7 @@ namespace burst{
 			);
 			positioner_.setup(
 				&_positioner
-				, nullptr
+				,& motion_.signal
 				, nullptr
 				, &p.speed.range.lo
 				, &p.speed.range.hi

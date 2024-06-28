@@ -380,8 +380,8 @@ namespace burst{
 				, _current
 				, nullptr
 				, nullptr
-				, _present.current.range.lo
-				, _present.current.range.hi
+				, _present.ac.voltage.range.lo
+				, _present.ac.voltage.range.hi
 				, _present.ac.voltage.req
 				, _ps.satstate()
 			)

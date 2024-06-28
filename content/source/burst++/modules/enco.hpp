@@ -170,6 +170,14 @@ namespace burst {
 			offset.position = cfg.offset.position;
 			start_pause_tick = 1 << cfg.init_count_bits;
 		}
+		void movezero(long_signal_t _delta) {
+			ACTOR_CONFIG_S(conf);
+			ACTOR_PRESENT_S(p);
+			p.ref.position -= conf.offset.position;
+			*(const_cast<long_signal_t *> (&conf.offset.position)) += _delta;
+			offset.position += _delta;
+			p.ref.position += conf.offset.position;
+		}
 		virtual void run(void) {
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
@@ -187,7 +195,7 @@ namespace burst {
 					p.native.ceiled = tmp;
 
 					p.native.delta = fast::rsh(tmp_delta, shift.raw);// (((native_t)(tmp_delta)) >> shift);
-					signal_t dtmp;
+					long_signal_t dtmp;
 					if (conf.inverce) {
 						dtmp = fast::rsh(-p.native.delta, shift.value);
 					}

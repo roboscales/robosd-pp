@@ -29,6 +29,7 @@ namespace burst{
 				
 				var::reg(number::var::signal, _config.deadZone, RT("dz"));
 				var::reg(number::var::signal, _config.crawlSpeed, RT("cs"));
+				var::reg(var::types::uint8, _config.controlShift, RT("sh"));
 
 				var::pop();
 			}
@@ -162,17 +163,21 @@ namespace burst{
 							control_val += present.quadDiff;
 						}
 					}
-					control_val = fast::rsh(control_val, config_->controlShift);
-					
-					if (forceControl_) control_val += *(forceControl_);
-					control_val = saturate(control_val, number::min, number::max );
-					if(control_val == 0 && config_->crawlSpeed >0 ){
-						if(err>config_->deadZone){
-							control_val =   config_->crawlSpeed;				
-						} else if( err < -config_->deadZone) {
-							control_val =   -config_->crawlSpeed;				
+					if (control_val > 0) {
+						control_val = fast::rsh(control_val, config_->controlShift);
+						if (control_val < config_->crawlSpeed ) {
+							control_val = config_->crawlSpeed;
 						}
 					}
+					else if(control_val < 0) {
+						control_val = fast::rsh(control_val, config_->controlShift);
+						if (control_val > -config_->crawlSpeed) {
+							control_val = -config_->crawlSpeed;
+						}
+					}
+					
+					if (forceControl_) control_val += *(forceControl_);
+					control_val = saturate(control_val, *controlMin_, *controlMax_);
 					*control_ = control_val;
 				}
 

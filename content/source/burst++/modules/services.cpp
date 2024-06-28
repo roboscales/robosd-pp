@@ -128,8 +128,8 @@ namespace burst{
 				::robo::termo::itf::connect(&termo_abonent);
 				::robo::termo::itf::set_prompt(">");
 				#endif
-				#if ROBO_APP_MEXO_VAR_ENABLED
-				var::record::create(::mexo::var::types::const_uint32, time_us, RT("tm_us"));
+				#if ROBO_APP_BURST_VARTREE_ENABLED
+				burst::var::reg(burst::var::const_uint32, time_us, RT("tm_us"));
 				#endif
 
 			});
@@ -245,22 +245,22 @@ namespace burst{
 			}
 		};
 		static ::robo::termo::node root(
-				RT8("SERVICE")
-				, RT8("SERVICE commands")
+				RT8("burst")
+				, RT8("burst commands")
 				, RT8("addr <CR>")
 				, robo::termo::itf::root()
 			);
 		static imexo_cmd reset(
 				imexo_cmd::kind::RESET
 				, RT8("reset")
-				, RT8("SERVICE CPU reset")
+				, RT8("CPU reset")
 				, RT8("<CR>")
 				, &root
 			);
 		static imexo_cmd memo(
 				imexo_cmd::kind::MEMO
 				, RT8("memo")
-				, RT8("SERVICE memory usage")
+				, RT8("memory usage")
 				, RT8("<CR>")
 				, &root
 			);

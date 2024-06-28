@@ -102,17 +102,25 @@ namespace burst {
 			presc_shift = c.presc_shift + c.shift;
 			value_shift = c.value_shift + c.shift;
 			gain = (1 << shift) - 1;
-			p.long_value = fast::lsh(p.flt.value , shift);
+			p.long_value = fast::lsh((typename number::long_signal_t)p.flt.value , shift);
 		};
 		virtual void run (void) {
 			ACTOR_PRESENT_S(p);
 			auto long_value = p.long_value;
-			long_value = long_value * gain + fast::lsh( * B::input , presc_shift );
+			long_value = long_value * gain + fast::lsh( (typename number::long_signal_t ) * B::input , presc_shift );
 			if (reset_acc_value) {
 				*B::input = 0;
 			}
 			long_value = fast::rsh(long_value, shift);
 			p.long_value = long_value;
+			if (*B::input == 0) {
+				if (p.long_value > 0) {
+					p.long_value--;
+				}
+				else if (p.long_value < 0) {
+					p.long_value++;
+				}
+			}
 			long_value = fast::rsh(long_value, value_shift);
 			p.flt.value = number::s_sat(long_value);
 		}
