@@ -76,9 +76,13 @@ namespace robo {
 				break;
 			case state::relax:
 			if (doRelax() == result::success) {
-				onFinish();
-				state_ = state::stopped;
-				return true;
+				if ( onFinish() ==repeate::no){
+					state_ = state::stopped;
+					return true;
+				} else{
+					state_ = state::stopped;
+					start_();
+			}
 			}
 			else
 				break;

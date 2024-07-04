@@ -62,7 +62,7 @@ namespace burst{
 		#define BRAKE_CONFIG(a) BRAKE_CONFIG_(a)
 		#define BRAKE_CONFIG_(a)\
 		{\
-			,{\
+			{\
 				a##_PWM_FORCE\
 				,a##_PWM_NORMAL\
 				, BURST_RANGE_CONFIG(a##_PWM_RANGE)\

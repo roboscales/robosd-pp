@@ -28,6 +28,10 @@ namespace robo {
 				wait = false,
 				success = true
 			};
+			enum class repeate {
+				no = false,
+				go = true
+			};
 		private:
 			friend class controller;
 
@@ -51,10 +55,10 @@ namespace robo {
 			virtual void onPrepare(void) {}
 			virtual void onStartup(void) {}
 			virtual void onExecute(void) {}
-			virtual void onFinish(void) {}
 			virtual void onShutdown(void) {}
 			virtual void onRelax(void) {}
-
+			virtual repeate onFinish(void) { return repeate::no; }
+				
 			virtual result doPrepare(void) { return result::success; }
 			virtual result doStartup(void) { return result::success; }
 			virtual result doExecute(void) { return result::success; }
