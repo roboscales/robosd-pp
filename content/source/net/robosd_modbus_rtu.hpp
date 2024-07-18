@@ -365,6 +365,10 @@ namespace robo{
 				
 
 			public:
+				virtual void poll(void){
+					::robo::net::master_t<D, packet>::poll();
+					T::poll();
+				}
 				master_t()
 					: write_regs_confirm_(*this,&master_t::write_regs_confirm__)
 					, read_regs_confirm_(*this,&master_t::read_regs_confirm__)
@@ -445,6 +449,7 @@ namespace robo{
 				void read_outputs(uint8_t _address, uint16_t _reg_adress, uint8_t _count, uint16_t * _incom_regs ){
 					read_regs__(_address,_reg_adress,_count,_incom_regs, commands::read_outputs);
 				}
+				
 			};
 
 

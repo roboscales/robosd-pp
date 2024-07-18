@@ -464,6 +464,7 @@ namespace robo {
 				}else{
 					last_tx_ = D::time_us();
 				}
+				D::begin_receive();
 			}
 			void on_receive(const uint8_t* _data, size_t _max_size){
 				if( ! bridge::A.put(_data,_max_size) ){
@@ -471,6 +472,7 @@ namespace robo {
 				} else {
 							last_tx_ = D::time_us();
 				}
+				D::begin_receive();
 			}
 			void on_confirm(void){
 				busy_ = false;

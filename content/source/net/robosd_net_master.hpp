@@ -32,14 +32,19 @@ namespace robo{
 			
 			state state_ = state::disable;
 			
-			void panic_(void){
-				refuse();
+			void panic__(void){
 				if( phys::panic() ){
 					state_ = state::panic;
 				} else {
-					state_ = state::idle;
+					if(state_!=state::disable && state_ != state::panic ){
+						state_ = state::idle;
+					}
 				}
 				reset_();
+			}
+			void panic_(void){
+				refuse();
+				panic__();
 			}
 			
 			const P * outcom_packet_ = nullptr;
@@ -147,18 +152,17 @@ namespace robo{
 				guard g__;
 				reset_();
 				switch (state_){
-				case state::idle:
-					break;
 				case state::send:
 					phys::send_cancel();
+					state_ = state::idle;
 					break;
 				case state::receive:
 					phys::receive_cancel();
+					state_ = state::idle;
 					break;						
-				default:
-					panic_();			
+					default:
+					break;						
 				}
-				state_ = state::idle;
 				//if (confirm_) (*confirm_)(false);
 			}				
 			
