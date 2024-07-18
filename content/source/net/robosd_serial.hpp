@@ -354,8 +354,8 @@ namespace robo {
 		};
 		
 		template <typename D,unsigned SA, unsigned SB, typename G > class ROBO_EXPORT hardware_bridge_t: protected bridge_t<SA,SB,G>, public net::iserial, private D {
-		typedef bridge_t<SA,SB,G> bridge;
 		public:
+			typedef bridge_t<SA,SB,G> bridge;
 			void on_receive(uint8_t _data){
 				if( ! bridge::A.put(_data)){
 					//D::fault(); to do крепко подумать
