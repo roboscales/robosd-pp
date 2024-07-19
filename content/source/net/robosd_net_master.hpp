@@ -4,9 +4,10 @@
 
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_system.hpp"
+#include "net/robosd_net_trafic.hpp"
 
 namespace robo{
-    namespace net{        
+	namespace net{        
 		template< typename P > class imaster_t {
 		public:
 			typedef  ::robo::delegat::ref<void, bool> confirm_delegat;
@@ -193,7 +194,54 @@ namespace robo{
 
 			#endif
 		};
-			
-    }
+		
+
+		
+		template <typename D, typename E> class dispetcher_adapter_t{
+			public:
+				robo::time_us_t timeout_us = 0;
+				robo::time_us_t last_request_us = 0;
+			protected:
+				virtual void dispetcher_confirm(void) = 0;
+				virtual void dispetcher_refuse(const E & ) = 0;
+				virtual bool dispetcher_ready(void) = 0;
+				virtual bool dispetcher_request(void) = 0;
+			public:
+				statistic_s<E> statistic = {};
+				void on_confirm(void){
+					robo::system::critical g__;
+					statistic.confirm++;
+					dispetcher_confirm();
+				}
+				
+				void on_refuse(const E & _err){
+					robo::system::critical g__;
+					statistic.refuse.detail[(int)_err]++;
+					dispetcher_refuse(_err);
+				}
+				
+
+				void	poll(void) {
+					bool ready;
+					{
+						robo::system::critical g__;
+						ready = dispetcher_ready();
+					}
+					auto now = robo::system::time_us();
+					if(ready && ( now - last_request_us > timeout_us) ){
+						if( dispetcher_request() ){
+							last_request_us = now;
+							statistic.request++;
+						}						
+					}			
+				}
+					
+				uint16_t crc(const uint8_t * _data, size_t _length){						
+					//return ::robo::crc16_modbus_by_table(_data,_length);
+					return D::crc(_data,_length);
+				}
+		};
+
+	}
 }
 #endif

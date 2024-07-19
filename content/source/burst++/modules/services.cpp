@@ -18,6 +18,7 @@
 #endif
 
 
+
 namespace burst{
 	namespace service {
 		#if SERVICE_FREEMASTER_CONNECT_TYPE == SERVICE_FREEMASTER_CONNECT_TYPE_ABONENT
@@ -760,3 +761,185 @@ namespace burst{
 			, SERVICE_RELAY_PROTO_ABONENT_SILENS_US
 		) relaye_proto_abonent;
 #endif
+
+namespace burst{
+	namespace service {
+		namespace rs485{
+			
+			namespace A{
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				modbus_rtu_servo_t modbus_rtu_servo;
+				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
+					modbus_rtu_servo.on_receive(_data,_length);
+				}
+				#endif
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				#ifndef SERVICE_RS485_A_MODBUS_RTU_MASTER_US
+				#define SERVICE_RS485_A_MODBUS_RTU_MASTER_US 20000
+				#endif
+				dispetcher_t dispetcher(SERVICE_RS485_A_MODBUS_RTU_MASTER_US);
+				void prf::modbus_rtu_master::confirm(){
+						dispetcher.confirm();
+				}
+				void prf::modbus_rtu_master::refuse(){
+					dispetcher.refuse();
+				}
+				#endif
+				
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
+
+				serial_t serial_;
+				
+				void prf::serial::refuse(void){
+					serial_.on_refuse();
+				}
+				void prf::serial::confirm(void){
+					serial_.on_confirm();
+				}
+				void prf::serial::receive(const uint8_t * data, uint16_t _length){
+					serial_.on_receive(data,_length);
+				}
+				#endif
+			}
+			
+			namespace B{
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				modbus_rtu_servo_t modbus_rtu_servo;
+				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
+					modbus_rtu_servo.on_receive(_data,_length);
+				}
+				#endif
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				#ifndef SERVICE_RS485_B_MODBUS_RTU_MASTER_US
+				#define SERVICE_RS485_B_MODBUS_RTU_MASTER_US 20000
+				#endif
+				dispetcher_t dispetcher(SERVICE_RS485_B_MODBUS_RTU_MASTER_US);
+				void prf::modbus_rtu_master::confirm(){
+						dispetcher.confirm();
+				}
+				void prf::modbus_rtu_master::refuse(){
+					dispetcher.refuse();
+				}
+				#endif
+				
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
+
+				serial_t serial_;
+				
+				void prf::serial::refuse(void){
+					serial_.on_refuse();
+				}
+				void prf::serial::confirm(void){
+					serial_.on_confirm();
+				}
+				void prf::serial::receive(const uint8_t * data, uint16_t _length){
+					serial_.on_receive(data,_length);
+				}
+				#endif
+			}
+			
+			namespace C{
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				modbus_rtu_servo_t modbus_rtu_servo;
+				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
+					modbus_rtu_servo.on_receive(_data,_length);
+				}
+				#endif
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				#ifndef SERVICE_RS485_C_MODBUS_RTU_MASTER_US
+				#define SERVICE_RS485_C_MODBUS_RTU_MASTER_US 20000
+				#endif
+				dispetcher_t dispetcher(SERVICE_RS485_C_MODBUS_RTU_MASTER_US);
+				void prf::modbus_rtu_master::confirm(){
+						dispetcher.confirm();
+				}
+				void prf::modbus_rtu_master::refuse(){
+					dispetcher.refuse();
+				}
+				#endif
+				
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
+
+				serial_t serial_;
+				
+				void prf::serial::refuse(void){
+					serial_.on_refuse();
+				}
+				void prf::serial::confirm(void){
+					serial_.on_confirm();
+				}
+				void prf::serial::receive(const uint8_t * data, uint16_t _length){
+					serial_.on_receive(data,_length);
+				}
+				#endif			
+			}
+			
+			
+			burst::board::slot::simple begin(
+				burst::board::slot::kind::begin
+				, [] {
+					#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					A::dispetcher.begin();
+					#endif
+					#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					B::dispetcher.begin();
+					#endif
+					#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					C::dispetcher.begin();
+					#endif
+
+					#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
+					A::serial_.begin(SERVICE_RS485_A);
+					#endif
+					#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
+					B::serial_.begin(SERVICE_RS485_B);
+					#endif
+					#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
+					C::serial_.begin(SERVICE_RS485_C);
+					#endif					
+					}
+				);
+					
+			burst::board::slot::simple start(
+			burst::board::slot::kind::start
+			, [] {
+				
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				A::prf::modbus_rtu_slave::start_receive();
+				#endif
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				B::prf::modbus_rtu_slave::start_receive();
+				#endif
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				C::prf::modbus_rtu_slave::start_receive();
+				#endif				
+				
+				
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
+				A::prf::serial::begin_receive();
+				#endif
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
+				B::prf::serial::begin_receive();
+				#endif
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
+				C::prf::serial::begin_receive();
+				#endif		
+			}
+			);
+			burst::board::slot::simple frontend_loop(
+			burst::board::slot::kind::frontend
+			, [] {
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				A::dispetcher.poll();
+				#endif		
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				B::dispetcher.poll();
+				#endif		
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				C::dispetcher.poll();
+				#endif		
+			}
+			);
+		}
+	}
+}

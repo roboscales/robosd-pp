@@ -1,109 +1,133 @@
-#ifndef burst_service_common_hpp
-#define burst_service_common_hpp
+#ifndef burst_service_hpp
+#define burst_service_hpp
+#include "burst++/modules/services.common.hpp"
+#include "net/robosd_modbus_rtu.hpp"
+#include "net/robosd_serial.hpp"
+#include "core/robosd_crc.hpp"
 
-#define SERVICE_TYPE_NONE 0
+namespace burst{
+	namespace service {
+		namespace rs485{
+			#if SERVICE_RS485_A_TAG != SERVICE_RS485_TAG_NONE
+			namespace A{
+				namespace prf{				
+					#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+					ROBOSD_MODBUS_RTU_SLAVE_DRIVER(modbus_rtu_slave);
+					#endif
+					#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
+					#ifndef SERVICE_485_A_BUFFER_SIZE_BITS
+					#define SERVICE_485_A_BUFFER_SIZE_BITS 5
+					#endif
+					#ifndef SERVICE_485_A_WATCHDOG_US
+					#define SERVICE_485_A_WATCHDOG_US 1000
+					#endif
+					ROBOSD_HALF_DUPLEX_SERIAL_DRIVER(serial,SERVICE_485_A_BUFFER_SIZE_BITS,SERVICE_485_A_WATCHDOG_US);
+					#endif	
+					#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					ROBOSD_MODBUS_RTU_MASTER_DRIVER(modbus_rtu_master);
+					#endif
+				}
+			}
+			#endif
+			
+			#if SERVICE_RS485_B_TAG != SERVICE_RS485_TAG_NONE
+			namespace B{
+				namespace prf{				
+					#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+					ROBOSD_MODBUS_RTU_SLAVE_DRIVER(modbus_rtu_slave);
+					#endif
+					#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
+					#ifndef SERVICE_485_B_BUFFER_SIZE_BITS
+					#define SERVICE_485_B_BUFFER_SIZE_BITS 5
+					#endif
+					#ifndef SERVICE_485_B_WATCHDOG_US
+					#define SERVICE_485_B_WATCHDOG_US 1000
+					#endif
+					ROBOSD_HALF_DUPLEX_SERIAL_DRIVER(serial,SERVICE_485_B_BUFFER_SIZE_BITS,SERVICE_485_B_WATCHDOG_US);
+					#endif	
+					#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					ROBOSD_MODBUS_RTU_MASTER_DRIVER(modbus_rtu_master);
+					#endif
+				}
+			}
+			#endif
+			#if SERVICE_RS485_C_TAG != SERVICE_RS485_TAG_NONE
+			namespace C{
+				namespace prf{				
+					#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+					ROBOSD_MODBUS_RTU_SLAVE_DRIVER(modbus_rtu_slave);
+					#endif
+					#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
+					#ifndef SERVICE_485_C_BUFFER_SIZE_BITS
+					#define SERVICE_485_C_BUFFER_SIZE_BITS 5
+					#endif
+					#ifndef SERVICE_485_C_WATCHDOG_US
+					#define SERVICE_485_C_WATCHDOG_US 1000
+					#endif
+					ROBOSD_HALF_DUPLEX_SERIAL_DRIVER(serial,SERVICE_485_C_BUFFER_SIZE_BITS,SERVICE_485_C_WATCHDOG_US);
+					#endif	
+					
+					#if SERVICE_RS485_C_TBG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+					ROBOSD_MODBUS_RTU_MASTER_DRIVER(modbus_rtu_master);
+					#endif
+				}
+			}
+			#endif
 
-#define SERVICE_FREEMASTER_CONNECT_TYPE_NONE SERVICE_TYPE_NONE
-#define SERVICE_FREEMASTER_CONNECT_TYPE_DIRRECT SERVICE_TYPE_NONE+1
-#define SERVICE_FREEMASTER_CONNECT_TYPE_ABONENT SERVICE_TYPE_NONE+2
+			namespace A{
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
+				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
+				extern modbus_rtu_servo_t modbus_rtu_servo;
+				#endif
+				
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				extern dispetcher_t dispetcher;
+				#endif
+				
+				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
+				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_A_BUFFER_SIZE_BITS,SERVICE_485_A_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				#endif
 
-#define SERVICE_TERMO_CONNECT_TYPE_NONE SERVICE_TYPE_NONE
-#define SERVICE_TERMO_CONNECT_TYPE_DIRRECT SERVICE_TYPE_NONE+1
-#define SERVICE_TERMO_CONNECT_TYPE_ABONENT SERVICE_TYPE_NONE+2
+			}
+			namespace B{
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
+				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
+				extern modbus_rtu_servo_t modbus_rtu_servo;
+				#endif
 
-#define SERVICE_TERMO_PRINT_TYPE_NONE SERVICE_TYPE_NONE
-#define SERVICE_TERMO_PRINT_TYPE_STD SERVICE_TYPE_NONE+1
-#define SERVICE_TERMO_PRINT_TYPE_SPECIFIC SERVICE_TYPE_NONE+2
-#define SERVICE_TERMO_PRINT_TYPE_KEIL SERVICE_TYPE_NONE+3
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				extern dispetcher_t dispetcher;
+				#endif
+				
+				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
+				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_B_BUFFER_SIZE_BITS,SERVICE_485_B_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				#endif
+			}
+			namespace C{
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
+				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
+				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
+				extern modbus_rtu_servo_t modbus_rtu_servo;
+				#endif
+				
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				extern dispetcher_t dispetcher;
+				#endif
 
-#define SERVICE_NET_FLOW_TYPE_NONE SERVICE_TYPE_NONE
-#define SERVICE_NET_FLOW_TYPE_DEFAULT SERVICE_TYPE_NONE+1
-#define SERVICE_NET_FLOW_TYPE_SPECIFIC SERVICE_TYPE_NONE+2
+				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
+				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_C_BUFFER_SIZE_BITS,SERVICE_485_C_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				#endif
+			}
+		}
+	}
+}
 
-#include "service.tunning.hpp"
-
-#ifndef SERVICE_NET_FLOW_COMMAND_ENABLED
-#define SERVICE_NET_FLOW_COMMAND_ENABLED SERVICE_TYPE_NONE
-#endif 
-
-#ifndef SERVICE_SETTINGS_STORE_ENABLE
-#define SERVICE_SETTINGS_STORE_ENABLE SERVICE_TYPE_NONE
 #endif
 
-#ifndef SERVICE_FREEMASTER_CONNECT_TYPE
-#define SERVICE_FREEMASTER_CONNECT_TYPE SERVICE_FREEMASTER_CONNECT_TYPE_NONE
-#endif
-
-#ifndef SERVICE_TERMO_CONNECT_TYPE
-#define SERVICE_TERMO_CONNECT_TYPE SERVICE_TERMO_CONNECT_TYPE_NONE
-#endif
-
-#ifndef SERVICE_RELAY_PROTO_ENABLED
-#define SERVICE_RELAY_PROTO_ENABLED 0
-#endif
-
-#ifndef SERVICE_TERMO_PRINT_TYPE
-#define SERVICE_TERMO_PRINT_TYPE SERVICE_TERMO_PRINT_TYPE_NONE
-#endif 
 
 
-# if ((SERVICE_TERMO_CONNECT_TYPE == SERVICE_TERMO_CONNECT_TYPE_ABONENT) \
-||(SERVICE_FREEMASTER_CONNECT_TYPE == SERVICE_FREEMASTER_CONNECT_TYPE_ABONENT))
-#define  SERVICE_PROTO_SWITCH_ENABLED 1
-#else
-#define  SERVICE_PROTO_SWITCH_ENABLED 0
-#endif
-
-#ifdef ROBO_APP_FREEMASTER_SERIAL_ENABLED 
-#error ROBO_APP_FREEMASTER_SERIAL_ENABLED will be defined automatically in mexo.SERVICE.common.hpp
-#endif
-
-#ifdef ROBO_APP_TERMINAL_ENABLED 
-#error ROBO_APP_TERMINAL_ENABLED will be defined automatically in mexo.SERVICE.common.hpp
-#endif
-
-#ifdef ROBO_APP_PROTO_SWITCH_ENABLED
-#error ROBO_APP_PROTO_SWITCH_ENABLED will be defined automatically in mexo.SERVICE.common.hpp
-#endif
-
-#ifdef ROBO_APP_NET_FLOW_ENABLED
-#error ROBO_APP_NET_FLOW_ENABLED will be defined automatically in mexo.SERVICE.common.hpp
-#endif
-
-#ifdef ROBO_APP_NET_RELEY_ENABLED
-#error ROBO_APP_NET_RELEY_ENABLED will be defined automatically in mexo.SERVICE.common.hpp
-#endif
-
-#if SERVICE_FREEMASTER_CONNECT_TYPE != SERVICE_FREEMASTER_CONNECT_TYPE_NONE
-#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 1
-#else
-#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 0
-#endif
-
-#if SERVICE_TERMO_CONNECT_TYPE != SERVICE_TERMO_CONNECT_TYPE_NONE
-#define ROBO_APP_TERMINAL_ENABLED 1
-#else
-#define ROBO_APP_TERMINAL_ENABLED 0
-#endif
-
-#ifndef SERVICE_NET_FLOW_TYPE
-#define SERVICE_NET_FLOW_TYPE SERVICE_NET_FLOW_TYPE_NONE
-#endif
-
-#if SERVICE_NET_FLOW_TYPE!=SERVICE_NET_FLOW_TYPE_NONE
-#define ROBO_APP_NET_FLOW_ENABLED 1
-#else
-#define ROBO_APP_NET_FLOW_ENABLED 0
-#endif
-
-#define ROBO_APP_PROTO_SWITCH_ENABLED SERVICE_PROTO_SWITCH_ENABLED
-
-#ifndef SERVICE_SAMPLE_US
-#define SERVICE_SAMPLE_US 50
-#endif 
-
-#define FMSTR_REC_TIMEBASE (32768 + SERVICE_SAMPLE_US)
-
-#define ROBO_APP_NET_RELEY_ENABLED  SERVICE_RELAY_PROTO_ENABLED
-
-#endif

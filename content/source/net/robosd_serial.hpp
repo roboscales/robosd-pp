@@ -625,6 +625,18 @@ namespace robo {
 		
 	}
 }
+#define ROBOSD_HALF_DUPLEX_SERIAL_DRIVER(N,S,US)\
+struct  N{\
+	enum { buffer_size = 1<<S, watchdog_us=US};\
+	static inline uint8_t tx_buffer[buffer_size] = {};\
+	static inline uint8_t rx_buffer[buffer_size] = {};\
+	static robo::time_us_t time_us(){ return robo::system::time_us(); }\
+	static bool try_send(const uint8_t * _data,size_t _size);\
+	static void begin_receive(void);\
+	static void refuse();\
+	static void confirm();\
+	static void receive(const uint8_t * data, uint16_t _length);\
+}
 
 
 #endif

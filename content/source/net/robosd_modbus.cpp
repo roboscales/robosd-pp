@@ -2,7 +2,7 @@
 namespace robo{
 	namespace net{
 		namespace modbus{		
-
+			#if 0
 			phy::phy(void): entry_(nullptr), ref_(*this,0){
 				//некому вызывать функции, которыебы задействовали entry_
 			};
@@ -75,6 +75,7 @@ namespace robo{
 	//
 			entry::entry(void): phy_(phy::dummy_()){
 			}
+			#endif
 		}
 	}
 

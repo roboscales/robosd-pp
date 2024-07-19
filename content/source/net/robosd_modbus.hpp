@@ -1,9 +1,210 @@
 #ifndef robosd_net_modbus_hpp
 #define robosd_net_modbus_hpp
 #include "core/robosd_list.hpp"
+#include "core/robosd_system.hpp"
+#include "net/robosd_net_trafic.hpp"
 namespace robo{
 	namespace net{
 		namespace modbus{
+			template < class M > class dispetcher_t : public M{
+				public:
+					typedef typename  M::errors errors;
+					class regs;
+					friend class regs;
+					friend class device_c;
+					class device_c{
+					public:
+					friend class regs;
+					protected:
+						robo::time_us_t timeout_us = 0;
+						robo::time_us_t last_request_us = 0;
+						//robo::time_us_t timeout;
+						void on_request(void){
+							last_request_us = robo::system::time_us();
+						}
+						virtual bool exchange_need(void){
+							return ( robo::system::time_us()-last_request_us > timeout_us);
+						}
+					public:
+						uint8_t devaddr; //Адрес устройства
+						~device_c(void) { }
+						device_c(
+							uint8_t _devaddr
+							, robo::time_us_t _timeout_us				
+						)
+						: devaddr(_devaddr)
+						, timeout_us(_timeout_us)
+						{
+						}
+					};
+					
+					class regs{
+					public:
+						typedef ::robo::list::unsorted<regs> list;
+						typedef typename list::ref ref;
+					protected:
+						device_c & device;
+						dispetcher_t & dispetcher;
+						uint16_t regaddr; //Адрес первого регистра 
+						uint16_t count; //Количество регистров
+						uint16_t * memo;
+						void set ( uint16_t * _memo){ 
+							robo::system::guard g__;
+							std::copy_n(memo,count,_memo); 
+						}
+						void get ( const uint16_t * _memo){ 
+							robo::system::guard g__;
+							std::copy_n(_memo,count,memo); 
+						}
+					private:
+						ref ref_;
+					protected:
+						virtual void on_request(void) = 0;
+						virtual void on_confirm(void) = 0;
+						virtual void on_refuse(const errors & _err) = 0;
+					public:
+						statistic_s<errors> statistic = {};
+						void request(void){
+							on_request();
+							device.on_request();
+							statistic.request ++;
+						}
+						void confirm(void){
+							on_confirm();
+							statistic.confirm ++;
+						}
+						void refuse(const errors& _err){
+							on_refuse(_err);
+							statistic.refuse.total ++;
+							statistic.refuse.detail[(int)_err] ++;
+						}
+						virtual bool exchange_need(void){
+							return device.exchange_need();
+						}
+
+						regs(
+							dispetcher_t & _dispetcher
+							, device_c & _device
+							, uint16_t _regaddr
+							, uint16_t _count
+						)
+						: ref_(*this)
+						, dispetcher(_dispetcher)
+						, device(_device)
+						, regaddr(_regaddr)
+						, count(_count)
+						{
+							memo =  new uint16_t[_count];
+							ref_.attach_to(_dispetcher.regs_);
+						}
+						~regs(void) { if(memo) delete[] memo; }
+					};
+				
+					class outcom : public regs{
+						const uint16_t * src_;
+					public:
+						outcom(
+							dispetcher_t & _dispetcher
+							, device_c & _device
+							, uint16_t _regaddr
+							, uint16_t _count
+							, const uint16_t * _src
+						): regs(
+							_dispetcher
+							, _device
+							,_regaddr
+							,_count
+						), src_(_src){
+						}
+					protected:
+						virtual void on_request(void){
+							regs::get(src_);
+							if(regs::count == 1){
+								regs::dispetcher.write_reg(regs::device.devaddr,regs::regaddr,regs::memo[0]);
+							} else {
+								regs::dispetcher.write_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
+							}
+						}
+						virtual void on_confirm(void){
+						}
+						virtual void on_refuse(const errors & _err){
+						}
+					};
+					class incom : public regs{
+						uint16_t * dst_;
+					public:
+						incom(
+							dispetcher_t & _dispetcher
+							, device_c & _device
+							, uint16_t _regaddr
+							, uint16_t _count
+							, uint16_t * _dst
+						): regs(
+							_dispetcher
+							,_device
+							,_regaddr
+							,_count), dst_(_dst){
+						}
+						virtual void on_request(void){
+							if(regs::count() == 1){
+								regs::dispetcher.read_reg(regs::devaddr,regs::regaddr,regs::memo[0]);
+							} else {
+								regs::dispetcher.read_regs(regs::devaddr,regs::regaddr,regs::count,regs::memo);
+							}
+						}
+						virtual void on_confirm(void){
+							regs::set(dst_);
+						}
+						virtual void on_refuse(const errors & _err){
+						}
+					};
+				private:
+					typename regs::list regs_;
+					typename regs::ref * current_ = nullptr;
+					typename regs::ref * active_ = nullptr;
+				protected:
+				
+					virtual void dispetcher_confirm(void){
+						if(active_ != nullptr){
+							active_->owner().confirm();
+							active_ = nullptr;
+						}
+					}
+					virtual void dispetcher_refuse(const errors & _err){
+						if(active_ != nullptr){
+							active_->owner().refuse(_err);
+							active_ = nullptr;
+						}
+					}
+					virtual bool dispetcher_ready(void){
+						 return (active_ == nullptr);
+					}
+					virtual bool dispetcher_request(void){
+						if(current_){
+							current_ = current_->next();
+						} 
+					
+						if(current_==nullptr){
+							current_= regs_.first();
+						}
+					
+						if(current_){
+							if(current_->owner().exchange_need()){						
+								robo::system::critical g__;
+								active_ =  current_;
+								active_->owner().request();
+								return true;
+							}
+						}
+						return false;
+					}
+				public:
+					dispetcher_t(robo::time_us_t _timeout_us){
+						 M::timeout_us = _timeout_us;
+					}
+			};
+			
+			#if 0
 			class entry;
 			class phy{				
 				friend class entry;
@@ -46,6 +247,7 @@ namespace robo{
 					virtual bool startReceive(void){ return phy_->startReceive();}
 					virtual bool startSend(const uint8_t * _packet, size_t _size){ return phy_->startSend(_packet,_size);};
 			};
+			#endif
 		}
 	}
 }

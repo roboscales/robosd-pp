@@ -2,6 +2,16 @@
 #define robosd_net_itrafic
 #include "core/robosd_common.hpp"
 namespace robo {
+	
+	template <typename E>struct ROBO_EXPORT statistic_s{
+		uint32_t request;
+		uint32_t confirm;
+		struct{
+			uint32_t total;
+			uint32_t detail[(unsigned)E::count];
+		} refuse;
+	};
+	
 	struct ROBO_EXPORT itrafic {
 		struct agent {
 			size_t prev = 0;
