@@ -389,7 +389,7 @@ namespace burst {
 				discret_lo = _discret_lo;
 				gain = (long_signal_t)(discret_hi - discret_lo);
 				gain <<= (1+ digit::bits);
-				gain += (signal_hi - signal_lo) / 2; //îêðóãëåíèå
+				gain += (signal_hi - signal_lo) / 2; //Ð¾ÐºÑ€ÑƒÐ³Ð»ÐµÐ½Ð¸Ðµ
 				gain /= (signal_hi - signal_lo);
 			}
 			void run(signal_t _signal, discret_t & _discret) {
@@ -482,7 +482,7 @@ namespace burst {
 				}
 				else {
 					_x -= (1 << (_dg-1));
-					// Äâå èíâåðñèè. Âûÿñíèòü íàäîëè òàê äåëàòü!
+					// Ð´Ð²Ðµ Ð¸Ð½Ð²ÐµÑ€ÑÐ¸Ð¸. Ð²Ñ‹ÑÑÐ½Ð¸Ñ‚ÑŒ Ð½Ð°Ð´Ð¾Ð»Ð¸ Ñ‚Ð°Ðº Ð´ÐµÐ»Ð°Ñ‚ÑŒ!
 					_x = -( (-_x) >> _dg );
 				}
 			}

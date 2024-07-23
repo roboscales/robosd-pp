@@ -190,7 +190,7 @@ namespace burst {
 
 			if (p.ref.ready) {
 				if (success) {
-					uint32_t tmp = fast::lsh(p.native.raw, shift.raw);
+					uint32_t tmp = fast::lsh( (uint32_t)p.native.raw, shift.raw);
 					int32_t  tmp_delta = (int32_t)(tmp - p.native.ceiled);
 					p.native.ceiled = tmp;
 
@@ -226,7 +226,7 @@ namespace burst {
 				else {
 					p.ref.counter.fault++;
 					p.native.delta = p.ref.delta_acc = 0;
-					//to do так делать нельзя, та как накапливается ошибка!
+					//to do С‚Р°Рє РєР°Рє Р·Р°РєРѕРјРµРЅС‚РёСЂРѕРІР°РЅРѕ - С‚Р°Рє РґРµР»Р°С‚СЊ РЅРµР»СЊР·СЏ, С‚Р° РєР°Рє РЅР°РєР°РїР»РёРІР°РµС‚СЃСЏ РѕС€РёР±РєР°!
 					/*present.native.raw += present.native.delta;
 					present.native.ceiled += (present.native.delta << shift);
 					present.delta_acc += present.delta;*/
@@ -237,14 +237,14 @@ namespace burst {
 				else {
 					p.acc += p.native.delta;
 				}
-				//todo round_l не катит
+				//todo round_l РЅРµ РєР°С‚РёС‚
 				p.ref.position = fast::rsh(p.acc, shift.value);
 				p.ref.position += conf.offset.position;
 			}
 			else {
 				if (success) {
-					p.native.ceiled = fast::lsh(p.native.raw, shift.raw);
-					uint32_t tmp = p.native.ceiled + conf.offset.native;
+					p.native.ceiled = fast::lsh((uint32_t)p.native.raw, shift.raw);
+					uint32_t tmp = p.native.ceiled + fast::lsh((uint32_t)conf.offset.native, shift.raw);
 					if (conf.inverce) {
 						tmp = 0xFFFFFFFF - tmp;
 					}
