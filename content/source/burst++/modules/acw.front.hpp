@@ -24,6 +24,7 @@ namespace burst {
 					, speed_cl = actuator::modes::last + 2 //6
 					, position_cl = actuator::modes::last + 3 //7
 					, voltage = actuator::modes::last + 4 //8
+					, currnet = 20 //
 					, speed = actuator::modes::last + 5 //9
 					, position = actuator::modes::last + 6 //10
 					, last = position

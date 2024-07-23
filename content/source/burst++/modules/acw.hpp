@@ -283,7 +283,7 @@ namespace burst{
 			class current_mode : public dev::mode {
 				friend class acw_t;
 				current_mode(acw_t& _actuator)
-					: dev::mode(front::acw::modes::voltage, _actuator) {}
+				: dev::mode(front::acw::modes::currnet, _actuator) {}
 			protected:
 				virtual void	applay_action(void) { owner<acw_t>().mode_current_applay_action(); }
 				virtual void	start(void) { owner<acw_t>().mode_current_start(); }
