@@ -170,13 +170,17 @@ namespace burst{
 				#endif
 				signal_t control = * control_;
 				Error = sr - signal;
-				if( (Error>0) && ( (control>=controlMax) || (present.long_model> MODEL_VALUE_MAX) || (*master_sut_flag_ == satstates::up) ) ){
-						sut_flag = satstates::up;
+				if(*master_sut_flag_ != satstates::both ){
+					if( (Error>0) && ( (control>=controlMax) || (present.long_model> MODEL_VALUE_MAX) || (*master_sut_flag_ == satstates::up) ) ){
+							sut_flag = satstates::up;
+					} else {
+						if( (Error<0) && ( (control<=controlMin) || (present.long_model<-MODEL_VALUE_MAX) || (*master_sut_flag_ == satstates::low)  ) ){
+									sut_flag = satstates::low;
+							}
+							else sut_flag =  *master_sut_flag_;
+					}
 				} else {
-					if( (Error<0) && ( (control<=controlMin) || (present.long_model<-MODEL_VALUE_MAX) || (*master_sut_flag_ == satstates::low)  ) ){
-								sut_flag = satstates::low;
-						}
-						else sut_flag =  *master_sut_flag_;
+					sut_flag = satstates::both;
 				}
 				present.satstate = sut_flag;
 				if ( sut_flag == satstates::none )

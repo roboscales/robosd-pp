@@ -28,6 +28,7 @@ namespace burst {
 		store::present_s& present_;
 		S& content_;		
 		const S default_;		
+		S tmp;
 	public:
 		store_t(store::action_s & _action, store::present_s& _present,  S& _content)
 	: action_(_action), present_(_present), default_(_content), content_(_content), D(sizeof(S)){}
@@ -57,7 +58,6 @@ namespace burst {
 		bool save(void) {
 			present_.status =  store::statuses::busy;					
 			if( D::save( (uint8_t *) &content_) ){
-				S tmp;
 				if( D::load( (uint8_t *) &tmp) == store::result::full ) {
 					if ( std::equal((uint8_t *)&tmp,((uint8_t *)&tmp)+sizeof(S),(uint8_t *)&content_) ){
 						present_.status =		store::statuses::full;
@@ -70,7 +70,6 @@ namespace burst {
 		}
 		
 		bool load(void) {
-			S tmp;
 			present_.status = store::statuses::busy;					
 			switch(D::load( (uint8_t *) &tmp)){
 				case  store::result::full: 
@@ -78,7 +77,8 @@ namespace burst {
 					present_.status =  store::statuses::full;					
 					return true;
 				case store::result::empty: 
-					return reset();
+					content_ = default_;
+					return save();
 				default:
 					break;
 			}

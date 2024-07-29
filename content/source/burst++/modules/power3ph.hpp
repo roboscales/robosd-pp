@@ -3,7 +3,9 @@
 
 #include "burst++/modules/actor.hpp"
 #include "burst++/math.hpp"
-
+#ifndef BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED
+#define BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED 1
+#endif
 namespace burst {
 	template<typename number> struct powe3ph {
 		using signal_t = typename number::signal_t;
@@ -515,7 +517,7 @@ namespace burst {
 				dq_s dq;
 				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-				usignal_t magnitude;
+				signal_t magnitude;
 				#endif
 				#endif
 			};
@@ -592,6 +594,14 @@ namespace burst {
 				connectto( raw.B , _adc + cfg.adc_index[1] );
 				connectto(raw.C , _adc + cfg.adc_index[2]);
 			}
+			#if BURST_PROTECTION_ENABLED == 1
+			#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==0
+			void update_magnituse(void){
+				ACTOR_PRESENT_S(p);
+				p.magnitude = number::sqrt( ( ulong_signal_t) ( (long_signal_t)p.dq.lateral * p.dq.lateral + (long_signal_t)p.dq.cross * p.dq.cross));
+			}
+			#endif
+			#endif
 			virtual void run(void) {
 				ACTOR_CONFIG_S(cfg);
 				long_signal_t a;
@@ -631,7 +641,10 @@ namespace burst {
 				p.abc.C = c;
 				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
-				p.magnitude = number::sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
+
+				#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==1
+				p.magnitude = (signal_t)number::sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
+				#endif
 				#endif
 				#endif
 			}

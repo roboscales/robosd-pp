@@ -103,15 +103,19 @@ namespace burst{
 			#endif
 
 			Error = signal_req_ - signal_;
-			if( (Error>0) && ( (control_ >=controlMax_) || (present.long_model>MODEL_VALUE_MAX) || (master_sut_flag_ == satstates::up) ) ){
-				sut_flag = satstates::up;
-			} else {
-				if( (Error<0) && ( (control_ <=controlMin_) || (present.long_model<-MODEL_VALUE_MAX) || (master_sut_flag_ == satstates::low)  ) ){
-						sut_flag = satstates::low;
-					}
-					else {
-						sut_flag =  satstates::none;
-					}
+			if(master_sut_flag_ != satstates::both ){
+				if( (Error>0) && ( (control_ >=controlMax_) || (present.long_model>MODEL_VALUE_MAX) || (master_sut_flag_ == satstates::up)  ) ){
+					sut_flag = satstates::up;
+				} else {
+					if( (Error<0) && ( (control_ <=controlMin_) || (present.long_model<-MODEL_VALUE_MAX) || (master_sut_flag_ == satstates::low)  ) ){
+							sut_flag = satstates::low;
+						}
+						else {
+							sut_flag =  satstates::none;
+						}
+				}
+			}else{
+					sut_flag =  satstates::both;
 			}
 			present.satstate = sut_flag;
 			if ( sut_flag == satstates::none )
