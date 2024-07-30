@@ -88,6 +88,7 @@ namespace burst{
 				
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
 				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_A_BUFFER_SIZE_BITS,SERVICE_485_A_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				extern robo::net::iserial & serial;
 				#endif
 
 			}
@@ -105,6 +106,7 @@ namespace burst{
 				
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
 				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_B_BUFFER_SIZE_BITS,SERVICE_485_B_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				extern robo::net::iserial & serial;
 				#endif
 			}
 			namespace C{
@@ -121,6 +123,7 @@ namespace burst{
 
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
 				typedef robo::net::half_duplex_t<prf::serial,SERVICE_485_C_BUFFER_SIZE_BITS,SERVICE_485_C_BUFFER_SIZE_BITS,::robo::system::critical> serial_t;
+				extern robo::net::iserial & serial;
 				#endif
 			}
 		}

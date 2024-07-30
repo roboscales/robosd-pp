@@ -1098,7 +1098,7 @@ namespace burst {
 		}
 	}
 
-	template <typename T> T  range_apply( const T & _src, const range_s<T> & _lim) {
+	template <typename S, typename T> T  range_apply( const S & _src, const range_s<T> & _lim) {
 		if (_src > _lim.hi) {
 			return _lim.hi;
 		}
@@ -1106,7 +1106,7 @@ namespace burst {
 			return _lim.lo;
 		}
 		else {
-			return _src;
+			return (T)_src;
 		}
 	}
 }

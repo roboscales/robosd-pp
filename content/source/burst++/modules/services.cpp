@@ -777,7 +777,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_A_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_A_MODBUS_RTU_MASTER_US 20000
 				#endif
-				dispetcher_t dispetcher(SERVICE_RS485_A_MODBUS_RTU_MASTER_US);
+				//dispetcher_t dispetcher(SERVICE_RS485_A_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}
@@ -789,7 +789,8 @@ namespace burst{
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
 
 				serial_t serial_;
-				
+				robo::net::iserial & serial = serial_;
+			
 				void prf::serial::refuse(void){
 					serial_.on_refuse();
 				}
@@ -813,7 +814,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_B_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_B_MODBUS_RTU_MASTER_US 20000
 				#endif
-				dispetcher_t dispetcher(SERVICE_RS485_B_MODBUS_RTU_MASTER_US);
+				//dispetcher_t dispetcher(SERVICE_RS485_B_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}
@@ -825,7 +826,8 @@ namespace burst{
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
 
 				serial_t serial_;
-				
+				robo::net::iserial & serial = serial_;
+			
 				void prf::serial::refuse(void){
 					serial_.on_refuse();
 				}
@@ -849,7 +851,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_C_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_C_MODBUS_RTU_MASTER_US 20000
 				#endif
-				dispetcher_t dispetcher(SERVICE_RS485_C_MODBUS_RTU_MASTER_US);
+				//dispetcher_t dispetcher(SERVICE_RS485_C_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}
@@ -861,7 +863,7 @@ namespace burst{
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
 
 				serial_t serial_;
-				
+				robo::net::iserial & serial = serial_;
 				void prf::serial::refuse(void){
 					serial_.on_refuse();
 				}
