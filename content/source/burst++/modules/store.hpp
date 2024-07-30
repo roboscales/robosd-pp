@@ -6,7 +6,7 @@ namespace burst {
 	namespace  store {
 		enum class result { empty = 0, full = 1, panic = 2};
 		enum class statuses { empty = 2, full = 1, panic = 3, busy = 4, unknown = 0};
-		enum class commands { save = 's', load = 'l', reset = 'r', none = 0 };
+		enum class commands { save = 1, load =2, reset = 3, none = 0 };
 		struct action_s {
 			commands command;
 		};
@@ -28,6 +28,7 @@ namespace burst {
 		store::present_s& present_;
 		S& content_;		
 		const S default_;		
+		S tmp;
 	public:
 		store_t(store::action_s & _action, store::present_s& _present,  S& _content)
 	: action_(_action), present_(_present), default_(_content), content_(_content), D(sizeof(S)){}
@@ -51,12 +52,13 @@ namespace burst {
 				return false;
 			}
 		};
-		
+		bool begin(void){
+			return D::begin();
+		}
 		bool save(void) {
 			present_.status =  store::statuses::busy;					
-			if( D::save( (typename D::memo_t *) &content_) ){
-				S tmp;
-				if( D::load( (typename D::memo_t *) &tmp) == store::result::full ) {
+			if( D::save( (uint8_t *) &content_) ){
+				if( D::load( (uint8_t *) &tmp) == store::result::full ) {
 					if ( std::equal((uint8_t *)&tmp,((uint8_t *)&tmp)+sizeof(S),(uint8_t *)&content_) ){
 						present_.status =		store::statuses::full;
 						return true;
@@ -68,15 +70,15 @@ namespace burst {
 		}
 		
 		bool load(void) {
-			S tmp;
 			present_.status = store::statuses::busy;					
-			switch(D::load( (typename D::memo_t *) &tmp)){
+			switch(D::load( (uint8_t *) &tmp)){
 				case  store::result::full: 
 					content_ = tmp;
 					present_.status =  store::statuses::full;					
 					return true;
 				case store::result::empty: 
-					return reset();
+					content_ = default_;
+					return save();
 				default:
 					break;
 			}
