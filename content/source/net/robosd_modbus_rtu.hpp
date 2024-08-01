@@ -74,6 +74,10 @@ namespace robo{
 				using  guard =  ::robo::system::guard;
 				template <typename D, typename T> class slave_t{
 				public:
+					static void on_receive( uint16_t Size ){
+						on_receive(D::frame.incom, Size);
+					}
+
 					// вызовется когда придут данные с интерфейса
 					static void on_receive(const uint8_t * _frame, uint16_t _length){
 						uint32_t txLen = 0;
@@ -495,6 +499,11 @@ namespace robo{
 		}
 	}
 }
+struct modbus_rtu_frame_s{
+	enum{ size =255};
+	uint8_t incom[size];
+	uint8_t outcom[size];				
+};
 
 #define ROBOSD_MODBUS_RTU_SLAVE_DRIVER(N)\
 class  N {\
@@ -503,9 +512,11 @@ class  N {\
 		static uint8_t * answer_frame_get(void);\
 		static void start_receive(void);\
 		static void on_receive(const uint8_t * data, uint16_t _length);\
+		static void on_receive(uint16_t _length);\
 		static uint16_t crc(const uint8_t * _data, size_t _length){\
 			return ::robo::crc16_modbus_by_table(_data,_length);\
 		}\
+		static inline modbus_rtu_frame_s frame;\
 }
 
 #define ROBOSD_MODBUS_RTU_SLAVE_SERVO(N)\

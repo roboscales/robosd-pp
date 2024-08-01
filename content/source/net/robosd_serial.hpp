@@ -636,6 +636,7 @@ struct  N{\
 	static void refuse();\
 	static void confirm();\
 	static void receive(const uint8_t * data, uint16_t _length);\
+	static void receive(uint16_t _length);\
 }
 
 

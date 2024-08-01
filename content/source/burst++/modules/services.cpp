@@ -772,6 +772,9 @@ namespace burst{
 				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
 					modbus_rtu_servo.on_receive(_data,_length);
 				}
+				void prf::modbus_rtu_slave::on_receive(uint16_t _length){		
+					modbus_rtu_servo.on_receive(_length);
+				}
 				#endif
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
 				#ifndef SERVICE_RS485_A_MODBUS_RTU_MASTER_US
@@ -800,6 +803,10 @@ namespace burst{
 				void prf::serial::receive(const uint8_t * data, uint16_t _length){
 					serial_.on_receive(data,_length);
 				}
+				void prf::serial::receive(uint16_t _length){
+					serial_.on_receive(rx_buffer,_length);
+				}
+
 				#endif
 			}
 			
@@ -808,6 +815,9 @@ namespace burst{
 				modbus_rtu_servo_t modbus_rtu_servo;
 				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
 					modbus_rtu_servo.on_receive(_data,_length);
+				}
+				void prf::modbus_rtu_slave::on_receive(uint16_t _length){		
+					modbus_rtu_servo.on_receive(_length);
 				}
 				#endif
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
@@ -837,6 +847,9 @@ namespace burst{
 				void prf::serial::receive(const uint8_t * data, uint16_t _length){
 					serial_.on_receive(data,_length);
 				}
+				void prf::serial::receive(uint16_t _length){
+					serial_.on_receive(rx_buffer,_length);
+				}
 				#endif
 			}
 			
@@ -845,6 +858,9 @@ namespace burst{
 				modbus_rtu_servo_t modbus_rtu_servo;
 				void prf::modbus_rtu_slave::on_receive(const uint8_t * _data, uint16_t _length){		
 					modbus_rtu_servo.on_receive(_data,_length);
+				}
+				void prf::modbus_rtu_slave::on_receive(uint16_t _length){		
+					modbus_rtu_servo.on_receive(_length);
 				}
 				#endif
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
@@ -873,6 +889,10 @@ namespace burst{
 				void prf::serial::receive(const uint8_t * data, uint16_t _length){
 					serial_.on_receive(data,_length);
 				}
+				void prf::serial::receive(uint16_t _length){
+					serial_.on_receive(rx_buffer,_length);
+				}
+
 				#endif			
 			}
 			
