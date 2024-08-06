@@ -87,6 +87,7 @@ namespace burst {
 		, action_(_action) 
 		, feedback_(_feedback)
 	{
+		ref_.attach_to(board::devs_());
 	}
 
 
@@ -94,16 +95,22 @@ namespace burst {
 		ROBO_ASSERT(ref_.attach_to(dev_.modes_));
 	}
 
-	void dev::raise_panic(uint32_t _flag) {
+	void dev::raise_panic(uint8_t _flag) {
 		uint32_t mask = (1 << _flag);
 		if ((present_.panic & mask) == 0) {
 			present_.panic |= mask;
 			perform_panic();
+			board::instance_. present_.last_panic_us = time_us();				
 		}
 	}
 
-	void dev::reset_panic(uint32_t _flag) {
+	void dev::reset_panic(uint8_t _flag) {
 		present_.panic &= ~(1 << _flag);
+	}
+	
+	
+	void dev::reset_panics(uint32_t _mask) {
+		present_.panic &= ~(_mask);
 	}
 
 	#if BURST_PANICS_MASTER_LOST_ENABLED == 1
@@ -214,6 +221,9 @@ namespace burst {
 		slots_ref_.frontend.execute();
 		#if ROBO_APP_NET_FLOW_ENABLED == 1
 		::robo::net::flow::machine::frontend_poll();
+		#endif
+		#if BURST_PROTECTION_ENABLED == 1
+		frontend_protection_();
 		#endif
 		debug_tp_off(front::tp_verb::frontend);
 	}
@@ -491,7 +501,7 @@ namespace burst {
 		}
 	}
 #if BURST_PROTECTION_ENABLED
-	void board::realtime_protection(void) {
+	void board::realtime_protection_(void) {
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED 
 		int burst_board_voltage = voltage_get_pp();
 		if (burst_board_voltage >= config_->panics.overvoltage_pp) {
@@ -511,9 +521,10 @@ namespace burst {
 			raise_panic(front::board::panics::bits::locurrent);
 		}
 		#endif	
+		
 	}
 
-	void board::frontend_protection(void) {
+	void board::frontend_protection_(void) {
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1
 		int burst_board_temper_hi = temper_get_hi_pp();
 		int burst_board_temper_lo = temper_get_lo_pp();
@@ -535,17 +546,30 @@ namespace burst {
 			}
 		}
 		#endif
-		if (present_.panics && config_->panics.reset_timeout_us) {
+		if ( config_->panics.reset_timeout_us) {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
-				uint32_t mask = present_.panics;
-				mask &= ~(front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
-				present_.panics &= ~(mask);
-				if (present_.panics == 0) {
-					for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
-						p->owner().reset_panic(front::dev::panics::bits::board);
+				if(present_.panics){
+					uint32_t mask = present_.panics;
+					mask &= ~(front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
+					present_.panics &= ~(mask);
+					if (present_.panics == 0) {
+						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
+							p->owner().reset_panic(front::dev::panics::bits::board);
+						}
 					}
 				}
-			}
+				for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
+					auto & d = p->owner();
+					uint32_t mask = d.present_.panic;
+					if(mask){
+						mask &= ~(d.noreset_panic_mask);
+						d.reset_panics(mask);
+					}
+				}			
+			}						
+		}
+		for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
+			p->owner().frontend_protection();
 		}
 	}
 #endif

@@ -49,6 +49,8 @@ namespace burst {
 	
 	class dev {
 		friend class board;
+	protected:
+		uint32_t noreset_panic_mask = (front::dev::panics::masks::master_lost || front::dev::panics::masks::board ) ;
 	public:
 		typedef robo::list::unique<dev, int> map;
 		typedef map::ref ref;
@@ -172,8 +174,9 @@ namespace burst {
 		virtual void realtime_protection(void) {};
 		virtual void frontend_protection(void) ;
 		#endif
-		void raise_panic(uint32_t _flag);
-		void reset_panic(uint32_t _flag);
+		void raise_panic(uint8_t _flag);
+		void reset_panic(uint8_t _flag);
+		void reset_panics(uint32_t _mask);
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
 		void master_alive(void);
 		#endif
@@ -212,6 +215,7 @@ namespace burst {
 
 	class board {
 		bool startuped_ = false;
+		friend class dev;
 	public:
 		struct config_s {
 			int vercion;
@@ -458,6 +462,9 @@ namespace burst {
 		#if ROBO_APP_BURST_REALTIME_SLOT_ENABLE == 1
 		static void realtime_loop(void) { instance_.realtime_loop_(); }
 		#endif
+		#if BURST_PROTECTION_ENABLED == 1
+		static void realtime_protection(void) { instance_.realtime_protection_(); }
+		#endif
 		static void setup(config_s& _config) { instance_.setup_(_config); }
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
@@ -478,8 +485,8 @@ namespace burst {
 		void reset_panics(void);
 	private:
 		#if BURST_PROTECTION_ENABLED == 1
-		void realtime_protection(void);
-		void frontend_protection(void);
+		void realtime_protection_(void);
+		void frontend_protection_(void);
 		#endif
 
 	public:

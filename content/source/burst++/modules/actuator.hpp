@@ -311,7 +311,8 @@ namespace burst{
 			, voltage_mode_(*this) 
 			, position_ov_voltage_mode_(*this) 
 		{
-
+			using namespace front::actuator::panics;
+			noreset_panic_mask |= (masks::overtemp | masks::lotemp) ;
 		}
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		virtual void regvar_action(robo::cstr _name) {

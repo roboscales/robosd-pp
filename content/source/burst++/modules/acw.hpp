@@ -492,14 +492,24 @@ namespace burst{
 			time_us_t now = time_us();
 			p.current.magnitude.delta = delta;
 			p.current.magnitude.actual = magnitude;
-
+			#ifndef BURST_PANICS_ACWC_OVERCURRENT_PEAK_ENABLED
+			#define BURST_PANICS_ACWC_OVERCURRENT_PEAK_ENABLED 1
+			#endif
+			#ifndef BURST_PANICS_ACWC_OVERCURRENT_PEAK_PARANOIC_ENABLED
+			#define BURST_PANICS_ACWC_OVERCURRENT_PEAK_PARANOIC_ENABLED 1
+			#endif
+			#if BURST_PANICS_ACWC_OVERCURRENT_PEAK_ENABLED ==1
 			if (
 				magnitude > cfg.panic.overcurrent
+				#if BURST_PANICS_ACWC_OVERCURRENT_PEAK_PARANOIC_ENABLED ==1
 				|| (magnitude + delta) > cfg.panic.overcurrent
+				#endif
 				) {
 				B::raise_panic(front::acw::panics::bits::overcurrent);
 			}
-			else {
+			else
+			#endif
+				{
 				if (
 					magnitude > cfg.panic.overpower
 					) {
