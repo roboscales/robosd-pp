@@ -399,6 +399,7 @@ namespace burst {
 					if (action_enabled_) {
 						m->applay_action();
 					}
+					action_.action_actual = false;
 				}
 			}
 		}
@@ -425,11 +426,13 @@ namespace burst {
 				switch_to_mode(action_.mode);
 			}
 		}
-		if (action_.action_actual) {
-			guard__;
-			action_.action_actual = false;
-			if (action_enabled_) {
-				actual_mode_->applay_action();
+		if (action_enabled_) {
+			if (action_.action_actual) {
+				guard__;
+				action_.action_actual = false;
+				if( actual_mode_ ){
+					actual_mode_->applay_action();
+				}
 			}
 		}
 		#if 0

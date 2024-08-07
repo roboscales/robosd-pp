@@ -425,9 +425,6 @@ namespace burst{
 			#endif
 		}
 		#endif 
-		
-
-
 
 	};
 }
