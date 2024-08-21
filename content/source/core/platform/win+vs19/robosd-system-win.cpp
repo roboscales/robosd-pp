@@ -144,7 +144,7 @@ namespace robo {
 		#endif
 		init_ = false;
 	}
-	//todo костыль
+	//todo РєРѕСЃС‚С‹Р»СЊ
 	bool system_realtime_disabled_ = false;
 	bool system::env::start(time_us_t & _period_us) {
 		if (_period_us == 0) {
@@ -199,11 +199,7 @@ namespace robo {
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-	#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE 
-	void system::env::abort(void) {
-		::abort();
-	}
-	#endif
+
 	time_us_t system::env::realtime_us(void) {
 		QueryPerformanceCounter(&tickCurrent_);
 		double us = us_per_tick_ * tickCurrent_.LowPart;

@@ -563,7 +563,7 @@ namespace burst {
 
 	//template< class K, class D> class box_t : public D
 
-
+	extern board::present_s burst_present;
 };
 
 #if BURST_DEBUG_TP_ENABLED == 1

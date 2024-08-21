@@ -268,11 +268,7 @@ namespace robo {
 	void system::env::comeback(void) {
 		backend_thread_id_ = dummy_thread_id_;
 	}
-	#if ROBO_APP_CRASH_TYPE != ROBO_APP_STD_TYPE
-	void system::env::abort(void) {
-		::abort();
-	}
-	#endif
+
 
 	time_us_t system::env::realtime_us(void) {
 		std::chrono::steady_clock::time_point now_ = std::chrono::steady_clock::now();
@@ -290,7 +286,11 @@ namespace robo {
 	}
 }
 #endif
-
+#if ROBO_APP_CRASH_TYPE != ROBO_APP_STD_TYPE
+void robo::system::env::abort(void) {
+	::abort();
+}
+#endif
 #if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_STD
 #include <mutex>
 namespace robo {

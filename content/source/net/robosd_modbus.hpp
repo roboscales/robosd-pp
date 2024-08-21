@@ -23,7 +23,7 @@ namespace robo{
 							last_request_us = robo::system::time_us();
 						}
 						virtual bool exchange_need(void){
-							return ( robo::system::time_us()-last_request_us > timeout_us);
+							return  true; // (robo::system::time_us() - last_request_us > timeout_us);
 						}
 					public:
 						uint8_t devaddr; //Адрес устройства
@@ -181,22 +181,23 @@ namespace robo{
 						 return (active_ == nullptr);
 					}
 					virtual bool dispetcher_request(void){
-						if(current_){
-							current_ = current_->next();
-						} 
-					
-						if(current_==nullptr){
-							current_= regs_.first();
-						}
-					
-						if(current_){
-							if(current_->owner().exchange_need()){						
-								robo::system::critical g__;
-								active_ =  current_;
-								active_->owner().request();
-								return true;
+
+							if (current_) {
+								current_ = current_->next();
 							}
-						}
+
+							if (current_ == nullptr) {
+								current_ = regs_.first();
+							}
+
+							if (current_) {
+								if (current_->owner().exchange_need()) {
+									robo::system::critical g__;
+									active_ = current_;
+									active_->owner().request();
+									return true;
+								}
+							}
 						return false;
 					}
 				public:

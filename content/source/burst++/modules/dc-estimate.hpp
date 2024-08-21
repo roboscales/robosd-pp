@@ -57,6 +57,7 @@ namespace burst{
 //				fpn_t L;
 				fpn_t R;
 				fpn_t E;
+				fpn_t E10;
 				fpn_t error;
 				//fpn_t scale;
 				//fpn_t factor;
@@ -90,7 +91,7 @@ namespace burst{
 			p.current.actual = (signal_t)((((long_signal_t)*pcurrent)* c.scale.current8)>>8);
 			p.estimate.E32 = p.voltage.prev - ( (p.current.actual + p.current.prev) >> 1 )* p.estimate.R;
 			p.estimate.E = range_apply(p.estimate.E32,c.range.E);
-			
+			p.estimate.E10 = p.estimate.E>>5;
 			//p.current.delta = p.current.actual-p.current.prev;
 			
 			//p.estimate.voltage = p.estimate.E + ( (long_signal_t)p.current.prev * p.estimate.R );

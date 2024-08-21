@@ -243,6 +243,10 @@ namespace robo{
 						
 						/*Set number of bytes*/
 						uint16_t payload_len = regNum << 1;
+						uint8_t payload_control = *_payload++;
+						if (payload_len != payload_control) {
+							return errors::proto::fault;
+						}
 						/*Copy data from memory to frame*/
 						for(uint16_t i = 0; i < regNum; ++i, ++addr )
 						{
@@ -378,8 +382,11 @@ namespace robo{
 						T::poll();
 					}
 					master_t()
-						: write_regs_confirm_(*this,&master_t::write_regs_confirm__)
-						, read_regs_confirm_(*this,&master_t::read_regs_confirm__)
+						: write_regs_confirm_(*this, &master_t::write_regs_confirm__)
+						, read_regs_confirm_(*this, &master_t::read_regs_confirm__)
+#if ROBO_APP_MODULE_ENABLED ==1
+						, ::robo::net::master_t<D, packet>(0,0)
+#endif
 						{
 						}
 				
@@ -396,6 +403,8 @@ namespace robo{
 							*ptr++ = command_;
 							ptr= write_to(_reg_adress,ptr);
 							ptr = write_to(_count,ptr);
+							//todo!!
+							*ptr++ = _count * 2;
 							{
 								guard g__;
 								for(uint8_t i=0; i < _count; ++i,++_reg_adress, ++_data ){
@@ -403,7 +412,7 @@ namespace robo{
 									ptr = write_to(tmp,ptr);
 								}
 							}
-							uint16_t crc_len= 6 + 2*_count;
+							uint16_t crc_len= 6 + 2*_count + 1;
 							uint16_t crc = T::crc(outcom_.memo, crc_len);
 							*(uint16_t*)ptr = crc;		
 							outcom_.size = crc_len+2;
@@ -530,7 +539,27 @@ public:\
 		return ::robo::crc16_modbus_by_table(_data,_length);\
 	}\
 }
-				
+#if ROBO_APP_MODULE_ENABLED ==1
+#define ROBOSD_MODBUS_RTU_MASTER_DRIVER(N)\
+class  N {\
+	public:\
+		using packet = ::robo::net::modbus::rtu::packet;\
+		static robo::time_us_t wd_us( const packet * _pk);\
+		static void receive(packet * _pk);\
+		static void send(const packet * _pk);\
+		static bool panic(void);\
+		static void send_cancel(void);\
+		static void receive_cancel(void);\
+		static bool ready(void);\
+		static void confirm(void);\
+		static void refuse(void);\
+		static uint16_t crc(const uint8_t * _data, size_t _length){\
+			return ::robo::crc16_modbus_by_table(_data,_length);\
+		}\
+		static bool do_load(robo::cstr _section , robo::cstr _key  );\
+		static void do_clean(void);\
+}
+#else
 #define ROBOSD_MODBUS_RTU_MASTER_DRIVER(N)\
 class  N {\
 	public:\
@@ -548,5 +577,5 @@ class  N {\
 			return ::robo::crc16_modbus_by_table(_data,_length);\
 		}\
 }
-
+#endif
 #endif
