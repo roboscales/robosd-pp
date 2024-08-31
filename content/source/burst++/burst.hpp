@@ -174,12 +174,10 @@ namespace burst {
 		virtual void realtime_protection(void) {};
 		virtual void frontend_protection(void) ;
 		#endif
-		void raise_panic(uint8_t _flag);
+		
 		void reset_panic(uint8_t _flag);
 		void reset_panics(uint32_t _mask);
-		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-		void master_alive(void);
-		#endif
+
 		//virtual void reset(void) {};
 		//virtual void start(void) {};
 		//virtual void realtime_loop(void) {};
@@ -189,6 +187,10 @@ namespace burst {
 		void switch_to_idle_(void);
 		bool action_enabled_ = true;
 	public:
+		void raise_panic(uint8_t _flag);
+		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
+		void master_alive(void);
+		#endif
 		virtual void switch_to_mode(int _mode);
 		virtual void loopA(void);
 		void loopB(void);
@@ -214,7 +216,7 @@ namespace burst {
 	*/
 
 	class board {
-		bool startuped_ = false;
+		//bool startuped_ = false;
 		friend class dev;
 	public:
 		struct config_s {
@@ -476,6 +478,7 @@ namespace burst {
 		struct present_s {
 			uint32_t panics;
 			time_us_t last_panic_us;
+			bool startuped;
 		} &present_;
 
 		//void perform_panic(void);

@@ -209,9 +209,9 @@ namespace burst {
 		debug_tp_off(front::tp_verb::loop);
 	}
 	void board::frontend_loop_(void) {
-		if(!startuped_){
+		if(!present_.startuped){
 			slots_ref_.startup.execute();
-			startuped_ = slots_ref_.startup.isempty();
+			present_.startuped = slots_ref_.startup.isempty();
 		}
 
 		debug_tp_on(front::tp_verb::frontend);
@@ -407,8 +407,10 @@ namespace burst {
 
 	void dev::perform_panic(void) {
 		if (present_.mode != front::dev::modes::idle) {
-			actual_mode_->stop();
-			switch_to_idle_();
+			robo::system::guard g__;
+			if(robo::system::env::is_backend()){
+				switch_to_idle_(); 
+			}
 		}
 		action_.mode = front::dev::modes::idle;
 	}
@@ -416,6 +418,7 @@ namespace burst {
 	void dev::loopA(void) {
 
 		ROBO_APP_ASSERT(is_backend__);
+		
 		if (action_.mode != present_.mode) {
 			guard__;
 			if (present_.panic != 0) {
@@ -423,7 +426,9 @@ namespace burst {
 				switch_to_idle_();
 			}
 			else {
-				switch_to_mode(action_.mode);
+				if( burst_present.startuped ){
+					switch_to_mode(action_.mode);
+				}
 			}
 		}
 		if (action_enabled_) {
