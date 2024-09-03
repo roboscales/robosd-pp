@@ -33,6 +33,7 @@ typedef union drv8301_STATUS_1_s{
 		uint16_t 	address:4;
 		uint16_t 	request:1;
 	};
+	drv8301_registr_s reg;
 	uint16_t value;	
 } drv8301_STATUS_1;
 
@@ -47,6 +48,7 @@ typedef union drv8301_STATUS_2_s{
 		uint16_t 	address:4;
 		uint16_t 	request:1;
 	};
+	drv8301_registr_s reg;
 	uint16_t value;	
 } drv8301_STATUS_2;
 
@@ -122,6 +124,7 @@ typedef union drv8301_CONTROL_1_s{
 		uint16_t 	address:4;
 		uint16_t 	request:1;
 	};
+	drv8301_registr_s reg;
 	uint16_t value;	
 } drv8301_CONTROL_1;
 
@@ -156,7 +159,7 @@ typedef enum  {
 	DRV8301_OC_TOFF_CYCLE_BY_CYCLE	= 0
 	, DRV8301_OC_TOFF_OFF_TIME			= 1
 } DRV8301_OC_TOFF;
-
+ 
 typedef union drv8301_CONTROL_2_s{
 	struct{
 		uint16_t	OCTW_MODE:2;
@@ -168,6 +171,7 @@ typedef union drv8301_CONTROL_2_s{
 		uint16_t 	address:4;
 		uint16_t 	request:1;
 	};
+	drv8301_registr_s reg;
 	uint16_t value;	
 } drv8301_CONTROL_2;
 
