@@ -225,11 +225,11 @@ namespace burst {
 				}
 				else {
 					p.ref.counter.fault++;
-					p.native.delta = p.ref.delta_acc = 0;
+					//p.native.delta = p.ref.delta_acc = 0;
 					//to do так как закоментировано - так делать нельзя, та как накапливается ошибка!
 					/*present.native.raw += present.native.delta;
-					present.native.ceiled += (present.native.delta << shift);
-					present.delta_acc += present.delta;*/
+					present.native.ceiled += (present.native.delta << shift);*/
+					p.ref.delta_acc += p.delta;
 				}
 				if (conf.inverce) {
 					p.acc -= p.native.delta;
@@ -237,9 +237,11 @@ namespace burst {
 				else {
 					p.acc += p.native.delta;
 				}
+				if (success) {
 				//todo round_l не катит
-				p.ref.position = fast::rsh(p.acc, shift.value);
-				p.ref.position += conf.offset.position;
+					p.ref.position = fast::rsh(p.acc, shift.value);
+					p.ref.position += conf.offset.position;
+				}
 			}
 			else {
 				if (success) {
