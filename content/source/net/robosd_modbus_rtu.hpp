@@ -281,6 +281,7 @@ namespace robo{
 					uint8_t wait_length_;
 					uint16_t reg_adress_;
 					uint16_t count_;
+					uint16_t value_;
 					uint16_t * incom_regs_;
 					void write_regs_confirm__(bool result_){
 						if(result_){
@@ -314,11 +315,19 @@ namespace robo{
 								T::on_refuse(errors::frame::proto);
 								return;
 							}
-							
-							uint16_t count = read_from(ptr);
-							if(count!=count_){
-								T::on_refuse(errors::frame::proto);							
-								return;
+							if (command_ == commands::write_reg) {
+								uint16_t value = read_from(ptr);
+								if (value != value_) {
+									T::on_refuse(errors::frame::proto);
+									return;
+								}
+							}
+							else {
+								uint16_t count = read_from(ptr);
+								if (count != count_) {
+									T::on_refuse(errors::frame::proto);
+									return;
+								}
 							}
 							
 							T::on_confirm();
@@ -427,6 +436,7 @@ namespace robo{
 							count_ = 1;
 							incom_regs_ = 0;
 							wait_length_ = 8;
+							value_ = _data;
 							uint8_t* ptr = outcom_.memo;
 							*ptr++ = address_;
 							*ptr++ = command_;

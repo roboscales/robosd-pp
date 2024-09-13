@@ -146,11 +146,13 @@ namespace robo{
 							,_count), dst_(_dst){
 						}
 						virtual void on_request(void){
-				//			if(regs::count == 1){
-			//					regs::dispetcher.read_reg(regss::devaddr,regs::regaddr,regs::memo[0]);
-		//					} else {
-	//							regs::dispetcher.read_regs(regs::devaddr,regs::regaddr,regs::count,regs::memo);
-//							}
+							/*
+							if(regs::count == 1){
+								regs::dispetcher.read_reg(regs::device.devaddr,regs::regaddr,regs::memo[0]);
+							} else {
+								regs::dispetcher.read_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
+							}
+							*/
 							regs::dispetcher.read_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 						}
 						virtual void on_confirm(void){

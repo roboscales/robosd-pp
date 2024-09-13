@@ -33,7 +33,6 @@ namespace robo {
 	ROBO_WEAK void system::env::abort(void) {
 		//::abort();
 	}
-
 	ROBO_WEAK system::guard::op system::env::critical_enter(void) {
 		return system::guard::op::skip;
 	}

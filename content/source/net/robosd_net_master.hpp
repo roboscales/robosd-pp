@@ -228,7 +228,7 @@ namespace robo{
 						ready = dispetcher_ready();
 					}
 					auto now = robo::system::time_us();
-					if(ready && ( now - last_request_us > timeout_us) ){
+					if(ready && ( now - last_request_us >= timeout_us) ){
 						if( dispetcher_request() ){
 							last_request_us = now;
 							statistic.request++;
