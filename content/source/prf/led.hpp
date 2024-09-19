@@ -3,16 +3,16 @@
 #include "core/robosd_common.hpp"
 namespace robo {	
 	namespace prf {	
-		template <typename D> class led_base_t : public D{
+		template <typename D, typename V> class led_base_t : public D{			
 			enum class state{ on =1,off = 0} state_ = state::off;
-			unsigned int verb_ = 0;
-			protected:
-			led_base_t(void):D(){}
+			V verb_ = 0;
+		public:
+			led_base_t(V _verb):D(), verb_(_verb){}
 			~led_base_t(void){}
-			void set_verb_(unsigned int _verb){
+			void set_verb(unsigned int _verb){
 				verb_ = _verb;
 			}
-			void on_(unsigned int _verb = 0){				
+			void on(unsigned int _verb = 0){				
 				if(verb_ == _verb){
 					if(state_==state::off){
 						D::on();
@@ -20,7 +20,7 @@ namespace robo {
 					}
 				}
 			}
-			void off_(unsigned int _verb = 0){
+			void off(unsigned int _verb = 0){
 				if(verb_ == _verb){
 					if(state_==state::on){
 						D::off();
@@ -28,7 +28,7 @@ namespace robo {
 					}
 				}
 			}
-			void toggle_(unsigned int _verb = 0){
+			void toggle(unsigned int _verb = 0){
 				if(verb_ == _verb){
 					if(state_==state::on){
 						D::off();
@@ -41,26 +41,28 @@ namespace robo {
 			}
 		};
 
-		template <typename D> class ledcom_t : public led_base_t<D>{
+		template <typename D> class ledcom_t : public led_base_t<D,unsigned int>{
+			using B = led_base_t<D,unsigned int>;
 			static ledcom_t & instance_(){
 				static ledcom_t instance__;
 				return instance__;
 			}
 		public:
-			static void on(unsigned int _verb = 0) { instance_().on_(_verb); } 
-			static void off(unsigned int _verb = 0) { instance_().off_(_verb); } 
-			static void toggle(unsigned int _verb = 0) { instance_().toggle_(_verb); } 
-			static void set_verb(unsigned int _verb) { instance_().set_verb_(_verb); } 
+			static void on(unsigned int _verb = 0) { instance_().B::on(_verb); } 
+			static void off(unsigned int _verb = 0) { instance_().B::off(_verb); } 
+			static void toggle(unsigned int _verb = 0) { instance_().B::toggle(_verb); } 
+			static void set_verb(unsigned int _verb) { instance_().B::set_verb(_verb); } 
 		};
 
 
-		template <typename D> class led_t : public led_base_t<D>{
+		template <typename D> class led_t : public led_base_t<D,unsigned int>{
 			static led_t instance_;
+			using B = led_base_t<D,unsigned int>;
 		public:
-			static void on(unsigned int _verb = 0) { instance_.on_(_verb); } 
-			static void off(unsigned int _verb = 0) { instance_.off_(_verb); }
-			static void toggle(unsigned int _verb = 0) { instance_.toggle_(_verb); }
-			static void set_verb(unsigned int _verb) { instance_.set_verb_(_verb); }
+			static void on(unsigned int _verb = 0) { instance_.B::on(_verb); } 
+			static void off(unsigned int _verb = 0) { instance_.B::off(_verb); }
+			static void toggle(unsigned int _verb = 0) { instance_.B::toggle(_verb); }
+			static void set_verb(unsigned int _verb) { instance_.B::set_verb(_verb); }
 			static void perform( uint8_t _command, unsigned int _verb  = 0) {
 				switch (_command){
 					case 1: on(_verb); break;

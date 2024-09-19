@@ -148,6 +148,7 @@ namespace burst {
 		, config_(nullptr)
 	{
 	}
+	tp_t tp(burst_present.tp_verb);
 	board::~board(void) {
 	}
 	void board::begin_(time_us_t _period_us) {

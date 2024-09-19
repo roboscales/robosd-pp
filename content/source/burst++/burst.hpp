@@ -479,6 +479,7 @@ namespace burst {
 			uint32_t panics;
 			time_us_t last_panic_us;
 			bool startuped;
+			unsigned int tp_verb;
 		} &present_;
 
 		//void perform_panic(void);
@@ -510,10 +511,11 @@ namespace burst {
 	class tp_driver {
 		//реализацию принудительно делегируем в perephery проекта
 	protected:
-		void on(void);
-		void off(void);
+		static void on(void);
+		static void off(void);
 	};
-	typedef robo::prf::led_t<tp_driver>  tp;
+	typedef robo::prf::led_base_t<tp_driver, unsigned int &>  tp_t;
+	extern tp_t tp;
 	#endif
 
 	template< class K, class D> class timer_t : public D {
@@ -570,9 +572,9 @@ namespace burst {
 };
 
 #if BURST_DEBUG_TP_ENABLED == 1
-#define debug_tp_on(n)  burst::tp::on(n)
-#define debug_tp_off(n)  burst::tp::off(n)
-#define debug_set_verb(n)  burst::tp::set_verb(n)
+#define debug_tp_on(n)  burst::tp.on(n)
+#define debug_tp_off(n)  burst::tp.off(n)
+#define debug_set_verb(n)  burst::tp.set_verb(n)
 #else
 
 #define debug_tp_on(n)
