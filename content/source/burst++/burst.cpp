@@ -148,7 +148,9 @@ namespace burst {
 		, config_(nullptr)
 	{
 	}
+	#if BURST_DEBUG_TP_ENABLED == 1
 	tp_t tp(burst_present.tp_verb);
+	#endif
 	board::~board(void) {
 	}
 	void board::begin_(time_us_t _period_us) {
