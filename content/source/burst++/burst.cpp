@@ -148,8 +148,7 @@ namespace burst {
 		, config_(nullptr)
 	{
 	}
-	
-	#if BURST_DEBUG_TP_ENABLED
+	#if BURST_DEBUG_TP_ENABLED == 1
 	tp_t tp(burst_present.tp_verb);
 	#endif
 	

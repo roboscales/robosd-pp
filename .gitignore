@@ -33,3 +33,5 @@
 /content/doc/matlab/slprj/sim/varcache/ee_power_factor_correction
 /content/app-template/app/mexo++drive/projects/STM32F103CB/MDK-ARM/mexo++drive
 /content/source/mexo/*.bak
+/content/source/lxi
+/content/build/vs19/fmdirrect/.vs/fmd-test/v16
