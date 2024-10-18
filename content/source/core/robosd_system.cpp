@@ -66,19 +66,21 @@ namespace robo {
 	char const* fault_file_ = nullptr;
 	char const* fault_function_ = nullptr;
 	int fault_line_ = 0;
-	//#if ROBO_APP_CRASH_TYPE == ROBO_APP_ENV_TYPE && ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_SPECIFIC
-	#if ROBO_APP_CRASH_TYPE == ROBO_APP_TYPE_STD
+
 	void crash(char const* _file, char const* _function, int _line) {
 		fault_file_ = _file;
 		fault_function_ = _function;
 		fault_line_ = _line;
+		#if ROBO_APP_DEBUG_LOG_ENABLED
+		::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" system panic \r\n\t%s\r\n\t%s - %d"), fault_function_, fault_file_, fault_line_);
+		#endif
 		#if ROBO_APP_ENV_ENABLED == 1
 		system::env::abort();
 		#else
 		while (true) {}
 		#endif
 	}
-	#endif
+	
 }
 
 #if ROBO_APP_SYSTEM_ENABLED == 1

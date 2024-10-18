@@ -11,7 +11,7 @@ namespace robo {
 			typedef ::robo::list::unique<item, int> list;
 		private:
 			item* branch_;
-			list* childs_;
+			list* childs_ = nullptr;
 			list::ref  ref_;
 		protected:
 			size_t path_len(size_t _carrent, size_t _max);

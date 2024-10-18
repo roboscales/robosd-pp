@@ -47,7 +47,7 @@ public:
 	}
 	// количество элементов в буфере
 	unsigned count(void)const
-	{
+ 	{
 		return (_writeCount - _readCount) & _masksz;
 	}
 	unsigned space(void)const

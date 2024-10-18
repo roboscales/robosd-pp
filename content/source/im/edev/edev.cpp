@@ -50,7 +50,10 @@ namespace robo {
 		}
 
 		bool agent::do_begin(void) {
-			ROBO_LRET(ini::load(name, type, RT("SAMPLE_TIME_SEC"), sample_time));
+			ROBO_LBREAKN(ini::load(name, type, RT("SAMPLE_TIME_SEC"), sample_time));
+			int thread_id = -1;
+			ini::try_load(name, type, RT("THREAD_ID"), thread_id);
+			ROBO_LRET(attach_to_thread_(thread_id));
 		}
 		agent* agent::find(int _id) {
 			agent* tmp = agents_().find(_id);
@@ -72,7 +75,10 @@ namespace robo {
 				return tmp;
 			}
 		}
-
+		agent::thread::list& agent::threads(void) {
+			static thread::list threads_;
+			return threads_;
+		}
 		void agent::run( double time) {
 			for (agent::ref* p = agents_().first(); p; p = p->next()) {
 				p->owner().run_(time);
@@ -140,6 +146,12 @@ namespace robo {
 		}
 
 		void agent::finish(void) {
+			thread::ref* ti = threads().first();
+			while (ti) {
+				auto * tmp = & (ti->owner());
+				delete tmp;
+				ti = threads().first();
+			}
 			agent::ref* p;
 			for (p = agents_().first(); p; p = p->next()) {
 				p->owner().do_finish();

@@ -356,18 +356,30 @@ namespace robo {
 				z = -a.w * b.z - a.x * b.y + a.y * b.x + a.z * b.w;
 				rotated_ = false;
 			}
-			bool load(cstr _path, cstr key) {
-				T tmp[size];
-				ROBO_LBREAKN(ini::load_arr(_path, key, tmp, size));
-				T f = tmp[0] * deg2rad<T>;
+			void from_dg(const std::initializer_list<T> _dg) {
+				ROBO_APP_ASSERT(size == _dg.size());
+				from_dg_(_dg.begin());
+			}
+			void from_dg(const T (&_dg)[size]) {
+				from_dg_(_dg);
+			}
+		private:
+			void from_dg_(const  T * _dg) {
+				T f = _dg[0] * deg2rad<T>;
 				w = cos(f / 2);
-				vector3_t<T> n{tmp[1],tmp[2] ,tmp[3] };
+				vector3_t<T> n{ _dg[1],_dg[2] ,_dg[3] };
 				n.normalize();
 				n *= sin(f / 2);
 				x = n.x;
 				y = n.y;
 				z = n.z;
 				rotated_ = false;
+			}
+		public:
+			bool load(cstr _path, cstr key) {
+				T tmp[size];
+				ROBO_LBREAKN(ini::load_arr(_path, key, tmp, size));
+				from_dg_(tmp);
 				return true;
 			}
 		private:
@@ -607,6 +619,7 @@ namespace robo {
 		template<typename T> struct scene_t {
 			using axis = quat_axis_t<T>;
 			using vector3 = vector3_t<T>;
+			using avionic = avionic_t<T>;
 			class series;
 			class body;
 			class actuator_s;
@@ -735,13 +748,27 @@ namespace robo {
 			class actuator_s : public point {
 				friend class body;
 				friend class series;
+				T dg_ = T(0.);
+				T rd_ = T(0.);
+			protected:
+				virtual void rotate(const T& _angle) = 0;
 			public:
 				typedef ::robo::list::unsorted<actuator_s> list;
 				typedef typename list::ref ref;
-				virtual void rotate_rd(const T& _angle) = 0;
-				void rotate_gr(const T& _angle) {
-					rotate_rd(_angle * deg2rad<T>);
+				const T & dg(void) { return dg_;  };
+				const T& rd(void) { return rd_; };
+
+				void rotate_dg(const T& _angle) {
+					dg_ = _angle;
+					rd_ = _angle * deg2rad<T>;
+					rotate(rd_);
 				};
+				void rotate_rd(const T& _angle) {
+					dg_ = _angle* *rad2deg<T>;
+					rd_ = _angle;
+					rotate(_angle);
+				};
+
 				actuator_s(cstr _name, body& _body);
 
 				
@@ -790,12 +817,14 @@ namespace robo {
 			};
 
 			class yaw : public actuator_s {
-			public:
-				virtual void rotate_rd(const T& _angle) {
+			protected:
+				virtual void rotate(const T& _angle) {
 					actuator_s::position.L.w = cos(_angle / 2);
 					actuator_s::position.L.z = sin(_angle / 2);
 					actuator_s::position.L.rotate();
 				}
+
+			public:
 				virtual T rot_projection(const vector3& R)
 				{
 					return R.z;
@@ -812,12 +841,13 @@ namespace robo {
 			};
 
 			class pitch : public actuator_s {
-			public:
-				virtual void rotate_rd(const T& _angle) {
+			protected:
+				virtual void rotate(const T& _angle) {
 					actuator_s::position.L.w = cos(_angle / 2);
 					actuator_s::position.L.y = sin(_angle / 2);
 					actuator_s::position.L.rotate();
 				}
+			public:
 
 				virtual T rot_projection(const vector3& R) {
 					return R.y;
@@ -833,12 +863,13 @@ namespace robo {
 			};
 
 			class roll : public actuator_s {
-			public:
-				virtual void rotate_rd(const T& _angle) {
+			protected:
+				virtual void rotate(const T& _angle) {
 					actuator_s::position.L.w = cos(_angle / 2);
 					actuator_s::position.L.x = sin(_angle / 2);
 					actuator_s::position.L.rotate();
 				}
+			public:
 				virtual T rot_projection(const vector3& R) {
 					return R.x;
 				}
@@ -860,16 +891,16 @@ namespace robo {
 				typedef ::robo::list::unsorted<series> list;
 				robot& robot_ref() { return tree::item:: template branch<robot>(); };
 				typename actuator_s::list actuators;
+				typename body::list bodies;
 
 			private:
 				robot& robot_;
-				typename body::list bodies_;
 				typename list::ref ref_;
 				void arrange_(void) {
 					for (typename actuator_s::list::ref* r = actuators.first(); r; r = r->next()) {
 						r->owner().arrange_();
 					}
-					for (typename body::list::ref* r = bodies_.first(); r; r = r->next()) {
+					for (typename body::list::ref* r = bodies.first(); r; r = r->next()) {
 						r->owner().arrange_();
 					}
 				}
@@ -882,8 +913,8 @@ namespace robo {
 						}
 					}
 					{
-						typename body::list::ref* d = bodies_.first();
-						typename body::list::ref* s = _src.bodies_.first();
+						typename body::list::ref* d = bodies.first();
+						typename body::list::ref* s = _src.bodies.first();
 						for (; d; d = d->next(), s = s->next()) {
 							d->owner().assign_(s->owner());
 						}
@@ -1005,7 +1036,7 @@ namespace robo {
 			: tree::item(_name, &_series)
 			, ref_(*this)
 			, ct(RT("ct"), *this) {
-			ref_.attach_to(series_ref().bodies_);
+			ref_.attach_to(series_ref().bodies);
 			ct.manual_arrange = true;;
 		}
 

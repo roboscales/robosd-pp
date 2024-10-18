@@ -23,6 +23,7 @@ namespace robo {
 			virtual ~iserial(void){};
 			iserial(void):link(){};
 			virtual bool  puts(const char *_s);
+			static iserial & query_ref(cstr _caption);
 			
 		};
 

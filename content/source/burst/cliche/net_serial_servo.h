@@ -10,11 +10,16 @@ extern burst_serial_servo_t  CLCH_NAME;
 
 #else
 
-BURST_WEAK burst_time_us_t  PREFIX(hw_send_packet_)(uint8_t * _data, uint8_t _sz){
+BURST_WEAK burst_bool_t  PREFIX(hw_send_packet_)(uint8_t * _data, uint8_t _sz){
 	BURST_UNUSED(_data);
 	BURST_UNUSED(_sz);
 	return 0; 
 }
+BURST_WEAK  burst_time_us_t PREFIX(hw_send_packet_timeout_us_)(uint8_t _sz){
+	BURST_UNUSED(_sz);
+	return 0; 
+}
+
 
 BURST_WEAK void  PREFIX(hw_aborttx_)(void){ }
 
@@ -61,6 +66,8 @@ void PREFIX(finish_)(void);
 
 uint8_t PREFIX(tx_buffer_)[PREFIX(outcom_size_)];
 
+//burst_time_us_t (*hw_send_packet_timeout_us)(uint8_t _sz);
+
 burst_serial_servo_t  CLCH_NAME ={
 	{
 		PREFIX(serial_available_)
@@ -74,6 +81,7 @@ burst_serial_servo_t  CLCH_NAME ={
 		, PREFIX(serial_reset_)
 		, PREFIX(serial_finish_)
 	}
+	, PREFIX(hw_send_packet_timeout_us_)
 	, PREFIX(hw_send_packet_)
 	, PREFIX(hw_aborttx_)
 	, PREFIX(hw_start_receive_)
@@ -105,10 +113,13 @@ BURST_WEAK  uint8_t PREFIX(query_packet_)(uint8_t * _data, uint8_t _max_sz){
 }
 
 BURST_WEAK  void PREFIX(refuse_)(void){
+	CLCH_NAME.hw_abort_tx();
 	burst_serial_servo_refuse_ (&CLCH_NAME); 
+	CLCH_NAME.hw_start_receive();
 }
 BURST_WEAK  void PREFIX(complete_)(void){
 	burst_serial_servo_complete_ (&CLCH_NAME);
+	CLCH_NAME.hw_start_receive();
 }
 BURST_WEAK  void PREFIX(begin_)(void){
 	CLCH_NAME.serial.begin();
@@ -117,13 +128,16 @@ BURST_WEAK  void PREFIX(begin_)(void){
 BURST_WEAK  void PREFIX(start_)(void){
 	CLCH_NAME.serial.start();
 	burst_serial_servo_start_(&CLCH_NAME);
+	CLCH_NAME.hw_start_receive();
 }
 BURST_WEAK  void PREFIX(reset_)(void){
 	CLCH_NAME.serial.reset();
 	CLCH_NAME.hw_abort_tx();
 	burst_serial_servo_reset_(&CLCH_NAME);
+	CLCH_NAME.hw_start_receive();
 }
 BURST_WEAK  void PREFIX(finish_)(void){
+	CLCH_NAME.hw_abort_tx();
 	CLCH_NAME.serial.finish();
 	burst_serial_servo_finish_(&CLCH_NAME);
 }

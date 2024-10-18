@@ -148,7 +148,11 @@ namespace burst {
 		, config_(nullptr)
 	{
 	}
+	
+	#if BURST_DEBUG_TP_ENABLED
 	tp_t tp(burst_present.tp_verb);
+	#endif
+	
 	board::~board(void) {
 	}
 	void board::begin_(time_us_t _period_us) {
@@ -189,10 +193,10 @@ namespace burst {
 
 	void board::backend_loop_(void) {
 		debug_tp_on(front::tp_verb::backend);
-		fall__;
 		#if ROBO_APP_BURST_REALTIME_SLOT_ENABLE != 1
 		realtime_loop_();
 		#endif
+		fall__;
 		#if ROBO_APP_SYSTEM_ENABLED
 		::robo::system::backend_loop();
 		#endif
@@ -228,7 +232,7 @@ namespace burst {
 		#endif
 		debug_tp_off(front::tp_verb::frontend);
 	}
-	void board::raise_fault_(void) {
+	void board::handle_panic_(void) {
 		slots_ref_.raise_fault.execute();
 	}
 	board::slots& board::slots_(void) {
@@ -420,6 +424,10 @@ namespace burst {
 
 		ROBO_APP_ASSERT(is_backend__);
 		
+		if( !board::instance_.present_ . startuped){
+			return;
+		}
+
 		if (action_.mode != present_.mode) {
 			guard__;
 			if (present_.panic != 0) {
@@ -673,27 +681,25 @@ void burst_begin_ps(unsigned int _period_us) {
 	burst::board::begin(_period_us);
 }
 #endif
-
+#if ROBO_APP_BURST_REALTIME_SLOT_ENABLE
 void burst_realtime_loop(void) {
 	burst::board::realtime_loop();
 }
+#endif
 void burst_backend_loop(void) {
 	burst::board::backend_loop();
 }
 void burst_frontend_loop() {
 	burst::board::frontend_loop();
 }
-void burst_raise_fault() {
-	burst::board::raise_fault();
+
+void robo::system::env::abort(void) {
+	
+	burst::board::instance_.handle_panic_();
+	burst::board::abort();
 }
 
-void robo::crash(char const* _fun, char const* _file, int _line) {
-	#if ROBO_APP_DEBUG_LOG_ENABLED
-	::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" abort \r\n\t%s\r\n\t%s - %d"), _fun, _file, _line);
-	#endif
-	burst_raise_fault();
-	abort();
+extern "C" void burst_core_crash(void){
+	ROBO_APP_CRASH();
 }
-
-
 

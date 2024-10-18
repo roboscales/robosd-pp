@@ -26,10 +26,6 @@
 #ifndef ROBO_APP_MODULE_ENABLED
 #define ROBO_APP_MODULE_ENABLED 0
 #endif
-//ROBO_APP_CRASH_TYPE лучше определять всегда отдельно
-#ifndef ROBO_APP_CRASH_TYPE
-#define ROBO_APP_CRASH_TYPE ROBO_APP_TYPE_STD
-#endif
 
 #if ROBO_UNICODE_ENABLED == 1
 #define ROBO_CHAR wchar_t

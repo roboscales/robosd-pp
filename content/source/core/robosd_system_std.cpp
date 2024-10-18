@@ -286,11 +286,14 @@ namespace robo {
 	}
 }
 #endif
-#if ROBO_APP_CRASH_TYPE == ROBO_APP_TYPE_STD
+
+
+#if ROBO_APP_ABORT_TYPE == ROBO_APP_TYPE_STD
 void robo::system::env::abort(void) {
 	::abort();
 }
 #endif
+
 #if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_STD
 #include <mutex>
 namespace robo {

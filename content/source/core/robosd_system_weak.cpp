@@ -116,7 +116,8 @@ namespace robo {
 		ROBO_UNUSED(_args);
 	}
 	#endif
-
+	#endif
+	
 	#if ROBO_APP_ALLOC_ENABLED ==1
 	ROBO_WEAK void* system::env::mem_alloc(size_t _size) {
 		return malloc(_size);
@@ -129,7 +130,7 @@ namespace robo {
 		return 0;
 	}
 	#endif
-	#endif
+	
 	#endif
 
 	#if ROBO_APP_INI_ENABLED ==1

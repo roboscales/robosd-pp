@@ -447,7 +447,7 @@ namespace burst {
 		void realtime_loop_(void);
 		void backend_loop_(void);
 		void frontend_loop_(void);
-		void raise_fault_(void);
+		void handle_panic_(void);
 		void setup_(config_s& _config) { config_ = &_config; }
 		//void reset_(void);
 		static board instance_;
@@ -471,9 +471,11 @@ namespace burst {
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
 		static int slot_index(void) { return instance_.slot_index_; }
-		static void raise_fault(void) { instance_.raise_fault_(); }
+		friend class robo::system::env;
 		//static void reset(void) { instance_.reset_(); }
-
+			private:
+				static void abort(void);
+			public:
 		
 		struct present_s {
 			uint32_t panics;

@@ -140,7 +140,9 @@ namespace burst{
 			board::slot::kind::frontend
 			,	[]{
 				#if SERVICE_FREEMASTER_CONNECT_TYPE != SERVICE_FREEMASTER_CONNECT_TYPE_NONE
+				#if SERVICE_FREEMASTER_MANUAL_POOL_ENABLED == 0
 				robo::freemaster::poll();
+				#endif
 				#endif
 				static volatile robo::time_us_t g_time_us_t = 0;
 				static time_us_t tick_prev_us = 0;

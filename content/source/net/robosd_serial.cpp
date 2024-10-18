@@ -40,6 +40,17 @@ namespace robo {
 			static serial_dummy instance_;
 			return instance_;
 		}
+		
+		iserial & iserial::query_ref(cstr _caption) {
+			iserial * s =  link::query<iserial>(_caption);
+			if(s){
+				return *s;
+			} else {
+				return serial_dummy::instance();
+			}
+		}
 
 	}
+
+
 }

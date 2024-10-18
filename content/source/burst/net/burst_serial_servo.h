@@ -5,9 +5,11 @@
 #define clch_net_serial_servo_h
 
 #include "burst/burst_serial.h"
+
 typedef struct burst_serial_servo_s {
 	burst_serial_t serial;
-	burst_time_us_t (*hw_send_packet)(uint8_t * _data, uint8_t _sz);
+	burst_time_us_t (*hw_send_packet_timeout_us)(uint8_t _sz);
+	burst_bool_t (*hw_send_packet)(uint8_t * _data, uint8_t _sz);
 	void (*hw_abort_tx)(void);
 	void (*hw_start_receive)(void);
 	burst_bool_t (*hw_ready)(void);
