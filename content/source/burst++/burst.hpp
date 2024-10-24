@@ -50,7 +50,7 @@ namespace burst {
 	class dev {
 		friend class board;
 	protected:
-		uint32_t noreset_panic_mask = (front::dev::panics::masks::master_lost || front::dev::panics::masks::board ) ;
+		uint32_t noreset_panic_mask = (front::dev::panics::masks::master_lost | front::dev::panics::masks::board ) ;
 	public:
 		typedef robo::list::unique<dev, int> map;
 		typedef map::ref ref;

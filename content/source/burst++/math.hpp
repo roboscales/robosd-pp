@@ -401,7 +401,44 @@ namespace burst {
 				_discret = (discret_t) ( discret_lo +  tmp );
 			}
 		};
-
+		
+		struct discret2signal {
+			
+			const struct config_s {
+				struct{
+					range_s <signal_t> signal;
+					range_s <discret_t> raw;
+				} range;
+			} & config;
+			
+			#define DISCRET2SIGNAL_CONFIG(a) DISCRET2SIGNAL_CONFIG_(a)
+			#define DISCRET2SIGNAL_CONFIG_(a)\
+			{\
+				{\
+					BURST_RANGE_CONFIG(a##_SIGNAL)\
+					,BURST_RANGE_CONFIG(a##_RAW)\
+				}\
+			}
+			
+			long_discret_t gain = 0;
+				
+			//typedef fixed_point<digit> types;
+			void reconfig(void) {
+				gain = (long_discret_t)(config.range.signal.hi - config.range.signal.lo);
+				gain <<= (1+ digit::bits);
+				gain += ((config.range.raw.hi - config.range.raw.lo) / 2); //округление
+				gain /= (config.range.raw.hi - config.range.raw.lo);
+			}
+			discret2signal(const config_s & _config): config(_config){}
+			signal_t run( const discret_t & _raw ) {
+				if (_raw > config.range.raw.hi) return config.range.signal.hi;
+				if (_raw < config.range.raw.lo) return config.range.signal.lo;
+				long_discret_t tmp =  gain * (_raw - config.range.raw.lo);
+				tmp += (1 << digit::bits);
+				tmp >>= (1 + digit::bits);
+				return (signal_t) ( config.range.signal.lo +  tmp );
+			}
+		};
 		union long_signal_u {
 			long_signal_t value;
 			struct {

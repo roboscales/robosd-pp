@@ -1,6 +1,7 @@
 #ifndef burst_adc_hpp
 #define burst_adc_hpp
 #include "burst++/modules/actor.hpp"
+#include <algorithm>
 
 namespace burst {
 	template< class number, class driver>  class adc_t : public actor {
@@ -139,6 +140,183 @@ namespace burst {
 			: actor(_config.tag, _present.tag) {};
 		adc_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: actor(_config.tag, _present.tag, _subsystem) {};
+
+	};	
+	
+	template< class number, class driver>  class analog_input_t : public actor {
+		using R = typename driver::raw_t;
+		enum {N = driver::channel_count};
+		using signal_t = typename number::signal_t;
+		using long_signal_t = typename number::long_signal_t;
+
+	public:
+		enum { count = N};
+		struct config_s {
+			actor::config_s tag;
+			unsigned init_count_bits;
+		};
+		struct present_s {
+			actor::present_s tag;
+			R raw[count];
+			signal_t values[count];
+			struct{
+				R raw[N] = {};
+				signal_t values[count];
+			} startup;
+			bool ready;
+		};
+		
+		#define reg_arr(t,x,n) if(n < count) reg(t, x[n], RT(#n));
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		virtual void do_regvar_present(void) {
+			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
+			if (actual_mode >= mode::full) {
+				reg(types::const_uint8, p.ready, RT("ready"));
+				push(RT("raw"));
+				auto t = (types)descriptor_enco(sizeof(R), false, false, false);				
+				#define reg_raw_(i) reg_arr(t, p.raw, i);
+				reg_raw_(0);
+				reg_raw_(1);
+				reg_raw_(2);
+				reg_raw_(3);
+				reg_raw_(4);
+				reg_raw_(5);
+				reg_raw_(6);
+				reg_raw_(7);
+				reg_raw_(8);
+				reg_raw_(10);
+				reg_raw_(11);
+				reg_raw_(12);
+				reg_raw_(13);
+				reg_raw_(14);
+				reg_raw_(15);
+				pop();
+				push(RT("val"));
+				#define reg_value_(i) if(i<N) reg_arr(number::var::signal, p.raw, i);
+				reg_value_(0);
+				reg_value_(1);
+				reg_value_(2);
+				reg_value_(3);
+				reg_value_(4);
+				reg_value_(5);
+				reg_value_(6);
+				reg_value_(7);
+				reg_value_(8);
+				reg_value_(10);
+				reg_value_(11);
+				reg_value_(12);
+				reg_value_(13);
+				reg_value_(14);
+				reg_value_(15);
+				pop();
+			}
+		}
+
+		virtual void do_regvar_conf(void) {
+			using namespace burst::var;
+			ACTOR_CONFIG_S(c);
+			if (actual_mode >= mode::config) {
+				reg(types::uint8, c.init_count_bits, RT("icb"));
+			}			
+		}
+		#endif
+
+		R acc[N] = {};
+		int init_count = 0;
+
+		#define ANALOG_INPUT_CONFIG(a) ANALOG_INPUT_CONFIG_(a)
+		#define ANALOG_INPUT_CONFIG_(a)\
+		{\
+			ACTOR_CONFIG(a)\
+			, a##_INIT_COUNT_BITS\
+		}
+
+		struct converter{
+			virtual void begin(void) = 0;
+			virtual signal_t operator () (const R & _value) = 0;
+		} * converters[N];
+
+		virtual void begin(void) {
+			actor::begin();
+			ACTOR_CONFIG_S(cfg);
+			ACTOR_PRESENT_S(p);
+			R * a = acc;
+			for (int i = 0; i < N; ++i, ++a) {
+				*a = 0;
+			}
+			init_count = 1 << cfg.init_count_bits;
+			converter ** c = converters;
+			for (int i = 0; i < N; ++i, ++c) {
+				(*c)->begin();
+			}
+			p.ready = false;
+		};
+		
+
+		
+		struct line_converter: public converter{
+			typename number::discret2signal scaler;
+			typedef typename number::discret2signal::config_s config_s;
+			virtual void begin(void){
+				scaler.reconfig();
+			}
+			virtual signal_t operator () (const R & _value){
+				return scaler.run((typename number::discret_t)_value);
+			}
+			line_converter( const config_s & _config) : scaler(_config){}
+		};
+		
+		virtual void convert(void) {
+			ACTOR_PRESENT_S(p);
+			signal_t * v = p.values;
+			R * n = p.raw;
+			converter ** c = converters;
+			for (int i = 0; i < N; ++i, ++n, ++v, ++c) {
+				R  tmp;
+				{
+					::robo::system::guard g__;
+					tmp = *n;
+				}
+				
+				*v = (**c)(tmp);
+			}
+		}
+
+		virtual void run(void) {
+			ACTOR_CONFIG_S(cfg);
+			ACTOR_PRESENT_S(p);
+			driver::query(p.raw);
+			if (!p.ready) {
+				R * a = acc;
+				R * n = p.raw;
+				for (int i = 0; i < N; ++i, ++a, ++n) {
+					*a += *n;
+				}
+				init_count--;
+				if (init_count == 0) {
+					typename number::signal_t * v = p.startup.values;
+					R * o = p.startup.raw;
+					R* a = acc;
+					converter ** c = converters;
+					int shift = cfg.init_count_bits;
+					for (int i = 0; i < N; ++i, ++v, ++o, ++a, ++c) {
+						*o = (R)((*a + (1 << (shift - 1))) >> shift) + 1;
+						*v = (**c)(*o);
+					}
+					p.ready = true;
+				}
+			}
+		}
+
+		analog_input_t(const config_s& _config, present_s& _present, converter * ( &_converters)  [N] )
+			: actor(_config.tag, _present.tag) {
+				std::copy_n(_converters,N,converters);
+			};
+		analog_input_t(const config_s& _config, present_s& _present, subsystem& _subsystem, converter * ( &_converters)  [N])
+			: actor(_config.tag, _present.tag, _subsystem){
+				std::copy_n(_converters,N,converters);
+			};
 
 	};	
 }

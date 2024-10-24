@@ -495,9 +495,9 @@ namespace burst {
 
 	void board::reset_panic(uint32_t _flag) {
 		uint32_t mask = (1 << _flag);
-		if ((present_.panics & mask) == 0) {
+		if ((present_.panics & mask) != 0) {
 			present_.last_panic_us = time_us();
-			present_.panics |= mask;
+			present_.panics &= ~mask;
 		}
 		if (present_.panics == 0) {
 			for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
@@ -566,7 +566,7 @@ namespace burst {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){
 					uint32_t mask = present_.panics;
-					mask &= ~(front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
+					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
 					present_.panics &= ~(mask);
 					if (present_.panics == 0) {
 						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
