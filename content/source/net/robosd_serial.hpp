@@ -453,7 +453,7 @@ namespace robo {
 			}
 			::robo::delegat::dummy<void,panic> pd_;
 		public:
-			half_duplex_t(const char * _name=nullptr, ::robo::delegat::ref<void,panic> * _on_panic=nullptr): 
+			half_duplex_t(cstr _name=nullptr, ::robo::delegat::ref<void,panic> * _on_panic=nullptr): 
 				on_panic_(_on_panic?*_on_panic:pd_){
 					if(_name){
 						iserial::begin(_name);						

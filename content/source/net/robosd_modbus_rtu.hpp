@@ -31,7 +31,7 @@ namespace robo{
 					};
 					enum class proto{
 						success = 0x00
-						, code = 0x01 //	Принятый код функции не может быть обработан.
+						, code = 0x01 //	Принятый код функции не может быть обработан. 
 						, address = 0x02	//Адрес данных, указанный в запросе, недоступен.
 						, value = 0x03	//Значение, содержащееся в поле данных запроса, является недопустимой величиной.
 						, fault = 0x04	//Невосстанавливаемая ошибка имела место, пока ведомое устройство пыталось выполнить затребованное действие.
@@ -386,6 +386,8 @@ namespace robo{
 					
 
 				public:
+					const packet& outcom_packet(void) { return outcom_;  };
+					const packet& incom_packet(void) { return incom_; };
 					virtual void poll(void){
 						::robo::net::master_t<D, packet>::poll();
 						T::poll();

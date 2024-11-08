@@ -96,6 +96,9 @@ namespace robo {
 	template<typename T>
 	constexpr T rad2deg = T(180.0) / pi<T>;
 
+	template<typename T>
+	constexpr T g = T(9.8066);
+
 	double constexpr csqrt_helper(double x, double curr, double prev) {
 		return curr == prev
 			? curr

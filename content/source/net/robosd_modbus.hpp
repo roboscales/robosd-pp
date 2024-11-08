@@ -58,11 +58,15 @@ namespace robo{
 						}
 					private:
 						ref ref_;
+						bool active_;
+						bool continues_;
 					protected:
 						virtual void on_request(void) = 0;
 						virtual void on_confirm(void) = 0;
 						virtual void on_refuse(const errors & _err) = 0;
 					public:
+						bool active(void) { return active_; }
+						void activate(void) { active_ = true; };
 						statistic_s<errors> statistic = {};
 						void request(void){
 							on_request();
@@ -72,6 +76,7 @@ namespace robo{
 						void confirm(void){
 							on_confirm();
 							statistic.confirm ++;
+							if (!continues_) { active_ = false; }
 						}
 						void refuse(const errors& _err){
 							on_refuse(_err);
@@ -79,7 +84,7 @@ namespace robo{
 							statistic.refuse.detail[(int)_err] ++;
 						}
 						virtual bool exchange_need(void){
-							return device.exchange_need();
+							return device.exchange_need() && active_;
 						}
 
 						regs(
@@ -87,12 +92,15 @@ namespace robo{
 							, device_c & _device
 							, uint16_t _regaddr
 							, uint16_t _count
+							, bool _continues
 						)
 						: ref_(*this)
 						, dispetcher(_dispetcher)
 						, device(_device)
 						, regaddr(_regaddr)
 						, count(_count)
+						, continues_(_continues)
+						, active_(_continues)
 						{
 							memo =  new uint16_t[_count];
 							ref_.attach_to(_dispetcher.regs_);
@@ -109,11 +117,13 @@ namespace robo{
 							, uint16_t _regaddr
 							, uint16_t _count
 							, const uint16_t * _src
+							, bool _continues = true
 						): regs(
 							_dispetcher
 							, _device
 							,_regaddr
 							,_count
+							, _continues
 						), src_(_src){
 						}
 					protected:
@@ -139,11 +149,12 @@ namespace robo{
 							, uint16_t _regaddr
 							, uint16_t _count
 							, uint16_t * _dst
+							, bool _continues = true
 						): regs(
 							_dispetcher
 							,_device
 							,_regaddr
-							,_count), dst_(_dst){
+							,_count, _continues), dst_(_dst){
 						}
 						virtual void on_request(void){
 							/*
@@ -193,7 +204,7 @@ namespace robo{
 							}
 
 							if (current_) {
-								if (current_->owner().exchange_need()) {
+								if (current_->owner().exchange_need() ) {
 									robo::system::critical g__;
 									active_ = current_;
 									active_->owner().request();

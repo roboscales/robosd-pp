@@ -23,12 +23,12 @@ namespace burst{
 			} current;
 			struct {
 				struct {
-					typename motion_t<number>::config_s motion;
-					typename positioner_t<number>::config_s positioner;
+					typename burst::motion_t<number>::config_s motion;
+					typename burst::positioner_t<number>::config_s positioner;
 				} voltage_cl;
 				struct {
-					typename motion_t<number>::config_s motion;
-					typename positioner_t<number>::config_s positioner;
+					typename burst::motion_t<number>::config_s motion;
+					typename burst::positioner_t<number>::config_s positioner;
 				} current;
 			} modes;
 			#if BURST_PROTECTION_ENABLED == 1

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_weak.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_string.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_log.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_string.hpp" />
+  </ItemGroup>
+</Project>
