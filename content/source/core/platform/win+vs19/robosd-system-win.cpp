@@ -6,6 +6,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <thread>
+#include <windows.h>
 #if ROBO_UNICODE_ENABLED
 #ifndef UNICODE
 #define UNICODE
@@ -17,7 +18,6 @@
 #endif
 
 #if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
-#include <windows.h>
 namespace robo {
 	typedef enum {
 		Black = 0,

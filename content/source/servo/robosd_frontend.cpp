@@ -741,7 +741,7 @@ namespace robo {
 	}
 
 	frontend::varindex::node& frontend::varindex::record::root() {
-		static node root__("", nullptr);
+		static node root__(RT(""), nullptr);
 		return root__;
 	}
 	frontend::varindex::node*& frontend::varindex::record::current_() {

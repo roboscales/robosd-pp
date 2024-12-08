@@ -59,6 +59,7 @@ namespace burst {
 		static signal_t sin(signal_t _angle);
 		static signal_t cos(signal_t _angle);
 		static  signal_t sqrt(ulong_signal_t _value);
+		static signal_t atan2(signal_t _y,signal_t _x);
 	};
 
 	struct real15 {
@@ -529,7 +530,9 @@ namespace burst {
 		static signal_t sin(signal_t _angle) {
 			return digit::sin(_angle);
 		}
-
+		static signal_t atan2(signal_t _y,signal_t _x) {
+			return digit::atan2(_y,_x);
+		}
 		static signal_t cos(signal_t _angle) {
 			return digit::cos(_angle);
 		}

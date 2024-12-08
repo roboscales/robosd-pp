@@ -482,7 +482,7 @@ namespace burst {
 		}
 	}
 	*/
-	void board::raise_panic(uint32_t _flag) {
+	void board::raise_panic_(uint32_t _flag) {
 		uint32_t mask = (1 << _flag);
 		if ((present_.panics & mask) == 0) {
 			present_.last_panic_us = time_us();
@@ -493,7 +493,7 @@ namespace burst {
 		}
 	}
 
-	void board::reset_panic(uint32_t _flag) {
+	void board::reset_panic_(uint32_t _flag) {
 		uint32_t mask = (1 << _flag);
 		if ((present_.panics & mask) != 0) {
 			present_.last_panic_us = time_us();
@@ -510,7 +510,7 @@ namespace burst {
 		return present_.panics;
 	}
 
-	void board::reset_panics(void) {
+	void board::reset_panics_(void) {
 		present_.panics = 0;
 		for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
 			p->owner().present_.panic = 0;
@@ -545,20 +545,20 @@ namespace burst {
 		int burst_board_temper_hi = temper_get_hi_pp();
 		int burst_board_temper_lo = temper_get_lo_pp();
 		if (burst_board_temper_hi >= config_->panics.temp_pp.overhi) {
-			raise_panic(front::board::panics::bits::overtemp);
+			raise_panic_(front::board::panics::bits::overtemp);
 		}
 		else if (burst_board_temper_hi < config_->panics.temp_pp.hi) {
 			if (present_.panics) {
-				reset_panic(front::board::panics::bits::overtemp);
+				reset_panic_(front::board::panics::bits::overtemp);
 			}
 		}
 
 		if (burst_board_temper_lo <= config_->panics.temp_pp.ultralo) {
-			raise_panic(front::board::panics::bits::lotemp);
+			raise_panic_(front::board::panics::bits::lotemp);
 		}
 		else if (burst_board_temper_lo > config_->panics.temp_pp.lo) {
 			if (present_.panics) {
-				reset_panic(front::board::panics::bits::lotemp);
+				reset_panic_(front::board::panics::bits::lotemp);
 			}
 		}
 		#endif
@@ -566,7 +566,7 @@ namespace burst {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){
 					uint32_t mask = present_.panics;
-					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
+					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config );
 					present_.panics &= ~(mask);
 					if (present_.panics == 0) {
 						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {

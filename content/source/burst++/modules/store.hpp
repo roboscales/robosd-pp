@@ -22,6 +22,91 @@ namespace burst {
 				};*/
 
 	}
+	
+	template < class D> class store_flash_drive_t : D {
+			size_t page_size_ = 0;
+			size_t page_count_ = 0;
+			size_t size_;
+			int read_page_ix=-1;
+			int write_page_ix=-1;
+		public:
+			void eraise(void){
+				D::eraise();
+				read_page_ix = -1;
+				write_page_ix = 0;
+			}
+			bool begin(void){
+				
+				for(int i=0;i<page_count_;++i){
+					bool isempty = true;
+					auto * ptr = &D::memo[i*page_size_];
+					for(int j=0;j<page_size_;++j,++ptr){
+						if( *ptr != D::empty){
+							isempty = false;
+							break;
+						}
+					}
+					if(isempty){
+						if(i==0){
+							read_page_ix = -1;
+							write_page_ix = 0;
+						} else{
+							read_page_ix = i-1;
+							if(read_page_ix < page_count_-1){
+								write_page_ix = read_page_ix+1;
+							} else{
+								write_page_ix = -1;
+							}
+						}
+						return true;
+					}
+				}
+				read_page_ix = page_count_-1;
+				write_page_ix = -1;
+				return true;
+			}
+			
+			bool clear(void){
+				return true;
+			}
+			bool save(const uint8_t * _memo){
+				if(write_page_ix<0){
+					eraise();
+				}
+				typename D::memo_t crc = D::crc(_memo);				
+				if ( D::write(write_page_ix*page_size_, page_size_,_memo, crc)){
+						read_page_ix = write_page_ix;
+						if(read_page_ix<page_count_-1){
+							write_page_ix= write_page_ix+1;
+						} else {
+							write_page_ix = -1;
+						}
+						return true;
+				}
+				return false;
+			}
+			
+			burst::store::result load(uint8_t * _memo){
+				if( read_page_ix>=0 ){
+					typename D::memo_t crc_exists = D::memo[ (read_page_ix+1)*page_size_-1];
+					typename D::memo_t crc = D::crc((uint8_t *)&D::memo[read_page_ix*page_size_]);
+					if(crc==crc_exists){
+						std::copy_n( (uint8_t *)&D::memo[read_page_ix*page_size_], size_,_memo);
+						return burst::store::result::full;
+					} else{
+						return burst::store::result::panic;
+					}
+				} else{
+					return burst::store::result::empty;
+				}
+			}
+			store_flash_drive_t(size_t _size): D(_size), size_(_size){
+				page_size_ =  (size_/sizeof(typename D::memo_t))+2;				
+				page_count_ = D::size/page_size_;
+			}
+
+	};
+	
 	template < class D , typename S> class store_t:  D {
 	private:
 		store::action_s& action_;
@@ -52,9 +137,11 @@ namespace burst {
 				return false;
 			}
 		};
+		
 		bool begin(void){
 			return D::begin();
 		}
+		
 		bool save(void) {
 			present_.status =  store::statuses::busy;					
 			if( D::save( (uint8_t *) &content_) ){
@@ -92,18 +179,19 @@ namespace burst {
 				break;
 			case store::commands::load:
 				load();
-				action_.command = store::commands::none;
 				break;
 			case store::commands::save:
 				save();
-				action_.command = store::commands::none;
 				break;
 			case store::commands::reset:
 				reset();
-				action_.command = store::commands::none;
+				break;
+			default:
 				break;
 			}
+			action_.command = store::commands::none;
 		}
+
 	};
 }
 #endif

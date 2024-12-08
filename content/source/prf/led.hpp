@@ -41,12 +41,15 @@ namespace robo {
 			}
 		};
 
-		template <typename D> class ledcom_t : public led_base_t<D,unsigned int>{
+		template <typename D> class ledcom_t
+ : public led_base_t<D,unsigned int>{
 			using B = led_base_t<D,unsigned int>;
+			unsigned int verb = 0;
 			static ledcom_t & instance_(){
 				static ledcom_t instance__;
 				return instance__;
 			}
+			ledcom_t(void):B(verb){}
 		public:
 			static void on(unsigned int _verb = 0) { instance_().B::on(_verb); } 
 			static void off(unsigned int _verb = 0) { instance_().B::off(_verb); } 

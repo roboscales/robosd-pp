@@ -471,6 +471,10 @@ namespace burst {
 		static void backend_loop(void) { instance_.backend_loop_(); }
 		static void frontend_loop(void) { instance_.frontend_loop_(); }
 		static int slot_index(void) { return instance_.slot_index_; }
+		static void raise_panic(uint32_t _flag) { instance_.raise_panic_(_flag); };
+		static void reset_panic(uint32_t _flag){ instance_.reset_panic_(_flag); };
+		static void reset_panics(void){ instance_.reset_panics(); };
+
 		friend class robo::system::env;
 		//static void reset(void) { instance_.reset_(); }
 			private:
@@ -485,11 +489,11 @@ namespace burst {
 		} &present_;
 
 		//void perform_panic(void);
-		void raise_panic(uint32_t _flag);
-		void reset_panic(uint32_t _flag);
 		uint32_t panics(void);
-		void reset_panics(void);
 	private:
+		void raise_panic_(uint32_t _flag);
+		void reset_panic_(uint32_t _flag);
+		void reset_panics_(void);
 		#if BURST_PROTECTION_ENABLED == 1
 		void realtime_protection_(void);
 		void frontend_protection_(void);

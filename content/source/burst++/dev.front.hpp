@@ -21,6 +21,7 @@ namespace burst {
 						, locurrent = 3
 						, overtemp = 4
 						, lotemp = 5
+						, config = 6
 					};
 				};
 				struct masks {
@@ -31,6 +32,7 @@ namespace burst {
 						, locurrent = 1 << bits::locurrent
 						, overtemp = 1 << bits::overtemp
 						, lotemp = 1 << bits::lotemp
+						, config = 1 << bits::config
 					};
 				};
 			}
