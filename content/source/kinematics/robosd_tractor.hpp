@@ -356,6 +356,19 @@ namespace robo {
 				return *this;
 			}
 
+			template<typename S > void operator << (const S& _src) {
+				x = _src.x;
+				y = _src.y;
+				z = _src.z;
+			}
+
+			template<typename S > void operator >> (S& _dst) {
+				_dst.x = x;
+				_dst.y = y;
+				_dst.z = z;
+			}
+
+
 		};
 		template<class T>	using vector3_t = numbers_t <T, vector3_s<T> >;
 

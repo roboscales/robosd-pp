@@ -333,7 +333,7 @@ namespace robo {
 		};
 		
 		namespace unidir {
-			template <typename T, typename I> class ROBO_EXPORT base_t {
+			template <typename T, typename I = T> class ROBO_EXPORT base_t {
 			private:
 				I* first_ = nullptr;
 				I* last_ = nullptr;
@@ -362,7 +362,7 @@ namespace robo {
 						count_--;
 					}
 				}
-			protected:
+			public:
 				void push(I& _item) {
 					ROBO_APP_ASSERT(_item.next_ == nullptr);
 					if (last_ == nullptr) {
@@ -425,6 +425,8 @@ namespace robo {
 								}
 							}*/
 			};
+
+
 			template <typename T, typename...Arg> class ROBO_EXPORT store_t;
 			template <typename T, typename...Arg> class ROBO_EXPORT store_item_t  {
 				T t_;
