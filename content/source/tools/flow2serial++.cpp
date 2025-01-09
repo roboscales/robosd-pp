@@ -41,6 +41,7 @@ int main(int _argc, char* _argv[]) {
 
 			while (!robo::app::machine::terminated()) {
 				robo::app::machine::backend_loop();
+
 			}
 			frontend.join();
 		}

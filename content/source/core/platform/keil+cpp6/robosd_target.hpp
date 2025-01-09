@@ -20,3 +20,10 @@
 #define ROBO_UNUSED(x) ((void)(x))
 #define ROBO_WEAK __attribute__((weak))
 
+#ifndef ROBO_APP_DMA_BUFFER
+#define ROBO_APP_DMA_BUFFER
+#endif
+
+#ifndef ROBO_APP_ALIGN_32BYTES
+#define ROBO_APP_ALIGN_32BYTES(x)
+#endif
