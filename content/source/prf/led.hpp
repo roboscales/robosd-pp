@@ -40,9 +40,11 @@ namespace robo {
 				}
 			}
 		};
-
+		
+		//Шаблон для светлячка, который можно использовать из любого модуля проекта
+		//инициализируется автоматически
 		template <typename D> class ledcom_t
- : public led_base_t<D,unsigned int>{
+			: public led_base_t<D,unsigned int>{
 			using B = led_base_t<D,unsigned int>;
 			unsigned int verb = 0;
 			static ledcom_t & instance_(){
@@ -58,6 +60,8 @@ namespace robo {
 		};
 
 
+		//Шаблон для светлячка, который имеет статическую реализацию. Использовать можно
+		//только после процедуры инициализации статических объектов
 		template <typename D> class led_t : public led_base_t<D,unsigned int>{
 			static led_t instance_;
 			using B = led_base_t<D,unsigned int>;

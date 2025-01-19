@@ -338,7 +338,7 @@ namespace burst {
 						dettach(x);
 					}
 				}
-				void startup_sucess(void) {
+				void  startup_sucess(void)  {
 					dettach(burst::board::slot::kind::startup);
 				}
 			private:
