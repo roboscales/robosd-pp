@@ -4,7 +4,7 @@ namespace robo {
 	template <typename math> class matrix_t {
         void clear_(void) {
             if (memo != nullptr) {
-                for (int i = 0; i < cols; ++i) {
+                for (int i = 0; i < rows; ++i) {
                     delete[] memo[i];
                 }
                 delete[] memo;
@@ -49,13 +49,13 @@ namespace robo {
         }
         void eye(void) {
             for (int i = 0; i < cols; ++i) {
-                math::fill(memo[i], rows, 0.);
+                math::fill(memo[i], cols, 0.);
                 memo[i][i] = 1.;
             }
         }
         void zeros(void) {
             for (int i = 0; i < cols; ++i) {
-                math::fill(IM.[i], rows, 0.);
+                math::fill(memo[i], cols, 0.);
             }
         }
         void invto(matrix_t & IM) {
