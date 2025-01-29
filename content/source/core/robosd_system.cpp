@@ -72,7 +72,7 @@ namespace robo {
 		fault_function_ = _function;
 		fault_line_ = _line;
 		#if ROBO_APP_DEBUG_LOG_ENABLED
-		::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" system panic \r\n\t%s\r\n\t%s - %d"), fault_function_, fault_file_, fault_line_);
+		::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" system panic \r\n\t%S\r\n\t%S - %d"), fault_function_, fault_file_, fault_line_);
 		#endif
 		#if ROBO_APP_ENV_ENABLED == 1
 		system::env::abort();

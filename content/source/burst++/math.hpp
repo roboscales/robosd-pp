@@ -108,7 +108,23 @@ namespace burst {
 		}
 		return _x;
 	}
-	
+	template< typename T> static T s_rshift(T _x, uint8_t _dg) {
+			if (_x  == T(0) || (_dg==0)) {
+				return _x;
+			}
+			else {
+				if (_x > 0) {
+					_x += (1 << (_dg-1) );
+					_x >>= _dg;
+				}
+				else {
+					_x -= (1 << (_dg-1));
+					// две инверсии. выяснить надоли так делать!
+					_x = -( (-_x) >> _dg );
+				}
+			}
+			return _x;
+		}
 	namespace fast {
 		template <typename T> T rsh(T _x, int8_t _sh) {
 			#if ROBO_APP_BURST_MATH_SHIFT_ENABLE
@@ -509,23 +525,7 @@ namespace burst {
 			tmp.value = (long_signal_t)(_x0) + (long_signal_t)(_x2)*_y2;
 			return s_extract(tmp);
 		}
-		template< typename T> static T s_rshift(T _x, uint8_t _dg) {
-			if (_x  == T(0) || (_dg==0)) {
-				return _x;
-			}
-			else {
-				if (_x > 0) {
-					_x += (1 << (_dg-1) );
-					_x >>= _dg;
-				}
-				else {
-					_x -= (1 << (_dg-1));
-					// две инверсии. выяснить надоли так делать!
-					_x = -( (-_x) >> _dg );
-				}
-			}
-			return _x;
-		}
+		
 
 		static signal_t sin(signal_t _angle) {
 			return digit::sin(_angle);
@@ -538,7 +538,7 @@ namespace burst {
 		}
 		static long_signal_t  l_add(long_signal_t _x0, long_signal_t _x2, signal_t _y2) {
 			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
-			return s_rshift<long_signal_t>(tmp);
+			return  s_rshift<long_signal_t>(tmp);
 		}
 		struct qa{
 			parameter_t gain;
@@ -1112,7 +1112,7 @@ namespace burst {
 		return round(_fraq * digit::max);
 	}
 	*/
-
+	
 
 	template <typename T> void range_set(range_s<T>& _dst, const T & __src, const range_s<T> &_lim) {
 
