@@ -114,8 +114,8 @@ namespace robo {
 				return shared_->out.state == PACKET_EMPTY;
 			}
 			void port::reset(void) {
-				close();
-				open();
+				//close();
+				//open();
 			}
 			void port::poll(void) {
 				switch (shared_->out.state) {

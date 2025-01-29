@@ -16,7 +16,6 @@
     <ClInclude Include="..\..\..\robosd-ref\net\platform\can\emulator\emu_can.hpp">
       <Filter>net</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\app\im\source\platform\im\robosd_app_tuning.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="net">

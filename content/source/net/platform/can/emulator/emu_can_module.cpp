@@ -64,7 +64,7 @@ namespace MODULE_NAME{
 		}
 		robo::time_us_t wd_us(const robo::net::can_flow_bus::packet* _packet) {
 			//todo!!
-			return _packet->len * 1000+200;
+			return 8 * 1000+200;
 		}
 		bool do_load( robo::cstr _common, robo::cstr _current) {
 			ROBO_LBREAKN(robo::ini::load(_common, _current, RT("CHANNEL"), can_.channel));
