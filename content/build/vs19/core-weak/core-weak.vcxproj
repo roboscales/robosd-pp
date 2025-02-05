@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_autonum.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_log.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp" />

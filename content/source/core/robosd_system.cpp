@@ -512,8 +512,8 @@ namespace robo {
 			env::print(tmp);
 		}
 		#endif
-		::robo::delegat::autonum::receicledbin::frontend_clean();
 		#endif
+		::robo::delegat::autonum::receicledbin::frontend_clean();
 	}
 	
 	void system::backend_loop(void) {

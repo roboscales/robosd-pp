@@ -27,46 +27,11 @@ namespace robo {
 							robo_infolog("\t\t%s autonum delegat -- (%d)", lbl, --counter_);
 						}
 					};
-					static inline core& frontend_core_(void) {
-						static core frontend_core__(RT("frontend"));
-						return frontend_core__;
-					}
-					static inline core& backend_core_(void) {
-						static core backend_core__(RT("backend"));
-						return backend_core__;
-					}
+					static core& frontend_core_(void);
+					static core& backend_core_(void);
 					rbref rbref_;
-					void release_(void) {
-						if (isfrontend_) {
-							#if ROBO_SYSTEM_ENABLED
-							system::guard g__;
-							#endif
-							rbref_.attach_to(frontend_core_().rbin);
-						}
-						else {
-							#if ROBO_SYSTEM_ENABLED
-							system::guard g__;
-							#endif
-							rbref_.attach_to(backend_core_().rbin);
-						}
-					}
-					static void clean_(rblist& _list) {
-						ref* tmp;
-						while (true) {
-							{
-								#if ROBO_SYSTEM_ENABLED
-								system::guard g__;
-								#endif
-								tmp = _list.pop();
-							}
-							if (tmp) {
-								delete tmp;
-							}
-							else {
-								break;
-							}
-						}
-					}
+					void release_(void);
+					static void clean_(rblist& _list);
 				protected:
 					virtual void use(void) {
 						used_++;
@@ -110,8 +75,8 @@ namespace robo {
 				//#if ROBO_SYSTEM_ENABLED
 				//friend class ::robo::system;
 				//#endif
-				static void frontend_clean(void) { ref::clean_(ref::frontend_core_().rbin); }
-				static void backend_clean(void) { ref::clean_(ref::backend_core_().rbin); }
+				static void frontend_clean(void);
+				static void backend_clean(void);
 			};
 
 			template <typename B, typename R, typename ... Args> class ROBO_EXPORT fabric {

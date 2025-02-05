@@ -28,6 +28,9 @@
     <ClCompile Include="..\..\..\robosd-ref\core\platform\win+vs19\robosd-system-win.cpp">
       <Filter>robosd++/core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_autonum.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_common.hpp">

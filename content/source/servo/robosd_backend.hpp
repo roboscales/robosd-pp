@@ -496,7 +496,7 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D> class devagent_b : public D, public ::robo::frontend::shared {
+		template<class D> class protdevagent_b : public D, public ::robo::frontend::shared {
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
@@ -535,7 +535,7 @@ namespace robo {
 				front_.goal = goal_;
 			}
 		public:
-			devagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config)
+			protdevagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config)
 				: D(_name, _boardagent, goal_, feedback_)
 				, front_(_action, _goal, _feedback,_config)
 				, ::robo::frontend::shared(
@@ -545,23 +545,23 @@ namespace robo {
 					, (void*)((uint8_t*)((&_feedback)) + sizeof(feedback_s) / sizeof(uint8_t))
 				) {}
 		};
-		template<class D > class devagent_t: public devagent_b<D>{
+		template<class D > class protdevagent_t : public protdevagent_b<D>{
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
 			typedef typename D::config_s config_s;
 			typedef typename D::content_s content_s;
-			devagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
-				devagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config) {}
+			protdevagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
+				protdevagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config) {}
 			/*			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content, Args ... _args) :
 				devagent_b<D, Args...>(_name, _boardagent, _content->action, _content->goal, _content->feedback, _content->config, _args ...)	{}
 			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback, config_s & _config, Args ... _args) :
 				devagent_b<D, Args...>(_name, _boardagent, _action, _goal, _feedback, _config, _args ...){}*/
 		};
 
-		class servo : public  robo::app::node {
+		class servo_s : public  robo::app::node {
 		public:
-			servo(robo::cstr _name, robo::app::module& _module)
+			servo_s(robo::cstr _name, robo::app::module& _module)
 				: robo::app::node(_name, &_module) {}
 		};
 
@@ -569,15 +569,18 @@ namespace robo {
 			friend class devagent;
 			time_us_t request_pause_us_ = 0;
 			time_us_t last_request_us_ = 0;
-			servo& servo_;
 		protected:
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			servo& owner(void) { return servo_;  };
-			boardagent(cstr _name, servo& _servo) 
+			servo_s& servo;
+			boardagent(cstr _name, servo_s& _servo)
 				: app::node(_name, &_servo) 
-				, servo_(_servo)
+				, servo(_servo)
+			{};
+			boardagent(cstr _name, servo_s& _servo, app::node & _owner)
+				: app::node(_name, &_owner)
+				, servo(_servo)
 			{};
 		};
 
