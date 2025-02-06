@@ -659,12 +659,12 @@ namespace mexo {
 
 			}
 		};
-		class servo : public robo::backend::servo {
+		class servo : public robo::backend::servo_s {
 			robo::backend::router defrout;
 		public:
 			virtual ::robo::quest* config_finish_quest() { return nullptr; };
 			servo(robo::cstr _name, robo::app::module& _module)
-				: robo::backend::servo(_name, _module), defrout(RT("defrout"), _module) {}
+				: robo::backend::servo_s(_name, _module), defrout(RT("defrout"), _module) {}
 		};
 	}
 }

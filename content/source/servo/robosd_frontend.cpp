@@ -566,6 +566,10 @@ namespace robo {
 			r->sema_ref_.attach_to(_sema->owned_);
 		}
 	}
+	quest::backend_core& quest::backend_core::instance_(void) {
+		static backend_core  instance__;
+		return instance__;
+	}
 
 	void quest::post(void) {
 		if (system::env::is_frontend()) {

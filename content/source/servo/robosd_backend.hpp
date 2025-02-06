@@ -314,7 +314,37 @@ namespace robo {
 			action_s& goal_;
 			feedback_s& feedback_;
 		protected:
-			virtual  ::robo::quest* do_create_discovery_quest(void) { return nullptr; }
+			::robo::time_us_t  discovery_period_us = 1000000;
+			virtual  ::robo::quest* do_create_discovery_quest(void) {
+				using q = ::robo::quest;
+				return ::robo::quest::create(
+					nullptr
+					, nullptr
+					, [this](q::result r)->q::reaction {
+						if (r == q::result::success) {
+
+							return q::reaction::normal;
+						}
+						else {
+							feedback<robo::backend::devagent>().state.local = state_s::locals::disabled;
+							stop();
+							return q::reaction::normal;
+						}
+					}
+					, [this](q* _q) {
+						::robo::backend::timer::core::start(
+							::robo::signal::autonum::create([_q, this] {
+								if (this->trafic.incom.success.bytes.total>0) {
+									_q->confirm();
+								}
+								else {
+									_q->refuse();
+								}
+								}, true
+							), discovery_period_us);
+					}
+					);
+			}
 			virtual bool agent_apply_action(commands _command) {
 				if (_command == commands::sw2dirrect) {
 					return true;
@@ -404,48 +434,62 @@ namespace robo {
 			virtual void on_discovery_refuse(void) {
 			};
 
+
 			::robo::quest* create_discovery_quest(::robo::quest* _owner) {
-				return ::robo::quest::create( 
+				robo_infolog("====================================================================================\n\t\tquest: '%s discovery' is started) \n====================================================================================", this->display_alias());
+				return ::robo::quest::create(
 					_owner,
 					do_create_discovery_quest(),
 					::robo::quest::answer_fabric::create([this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
-							robo_infolog("====================================================================================\n\t\tquest: '%s discovery' success finished (A response was received) \n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::configure;
-							on_discovery_complete();
+							{
+								system::guard g__;
+								on_discovery_complete();
+							}
+							robo_infolog("====================================================================================\n\t\tquest: '%s discovery' success finished (A response was received) \n====================================================================================", this->display_alias());
 							return robo::quest::reaction::normal;
 						}
 						else {
-							robo_errlog("====================================================================================\n\t\tquest: '%s discovery' terminated (object isn't found) \n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::disabled;
-							on_discovery_refuse();
+							{
+								system::guard g__;
+								on_discovery_refuse();
+							}
+							robo_errlog("====================================================================================\n\t\tquest: '%s discovery' terminated (object isn't found) \n====================================================================================", this->display_alias());
 							return robo::quest::reaction::terminate;
 						}
-					}														 
+						}
 				));
 
 			}
 
-			::robo::quest* quest_configure(::robo::quest* _owner,::robo::quest* _sema=nullptr) {
+			::robo::quest* create_configure_quest(::robo::quest* _owner, ::robo::quest* _sema = nullptr) {
 				return ::robo::quest::create(
 					_owner
 					, _sema
-					, ::robo::quest::answer_fabric::create( [this](robo::quest::result r)->robo::quest::reaction {
+					, ::robo::quest::answer_fabric::create([this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
-							robo_infolog("====================================================================================\n\t\tquest: '%s configure' success finished\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::ready;
-							on_configute_complete();
+							{
+								system::guard g__;
+								on_configute_complete();
+							}
+							robo_infolog("====================================================================================\n\t\tquest: '%s configure' success finished\n====================================================================================", this->display_alias());
 							return robo::quest::reaction::normal;
 						}
 						else {
-							robo_errlog("====================================================================================\n\t\tquest: '%s configure' terminated\n====================================================================================", this->display_alias());
 							feedback_.state.local = state_s::locals::disabled;
-							on_configute_refuse();
+							{
+								system::guard g__;
+								on_configute_refuse();
+							}
+							robo_errlog("====================================================================================\n\t\tquest: '%s configure' terminated\n====================================================================================", this->display_alias());
 							return robo::quest::reaction::terminate;
 						}
 						}
-						)					
-					);
+					)
+				);
 			}
 
 		};

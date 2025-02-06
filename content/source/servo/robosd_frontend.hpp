@@ -632,31 +632,30 @@ namespace robo {
 				delete this;
 			}
 		}
+		
 		class backend_core {
 			friend class quest;
 			list top_;
 			int counter_=0;
-			void inc(void) {
+			/*void inc(void) {
 				robo_infolog("\t\tbackend quest ++ (%d)", ++counter_);
 			}
 			void dec(void) {
 				robo_infolog("\t\tbackend quest -- (%d)", --counter_);
-			}
+			}*/
 			void request(void);
-			static backend_core& instance_(void) {
-				static backend_core  instance__;
-				return instance__;
-			}
+			static backend_core& instance_(void);
 		};
+		
 
 		class counter {
 			friend class quest;
 			int counter_ = 0;
 			void inc(void) {
-				robo_infolog("\t\t++ backend quest ++ (%d)", ++counter_);
+				robo_infolog("\t\t++ quest counter ++ (%d)", ++counter_);
 			}
 			void dec(void) {
-				robo_infolog("\t\t-- backend quest -- (%d)", --counter_);
+				robo_infolog("\t\t-- quest counter -- (%d)", --counter_);
 			}
 			static counter& instance_(void) {
 				static counter  instance__;
