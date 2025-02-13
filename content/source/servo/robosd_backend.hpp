@@ -314,7 +314,8 @@ namespace robo {
 			action_s& goal_;
 			feedback_s& feedback_;
 		protected:
-			virtual  ::robo::quest* do_create_discovery_quest(void) { return nullptr; }
+			::robo::time_us_t  discovery_period_us = 1000000;
+			
 			virtual bool agent_apply_action(commands _command) {
 				if (_command == commands::sw2dirrect) {
 					return true;
@@ -397,55 +398,106 @@ namespace robo {
 			commands actual_command(void) { return goal_.command; };
 			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
-			virtual void on_configute_complete(void) {};
-			virtual void on_configute_refuse(void) {};
+			virtual bool check_configure_complete(void) {
+				return feedback_.state.local == state_s::locals::configure;
+			}
+			virtual void on_configute_complete(void) {
+				feedback_.state.local = state_s::locals::ready;
+			};
+			void exchanhge_disable(void) {
+				feedback_.state.local = state_s::locals::disabled;
+				feedback<robo::backend::devagent>().state.local = state_s::locals::disabled;
+				stop();
+			}
+			virtual void on_configute_refuse(void) {
+				exchanhge_disable();
+			};
 			virtual void on_discovery_complete(void) {
+				feedback_.state.local = state_s::locals::configure;
 			};
 			virtual void on_discovery_refuse(void) {
+				exchanhge_disable();
 			};
 
+			virtual  ::robo::quest* do_create_discovery_quest(void) {
+				using q = ::robo::quest;
+				return ::robo::quest::create(
+					nullptr
+					, nullptr
+					, [this](q::result r)->q::reaction {
+						if (r == q::result::success) {
+
+							return q::reaction::normal;
+						}
+						else {
+							return q::reaction::terminate;
+						}
+					}
+
+					, [this](q* _q) {
+						::robo::backend::timer::core::start(
+							::robo::signal::autonum::create([_q, this] {
+								if (trafic.incom.success.bytes.total > 0) {
+									on_discovery_complete();
+									_q->confirm();
+								}
+								else {
+									on_discovery_refuse();
+									_q->refuse();
+								}
+								}, true
+							), discovery_period_us);
+					}
+					);
+
+			}
+
 			::robo::quest* create_discovery_quest(::robo::quest* _owner) {
-				return ::robo::quest::create( 
+				robo_infolog("====================================================================================\n\t\tquest: '%s discovery' is started) \n====================================================================================", this->display_alias());
+				return ::robo::quest::create(
 					_owner,
 					do_create_discovery_quest(),
-					::robo::quest::answer_fabric::create([this](robo::quest::result r)->robo::quest::reaction {
+					[this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
 							robo_infolog("====================================================================================\n\t\tquest: '%s discovery' success finished (A response was received) \n====================================================================================", this->display_alias());
-							feedback_.state.local = state_s::locals::configure;
-							on_discovery_complete();
 							return robo::quest::reaction::normal;
 						}
 						else {
 							robo_errlog("====================================================================================\n\t\tquest: '%s discovery' terminated (object isn't found) \n====================================================================================", this->display_alias());
-							feedback_.state.local = state_s::locals::disabled;
-							on_discovery_refuse();
-							return robo::quest::reaction::terminate;
+							return robo::quest::reaction::normal;
 						}
-					}														 
-				));
-
+						}
+				);				
 			}
 
-			::robo::quest* quest_configure(::robo::quest* _owner,::robo::quest* _sema=nullptr) {
-				return ::robo::quest::create(
+			::robo::quest* create_configure_quest(::robo::quest* _owner, ::robo::quest* _sema = nullptr) {
+				using q = ::robo::quest;
+				return q::create(
 					_owner
 					, _sema
-					, ::robo::quest::answer_fabric::create( [this](robo::quest::result r)->robo::quest::reaction {
+					, [this](robo::quest::result r)->robo::quest::reaction {
 						if (r == robo::quest::result::success) {
 							robo_infolog("====================================================================================\n\t\tquest: '%s configure' success finished\n====================================================================================", this->display_alias());
-							feedback_.state.local = state_s::locals::ready;
-							on_configute_complete();
 							return robo::quest::reaction::normal;
 						}
 						else {
 							robo_errlog("====================================================================================\n\t\tquest: '%s configure' terminated\n====================================================================================", this->display_alias());
-							feedback_.state.local = state_s::locals::disabled;
-							on_configute_refuse();
 							return robo::quest::reaction::terminate;
 						}
 						}
-						)					
-					);
+					
+					, [this](q* _q) {
+						if (check_configure_complete()) {
+							on_configute_complete();
+							_q->confirm();
+						}
+						else {
+							on_configute_refuse();
+							_q->refuse();
+						}								
+					}
+				);
+
 			}
 
 		};

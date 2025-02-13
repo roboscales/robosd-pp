@@ -46,12 +46,15 @@ namespace robo {
 					}
 					ref(void)
 						: rbref_(*this)
-						#if ROBO_SYSTEM_ENABLED
+						#if ROBO_APP_SYSTEM_ENABLED
 						, isfrontend_(system::env::is_frontend())
 						#else
 						, isfrontend_(true)
 						#endif
 						{
+						#if ROBO_APP_SYSTEM_ENABLED
+						system::guard g__;
+						#endif
 						if (isfrontend_) {
 							frontend_core_().inc();
 						}
@@ -60,6 +63,9 @@ namespace robo {
 						}
 					}
 					virtual ~ref(void) {
+						#if ROBO_APP_SYSTEM_ENABLED
+						system::guard g__;
+						#endif
 						if (isfrontend_) {
 							frontend_core_().dec();
 						}

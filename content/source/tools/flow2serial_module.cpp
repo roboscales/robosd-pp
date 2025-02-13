@@ -27,7 +27,7 @@ namespace MODULE_NAME {
 			virtual bool do_load(void) {
 				ROBO_LBREAKN(mexo::backend::devagent::do_load());
 				if (feedback_.agent.state.local == state_s::locals::discovery) {
-					quest_configure(nullptr);					
+					create_configure_quest(nullptr);
 					::robo::quest::post();
 				}
 				return true;
@@ -40,7 +40,7 @@ namespace MODULE_NAME {
 		class boardagent : public robo::backend::boardagent {
 			devagent dev_;
 		public:
-			boardagent(robo::cstr _name, robo::backend::servo& _servo)
+			boardagent(robo::cstr _name, robo::backend::servo_s& _servo)
 				: robo::backend::boardagent(_name, _servo)
 				, dev_(RT("dev"),*this) {
 			};

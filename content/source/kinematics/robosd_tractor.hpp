@@ -1056,7 +1056,7 @@ namespace robo {
 				}
 				void position_move_to_zero(void) {
 					for (auto* a = actuators.first(); a; a = a->next()) {
-						a->owner().rotate_rd(0)
+						a->owner().rotate_rd(0);
 					}
 				}
 				void position_move_to_zero( T* _arr) {

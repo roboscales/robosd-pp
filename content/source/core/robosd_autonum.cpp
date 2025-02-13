@@ -13,13 +13,13 @@ namespace robo {
 			}
 			void receicledbin::ref::release_(void) {
 				if (isfrontend_) {
-					#if ROBO_SYSTEM_ENABLED
+					#if ROBO_APP_SYSTEM_ENABLED
 					system::guard g__;
 					#endif
 					rbref_.attach_to(frontend_core_().rbin);
 				}
 				else {
-					#if ROBO_SYSTEM_ENABLED
+					#if ROBO_APP_SYSTEM_ENABLED
 					system::guard g__;
 					#endif
 					rbref_.attach_to(backend_core_().rbin);
@@ -29,7 +29,7 @@ namespace robo {
 				ref* tmp;
 				while (true) {
 					{
-						#if ROBO_SYSTEM_ENABLED
+						#if ROBO_APP_SYSTEM_ENABLED
 						system::guard g__;
 						#endif
 						tmp = _list.pop();
