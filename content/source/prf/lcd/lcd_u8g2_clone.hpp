@@ -182,8 +182,8 @@ namespace robo{
 					}
 					
 
-					uint16_t target_x;
-					uint16_t target_y;
+					int16_t target_x;
+					int16_t target_y;
 					
 					
 					struct painter_s	{
@@ -256,7 +256,7 @@ namespace robo{
 							uint8_t lx,ly;
 							
 								/* target position on the screen */
-							uint16_t x, y;
+							int16_t x, y;
 							
 							cnt = len;
 							
