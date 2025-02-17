@@ -18,7 +18,8 @@ namespace robo {
 				, kind_(_kind)
 				, port_(nullptr)
 				, rout_record_(nullptr){
-				ROBO_APP_ASSERT( ref_.attach_to( machine::instance_().performers_ ) )
+					bool ret = ref_.attach_to( machine::instance_().performers_ );
+					ROBO_APP_ASSERT( ret )
 			}
 			
 			bool performer::put_answer(const uint8_t* _data, size_t _size) {

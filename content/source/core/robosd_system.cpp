@@ -63,9 +63,9 @@ namespace robo {
 		}
 		return x;
 	}
-	char const* fault_file_ = nullptr;
-	char const* fault_function_ = nullptr;
-	int fault_line_ = 0;
+	static char const* fault_file_ = nullptr;
+	static char const* fault_function_ = nullptr;
+	static volatile int fault_line_ = 0;
 
 	void crash(char const* _file, char const* _function, int _line) {
 		fault_file_ = _file;

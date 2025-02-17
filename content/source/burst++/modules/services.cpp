@@ -107,6 +107,7 @@ namespace burst{
 	#if SERVICE_NET_FLOW_SERIAL0_ENABLED
 	#ifndef SERVICE_NET_FLOW_SERIAL0_PATH
 	#define SERVICE_NET_FLOW_SERIAL0_PATH RT("s0")
+	//qqq
 	#endif
 	#endif
 		time_us_t  time_us = 0;
@@ -757,7 +758,7 @@ namespace burst{
 		uint8_t relaye_proto_abonent_marker[3] = { 0xaa,0xaa };
 
 		robo::net::proto::switcher::abonent(
-			abonent_marker
+			abonent_marker,
 			2,
 			SERVICE_RELAY_PROTO_ABONENT_LOCK_US
 			, SERVICE_RELAY_PROTO_ABONENT_SILENS_US
