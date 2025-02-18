@@ -226,6 +226,11 @@ namespace robo {
 #define VA_OPT_SUPPORTED_I(...) PP_THIRD_ARG(__VA_OPT__(,),true,false,)
 #define VA_OPT_SUPPORTED VA_OPT_SUPPORTED_I(?)
 
+#ifndef ROBO_APP_DEBUG_ENABLED
+#define ROBO_APP_DEBUG_ENABLED 1
+#endif
+
+#if ROBO_APP_DEBUG_ENABLED
 
 #ifndef ROBO_APP_CRASH
 #define ROBO_APP_CRASH() robo::crash( \
@@ -235,9 +240,20 @@ namespace robo {
 )
 #endif
 
-#ifndef ROBO_APP_DEBUG_ENABLED
-#define ROBO_APP_DEBUG_ENABLED 1
+#else
+
+#ifndef ROBO_APP_CRASH
+#define ROBO_APP_CRASH() robo::crash( \
+	  ""\
+	, ""\
+	,0\
+)
 #endif
+
+
+#endif
+
+
 
 #if ROBO_APP_DEBUG_ENABLED == 1
 #ifndef ROBO_APP_ASSERT 

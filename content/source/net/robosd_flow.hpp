@@ -202,7 +202,8 @@ namespace robo {
 					)
 					, remote_(_remote)
 					, local_(_local) {
-					ROBO_APP_ASSERT(_local.begin(_local_path));
+						bool ret = _local.begin(_local_path);
+					ROBO_APP_ASSERT(ret);
 				}
 				net::iserial& local(void){return local_;}
 			protected:
