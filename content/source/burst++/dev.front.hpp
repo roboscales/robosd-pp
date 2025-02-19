@@ -12,6 +12,9 @@
 namespace burst {
 	namespace front {
 		namespace board {
+			enum class commands {none = 0,reconfig};
+			enum class statuses{ unknown = 0, startuped, reconfigured, ready};
+
 			namespace panics {
 				struct bits {
 					enum {

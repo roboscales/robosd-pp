@@ -704,7 +704,7 @@ namespace burst{
 	
 	#endif
 
-	#if ROBO_APP_MEXO_VAR_ENABLED == 1
+	#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 	#ifndef SERVICE_NET_FLOW_VAR_ENABLED
 	#define SERVICE_NET_FLOW_VAR_ENABLED 0
 	#endif 
@@ -728,7 +728,7 @@ namespace burst{
 		virtual void execute(void) {
 			static uint8_t answer[8];
 			if (in_msg) {
-				put_answer(answer, ::mexo::var::machine::proto(in_msg->data(), answer));
+				put_answer(answer, ::burst::var::proto(in_msg->data(), answer));
 			}
 		}
 	};

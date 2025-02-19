@@ -168,7 +168,7 @@ namespace burst {
 				}
 			}
 
-			quest* var_query_quest(quest* _owner, ::robo::cstr _var, quest* _sema = nullptr) {
+			quest* var_query_quest(::robo::cstr _var, quest* _owner, quest* _sema = nullptr) {
 				::robo::string* sv = new ::robo::string(_var);
 				return ::robo::quest::create(
 					_owner
@@ -198,7 +198,7 @@ namespace burst {
 					);
 			}
 			
-			quest* var_post_quest(quest* _owner, ::robo::cstr _var, ::robo::cstr _value ,quest* _sema = nullptr) {
+			quest* var_post_quest(::robo::cstr _var, ::robo::cstr _value, quest* _owner,quest* _sema = nullptr) {
 
 				::robo::string* sv = new ::robo::string(_var);
 				::robo::string* vv = new ::robo::string(_value);
@@ -452,7 +452,7 @@ namespace burst {
 								return false;
 							}
 							else {
-								var_post_quest(_owner, bg, value.c_str(), _sema);
+								var_post_quest(bg, value.c_str(), _owner, _sema);
 							}
 						}
 						bg = ptr + 1;
@@ -464,7 +464,7 @@ namespace burst {
 				return true;
 			}
 
-			quest* post_startup_vars(quest* _owner, robo::cstr _sect, quest* _sema = nullptr) {
+			quest* post_startup_vars(robo::cstr _sect, quest* _owner, quest* _sema = nullptr) {
 
 				//todo
 				//список строк заканивается двумя нулями

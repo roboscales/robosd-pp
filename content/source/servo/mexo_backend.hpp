@@ -534,7 +534,7 @@ namespace mexo {
 					return nullptr;
 				}
 			};
-			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _sect) {
+			bool post_startup_vars_(robo::cstr _sect, quest * _owner, quest * _sema) {
 				const size_t N = ROBO_STRING_BUFFER_SIZE;
 				robo::char_t keys[N];
 
@@ -569,7 +569,7 @@ namespace mexo {
 				return true;
 			}
 
-			quest* post_startup_vars(quest* _owner, robo::cstr _sect, quest* _sema = nullptr) {
+			quest* post_startup_vars(robo::cstr _sect, quest* _owner, quest* _sema = nullptr) {
 
 				//todo
 				//список строк заканивается двумя нулями
@@ -601,7 +601,7 @@ namespace mexo {
 						}
 					}
 				);
-				if (!post_startup_vars_(end_load, begin_load, _sect)) {
+				if (!post_startup_vars_(_sect,end_load, begin_load)) {
 					begin_load->terminate();
 					if(_sema)
 						_sema->terminate();
