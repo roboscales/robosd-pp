@@ -221,6 +221,7 @@ namespace burst {
 	public:
 		struct config_s {
 			int vercion;
+			bool reconfig_on_startup;
 			struct {
 				#if BURST_PROTECTION_ENABLED == 1
 				time_us_t reset_timeout_us;
@@ -242,7 +243,11 @@ namespace burst {
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		static void regvar_conf(void);
 		#endif
-
+		
+		#ifndef BURST_RECONFIG_ON_STARTUP
+		#define BURST_RECONFIG_ON_STARTUP false
+		#endif
+		
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
 		#define BURST_PANICS_BOARD_TEMPER_CO()\
 			,{\
@@ -277,6 +282,7 @@ namespace burst {
 		#endif
 		#define BURST_CONFIG() {\
 				BURST_VERCION\
+				,BURST_RECONFIG_ON_STARTUP\
 				,{\
 					BURST_PANICS_BOARD_RESET_TIMEOUT_CO()\
 					BURST_PANICS_BOARD_TEMPER_CO()\
@@ -480,11 +486,11 @@ namespace burst {
 			private:
 				static void abort(void);
 			public:
-		
 		struct present_s {
 			uint32_t panics;
 			time_us_t last_panic_us;
-			bool startuped;
+			front::board::commands command;
+			front::board::statuses status;
 			unsigned int tp_verb;
 		} &present_;
 

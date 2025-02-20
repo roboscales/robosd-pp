@@ -148,37 +148,33 @@ namespace burst {
 		, config_(nullptr)
 	{
 	}
-<<<<<<< HEAD
-	
-	#if BURST_DEBUG_TP_ENABLED
-	tp_t tp(burst_present.tp_verb);
-	#endif
-	
-=======
 	#if BURST_DEBUG_TP_ENABLED == 1
 	tp_t tp(burst_present.tp_verb);
 	#endif
->>>>>>> 457f2ad381812a2cb2e195f7cbb38f4eeae37be9
+	
 	board::~board(void) {
 	}
 	void board::begin_(time_us_t _period_us) {
 		#if ROBO_APP_SYSTEM_ENABLED
-		::robo::system::begin();
+		::robo::system::begin();		
 		#endif
 		{
 			guard__;
+			burst_present.status= front::board::statuses::startuped;
 			slots_ref_.begin.execute();
+			ROBO_ASSERT(config_);
 			//ROBO_APP_ASSERT(::mexo::node::begin());
 			#if ROBO_APP_NET_FLOW_ENABLED == 1
 			::robo::net::flow::machine::begin();
 			#endif
+			
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			regvar_conf();
 			#endif
 			#if ROBO_APP_SYSTEM_ENABLED
 			::robo::system::start(_period_us);
 			#endif
-			ROBO_ASSERT(config_);
+			raise_panic_(front::board::panics::bits::config);
 			slots_ref_.start.execute();
 		}
 	}
@@ -220,12 +216,37 @@ namespace burst {
 		debug_tp_off(front::tp_verb::loop);
 	}
 	void board::frontend_loop_(void) {
-		if(!present_.startuped){
-			slots_ref_.startup.execute();
-			present_.startuped = slots_ref_.startup.isempty();
-		}
-
 		debug_tp_on(front::tp_verb::frontend);
+		switch ( present_.status ){
+			case front::board::statuses::startuped:
+			{
+				slots_ref_.startup.execute();
+				if(slots_ref_.startup.isempty()){
+					if(config_->reconfig_on_startup){
+						present_.status = front::board::statuses::reconfigured ;
+						present_.command = front::board::commands::reconfig ;
+					} else{
+						reset_panic_(front::board::panics::bits::config);
+						present_.status = front::board::statuses::ready ;
+					}
+				} 
+				break;
+			}
+			case front::board::statuses::reconfigured:
+				if(present_.command != front::board::commands::reconfig){
+						reset_panic_(front::board::panics::bits::config);
+						present_.status = front::board::statuses::ready ;
+				}
+				break;
+			case front::board::statuses::ready:
+				if(present_.command == front::board::commands::reconfig){
+					raise_panic_(front::board::panics::bits::config);
+					present_.status = front::board::statuses::reconfigured ;
+				}
+				break;
+			case front::board::statuses::unknown:
+				ROBO_APP_CRASH();							
+		}
 		#if ROBO_APP_SYSTEM_ENABLED
 		::robo::system::frontend_loop();
 		#endif
@@ -429,10 +450,6 @@ namespace burst {
 	void dev::loopA(void) {
 
 		ROBO_APP_ASSERT(is_backend__);
-		
-		if( !board::instance_.present_ . startuped){
-			return;
-		}
 
 		if (action_.mode != present_.mode) {
 			guard__;
@@ -441,9 +458,7 @@ namespace burst {
 				switch_to_idle_();
 			}
 			else {
-				if( burst_present.startuped ){
-					switch_to_mode(action_.mode);
-				}
+				switch_to_mode(action_.mode);
 			}
 		}
 		if (action_enabled_) {
@@ -489,7 +504,7 @@ namespace burst {
 		}
 	}
 	*/
-	void board::raise_panic(uint32_t _flag) {
+	void board::raise_panic_(uint32_t _flag) {
 		uint32_t mask = (1 << _flag);
 		if ((present_.panics & mask) == 0) {
 			present_.last_panic_us = time_us();
@@ -500,11 +515,11 @@ namespace burst {
 		}
 	}
 
-	void board::reset_panic(uint32_t _flag) {
+	void board::reset_panic_(uint32_t _flag) {
 		uint32_t mask = (1 << _flag);
-		if ((present_.panics & mask) == 0) {
+		if ((present_.panics & mask) != 0) {
 			present_.last_panic_us = time_us();
-			present_.panics |= mask;
+			present_.panics &= ~mask;
 		}
 		if (present_.panics == 0) {
 			for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
@@ -517,7 +532,7 @@ namespace burst {
 		return present_.panics;
 	}
 
-	void board::reset_panics(void) {
+	void board::reset_panics_(void) {
 		present_.panics = 0;
 		for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
 			p->owner().present_.panic = 0;
@@ -552,20 +567,20 @@ namespace burst {
 		int burst_board_temper_hi = temper_get_hi_pp();
 		int burst_board_temper_lo = temper_get_lo_pp();
 		if (burst_board_temper_hi >= config_->panics.temp_pp.overhi) {
-			raise_panic(front::board::panics::bits::overtemp);
+			raise_panic_(front::board::panics::bits::overtemp);
 		}
 		else if (burst_board_temper_hi < config_->panics.temp_pp.hi) {
 			if (present_.panics) {
-				reset_panic(front::board::panics::bits::overtemp);
+				reset_panic_(front::board::panics::bits::overtemp);
 			}
 		}
 
 		if (burst_board_temper_lo <= config_->panics.temp_pp.ultralo) {
-			raise_panic(front::board::panics::bits::lotemp);
+			raise_panic_(front::board::panics::bits::lotemp);
 		}
 		else if (burst_board_temper_lo > config_->panics.temp_pp.lo) {
 			if (present_.panics) {
-				reset_panic(front::board::panics::bits::lotemp);
+				reset_panic_(front::board::panics::bits::lotemp);
 			}
 		}
 		#endif
@@ -573,7 +588,7 @@ namespace burst {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){
 					uint32_t mask = present_.panics;
-					mask &= ~(front::board::panics::masks::overtemp | front::board::panics::masks::lotemp);
+					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config );
 					present_.panics &= ~(mask);
 					if (present_.panics == 0) {
 						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
@@ -600,13 +615,20 @@ namespace burst {
 	void board::regvar_conf(void) {
 		using namespace burst::var;
 		if (actual_mode >= mode::tuning) {
+<<<<<<< HEAD
+			push(RT("board"));
+			push(RT("cfg"));
+=======
 			push("board");
+			reg(types::uint8, (burst_present.command), RT("cmd"));
+			reg(types::uint8, (burst_present.status), RT("status"));
 			push("cfg");
+>>>>>>> e7ce86b3510fb0b01f67339fbc14bda9575db4ac
 			reg(types::int32, (instance_.config_->vercion), RT("ver"));
-			push("panics");
+			push(RT("panics"));
 
 			#if BURST_PROTECTION_ENABLED == 1
-			reg(types::time_us, instance_.config_->panics.reset_timeout_us, "reset_tm_us");
+			reg(types::time_us, instance_.config_->panics.reset_timeout_us, RT("reset_tm_us"));
 			#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
 			push("temper");
 			reg(types::int16, (instance_.config_->panics.temp_pp.overhi), RT("overhi"));

@@ -156,22 +156,25 @@ namespace burst {
 	}
 	void board::begin_(time_us_t _period_us) {
 		#if ROBO_APP_SYSTEM_ENABLED
-		::robo::system::begin();
+		::robo::system::begin();		
 		#endif
 		{
 			guard__;
+			burst_present.status= front::board::statuses::startuped;
 			slots_ref_.begin.execute();
+			ROBO_ASSERT(config_);
 			//ROBO_APP_ASSERT(::mexo::node::begin());
 			#if ROBO_APP_NET_FLOW_ENABLED == 1
 			::robo::net::flow::machine::begin();
 			#endif
+			
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			regvar_conf();
 			#endif
 			#if ROBO_APP_SYSTEM_ENABLED
 			::robo::system::start(_period_us);
 			#endif
-			ROBO_ASSERT(config_);
+			raise_panic_(front::board::panics::bits::config);
 			slots_ref_.start.execute();
 		}
 	}
@@ -213,12 +216,37 @@ namespace burst {
 		debug_tp_off(front::tp_verb::loop);
 	}
 	void board::frontend_loop_(void) {
-		if(!present_.startuped){
-			slots_ref_.startup.execute();
-			present_.startuped = slots_ref_.startup.isempty();
-		}
-
 		debug_tp_on(front::tp_verb::frontend);
+		switch ( present_.status ){
+			case front::board::statuses::startuped:
+			{
+				slots_ref_.startup.execute();
+				if(slots_ref_.startup.isempty()){
+					if(config_->reconfig_on_startup){
+						present_.status = front::board::statuses::reconfigured ;
+						present_.command = front::board::commands::reconfig ;
+					} else{
+						reset_panic_(front::board::panics::bits::config);
+						present_.status = front::board::statuses::ready ;
+					}
+				} 
+				break;
+			}
+			case front::board::statuses::reconfigured:
+				if(present_.command != front::board::commands::reconfig){
+						reset_panic_(front::board::panics::bits::config);
+						present_.status = front::board::statuses::ready ;
+				}
+				break;
+			case front::board::statuses::ready:
+				if(present_.command == front::board::commands::reconfig){
+					raise_panic_(front::board::panics::bits::config);
+					present_.status = front::board::statuses::reconfigured ;
+				}
+				break;
+			case front::board::statuses::unknown:
+				ROBO_APP_CRASH();							
+		}
 		#if ROBO_APP_SYSTEM_ENABLED
 		::robo::system::frontend_loop();
 		#endif
@@ -422,10 +450,6 @@ namespace burst {
 	void dev::loopA(void) {
 
 		ROBO_APP_ASSERT(is_backend__);
-		
-		if( !board::instance_.present_ . startuped){
-			return;
-		}
 
 		if (action_.mode != present_.mode) {
 			guard__;
@@ -434,9 +458,7 @@ namespace burst {
 				switch_to_idle_();
 			}
 			else {
-				if( burst_present.startuped ){
-					switch_to_mode(action_.mode);
-				}
+				switch_to_mode(action_.mode);
 			}
 		}
 		if (action_enabled_) {
@@ -593,13 +615,15 @@ namespace burst {
 	void board::regvar_conf(void) {
 		using namespace burst::var;
 		if (actual_mode >= mode::tuning) {
-			push(RT("board"));
-			push(RT("cfg"));
+			push("board");
+			reg(types::uint8, (burst_present.command), RT("cmd"));
+			reg(types::uint8, (burst_present.status), RT("status"));
+			push("cfg");
 			reg(types::int32, (instance_.config_->vercion), RT("ver"));
-			push(RT("panics"));
+			push("panics");
 
 			#if BURST_PROTECTION_ENABLED == 1
-			reg(types::time_us, instance_.config_->panics.reset_timeout_us, RT("reset_tm_us"));
+			reg(types::time_us, instance_.config_->panics.reset_timeout_us, "reset_tm_us");
 			#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
 			push("temper");
 			reg(types::int16, (instance_.config_->panics.temp_pp.overhi), RT("overhi"));
