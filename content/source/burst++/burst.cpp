@@ -593,13 +593,13 @@ namespace burst {
 	void board::regvar_conf(void) {
 		using namespace burst::var;
 		if (actual_mode >= mode::tuning) {
-			push("board");
-			push("cfg");
+			push(RT("board"));
+			push(RT("cfg"));
 			reg(types::int32, (instance_.config_->vercion), RT("ver"));
-			push("panics");
+			push(RT("panics"));
 
 			#if BURST_PROTECTION_ENABLED == 1
-			reg(types::time_us, instance_.config_->panics.reset_timeout_us, "reset_tm_us");
+			reg(types::time_us, instance_.config_->panics.reset_timeout_us, RT("reset_tm_us"));
 			#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
 			push("temper");
 			reg(types::int16, (instance_.config_->panics.temp_pp.overhi), RT("overhi"));
