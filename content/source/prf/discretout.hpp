@@ -5,12 +5,19 @@ namespace robo {
 	namespace prf {	
 		namespace discret {	
 			namespace out {	
+				class  dummy{
+					public:
+						static void on(void) { }
+						static void off(void) {  }
+				};
+				//наследник от LED
 				namespace masked {	
 					enum class states{ on =1,off = 0};
 					struct present_s{
 						int verb;
 						states  state;
 					};
+					
 					template <typename D> class base_t : public D{			
 						 present_s & present_;
 					public:
@@ -47,6 +54,8 @@ namespace robo {
 							}
 						}
 					};
+					
+					
 					//доступно из любого модуля- инициализация автоматическая
 					template < typename D > class common_t: public base_t<D>{
 						static common_t & instance_(){
@@ -90,6 +99,7 @@ namespace robo {
 					};
 				}
 				namespace switcher {
+
 					enum class states{ on =1,off = 0};
 					enum class commands{ on =1,off = 2, none = 0, toggle = 3};
 					struct present_s{

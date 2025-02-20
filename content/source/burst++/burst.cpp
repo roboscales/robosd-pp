@@ -722,7 +722,7 @@ void robo::system::env::abort(void) {
 	burst::board::abort();
 }
 
-extern "C" void burst_core_crash(void){
-	ROBO_APP_CRASH();
+extern "C" void burst_core_crash_(const char * _function, const char * _file, int _line){
+	robo::crash(_function,_file,_line);
 }
 

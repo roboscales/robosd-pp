@@ -3,7 +3,7 @@
 #include "core/robosd_common.hpp"
 namespace robo {	
 
-	template <typename D> class pinout_base : public D{
+	template <typename D> class pinout_base_t : public D{
 		enum class state{ on =1,off = 0} state_ = state::off;
 		protected:
 		pinout_base(void):D(){}
@@ -34,7 +34,8 @@ namespace robo {
 		}
 	};
 
-	template <typename D> class pinout_s : public pinout_base<D>{
+
+	template <typename D> class pinoutcom_s : public pinout_base<D>{
 		static pinout_s & instance_(){
 			static pinout_s instance__;
 			return instance__;
