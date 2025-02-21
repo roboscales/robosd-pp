@@ -192,6 +192,7 @@ namespace burst {
 				if (success) {
 					uint32_t tmp = fast::lsh( (uint32_t)p.native.raw, shift.raw);
 					int32_t  tmp_delta = (int32_t)(tmp - p.native.ceiled);
+
 					p.native.ceiled = tmp;
 
 					p.native.delta = fast::rsh(tmp_delta, shift.raw);// (((native_t)(tmp_delta)) >> shift);
@@ -231,13 +232,13 @@ namespace burst {
 					present.native.ceiled += (present.native.delta << shift);*/
 					p.ref.delta_acc += p.delta;
 				}
-				if (conf.inverce) {
-					p.acc -= p.native.delta;
-				}
-				else {
-					p.acc += p.native.delta;
-				}
 				if (success) {
+					if (conf.inverce) {
+						p.acc -= p.native.delta;
+					}
+					else {
+						p.acc += p.native.delta;
+					}
 				//todo round_l не катит
 					p.ref.position = fast::rsh(p.acc, shift.value);
 					p.ref.position += conf.offset.position;
