@@ -269,6 +269,40 @@ namespace robo {
 		*((stds*)value_) = _src;
 		return *this;
 	}
+	#if ROBO_STRING_UTOA_TYPE == ROBO_APP_TYPE_NATIVE
+	
+	uint8_t  string::utoa_n(uint32_t value, uint8_t _n, char_t *  _r, char_t _space ){
+		char_t buffer[11];
+		char_t * r;
+		if(_space == 0){
+			r = &buffer[10];
+		} else{
+			r= _r+10;
+		}
+		// 11 байт достаточно для десятичного представления 32-х байтного числа
+		// и  завершающего нуля
+		uint8_t n = 0;
+		do {			
+			if(n==_n){
+				std::fill_n(_r,_n,RT('#'));
+				return n;
+			}
+			n++;
+			*--r = value % 10 + RT('0');
+			value /= 10;
+		} while (value != 0);		
+		
+		if(_space == 0){
+			std::copy_n(r,n,_r);			
+		} else{
+			while( n<_n){
+				*--r = _space;
+				n++;
+			}
+		}
+		return n; 					
+	}
+	#endif
 
 }
 

@@ -10,6 +10,11 @@
 #define ROBO_STRING_BUFFER_SIZE 255
 #endif
 
+#ifndef ROBO_STRING_UTOA_TYPE
+#define ROBO_STRING_UTOA_TYPE ROBO_APP_TYPE_NATIVE
+#endif 
+#define ROBO_STRING_UTOA_ENABLED ROBO_STRING_UTOA_TYPE != ROBO_APP_TYPE_NONE
+
 namespace robo {
 
 	class ROBO_EXPORT string {
@@ -157,6 +162,12 @@ namespace robo {
 		void ascii(char* _buf, size_t _len) const;
 		void ascii( ::robo::lambda<  void (const char *)> ) const;
 		void asciib(::robo::lambda<  void(const uint8_t* , size_t)>) const;
+		
+		#if ROBO_STRING_UTOA_ENABLED
+		static uint8_t  utoa_n(uint32_t value, uint8_t _n, char_t *  _r, char_t _space );
+		//static uint8_t  itoa_n(int32_t value, uint8_t _n, char_t *  _r, char_t _space );
+		#endif		
+		
 	};
 }
 
