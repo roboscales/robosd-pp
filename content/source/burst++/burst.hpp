@@ -214,7 +214,7 @@ namespace burst {
 		virtual void	frontend_loop(void) {};
 	} idle_mode;
 	*/
-
+	
 	class board {
 		//bool startuped_ = false;
 		friend class dev;
@@ -296,7 +296,7 @@ namespace burst {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, raise_fault };
+			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, raise_fault, ready };
 			class delegat : public ::robo::delegat::ref<void> {
 				friend class link;
 			public:
@@ -436,6 +436,7 @@ namespace burst {
 			slot raise_fault;
 			slot periodic[slot_count];
 			slot dummy;
+			slot ready;
 			slot& operator [] (slot::kind _kind);
 			slot& operator [] (int _index);
 			void free(void);
