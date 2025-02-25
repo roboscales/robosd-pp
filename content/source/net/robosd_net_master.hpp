@@ -16,9 +16,9 @@ namespace robo{
 			virtual bool ready(void) = 0;
 		};
 		#if ROBO_APP_MODULE_ENABLED ==1
-		template< typename phys, typename P > class master_t: public phys, public imaster_t<P>, public app::node {
+		template< typename phys, typename P, class guard = ::robo::system::guard > class master_t: public phys, public imaster_t<P>, public app::node {
 		#else
-		template< typename phys, typename P > class master_t : public phys, public imaster_t<P> {
+		template< typename phys, typename P, class guard= ::robo::system::guard> class master_t : public phys, public imaster_t<P> {
 		#endif
 		public:
 			enum class result { refuse, success, panic };
@@ -28,7 +28,6 @@ namespace robo{
 			unsigned int wd_delay_us_ = 0;
 			
 			enum class state { idle, send, receive, stopped, disable, panic};
-			typedef typename system::guard guard;
 			enum {incom_size_bits=5};
 			
 			state state_ = state::disable;
