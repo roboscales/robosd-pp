@@ -228,6 +228,7 @@ namespace burst {
 					} else{
 						reset_panic_(front::board::panics::bits::config);
 						present_.status = front::board::statuses::ready ;
+						slots_ref_.ready.execute();
 					}
 				} 
 				break;
@@ -293,6 +294,9 @@ namespace burst {
 		case slot::kind::raise_fault:
 		return raise_fault;
 
+		case slot::kind::ready:
+		return ready;
+
 		default:
 		ROBO_APP_CRASH();
 		return dummy;
@@ -308,6 +312,7 @@ namespace burst {
 		frontend.free();
 		raise_fault.free();
 		dummy.free();
+		ready.free();
 		for (int i = 0; i < slot_count; i++) {
 			periodic[i].free();
 		}
