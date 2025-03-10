@@ -126,7 +126,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(SolutionDir);$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
@@ -142,7 +142,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(SolutionDir);$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>
