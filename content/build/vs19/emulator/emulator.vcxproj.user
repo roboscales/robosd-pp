@@ -16,7 +16,7 @@
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\robot-im-2.ini</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\swan-sketch.ini</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
