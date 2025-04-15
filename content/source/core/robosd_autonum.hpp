@@ -3,6 +3,11 @@
 #include "core/robosd_system.hpp"
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
+#ifndef ROBO_AUTONUM_ENABLED
+#define  ROBO_AUTONUM_ENABLED 1
+#endif
+
+#if ROBO_AUTONUM_ENABLED
 namespace robo {
 	namespace delegat{
 		namespace autonum {
@@ -178,4 +183,6 @@ namespace robo {
 		using autonum_fabric = autonum::fabric < autonum::performer<R, Args...>, R, Args... >;
 	}
 }
+#endif
+
 #endif

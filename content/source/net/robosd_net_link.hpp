@@ -33,7 +33,11 @@ namespace robo{
            virtual bool begin(cstr _alias);
            virtual void finish(void);
            template<typename T> static T* query(cstr _caption) {
+							#if ROBO_APP_RTTI_ENABLED == 1
                T * s = dynamic_cast<T*>( map_().find(hash(_caption, 0)) );
+						 #else
+               T * s = (T*)( map_().find(hash(_caption, 0)) );
+						 #endif
                if (s) {
                    if (s->ref_.attached()) {
                        s->ref_.dettach();

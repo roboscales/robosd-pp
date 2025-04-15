@@ -513,7 +513,9 @@ namespace robo {
 		}
 		#endif
 		#endif
+		#if ROBO_AUTONUM_ENABLED == 1
 		::robo::delegat::autonum::receicledbin::frontend_clean();
+		#endif
 	}
 	
 	void system::backend_loop(void) {
@@ -521,7 +523,7 @@ namespace robo {
 		system::env::backend_loop();
 		#endif
 		sysclock::tick();
-		#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_AUTONUM_ENABLED == 1
 		::robo::delegat::autonum::receicledbin::backend_clean();
 		#endif
 	}

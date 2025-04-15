@@ -444,8 +444,8 @@ namespace burst {
 
 	void dev::perform_panic(void) {
 		if (present_.mode != front::dev::modes::idle) {
-			robo::system::guard g__;
-			if(robo::system::env::is_backend()){
+			guard__;
+			if(is_backend__){
 				switch_to_idle_(); 
 			}
 		}
@@ -721,11 +721,13 @@ void burst_frontend_loop() {
 	burst::board::frontend_loop();
 }
 
+#if ROBO_APP_SYSTEM_ENABLED
 void robo::system::env::abort(void) {
 	
 	burst::board::instance_.handle_panic_();
 	burst::board::abort();
 }
+#endif
 
 extern "C" void burst_core_crash_(const char * _function, const char * _file, int _line){
 	robo::crash(_function,_file,_line);

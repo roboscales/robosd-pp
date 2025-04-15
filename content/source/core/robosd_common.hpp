@@ -290,5 +290,10 @@ namespace robo {
 #define ROBO_APP_TYPE_SPECIFIC 8
 #define ROBO_APP_TYPE_DUMMY 9
 
+
+#ifndef ROBO_APP_RTTI_ENABLED
+#define ROBO_APP_RTTI_ENABLED 1
+#endif
+
 #endif
 

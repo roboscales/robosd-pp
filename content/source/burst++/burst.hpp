@@ -481,8 +481,9 @@ namespace burst {
 		static void raise_panic(uint32_t _flag) { instance_.raise_panic_(_flag); };
 		static void reset_panic(uint32_t _flag){ instance_.reset_panic_(_flag); };
 		static void reset_panics(void){ instance_.reset_panics(); };
-
+		#if ROBO_APP_SYSTEM_ENABLED
 		friend class robo::system::env;
+		#endif
 		//static void reset(void) { instance_.reset_(); }
 			private:
 				static void abort(void);
