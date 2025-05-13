@@ -187,7 +187,44 @@ namespace burst {
 			}
 			#endif	
 		};
+	class hall_adapter_t : public rotator_t {
+		protected:
+			const signal_t & angle_;
+		public:
+			typedef typename rotator_t::config_s config_s;
+			typedef typename rotator_t::present_s present_s;
 
+			#define POWER3PH_HALL_ADAPTR_CONFIG(a) POWER3PH_ROTATOR_CONFIG(a)
+		hall_adapter_t(const config_s& _config, present_s& _present, const signal_t & _angle)
+				: rotator_t(_config, _present), angle_(_angle) {
+					rotator_t::connect(nullptr);
+			};
+			hall_adapter_t(const config_s& _config, present_s& _present, const signal_t & _angle, subsystem& _subsystem)
+				: rotator_t(_config, _present, _subsystem) , angle_(_angle) {
+				rotator_t::connect(nullptr);
+			};
+			virtual void run(void) {
+				ACTOR_PRESENT_S(p);
+				p.angle.mechanic = angle_;
+
+				if (p.synchro) {
+					p.angle.electro = *rotator_t::synchro_anglee;
+				} else {
+					p.angle.electro = p.angle.mechanic;
+				}
+				p.rot.sn = number::sin(p.angle.electro);
+				p.rot.cs = number::cos(p.angle.electro);
+			}
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				rotator_t::do_regvar_present();
+			}
+
+			virtual void do_regvar_conf(void) {
+				rotator_t::do_regvar_conf();
+			}
+			#endif	
+		};
 		class inverter : public actor {
 		protected:
 			rotator_t & rotator;

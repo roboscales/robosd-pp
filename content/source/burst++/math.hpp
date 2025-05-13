@@ -56,6 +56,12 @@ namespace burst {
 				return (int15::long_signal_t)(_x - 0.5);
 			}
 		}
+		static constexpr uint32_t rad2ceil32(signal_t _x) {
+			return ((uint32_t)_x)<<16;
+		}
+		static constexpr uint16_t rad2ceil16(signal_t _x) {
+			return ((uint16_t)_x);
+		}
 		static signal_t sin(signal_t _angle);
 		static signal_t cos(signal_t _angle);
 		static  signal_t sqrt(ulong_signal_t _value);
@@ -108,6 +114,7 @@ namespace burst {
 		}
 		return _x;
 	}
+	
 	template< typename T> static T s_rshift(T _x, uint8_t _dg) {
 			if (_x  == T(0) || (_dg==0)) {
 				return _x;
@@ -276,6 +283,12 @@ namespace burst {
 
 		static constexpr typename digit::long_signal_t long_frac(double _x) {
 			return long_round(_x* digit::long_max);
+		}
+		static constexpr uint32_t rad2ceil32(signal_t _x) {
+			return digit::rad2ceil32(_x);
+		}
+		static constexpr uint16_t rad2ceil16(signal_t _x) {
+			return digit::rad2ceil16(_x);
 		}
 
 		/*/constexpr static signal_t one_div_2 = digit::round(0.5 * max);

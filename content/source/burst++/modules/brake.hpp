@@ -31,8 +31,7 @@ namespace burst{
 		virtual bool released(void) = 0;
 		virtual bool fixed(void) = 0;
 	};
-
-	template <class number> class brake_time_machine_t : public brake
+template <class number> class brake_time_machine_t : public brake
 	{
 	public:
 		using parameter_t = typename number::parameter_t;
@@ -245,5 +244,6 @@ namespace burst{
 		#endif
 
 	};
+
 }
 #endif
