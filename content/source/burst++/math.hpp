@@ -9,7 +9,9 @@ namespace burst {
 	struct int15  {
 		typedef int16_t discret_t;
 		typedef int32_t long_discret_t;
+		
 		typedef discret_t signal_t;
+		typedef int64_t extended_signal_t;
 		typedef discret_t parameter_t;
 		typedef int32_t long_signal_t;
 		typedef uint16_t usignal_t;
@@ -94,7 +96,6 @@ namespace burst {
 		};
 		#endif
 	};
-	
 	template <typename T, typename H> T saturate(T _x, H  _lo, H _hi) {
 		if (_x < _lo) {
 			_x = _lo;
@@ -115,7 +116,7 @@ namespace burst {
 		return _x;
 	}
 	
-	template< typename T> static T s_rshift(T _x, uint8_t _dg) {
+	template< typename T> static constexpr T s_rshift(T _x, uint8_t _dg) {
 			if (_x  == T(0) || (_dg==0)) {
 				return _x;
 			}
@@ -228,6 +229,7 @@ namespace burst {
 		typedef typename  digit::ulong_signal_t ulong_signal_t;
 		typedef typename  digit::long_signal_t long_signal_t;
 		typedef typename  digit::parameter_t parameter_t;
+		typedef typename digit::extended_signal_t extended_signal_t;
 
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		typedef typename  digit::var var;
@@ -481,7 +483,7 @@ namespace burst {
 			return ((long_signal_u*)(&_t))->second;
 		}
 
-		static signal_t s_extract(long_signal_u& v) {
+		static constexpr signal_t s_extract(long_signal_u& v) {
 			if (v.value == 0) {
 				return 0;
 			}
@@ -533,13 +535,22 @@ namespace burst {
 			return s_extract(tmp);
 		}
 
-		static signal_t s_add(signal_t _x0, signal_t _x2, signal_t _y2) {
+		static constexpr signal_t   s_add(signal_t _x0, signal_t _x2, signal_t _y2) {
 			long_signal_u tmp;
 			tmp.value = (long_signal_t)(_x0) + (long_signal_t)(_x2)*_y2;
 			return s_extract(tmp);
 		}
-		
-
+		static  signal_t constexpr s_fma(signal_t _a, signal_t _b, signal_t _c)
+		{
+			long_signal_u tmp;
+			tmp.value = (long_signal_t)(_a)*_b;
+			return _c+s_extract(tmp);
+			
+		}		
+		template<typename T>	 static  long_signal_t  constexpr l_fma(signal_t _a, signal_t _b, long_signal_t _c)
+		{
+			return _a*_b + _c;			
+		}	
 		static signal_t sin(signal_t _angle) {
 			return digit::sin(_angle);
 		}

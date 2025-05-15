@@ -220,6 +220,69 @@ namespace robo {
 		S len = 0;
 	};
 
+	template<typename T > T constexpr abs(const T & x){
+		return (x>0) ? x:-x;
+	}
+	template<typename T > T constexpr min(const T & x,const T & y){
+		return (x>y) ? y:x;
+	}
+	template<typename T > T constexpr max(const T & x,const T & y){
+		return (x>y) ? x:y;
+	}
+
+	template<typename T>	 T constexpr fma(T a, T b, T c)
+	{
+			return a * b + c;
+	}
+	double constexpr catan2(double y, double x)
+{
+    const double atan_tbl[] = {
+    -3.333333333333333333333333333303396520128e-1,
+     1.999999117496509842004185053319506031014e-1,
+    -1.428514132711481940637283859690014415584e-1,
+     1.110012236849539584126568416131750076191e-1,
+    -8.993611617787817334566922323958104463948e-2,
+     7.212338962134411520637759523226823838487e-2,
+    -5.205055255952184339031830383744136009889e-2,
+     2.938542391751121307313459297120064977888e-2,
+    -1.079891788348568421355096111489189625479e-2,
+     1.858552116405489677124095112269935093498e-3
+    };
+    /* argument reduction: 
+       arctan (-x) = -arctan(x); 
+       arctan (1/x) = 1/2 * pi - arctan (x), when x > 0
+    */
+
+    double ax = ::robo::abs(x);
+    double ay = abs(y);
+    double t0 = max(ax, ay);
+    double t1 = min(ax, ay);
+    
+    double a = 1 / t0;
+    a *= t1;
+
+    double s = a * a;
+    double p = atan_tbl[9];
+
+    p = fma( fma( fma( fma( fma( fma( fma( fma( fma( fma(p, s,
+        atan_tbl[8]), s,
+        atan_tbl[7]), s, 
+        atan_tbl[6]), s,
+        atan_tbl[5]), s,
+        atan_tbl[4]), s,
+        atan_tbl[3]), s,
+        atan_tbl[2]), s,
+        atan_tbl[1]), s,
+        atan_tbl[0]), s*a, a);
+
+    double r = ay > ax ? (pi<double>/2 - p) : p;
+
+    r = x < 0 ?  pi<double> - r : r;
+    r = y < 0 ? -r : r;
+
+    return p;
+		
+	}
 }
 
 #define PP_THIRD_ARG(a,b,c,...) c
