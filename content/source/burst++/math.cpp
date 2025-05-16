@@ -2,7 +2,7 @@
 namespace burst {
 	enum { sin_index_shift = 6, sin_length_table = 256 };
 
-	#define S(x) int15::round( (x)*32767.0)
+	#define S(x) int15::s_frac(x)
 
 
 	const int15::signal_t mcgenSineTable256[sin_length_table + 1] =

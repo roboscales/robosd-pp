@@ -110,7 +110,7 @@ namespace burst{
 						return;
 				}else{
 						#ifndef BURTS_POSITINER_MAX_ERR
-						#define BURTS_POSITINER_MAX_ERR number::long_frac(0.9)
+						#define BURTS_POSITINER_MAX_ERR number::l_frac(0.9)
 						#endif
 						if(err > config_->deadZone){
 								if (err>BURTS_POSITINER_MAX_ERR){
@@ -153,7 +153,7 @@ namespace burst{
 						control_val += present.diff;
 						if(config_->diffQuardGain && d != 0){
 							long_signal_t d2 = d*d;							
-							d2 = fast::rsh(d2, config_->diffQuardPreShift);
+							d2 = robo::digit::rsh(d2, config_->diffQuardPreShift);
 							d2*=config_->diffQuardGain;
 							if(d>0){
 								present.quadDiff =  -d2;
@@ -164,20 +164,20 @@ namespace burst{
 						}
 					}
 					if (control_val > 0) {
-						control_val = fast::rsh(control_val, config_->controlShift);
+						control_val = robo::digit::rsh(control_val, config_->controlShift);
 						if (control_val < config_->crawlSpeed ) {
 							control_val = config_->crawlSpeed;
 						}
 					}
 					else if(control_val < 0) {
-						control_val = fast::rsh(control_val, config_->controlShift);
+						control_val = robo::digit::rsh(control_val, config_->controlShift);
 						if (control_val > -config_->crawlSpeed) {
 							control_val = -config_->crawlSpeed;
 						}
 					}
 					
 					if (forceControl_) control_val += *(forceControl_);
-					control_val = saturate(control_val, *controlMin_, *controlMax_);
+					control_val = robo::saturate(control_val, *controlMin_, *controlMax_);
 					*control_ = control_val;
 				}
 

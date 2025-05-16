@@ -190,18 +190,18 @@ namespace burst {
 
 			if (p.ref.ready) {
 				if (success) {
-					uint32_t tmp = fast::lsh( (uint32_t)p.native.raw, shift.raw);
+					uint32_t tmp = robo::digit::lsh( (uint32_t)p.native.raw, shift.raw);
 					int32_t  tmp_delta = (int32_t)(tmp - p.native.ceiled);
 
 					p.native.ceiled = tmp;
 
-					p.native.delta = fast::rsh(tmp_delta, shift.raw);// (((native_t)(tmp_delta)) >> shift);
+					p.native.delta = robo::digit::rsh(tmp_delta, shift.raw);// (((native_t)(tmp_delta)) >> shift);
 					long_signal_t dtmp;
 					if (conf.inverce) {
-						dtmp = fast::rsh(-p.native.delta, shift.value);
+						dtmp = robo::digit::rsh(-p.native.delta, shift.value);
 					}
 					else {
-						dtmp = fast::rsh(p.native.delta, shift.value);
+						dtmp = robo::digit::rsh(p.native.delta, shift.value);
 					}
 
 					if (dtmp > number::max) {
@@ -240,19 +240,19 @@ namespace burst {
 						p.acc += p.native.delta;
 					}
 				//todo round_l не катит
-					p.ref.position = fast::rsh(p.acc, shift.value);
+					p.ref.position = robo::digit::rsh(p.acc, shift.value);
 					p.ref.position += conf.offset.position;
 				}
 			}
 			else {
 				if (success) {
-					p.native.ceiled = fast::lsh((uint32_t)p.native.raw, shift.raw);
-					uint32_t tmp = p.native.ceiled + fast::lsh((uint32_t)conf.offset.native, shift.raw);
+					p.native.ceiled = robo::digit::lsh((uint32_t)p.native.raw, shift.raw);
+					uint32_t tmp = p.native.ceiled + robo::digit::lsh((uint32_t)conf.offset.native, shift.raw);
 					if (conf.inverce) {
 						tmp = 0xFFFFFFFF - tmp;
 					}
-					p.acc = fast::rsh(((long_signal_t)tmp), shift.raw);
-					p.ref.position = fast::rsh(p.acc, shift.value);
+					p.acc = robo::digit::rsh(((long_signal_t)tmp), shift.raw);
+					p.ref.position = robo::digit::rsh(p.acc, shift.value);
 					p.ref.position += conf.offset.position;
 					start_pause_tick--;
 					if (start_pause_tick == 0) {

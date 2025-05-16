@@ -12,31 +12,31 @@ namespace burst {
 		using usignal_t = typename number::usignal_t;
 		using long_signal_t = typename number::long_signal_t;
 		using ulong_signal_t = typename number::ulong_signal_t;
-		constexpr static signal_t sqrt3_div_2 = number::frac( robo::csqrt<double>(3.0) / 2);// number::round(robo::csqrt<double>(3.0) / 2 * number::max);
-		constexpr static signal_t scale = number::frac( robo::csqrt<double>(2.0) -1 );
-		constexpr static signal_t sqrt2_div_2 = number::frac( robo::csqrt<double>(2.0) / 2 );
-		constexpr static signal_t one_div_3 = number::frac(1./ 3);
-		constexpr static signal_t one_div_sqrt3 = number::frac( 1. / robo::csqrt<double>(3.0) );
+		constexpr static signal_t sqrt3_div_2 = number::s_frac( robo::csqrt<double>(3.0) / 2);// number::round(robo::csqrt<double>(3.0) / 2 * number::max);
+		constexpr static signal_t scale = number::s_frac( robo::csqrt<double>(2.0) -1 );
+		constexpr static signal_t sqrt2_div_2 = number::s_frac( robo::csqrt<double>(2.0) / 2 );
+		constexpr static signal_t one_div_3 = number::s_frac(1./ 3);
+		constexpr static signal_t one_div_sqrt3 = number::s_frac( 1. / robo::csqrt<double>(3.0) );
 		static inline signal_t& standby = burst::standby<signal_t>();
 		static inline long_signal_t  mult_(long_signal_t x1, long_signal_t x2) {
-			return  fast::rsh(x1 * x2 ,15);
+			return  robo::digit::rsh(x1 * x2 ,15);
 		}
 		//static inline long_signal_t fast::rsh
 		static inline long_signal_t dot_(long_signal_t _x1, long_signal_t _y1, long_signal_t _x2, long_signal_t _y2) {
-			return fast::rsh(_x1 * _y1 + _x2 * _y2,15);
+			return robo::digit::rsh(_x1 * _y1 + _x2 * _y2,15);
 		}
 
 		static inline long_signal_t sum_x_ya_(long_signal_t x, long_signal_t y, long_signal_t a) {
 			long_signal_t tmp = ((long_signal_t)y) * a;
-			tmp = fast::rsh(tmp , 15);
+			tmp = robo::digit::rsh(tmp , 15);
 			tmp += x;
 			return tmp;
 		}
 		static inline long_signal_t l_sat_s(const long_signal_t& _x) {
-			return saturate(_x, number::min, number::max);
+			return robo::saturate(_x, number::min, number::max);
 		}
 		static inline long_signal_t l_sat_s(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
-			return saturate(_x, _lo, _hi);
+			return robo::saturate(_x, _lo, _hi);
 		}
 
 
@@ -151,7 +151,7 @@ namespace burst {
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
 				ACTOR_CONFIG_S(c);
-				signal_t tmp = (signal_t)fast::rsh((long_signal_t)*angle, 16);
+				signal_t tmp = (signal_t)robo::digit::rsh((long_signal_t)*angle, 16);
 				if (c.inverce) tmp = -tmp;
 
 				tmp *= c.pole_count;
@@ -332,7 +332,7 @@ namespace burst {
 			signal_t scale_(signal_t _signal) {
 				long_signal_t tmp = scale_gain * ((long_signal_t)_signal - number::min);
 				tmp += (1 << 15);
-				tmp = fast::rsh(tmp, 16);
+				tmp = robo::digit::rsh(tmp, 16);
 
 				if (tmp < discret_delta_lo) {
 					return discret_lo;
@@ -348,13 +348,13 @@ namespace burst {
 			long_signal_t deform_pwm_(signal_t _src) {
 				ACTOR_CONFIG_S(c);
 				if (_src > c.deform.level) {
-					return (fast::rsh((c.deform.lo_gain_16 * _src + c.deform.lo_bevel_16), 16));
+					return (robo::digit::rsh((c.deform.lo_gain_16 * _src + c.deform.lo_bevel_16), 16));
 				}
 				else if (_src < -c.deform.level) {
-					return  -(fast::rsh((c.deform.lo_gain_16 * (-_src) + c.deform.lo_bevel_16), 16));
+					return  -(robo::digit::rsh((c.deform.lo_gain_16 * (-_src) + c.deform.lo_bevel_16), 16));
 				}
 				else {
-					return  (fast::rsh(c.deform.hi_gain_16 * _src, 16));
+					return  (robo::digit::rsh(c.deform.hi_gain_16 * _src, 16));
 				}
 			}
 			virtual void run(void) {
@@ -500,7 +500,7 @@ namespace burst {
 				pwm_force = cfg.pwm_force;
 				long_signal_t delta = cfg.native.hi - cfg.native.lo;
 				long_signal_t gain = (long_signal_t)(cfg.native.hi - cfg.native.lo);
-				gain = fast::lsh(gain, 16);
+				gain = robo::digit::lsh(gain, 16);
 				gain += ((long_signal_t)number::max - number::min) / 2; //округление
 				gain /= ((long_signal_t)number::max - number::min);
 				scale_gain = gain;
@@ -648,10 +648,10 @@ namespace burst {
 					signal_t A = *raw.A;
 					signal_t B = *raw.B;
 					signal_t C = *raw.C;
-					a = fast::rsh ( deform[0] * A + deform[1] * B + deform[2] * C, 15);
-					b = fast::rsh ( deform[3] * A + deform[4] * B + deform[5] * C, 15);
-					c = fast::rsh ( deform[6] * A + deform[7] * B + deform[8] * C, 15);
-					long_signal_t ofs = fast::rsh( (a + b + c) * one_div_3, 15 );
+					a = robo::digit::rsh ( deform[0] * A + deform[1] * B + deform[2] * C, 15);
+					b = robo::digit::rsh ( deform[3] * A + deform[4] * B + deform[5] * C, 15);
+					c = robo::digit::rsh ( deform[6] * A + deform[7] * B + deform[8] * C, 15);
+					long_signal_t ofs = robo::digit::rsh( (a + b + c) * one_div_3, 15 );
 					a -= ofs;
 					b -= ofs;
 					c -= ofs;
@@ -661,7 +661,7 @@ namespace burst {
 					b = *raw.B;
 					c = *raw.C;
 				}
-				long_signal_t beta =  fast::rsh ((b * 2 + a) * one_div_sqrt3 , 15 );
+				long_signal_t beta =  robo::digit::rsh ((b * 2 + a) * one_div_sqrt3 , 15 );
 				ACTOR_ALIEN_PRESENT_S(rotator_t,rotator, rot);
 				//typename inverter::present_s& ip = inverter_.actor::template present<typename inverter::present_s>();
 				signal_t sn = rot.rot.sn;
@@ -680,7 +680,7 @@ namespace burst {
 				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 
 				#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==1
-				p.magnitude = (signal_t)number::sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
+				p.magnitude = number::s_sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
 				#endif
 				#endif
 				#endif

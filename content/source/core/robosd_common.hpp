@@ -234,8 +234,117 @@ namespace robo {
 	{
 			return a * b + c;
 	}
-	double constexpr catan2(double y, double x)
-{
+	
+	template <typename T, typename H> T constexpr  saturate(T _x, H  _lo, H _hi) {
+		if (_x < _lo) {
+			_x = _lo;
+		}
+		else if (_x > _hi) {
+			_x = _hi;
+		}
+		return _x;
+	}
+	
+	template <typename T, typename R> T constexpr  saturate(T _x, const R & _r) {
+		if (_x < _r.lo) {
+			_x = _r.lo;
+		}
+		else if (_x > _r.hi) {
+			_x = _r.hi;
+		}
+		return _x;
+	}
+	
+	//смещение вправо с округлением
+	namespace digit{
+		template <typename T> T constexpr  rsh(T _x, int8_t _sh) {
+			#if ROBO_APP_MATH_SHIFT_ENABLE
+			return _x >> _sh;
+			#else
+			return _x > 0 ? (_x >> _sh) : (-((-_x) >> _sh));
+			#endif
+		}
+		template <typename T> T constexpr  lsh(T _x, int8_t _sh) {
+			#if ROBO_APP_MATH_SHIFT_ENABLE
+			return _x << _sh;
+			#else
+			return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
+			#endif
+		}
+	
+		template <typename T>  T constexpr round(const T _src, uint8_t _shift) {
+			if (_src == 0) {
+				return (T)0;
+			}
+			else {
+				auto max = std::numeric_limits<T>::max();
+				auto min = -max;
+				auto r = ((T)1 << (_shift - 1))-1;
+				if (_src > 0){
+					if (_src >= max - r) {
+						return (_src >> _shift) + 1;
+					}
+					else {
+						return ((_src + r) >> _shift);
+					}
+				}
+				else {
+					if (_src <= min + r) {
+						#if ROBO_APP_MATH_SHIFT_ENABLE
+						return (_src >> _shift) - 1;
+						#else
+						return -((-_src) >> _shift) - 1;
+						#endif
+					}
+					else {
+						#if ROBO_APP_MATH_SHIFT_ENABLE
+						return ((_src - r) >> _shift);
+						#else
+						return -((-(_src - r)) >> _shift);
+						#endif
+					}
+				}
+			}
+		}
+		template <typename D, typename S > D constexpr pack(const S& _x, uint8_t _shift) {
+			if (_x == S(0)) {
+				return (D)0;
+			}
+			else {
+				S tmp = _x;
+				if (_shift > 0) {
+					int  r = (1 << (_shift - 1)) - 1;
+					if (tmp > S(0)) {
+						if ((int)(std::numeric_limits<S>::max() - _x) < r) {
+							tmp = std::numeric_limits<S>::max() >> _shift;
+						}
+						else {
+							tmp = (tmp + r) >> _shift;
+						}
+					}
+					else {
+						if ((int)(tmp + std::numeric_limits<S>::max()) < r) {
+							tmp = -(std::numeric_limits<S>::max() >> _shift);
+						}
+						else {
+							tmp = -((r - tmp) >> _shift);
+						}
+					}
+				}
+				if (std::numeric_limits<D>::digits < std::numeric_limits<S>::digits) {
+					if (tmp < -std::numeric_limits<D>::max()) {
+						return -std::numeric_limits<D>::max();
+					}
+					else if (_x > std::numeric_limits<D>::max()) {
+						return std::numeric_limits<D>::max();
+					}
+				}
+				return D(tmp);
+			}
+		}
+	}
+	
+	double constexpr catan2(double y, double x){
     const double atan_tbl[] = {
     -3.333333333333333333333333333303396520128e-1,
      1.999999117496509842004185053319506031014e-1,

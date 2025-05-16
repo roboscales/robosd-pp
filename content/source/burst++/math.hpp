@@ -42,7 +42,7 @@ namespace burst {
 			constexpr static ::burst::var::types const_long_signal = ::burst::var::types::const_int32;
 		};
 		#endif
-		static constexpr int15::signal_t round(double _x) {
+		static int15::signal_t constexpr s_round(double _x) {
 			if (_x > 0) {
 				return (int15::signal_t)(_x + 0.5);
 			}
@@ -50,18 +50,27 @@ namespace burst {
 				return (int15::signal_t)(_x - 0.5);
 			}
 		}
-		static constexpr int15::long_signal_t long_round(double _x) {
+
+		static signal_t constexpr  s_frac(double _x) {
+			return s_round(_x* max);
+		}
+
+		static long_signal_t constexpr  l_frac(double _x) {
+			return l_round(_x* long_max);
+		}
+
+		static constexpr long_signal_t l_round(double _x) {
 			if (_x > 0) {
-				return (int15::long_signal_t)(_x + 0.5);
+				return (long_signal_t)(_x + 0.5);
 			}
 			else {
-				return (int15::long_signal_t)(_x - 0.5);
+				return (long_signal_t)(_x - 0.5);
 			}
 		}
-		static constexpr uint32_t rad2ceil32(signal_t _x) {
+		static constexpr uint32_t l_rad2ceil(signal_t _x) {
 			return ((uint32_t)_x)<<16;
 		}
-		static constexpr uint16_t rad2ceil16(signal_t _x) {
+		static constexpr uint16_t s_rad2ceil(signal_t _x) {
 			return ((uint16_t)_x);
 		}
 		static signal_t sin(signal_t _angle);
@@ -96,132 +105,16 @@ namespace burst {
 		};
 		#endif
 	};
-	template <typename T, typename H> T saturate(T _x, H  _lo, H _hi) {
-		if (_x < _lo) {
-			_x = _lo;
-		}
-		else if (_x > _hi) {
-			_x = _hi;
-		}
-		return _x;
-	}
+
 	
-	template <typename T, typename R> T saturate(T _x, const R & _r) {
-		if (_x < _r.lo) {
-			_x = _r.lo;
-		}
-		else if (_x > _r.hi) {
-			_x = _r.hi;
-		}
-		return _x;
-	}
+
 	
-	template< typename T> static constexpr T s_rshift(T _x, uint8_t _dg) {
-			if (_x  == T(0) || (_dg==0)) {
-				return _x;
-			}
-			else {
-				if (_x > 0) {
-					_x += (1 << (_dg-1) );
-					_x >>= _dg;
-				}
-				else {
-					_x -= (1 << (_dg-1));
-					// две инверсии. выяснить надоли так делать!
-					_x = -( (-_x) >> _dg );
-				}
-			}
-			return _x;
-		}
-	namespace fast {
-		template <typename T> T rsh(T _x, int8_t _sh) {
-			#if ROBO_APP_BURST_MATH_SHIFT_ENABLE
-			return _x >> _sh;
-			#else
-			return _x > 0 ? (_x >> _sh) : (-((-_x) >> _sh));
-			#endif
-		}
-		template <typename T> T lsh(T _x, int8_t _sh) {
-			#if ROBO_APP_BURST_MATH_SHIFT_ENABLE
-			return _x << _sh;
-			#else
-			return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
-			#endif
-		}
 
-		template <typename T>  T lsh_r(const T _src, uint8_t _shift) {
-			if (_src == 0) {
-				return (T)0;
-			}
-			else {
-				auto r = (1 << (_shift - 1))-1;
-				if (_src > 0){
-					if (_src >= std::numeric_limits<T>::max() - r) {
-						return (_src >> _shift) + 1;
-					}
-					else {
-						return ((_src + r) >> _shift);
-					}
-				}
-				else {
-					if (_src <= std::numeric_limits<T>::min() + r) {
-						#if ROBO_APP_BURST_MATH_SHIFT_ENABLE
-						return (_src >> _shift) - 1;
-						#else
-						return -((-_src) >> _shift) - 1;
-						#endif
-					}
-					else {
-						#if ROBO_APP_BURST_MATH_SHIFT_ENABLE
-						return ((_src - r) >> _shift);
-						#else
-						return -((-(_src - r)) >> _shift);
-						#endif
-					}
-				}
-			}
-		}
-		template <typename D, typename S > D pack(const S& _x, uint8_t _shift) {
-			if (_x == S(0)) {
-				return (D)0;
-			}
-			else {
-				S tmp = _x;
-				if (_shift > 0) {
-					int  r = (1 << (_shift - 1)) - 1;
-					if (tmp > S(0)) {
-						if ((int)(std::numeric_limits<S>::max() - _x) < r) {
-							tmp = std::numeric_limits<S>::max() >> _shift;
-						}
-						else {
-							tmp = (tmp + r) >> _shift;
-						}
-					}
-					else {
-						if ((int)(tmp + std::numeric_limits<S>::max()) < r) {
-							tmp = -(std::numeric_limits<S>::max() >> _shift);
-						}
-						else {
-							tmp = -((r - tmp) >> _shift);
-						}
-					}
-				}
-				if (std::numeric_limits<D>::digits < std::numeric_limits<S>::digits) {
-					if (tmp < -std::numeric_limits<D>::max()) {
-						return -std::numeric_limits<D>::max();
-					}
-					else if (_x > std::numeric_limits<D>::max()) {
-						return std::numeric_limits<D>::max();
-					}
-				}
-				return D(tmp);
-			}
-		}
-	}
+	
 
 
-	template< typename digit > struct fixed_point {
-
+	template< typename digit > struct fixed_point:public digit {
+//		typedef digit digit_s;
 		typedef typename  digit::discret_t discret_t;
 		typedef typename  digit::long_discret_t long_discret_t;
 		typedef typename  digit::signal_t signal_t;
@@ -241,12 +134,17 @@ namespace burst {
 		constexpr static signal_t ones = digit::ones;
 		constexpr static signal_t pi = digit::max;
 		
-		static constexpr typename digit::signal_t round(double _x) {
-			return digit::round(_x);
+		static constexpr typename digit::signal_t s_round(double _x) {
+			return digit::s_round(_x);
 		}
 		
-		static constexpr typename digit::long_signal_t long_round(double _x) {
-			return digit::long_round(_x);
+		static constexpr typename digit::long_signal_t l_round(double _x) {
+			return digit::l_round(_x);
+		}
+
+
+		static  signal_t s_sqrt(ulong_signal_t _value) {
+			return digit::sqrt(_value);
 		}
 
 		static constexpr signal_t s_sat(long_signal_t _x) {
@@ -259,10 +157,6 @@ namespace burst {
 			else {
 				return _x;
 			}
-		}
-
-		static  signal_t sqrt(ulong_signal_t _value) {
-			return digit::sqrt(_value);
 		}
 
 		static constexpr signal_t s_inc(signal_t val, signal_t x, signal_t _min, signal_t _max) {
@@ -279,18 +173,18 @@ namespace burst {
 			return (signal_t)val32;
 		}
 
-		static constexpr typename digit::signal_t frac(double _x) {
-			return round(_x* digit::max);
+		static constexpr typename digit::signal_t s_frac(double _x) {
+			return s_round(_x* digit::max);
 		}
 
-		static constexpr typename digit::long_signal_t long_frac(double _x) {
-			return long_round(_x* digit::long_max);
+		static constexpr typename digit::long_signal_t l_frac(double _x) {
+			return l_round(_x* digit::long_max);
 		}
-		static constexpr uint32_t rad2ceil32(signal_t _x) {
-			return digit::rad2ceil32(_x);
+		static constexpr uint32_t l_rad2ceil(signal_t _x) {
+			return digit::l_rad2ceil(_x);
 		}
-		static constexpr uint16_t rad2ceil16(signal_t _x) {
-			return digit::rad2ceil16(_x);
+		static constexpr uint16_t s_rad2ceil(signal_t _x) {
+			return digit::s_rad2ceil(_x);
 		}
 
 		/*/constexpr static signal_t one_div_2 = digit::round(0.5 * max);
@@ -301,12 +195,13 @@ namespace burst {
 		constexpr static signal_t sqrt3_div_2 = digit::round(max * robo::sqrt3_div_2<double>);
 		constexpr static signal_t sqrt2_div_2 = digit::round(max * robo::sqrt2_div_2<double>);
 		*/
-		template <typename T> static satstates round_s(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
+		template <typename T> static satstates s_round(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
 				return satstates::both;
 			}
-			long_signal_t tmp;
+			long_signal_t tmp = robo::digit::round(_src,_shift);
+			/*
 			if (_src == 0) {
 				tmp = (long_signal_t)0;
 			}
@@ -339,7 +234,7 @@ namespace burst {
 						tmp = _src;
 					}
 				}
-			}
+			}*/
 			if (tmp > _range.hi) {
 				_output = _range.hi;
 				return satstates::up;
@@ -354,43 +249,9 @@ namespace burst {
 			}
 		}
 	
-		static long_signal_t round_l(const long_signal_t& _src, unsigned int _shift) {
-			if (_src == 0) {
-				return (long_signal_t)0;
-			}
-			else {
-				if (_src > 0) {
-					if (_shift > 0) {
-						int r = (1 << (_shift - 1))-1;
-						if (digit::long_max - _src < r) {
-							return digit::long_max >> _shift;
-						}
-						else {
-							return (_src + r) >> _shift;
-						}
-					}
-					else {
-						return _src;
-					}
-				}
-				else {
-					if (_shift > 0) {
-						int r = (1 << (_shift - 1))-1;
-						if (_src - digit::long_min < r) {
-							return -((-digit::long_min) >> _shift);
-						}
-						else {
-							return -((r - _src) >> _shift);
-						}
-					}
-					else {
-						return _src;
-					}
-				}
-			}
-		}
 		
-		template <typename T> static T round_t(const long_signal_t& _src, unsigned int _shift) {
+		
+		template <typename T> static T t_round (const long_signal_t& _src, unsigned int _shift) {
 			if (_src == 0) {
 				return (T)0;
 			}
@@ -479,7 +340,7 @@ namespace burst {
 			};
 		};
 
-		static signal_t scale_l(long_signal_t _t) {
+		static signal_t s_extract(long_signal_t _t) {
 			return ((long_signal_u*)(&_t))->second;
 		}
 
@@ -529,7 +390,7 @@ namespace burst {
 			return  s_extract(acc);
 		}
 
-		static signal_t dot(signal_t _x1, signal_t _y1, signal_t _x2, signal_t _y2) {
+		static signal_t s_dot(signal_t _x1, signal_t _y1, signal_t _x2, signal_t _y2) {
 			long_signal_u tmp;
 			tmp.value = (long_signal_t)(_x1) *_y1 + (long_signal_t)(_x2) *_y2 ;
 			return s_extract(tmp);
@@ -562,7 +423,7 @@ namespace burst {
 		}
 		static long_signal_t  l_add(long_signal_t _x0, long_signal_t _x2, signal_t _y2) {
 			long_signal_t tmp = 32768L * _x0 + _x2 * _y2;
-			return  s_rshift<long_signal_t>(tmp);
+			return  robo::digit::round(tmp);
 		}
 		struct qa{
 			parameter_t gain;
@@ -582,7 +443,7 @@ namespace burst {
 				qa = round_l(qa,qshift);
 				tmp+=qa;
 				tmp = round_l(tmp,shift);
-				tmp = saturate<long_signal_t>(tmp,long_min,long_max);				
+				tmp = robo::saturate<long_signal_t>(tmp,long_min,long_max);				
 				return (signal_t)tmp;
 			}
 			qa(
@@ -1173,6 +1034,42 @@ namespace burst {
 			return (T)_src;
 		}
 	}
+	/*
+static long_signal_t l_round(const long_signal_t& _src, unsigned int _shift) {
+			if (_src == 0) {
+				return (long_signal_t)0;
+			}
+			else {
+				if (_src > 0) {
+					if (_shift > 0) {
+						int r = (1 << (_shift - 1))-1;
+						if (digit::long_max - _src < r) {
+							return digit::long_max >> _shift;
+						}
+						else {
+							return (_src + r) >> _shift;
+						}
+					}
+					else {
+						return _src;
+					}
+				}
+				else {
+					if (_shift > 0) {
+						int r = (1 << (_shift - 1))-1;
+						if (_src - digit::long_min < r) {
+							return -((-digit::long_min) >> _shift);
+						}
+						else {
+							return -((r - _src) >> _shift);
+						}
+					}
+					else {
+						return _src;
+					}
+				}
+			}
+		}	*/
 }
 
 #endif

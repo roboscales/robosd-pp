@@ -168,7 +168,7 @@ namespace burst {
 		void mode_synchro_voltage_runA(void) {
 			DEV_PRESENT_S(p);
 			p.synchro.angle32 += p.synchro.freq;
-			p.synchro.angle = (signal_t)fast::rsh(p.synchro.angle32, 16);
+			p.synchro.angle = (signal_t)robo::digit::rsh(p.synchro.angle32, 16);
 		}
 	private:
 		class synchro_voltage_mode : public dev::mode {
@@ -196,7 +196,7 @@ namespace burst {
 			p.lateral.current.req = range_apply(a.lateral.current, p.lateral.current.range);
 			p.synchro.freq = a.synchro.freq;
 			p.synchro.angle32 = a.synchro.angle;
-			p.synchro.angle = (signal_t)fast::rsh(p.synchro.angle32, 16);
+			p.synchro.angle = (signal_t)robo::digit::rsh(p.synchro.angle32, 16);
 		}
 		void mode_synchro_current_start(void) {
 			DEV_PRESENT_S(p);
@@ -221,7 +221,7 @@ namespace burst {
 			lpi.run();
 			B::cpi.run();
 			p.synchro.angle32 += p.synchro.freq;
-			p.synchro.angle = (signal_t)fast::rsh(p.synchro.angle32, 16);
+			p.synchro.angle = (signal_t)robo::digit::rsh(p.synchro.angle32, 16);
 		}
 		private:
 			class synchro_current_mode : public dev::mode {

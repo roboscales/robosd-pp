@@ -116,9 +116,9 @@ namespace burst {
 			static inline const int sdiffs[6] = {
 				0, 1, 2, 3, -2, -1
 			};
-			static inline const signal_t one_div_3 = number::frac(1. / 3);
-			static inline const signal_t two_div_3 = number::frac(2. / 3);
-			static inline const signal_t one = number::frac(1.);
+			static inline const signal_t one_div_3 = number::s_frac(1. / 3);
+			static inline const signal_t two_div_3 = number::s_frac(2. / 3);
+			static inline const signal_t one = number::s_frac(1.);
 			static inline signal_t angles[6] = {
 				0
 				, one_div_3

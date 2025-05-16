@@ -122,12 +122,12 @@ namespace burst{
 			{
 				long_signal_t tmp;
 				tmp = (present.long_model += (Error* config.modelGain) );
-				tmp = fast::rsh( tmp, config.modelShift );
-				present.model = tmp = saturate(tmp, number::min, number::max );
+				tmp = robo::digit::rsh( tmp, config.modelShift );
+				present.model = tmp = robo::saturate(tmp, number::min, number::max );
 			}
 				
 			tmp = Error+ present.model - signal_;
-			tmp = fast::rsh( tmp , config.controlShift );
+			tmp = robo::digit::rsh( tmp , config.controlShift );
 
 			controlLong = tmp* (config.propGain)  ;
 
@@ -142,8 +142,8 @@ namespace burst{
 				controlLong += present.diff;
 			}
 
-			controlLong = fast::rsh(controlLong, config.controlShift);
-			controlLong = saturate(controlLong, controlMin_,controlMax_);
+			controlLong = robo::digit::rsh(controlLong, config.controlShift);
+			controlLong =robo:: saturate(controlLong, controlMin_,controlMax_);
 			control_ = (signal_t)controlLong;
 		}
 			
