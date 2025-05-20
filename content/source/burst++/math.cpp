@@ -5,7 +5,7 @@ namespace burst {
 	#define S(x) int15::s_frac(x)
 
 
-	const int15::signal_t mcgenSineTable256[sin_length_table + 1] =
+	const int15::signal_t constexpr  mcgenSineTable256[sin_length_table + 1] =
 	{ S(0.000000),S(-0.006134),S(-0.012268),S(-0.018402),
 	S(-0.024536),S(-0.030670),S(-0.036804),S(-0.042938),
 	S(-0.049042),S(-0.055176),S(-0.061310),S(-0.067444),
@@ -73,12 +73,9 @@ namespace burst {
 	S(-1.0)
 	};
 	
-#if 1 
-//static volatile uint16_t mcsinPIxLUT_ix = 0;
-//static volatile int15::signal_t mcsinPIxLUT_value =0;
-int15::signal_t mcsinPIxLUT(int15::signal_t _value) {
-		volatile uint16_t mcsinPIxLUT_ix;
-		volatile int15::signal_t mcsinPIxLUT_value = _value;
+constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
+		uint16_t mcsinPIxLUT_ix = 0;
+		int15::signal_t mcsinPIxLUT_value = _value;
 		if (mcsinPIxLUT_value >= 0) {
 			if(mcsinPIxLUT_value > S(0.5)){
 				mcsinPIxLUT_ix =(2 * sin_length_table - (mcsinPIxLUT_value >> sin_index_shift) - 1);
@@ -100,23 +97,6 @@ int15::signal_t mcsinPIxLUT(int15::signal_t _value) {
 
 		}
 	}
-		#else
-	int15::signal_t mcsinPIxLUT(volatile int15::signal_t _value) {		
-		if (_value >= 0) {
-			return (
-				_value > S(0.5) ?
-				-mcgenSineTable256[(2 * sin_length_table - (_value >> sin_index_shift) - 1)]
-				: (-mcgenSineTable256[(_value >> sin_index_shift)])
-				);
-		}
-		else {
-			return (
-				_value <= -S(0.5) ?
-				mcgenSineTable256[(2 * sin_length_table - ((-_value) >> sin_index_shift))]
-				: mcgenSineTable256[(((-_value) >> sin_index_shift))]);
-		}
-	}
-	#endif
 
 	int15::signal_t int15::sin(int15::signal_t _angle) {
 		return mcsinPIxLUT(_angle);

@@ -220,22 +220,22 @@ namespace robo {
 		S len = 0;
 	};
 
-	template<typename T > T constexpr abs(const T & x){
+	template<typename T > constexpr T abs(const T & x){
 		return (x>0) ? x:-x;
 	}
-	template<typename T > T constexpr min(const T & x,const T & y){
+	template<typename T > constexpr T min(const T & x,const T & y){
 		return (x>y) ? y:x;
 	}
-	template<typename T > T constexpr max(const T & x,const T & y){
+	template<typename T > constexpr T max(const T & x,const T & y){
 		return (x>y) ? x:y;
 	}
 
-	template<typename T>	 T constexpr fma(T a, T b, T c)
+	template<typename T>	 constexpr  T fma(T a, T b, T c)
 	{
 			return a * b + c;
 	}
 	
-	template <typename T, typename H> T constexpr  saturate(T _x, H  _lo, H _hi) {
+	template <typename T, typename H> constexpr T saturate(T _x, H  _lo, H _hi) {
 		if (_x < _lo) {
 			_x = _lo;
 		}
@@ -245,7 +245,7 @@ namespace robo {
 		return _x;
 	}
 	
-	template <typename T, typename R> T constexpr  saturate(T _x, const R & _r) {
+	template <typename T, typename R> constexpr T saturate(T _x, const R & _r) {
 		if (_x < _r.lo) {
 			_x = _r.lo;
 		}
@@ -257,14 +257,14 @@ namespace robo {
 	
 	//смещение вправо с округлением
 	namespace digit{
-		template <typename T> T constexpr  rsh(T _x, int8_t _sh) {
+		template <typename T> constexpr T rsh(T _x, int8_t _sh) {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
 			return _x >> _sh;
 			#else
 			return _x > 0 ? (_x >> _sh) : (-((-_x) >> _sh));
 			#endif
 		}
-		template <typename T> T constexpr  lsh(T _x, int8_t _sh) {
+		template <typename T> constexpr T lsh(T _x, int8_t _sh) {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
 			return _x << _sh;
 			#else
@@ -272,7 +272,7 @@ namespace robo {
 			#endif
 		}
 	
-		template <typename T>  T constexpr round(const T _src, uint8_t _shift) {
+		template <typename T> constexpr T round(const T _src, uint8_t _shift) {
 			if (_src == 0) {
 				return (T)0;
 			}
@@ -344,7 +344,8 @@ namespace robo {
 		}
 	}
 	
-	double constexpr catan2(double y, double x){
+	constexpr   double catan2(double y, double x){
+		if( y ==0. && x==0.) return 0.;
     const double atan_tbl[] = {
     -3.333333333333333333333333333303396520128e-1,
      1.999999117496509842004185053319506031014e-1,
@@ -362,7 +363,7 @@ namespace robo {
        arctan (1/x) = 1/2 * pi - arctan (x), when x > 0
     */
 
-    double ax = ::robo::abs(x);
+    double ax = abs(x);
     double ay = abs(y);
     double t0 = max(ax, ay);
     double t1 = min(ax, ay);
@@ -389,10 +390,29 @@ namespace robo {
     r = x < 0 ?  pi<double> - r : r;
     r = y < 0 ? -r : r;
 
-    return p;
+    return r;
 		
 	}
+
+	template<typename T> constexpr T csin(T x) {
+		T result = 0;
+		int sign = 1;
+		T xx = x * x;
+		T pw = x;
+		T fti = 1.0;
+		for(int i = 1; i < 25; i += 2) {
+			fti /= i;
+			result += sign * pw * fti;
+			fti /= ( i + 1 );
+			sign = -sign;
+			pw  *= xx;
+		}
+		return result;
+	}
+	
 }
+
+
 
 #define PP_THIRD_ARG(a,b,c,...) c
 #define VA_OPT_SUPPORTED_I(...) PP_THIRD_ARG(__VA_OPT__(,),true,false,)
