@@ -290,7 +290,7 @@ class resolver_driver_s {
 		uint16_t rphase;
 		//bool 
 	};
-	template<class number, class driver> class resolver_sincos_t : public resolver_driver_s{
+	template<class number, class driver,class generator> class resolver_sincos_t : public resolver_driver_s{
 		using B =  resolver_driver_s;
 		using statuses = B::statuses;
 		enum class modes {wait_prf=0, ready};
@@ -306,16 +306,24 @@ class resolver_driver_s {
 			bool enable;
 			typename number::signal_t sn;
 			burst::resolver_sincos_raw_t<number> raw;
+			bool data_enable;
 		};
-		static burst::board::slot::simple startup_machine;
+		bool data_enable(){
+			RESOLVER_PRESENT_S(p);
+			auto tmp = p.data_enable;
+			p.data_enable = false;
+			return tmp;
+		}
+		
+		
 		resolver_sincos_t(present_s& _present)
 			: B(_present.ref){
 				fill();
 		}
-		constexpr static inline const			uint32_t time_nsb =    (uint32_t)( 1024000000./driver::freq_hz/driver::table_size +0.5);
+		constexpr static inline const			uint32_t time_nsb =    (uint32_t)( 1024000000./generator::freq_hz/generator::table_size +0.5);
 
 		void start(void){
-			driver::start(time_nsb);				
+			driver::start(generator::sin_array,generator::table_size,time_nsb);				
 			RESOLVER_PRESENT_S(p);
 			p.enable = true;
 		}
@@ -323,11 +331,11 @@ class resolver_driver_s {
 		void  fill(void) {
 			using long_signal_t=  typename number::long_signal_t;
 			using signal_t=  typename number::signal_t;
-			constexpr long_signal_t amp_pp =    (long_signal_t)(driver::amp*driver::table_zero +0.5);
-			constexpr long_signal_t step_pp =    (long_signal_t)( (4294967346. + driver::table_size/2)/ driver::table_size);
+			constexpr long_signal_t amp_pp =    (long_signal_t)(generator::amp*generator::table_zero +0.5);
+			constexpr long_signal_t step_pp =    (long_signal_t)( (4294967346. + generator::table_size/2)/ generator::table_size);
 
 			typename number::long_signal_t phase = 0;
-			for (int i=0; i<driver::table_size;++i,phase+=step_pp) {
+			for (int i=0; i<generator::table_size;++i,phase+=step_pp) {
 				typename number::long_signal_t sphase;
 				if(phase==0){
 					sphase=0;
@@ -345,25 +353,25 @@ class resolver_driver_s {
 				} else{
 					sy=(signal_t)((y-16383)>>15);
 				}
-				auto n= (i+driver::table_offset) %driver::table_size;
-				driver::sin_array[i] = sy + driver::table_zero;
+				auto n= (i+generator::table_offset) %generator::table_size;
+				generator::sin_array[i] = sy + generator::table_zero;
 			}				
 		}
 		
 		void run(void){
 			RESOLVER_PRESENT_S(p);
 			if(p.enable){
-				if(driver::query(p.raw)){
+				if(p.data_enable){
 					p.rphase = p.raw.rphase;
-					p.rphase+=driver::table_mess_offset;
-					p.rphase%=driver::table_size;
-					p.rsin = driver::sin_array[p.rphase];
+					p.rphase+=generator::table_mess_offset;
+					p.rphase%=generator::table_size;
+					p.rsin = generator::sin_array[p.rphase];
 					
-					if(p.rsin>driver::table_mess_th+driver::table_zero){
+					if(p.rsin>generator::table_mess_th+generator::table_zero){
 						p.teta = number::atan2(p.raw.sn, p.raw.cs);
 						p.ref.ceiled = number::l_rad2ceil (p.teta);
 						p.ref.status = statuses::ready;
-					} else if(p.rsin<-driver::table_mess_th+driver::table_zero){
+					} else if(p.rsin<-generator::table_mess_th+generator::table_zero){
 						p.teta = number::atan2(-p.raw.sn, -p.raw.cs);
 						p.ref.ceiled = number::l_rad2ceil (p.teta);
 						p.ref.status = statuses::ready;
@@ -477,12 +485,7 @@ class resolver_driver_s {
 			long_signal_t acc;
 			typename hidriver_s::present_s hidrv;
 			typename lowdriver_s::present_s lowdrv;
-			/*
-			struct{
-				uint32_t lo;
-				uint32_t hi;
-			} abs;
-			*/
+
 		};
 		
 		
@@ -525,7 +528,7 @@ class resolver_driver_s {
 		resolver_x2_t(const config_s& _config, present_s& _present)
 			: B(_config.ref, _present.ref), hidriver_s(_present. hidrv), lowdriver_s(_present.lowdrv) {};
 		resolver_x2_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
-			: B(_config.ref, _present.ref, _subsystem), hidriver_s(_present. hidriver), lowdriver_s(_present.lowdriver) {}; 
+			: B(_config.ref, _present.ref, _subsystem), hidriver_s(_present. hidrv), lowdriver_s(_present.lowdrv) {}; 
 		bool first_tact = true;
 		virtual void begin(void) {
 			B::begin();
