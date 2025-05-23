@@ -184,6 +184,16 @@ namespace robo {
 				return *this;
 			}
 
+			constexpr numbers_t abs (void) {
+				numbers_t res;
+				T* dst = res.memo;
+				T* src = S::memo;
+				for (size_t i = 0; i < S::size; ++i) {
+					*dst++ = ::abs(*src++);
+				}
+				return res;
+			}
+
 			template <typename A> constexpr T dot(const A& _src) const {
 				ROBO_APP_ASSERT(S::size == _src.size);
 				T res = T(0);

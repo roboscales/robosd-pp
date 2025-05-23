@@ -223,9 +223,16 @@ namespace robo {
 	template<typename T > constexpr T abs(const T & x){
 		return (x>0) ? x:-x;
 	}
+	#ifdef min 
+	#undef min
+	#endif
 	template<typename T > constexpr T min(const T & x,const T & y){
 		return (x>y) ? y:x;
 	}
+	#ifdef max 
+	#undef max
+	#endif
+
 	template<typename T > constexpr T max(const T & x,const T & y){
 		return (x>y) ? x:y;
 	}
