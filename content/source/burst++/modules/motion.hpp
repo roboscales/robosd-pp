@@ -121,7 +121,7 @@ namespace burst{
 					if (config_->elasticLimmiterEnabled) {
 						if (r > r_max) {
 								long_signal_t tmp = (r_max - r);
-								tmp = fast::rsh( tmp, config_->limitGainPresc );
+								tmp = robo::digit::rsh( tmp, config_->limitGainPresc );
 								tmp *= config_->limitGain;
 								if (tmp < 0) {
 										tmp = 0;
@@ -132,7 +132,7 @@ namespace burst{
 						}	else {
 								if (r < r_min) {
 										long_signal_t tmp = (r_min - r);
-										tmp = fast::rsh( tmp, config_->limitGainPresc );
+										tmp = robo::digit::rsh( tmp, config_->limitGainPresc );
 										tmp *= config_->limitGain;
 										if (tmp > 0) {
 												tmp = 0;
@@ -145,9 +145,9 @@ namespace burst{
 					} else {
 						if (r > r_max) {
 							long_signal_t tmp = (r_max - r);
-							tmp = fast::rsh( tmp, config_->limitGainPresc );
+							tmp = robo::digit::rsh( tmp, config_->limitGainPresc );
 							tmp *= config_->limitGain;
-							controlMax = controlMax + fast::rsh( tmp, config_->controlShift);
+							controlMax = controlMax + robo::digit::rsh( tmp, config_->controlShift);
 							if (controlMax < 0) {
 									controlMax = 0;
 							}
@@ -155,9 +155,9 @@ namespace burst{
 						else {
 							if (r < r_min) {
 								long_signal_t tmp = (r_min - r);
-								tmp = fast::rsh( tmp, config_->limitGainPresc );
+								tmp = robo::digit::rsh( tmp, config_->limitGainPresc );
 								tmp *= config_->limitGain;
-								controlMin = controlMin +fast::rsh(tmp, config_->controlShift);
+								controlMin = controlMin +robo::digit::rsh(tmp, config_->controlShift);
 								if (controlMin > 0)
 										controlMin = 0;
 							}
@@ -166,7 +166,7 @@ namespace burst{
 				}
 
 				#ifndef MODEL_VALUE_MAX
-				#define MODEL_VALUE_MAX number::long_frac(0.9)
+				#define MODEL_VALUE_MAX number::l_frac(0.9)
 				#endif
 				signal_t control = * control_;
 				Error = sr - signal;
@@ -187,8 +187,8 @@ namespace burst{
 				{
 					long_signal_t tmp;
 					tmp = (present.long_model += (Error* config_->modelGain) );
-					tmp = fast::rsh( tmp, config_->modelShift );
-					present.model = tmp = saturate(tmp, number::min, number::max );
+					tmp = robo::digit::rsh( tmp, config_->modelShift );
+					present.model = tmp = robo::saturate(tmp, number::min, number::max );
 
 					if (  signal ==0 ){
 						if(Error>0){
@@ -215,8 +215,8 @@ namespace burst{
 					present.diff = -*(signal_diff_)*config_->diffGain;
 					controlLong += present.diff;
 				}
-				controlLong = fast::rsh(controlLong, config_->controlShift) + present.force;
-				controlLong = saturate(controlLong, controlMin,controlMax );
+				controlLong = robo::digit::rsh(controlLong, config_->controlShift) + present.force;
+				controlLong = robo::saturate(controlLong, controlMin,controlMax );
 				 * control_ = (signal_t)controlLong;				
 			}
 			

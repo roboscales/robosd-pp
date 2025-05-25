@@ -220,7 +220,206 @@ namespace robo {
 		S len = 0;
 	};
 
+	template<typename T > constexpr T abs(const T & x){
+		return (x>0) ? x:-x;
+	}
+	#ifdef min 
+	#undef min
+	#endif
+	template<typename T > constexpr T min(const T & x,const T & y){
+		return (x>y) ? y:x;
+	}
+	#ifdef max 
+	#undef max
+	#endif
+
+	template<typename T > constexpr T max(const T & x,const T & y){
+		return (x>y) ? x:y;
+	}
+
+	template<typename T>	 constexpr  T fma(T a, T b, T c)
+	{
+			return a * b + c;
+	}
+	
+	template <typename T, typename H> constexpr T saturate(T _x, H  _lo, H _hi) {
+		if (_x < _lo) {
+			_x = _lo;
+		}
+		else if (_x > _hi) {
+			_x = _hi;
+		}
+		return _x;
+	}
+	
+	template <typename T, typename R> constexpr T saturate(T _x, const R & _r) {
+		if (_x < _r.lo) {
+			_x = _r.lo;
+		}
+		else if (_x > _r.hi) {
+			_x = _r.hi;
+		}
+		return _x;
+	}
+	
+	//смещение вправо с округлением
+	namespace digit{
+		template <typename T> constexpr T rsh(T _x, int8_t _sh) {
+			#if ROBO_APP_MATH_SHIFT_ENABLE
+			return _x >> _sh;
+			#else
+			return _x > 0 ? (_x >> _sh) : (-((-_x) >> _sh));
+			#endif
+		}
+		template <typename T> constexpr T lsh(T _x, int8_t _sh) {
+			#if ROBO_APP_MATH_SHIFT_ENABLE
+			return _x << _sh;
+			#else
+			return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
+			#endif
+		}
+	
+		template <typename T> constexpr T round(const T _src, uint8_t _shift) {
+			if (_src == 0) {
+				return (T)0;
+			}
+			else {
+				auto max = std::numeric_limits<T>::max();
+				auto min = -max;
+				auto r = ((T)1 << (_shift - 1))-1;
+				if (_src > 0){
+					if (_src >= max - r) {
+						return (_src >> _shift) + 1;
+					}
+					else {
+						return ((_src + r) >> _shift);
+					}
+				}
+				else {
+					if (_src <= min + r) {
+						#if ROBO_APP_MATH_SHIFT_ENABLE
+						return (_src >> _shift) - 1;
+						#else
+						return -((-_src) >> _shift) - 1;
+						#endif
+					}
+					else {
+						#if ROBO_APP_MATH_SHIFT_ENABLE
+						return ((_src - r) >> _shift);
+						#else
+						return -((-(_src - r)) >> _shift);
+						#endif
+					}
+				}
+			}
+		}
+		template <typename D, typename S > D constexpr pack(const S& _x, uint8_t _shift) {
+			if (_x == S(0)) {
+				return (D)0;
+			}
+			else {
+				S tmp = _x;
+				if (_shift > 0) {
+					int  r = (1 << (_shift - 1)) - 1;
+					if (tmp > S(0)) {
+						if ((int)(std::numeric_limits<S>::max() - _x) < r) {
+							tmp = std::numeric_limits<S>::max() >> _shift;
+						}
+						else {
+							tmp = (tmp + r) >> _shift;
+						}
+					}
+					else {
+						if ((int)(tmp + std::numeric_limits<S>::max()) < r) {
+							tmp = -(std::numeric_limits<S>::max() >> _shift);
+						}
+						else {
+							tmp = -((r - tmp) >> _shift);
+						}
+					}
+				}
+				if (std::numeric_limits<D>::digits < std::numeric_limits<S>::digits) {
+					if (tmp < -std::numeric_limits<D>::max()) {
+						return -std::numeric_limits<D>::max();
+					}
+					else if (_x > std::numeric_limits<D>::max()) {
+						return std::numeric_limits<D>::max();
+					}
+				}
+				return D(tmp);
+			}
+		}
+	}
+	
+	constexpr   double catan2(double y, double x){
+		if( y ==0. && x==0.) return 0.;
+    const double atan_tbl[] = {
+    -3.333333333333333333333333333303396520128e-1,
+     1.999999117496509842004185053319506031014e-1,
+    -1.428514132711481940637283859690014415584e-1,
+     1.110012236849539584126568416131750076191e-1,
+    -8.993611617787817334566922323958104463948e-2,
+     7.212338962134411520637759523226823838487e-2,
+    -5.205055255952184339031830383744136009889e-2,
+     2.938542391751121307313459297120064977888e-2,
+    -1.079891788348568421355096111489189625479e-2,
+     1.858552116405489677124095112269935093498e-3
+    };
+    /* argument reduction: 
+       arctan (-x) = -arctan(x); 
+       arctan (1/x) = 1/2 * pi - arctan (x), when x > 0
+    */
+
+    double ax = abs(x);
+    double ay = abs(y);
+    double t0 = max(ax, ay);
+    double t1 = min(ax, ay);
+    
+    double a = 1 / t0;
+    a *= t1;
+
+    double s = a * a;
+    double p = atan_tbl[9];
+
+    p = fma( fma( fma( fma( fma( fma( fma( fma( fma( fma(p, s,
+        atan_tbl[8]), s,
+        atan_tbl[7]), s, 
+        atan_tbl[6]), s,
+        atan_tbl[5]), s,
+        atan_tbl[4]), s,
+        atan_tbl[3]), s,
+        atan_tbl[2]), s,
+        atan_tbl[1]), s,
+        atan_tbl[0]), s*a, a);
+
+    double r = ay > ax ? (pi<double>/2 - p) : p;
+
+    r = x < 0 ?  pi<double> - r : r;
+    r = y < 0 ? -r : r;
+
+    return r;
+		
+	}
+
+	template<typename T> constexpr T csin(T x) {
+		T result = 0;
+		int sign = 1;
+		T xx = x * x;
+		T pw = x;
+		T fti = 1.0;
+		for(int i = 1; i < 25; i += 2) {
+			fti /= i;
+			result += sign * pw * fti;
+			fti /= ( i + 1 );
+			sign = -sign;
+			pw  *= xx;
+		}
+		return result;
+	}
+	
 }
+
+
 
 #define PP_THIRD_ARG(a,b,c,...) c
 #define VA_OPT_SUPPORTED_I(...) PP_THIRD_ARG(__VA_OPT__(,),true,false,)
