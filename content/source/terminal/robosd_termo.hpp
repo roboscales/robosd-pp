@@ -149,6 +149,7 @@ namespace robo{
 			static void put(char  _ch);
 			static command * root();
 			static void connect(::robo::net::iserial * _serial);
+			static void connect(const robo::cstr _str );
 			static bool busy(void);
 
 		};
