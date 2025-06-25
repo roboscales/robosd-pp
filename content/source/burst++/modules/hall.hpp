@@ -81,6 +81,42 @@ namespace burst {
 				signal_t delta;
 				signal_t delta_acc;
 			};
+			
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_present(void) {
+				using namespace burst::var;
+				ACTOR_PRESENT_S(p);
+				push(RT("cnt"));
+				reg(types::uint32, p.counter.fault, RT("fault"));
+				reg(types::uint32, p.counter.total, RT("total"));
+				pop();
+				if (actual_mode >= mode::full) {
+					reg(types::const_uint32, p.pins.index, RT("pix"));
+					reg(types::const_int32, p.sector, RT("sector"));
+					reg(number::var::const_signal, p.raw, RT("raw"));
+					reg(number::var::const_signal, p.angle, RT("angle"));
+					reg(number::var::const_signal, p.extra_angle, RT("eangle"));
+					reg(number::var::const_signal, p.delta, RT("delta"));
+					reg(number::var::const_signal, p.delta_acc, RT("delta_acc"));
+				}
+			}
+			
+			virtual void do_regvar_conf(void) {
+				using namespace burst::var;
+				if (actual_mode >= mode::tuning) {
+					ACTOR_CONFIG_S(c);
+					push(RT("offset"));
+					reg(number::var::signal, c.offset.native, RT("native"));
+					reg(number::var::signal, c.offset.dynamic, RT("dynamic"));
+					pop();
+					if (actual_mode >= mode::full) {
+						reg(types::const_uint8, c.inv, RT("inv"));
+						reg(types::const_uint8, c.extra_mode, RT("emode"));
+					}
+				}
+			}
+			#endif	
+			
 			ref_t(const config_s& _config, present_s& _present)
 				: actor(_config.tag, _present.tag) {};
 			ref_t(const config_s& _config, present_s& _present, subsystem& _subsystem)

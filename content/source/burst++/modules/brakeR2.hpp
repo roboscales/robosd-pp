@@ -110,7 +110,7 @@ template <class number, class D> class brake_time_machineR2_t : public brake
 			push(_name);{
 				if (actual_mode >= var::mode::full) {
 
-					reg(types::uint8, present_.commans, RT("c"));
+					reg(types::uint8, present_.command, RT("c"));
 					reg(types::uint8, present_.status, RT("s"));
 
 				}

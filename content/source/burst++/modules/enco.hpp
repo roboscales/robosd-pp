@@ -28,12 +28,12 @@ namespace burst {
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		virtual void do_regvar_present(void) {
 			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
+			push(RT("counter"));
+			reg(types::uint32, p.counter.fault, RT("fault"));
+			reg(types::uint32, p.counter.total, RT("total"));
+			pop();
 			if (actual_mode >= mode::full) {
-				ACTOR_PRESENT_S(p);
-				push(RT("counter"));
-				reg(types::const_uint32, p.counter.fault, RT("fault"));
-				reg(types::const_uint32, p.counter.total, RT("total"));
-				pop();
 				reg(number::var::const_signal, p.delta_acc, RT("delta_acc"));
 				reg(number::var::const_long_signal, p.position, RT("pos"));
 				reg(types::const_uint8, p.ready, RT("ready"));
@@ -493,34 +493,42 @@ class resolver_driver_s {
 		virtual void do_regvar_present(void) {
 			enco_t<number>::do_regvar_present();
 			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
 			if (actual_mode >= mode::full) {
-				ACTOR_PRESENT_S(p);
+				push(RT("splice"));
+				reg(types::const_uint32, p.splice.actual, RT("actual"));
+				reg(types::const_uint32, p.splice.prev, RT("prev"));
+				reg(types::const_uint64, p.splice.total, RT("total"));
+				reg(types::const_uint64, p.splice.accum, RT("accum"));
+				reg(types::const_uint32, p.splice.begin, RT("begin"));
+				reg(types::const_int32, p.splice.delta, RT("begin"));
+				pop();
 				push(RT("native"));
-				reg((types)descriptor_enco(sizeof(R), false, true, false), p.native.raw, RT("raw"));
 				reg(types::const_uint32, p.native.ceiled, RT("ceiled"));
 				reg(types::const_int32, p.native.delta, RT("delta"));
 				pop();
 				reg(number::var::const_signal, p.delta, RT("delta"));
 				reg(number::var::const_long_signal, p.acc, RT("acc"));
 			}
+			reg(types::uint32, p.splice.fault, RT("splice_fault"));
 		}
+		
 		virtual void do_regvar_conf(void) {
 			enco_t<number>::do_regvar_conf();
 			using namespace burst::var;
 			if (actual_mode >= mode::tuning) {
 				ACTOR_CONFIG_S(c);
 				push(RT("offset"));
-				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"));
+				reg(types::uint32, c.offset.sence_hi, RT("sence_hi"));
+				reg(types::uint32, c.offset.native, RT("native"));
 				reg(number::var::long_signal, c.offset.position, RT("pos"));
 				pop();
 				if (actual_mode >= mode::config) {
-					push(RT("reso"));
-					reg(types::uint8, c.resolution.round, RT("round"));
-					reg(types::uint8, c.resolution.raw, RT("raw"));
-					reg(types::uint8, c.resolution.actual, RT("actual"));
-					pop();
-					reg(types::uint8, c.init_count_bits, RT("icb"));
-					reg(types::uint8, c.inverce, RT("inv"));
+					reg(types::const_uint8, c.resolution, RT("reso"));
+					reg(types::const_uint8, c.sence_hi_segment_bits, RT("hsb"));
+					reg(types::const_uint8, c.init_count_bits, RT("icb"));
+					reg(types::const_uint8, c.inverce, RT("inv"));
+					reg(types::const_uint8, c.allwaice_splice, RT("alw"));
 				}
 			}
 		}

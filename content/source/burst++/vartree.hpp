@@ -123,17 +123,17 @@ namespace burst {
 			, invalid_offset = 0x30
 			, invalid_length = 0x40
 		} error;
-
 		struct record_s {
 			descriptor desc;
 			robo::cstr name;
 			int key;
-			const void* addr;
+			const void* addr;			
 		};
 		void reg(ref_s* _r);
 
 		void push(robo::cstr _name);
 		void pop(void);
+		extern int var_count;
 		template<typename T>	void reg(types _type, const T& _addr, robo::cstr _name) {
 			record_s* tmp = new record_s;
 			tmp->desc.memo = _type;
@@ -142,6 +142,7 @@ namespace burst {
 			tmp->name = _name;
 			tmp->key = 0;
 			reg( &(tmp->desc.ref) );
+			var_count++;
 		}
 
 		void free(void);

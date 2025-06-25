@@ -8,7 +8,7 @@
 namespace burst {
 	namespace var {
 		robo::char_t path[path_size + 1] = {};
-
+		int var_count = 0;
 		ref_s** index = new ref_s * [pool_size];
 		int count = 0;
 		void reg(ref_s* _r) {
@@ -100,6 +100,7 @@ namespace burst {
 			for (int i = 0; i < count; ++i,++r) {
 				delete *r;
 			}
+			var_count = 0;
 		}
 		int find(int _key) {
 			ref_s * * r = index;
