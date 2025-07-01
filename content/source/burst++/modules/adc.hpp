@@ -48,9 +48,10 @@ namespace burst {
 				reg_raw_(13);
 				reg_raw_(14);
 				reg_raw_(15);
+				
 				pop();
 				push(RT("val"));
-				#define reg_value_(i) if(i<N) reg_arr(number::var::signal, p.raw, i);
+				#define reg_value_(i) if(i<N) reg_arr(number::var::signal, p.values, i);
 				reg_value_(0);
 				reg_value_(1);
 				reg_value_(2);
@@ -66,6 +67,7 @@ namespace burst {
 				reg_value_(13);
 				reg_value_(14);
 				reg_value_(15);
+				
 				pop();
 			}
 		}
@@ -193,7 +195,8 @@ namespace burst {
 				reg_raw_(15);
 				pop();
 				push(RT("val"));
-				#define reg_value_(i) if(i<N) reg_arr(number::var::signal, p.raw, i);
+				#undef reg_value_
+				#define reg_value_(i) if(i<N) reg_arr(number::var::signal, p.values, i);
 				reg_value_(0);
 				reg_value_(1);
 				reg_value_(2);
@@ -218,6 +221,10 @@ namespace burst {
 			ACTOR_CONFIG_S(c);
 			if (actual_mode >= mode::config) {
 				reg(types::uint8, c.init_count_bits, RT("icb"));
+				converter ** c = converters;
+				for (int i = 0; i < N; ++i, ++c) {
+					(*c)->do_regvar_conf();
+				}
 			}			
 		}
 		#endif
@@ -235,6 +242,9 @@ namespace burst {
 		struct converter{
 			virtual void begin(void) = 0;
 			virtual signal_t operator () (const R & _value) = 0;
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_conf(void) = 0;
+			#endif
 		} * converters[N];
 
 		virtual void begin(void) {
@@ -261,10 +271,28 @@ namespace burst {
 			virtual void begin(void){
 				scaler.reconfig();
 			}
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			virtual void do_regvar_conf(void) {
+				using namespace burst::var;
+				if (actual_mode >= mode::config) {
+								/*const struct config_s {
+				struct{
+					range_s <signal_t> signal;
+					range_s <discret_t> raw;
+				} range;
+			} & config;*/
+					push(name);
+					varreg(RT("sg"),number::var::signal, scaler.config.range.signal);
+					varreg(RT("raw"),number::var::discret, scaler.config.range.raw );
+					pop();
+				}			
+			}
+			#endif
 			virtual signal_t operator () (const R & _value){
 				return scaler.run((typename number::discret_t)_value);
 			}
-			line_converter( const config_s & _config) : scaler(_config){}
+			robo::cstr name;
+			line_converter( robo::cstr _name, const config_s & _config) : scaler(_config),name(_name){}
 		};
 		
 		virtual void convert(void) {

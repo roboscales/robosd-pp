@@ -2,6 +2,9 @@
 #define burst_enco_hpp
 #include "burst++/modules/actor.hpp"
 namespace burst {
+	#ifndef BURST_ENCO_ONLINE_RESTART
+	#define BURST_ENCO_ONLINE_RESTART 1
+	#endif
 	template<class number> class enco_t : public actor {
 	public:
 		using signal_t = typename number::signal_t;
@@ -136,17 +139,17 @@ namespace burst {
 			if (actual_mode >= mode::tuning) {
 				ACTOR_CONFIG_S(c);
 				push(RT("offset"));
-				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"));
-				reg(number::var::long_signal, c.offset.position, RT("pos"));
+				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"),true);
+				reg(number::var::long_signal, c.offset.position, RT("pos"),true);
 				pop();
 				if (actual_mode >= mode::config) {
 					push(RT("reso"));
-					reg(types::uint8, c.resolution.round, RT("round"));
-					reg(types::uint8, c.resolution.raw, RT("raw"));
-					reg(types::uint8, c.resolution.actual, RT("actual"));
+					reg(types::uint8, c.resolution.round, RT("round"),true);
+					reg(types::uint8, c.resolution.raw, RT("raw"),true);
+					reg(types::uint8, c.resolution.actual, RT("actual"),true);
 					pop();
-					reg(types::uint8, c.init_count_bits, RT("icb"));
-					reg(types::uint8, c.inverce, RT("inv"));
+					reg(types::uint8, c.init_count_bits, RT("icb"),true);
+					reg(types::uint8, c.inverce, RT("inv"),true);
 				}
 			}
 		}
@@ -181,13 +184,9 @@ namespace burst {
 		virtual void run(void) {
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
-			if (p.ref.ready && (conf.offset.native != offset.native || conf.offset.position != offset.position)) {
-				begin();
-				return;
-			}
+
 			p.ref.counter.total++;
 			bool success = driver::query(p.native.raw);
-
 			if (p.ref.ready) {
 				if (success) {
 					uint32_t tmp = robo::digit::lsh( (uint32_t)p.native.raw, shift.raw);
@@ -223,6 +222,16 @@ namespace burst {
 							p.ref.delta_acc = adtmp;
 						}
 					}
+					
+					#if BURST_ENCO_ONLINE_RESTART
+					if(!board::if_configure()){
+						if (conf.offset.native != offset.native || conf.offset.position != offset.position) {
+							begin();
+							return;
+						}
+					}
+					#endif
+
 				}
 				else {
 					p.ref.counter.fault++;
@@ -519,16 +528,16 @@ class resolver_driver_s {
 			if (actual_mode >= mode::tuning) {
 				ACTOR_CONFIG_S(c);
 				push(RT("offset"));
-				reg(types::uint32, c.offset.sence_hi, RT("sence_hi"));
-				reg(types::uint32, c.offset.native, RT("native"));
-				reg(number::var::long_signal, c.offset.position, RT("pos"));
+				reg(types::uint32, c.offset.sence_hi, RT("sence_hi"),true);
+				reg(types::uint32, c.offset.native, RT("native"),true);
+				reg(number::var::long_signal, c.offset.position, RT("pos"),true);
 				pop();
 				if (actual_mode >= mode::config) {
-					reg(types::const_uint8, c.resolution, RT("reso"));
-					reg(types::const_uint8, c.sence_hi_segment_bits, RT("hsb"));
-					reg(types::const_uint8, c.init_count_bits, RT("icb"));
-					reg(types::const_uint8, c.inverce, RT("inv"));
-					reg(types::const_uint8, c.allwaice_splice, RT("alw"));
+					reg(types::const_uint8, c.resolution, RT("reso"),true);
+					reg(types::const_uint8, c.sence_hi_segment_bits, RT("hsb"),true);
+					reg(types::const_uint8, c.init_count_bits, RT("icb"),true);
+					reg(types::const_uint8, c.inverce, RT("inv"),true);
+					reg(types::const_uint8, c.allwaice_splice, RT("alw"),true);
 				}
 			}
 		}
@@ -564,11 +573,22 @@ class resolver_driver_s {
 			
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
-			if (p.ref.ready && (conf.offset.native != offset.native || conf.offset.position != offset.position || p.lowdrv.ref.restart || p.hidrv.ref.restart )) {
-				begin();
-				return;
-			}
 			if (p.ref.ready) {
+				#if BURST_ENCO_ONLINE_RESTART
+				//todo govnocod
+				if(!board::if_configure()){
+					if (conf.offset.native != offset.native || conf.offset.position != offset.position || p.lowdrv.ref.restart || p.hidrv.ref.restart ) {
+						begin();
+						return;
+					}
+				}
+				#else
+				if (p.lowdrv.ref.restart || p.hidrv.ref.restart ) {
+					begin();
+					return;
+				}
+				#endif
+
 				p.ref.counter.total++;
 				hidriver_s::run();
 				if(conf.allwaice_splice){

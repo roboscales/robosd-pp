@@ -22,14 +22,26 @@ namespace burst{
 				range_s<signal_t> range;
 			} current;
 			struct {
+				#ifndef BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
+				#define BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 	0
+				#endif
+
+				#ifndef BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
+				#define BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED 	0
+				#endif
+
+				#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
 				struct {
 					typename burst::motion_t<number>::config_s motion;
 					typename burst::positioner_t<number>::config_s positioner;
 				} voltage_cl;
+				#endif
+				#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 				struct {
 					typename burst::motion_t<number>::config_s motion;
 					typename burst::positioner_t<number>::config_s positioner;
 				} current;
+				#endif
 			} modes;
 			#if BURST_PROTECTION_ENABLED == 1
 			#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
@@ -55,7 +67,45 @@ namespace burst{
 		#else
 		#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)
 		#endif
-
+		
+		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
+		#define BURST_ACW_MODES_CL_CO(a)\
+				{\
+					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
+					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE_CL)\
+				}
+		#else
+		#define BURST_ACW_MODES_CL_CO(a)
+		#endif
+				
+				
+		#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
+		#define BURST_ACW_MODES_CURRENT_CO(a)\
+				{\
+					MOTION_CONFIG(a##_MOTION_OV_CURRENT)\
+					,POSITIONER_CONFIG(a##_POSITIONER_OV_CURRENT)\
+				}
+		#else
+		#define BURST_ACW_MODES_CURRENT_CO(a)
+		#endif
+		
+		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED && BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
+				#define BURST_ACW_MODES(a)\
+					BURST_ACW_MODES_CL_CO(a)\
+					, BURST_ACW_MODES_CURRENT_CO(a)
+		#else
+				#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
+				#define BURST_ACW_MODES(a)	BURST_ACW_MODES_CL_CO(a)
+				#else
+					#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
+						#define BURST_ACW_MODES(a)	BURST_ACW_MODES_CURRENT_CO(a)
+					#else
+						#define BURST_ACW_MODES(a)	
+					#endif
+				#endif				
+		#endif
+				
+				
 		#define ACWC_CONFIG(a,b) ACWC_CONFIG_(a,b)
 		#define ACWC_CONFIG_(a,b)\
 		{\
@@ -66,14 +116,7 @@ namespace burst{
 				, BURST_RANGE_CONFIG(b##_CURRENT_RANGE)\
 			}\
 			,{\
-				{\
-					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
-					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE_CL)\
-				}\
-				,{\
-					MOTION_CONFIG(a##_MOTION_OV_CURRENT)\
-					,POSITIONER_CONFIG(a##_POSITIONER_OV_CURRENT)\
-				}\
+				BURST_ACW_MODES(a)\
 			}\
 			BURST_PANICS_ACWC_OVERCURRENT_CO(a)\
 		}
@@ -115,8 +158,8 @@ namespace burst{
 			DEV_ACTION_S(a);
 			range_set(p.current.range, a.current, c.current.range);
 		}
+	#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 		protected:
-
 		void mode_speed_ov_voltage_cl_stop(void) {
 			B::mode_speed_stop();
 		}
@@ -151,7 +194,7 @@ namespace burst{
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
 		} speed_ov_voltage_cl_mode_;
-
+#endif
 		protected:
 
 		void mode_voltage_cl_applay_action(void) {
@@ -186,6 +229,8 @@ namespace burst{
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
 		} voltage_cl_mode_;
+
+		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 		protected:
 		void mode_position_ov_voltage_cl_stop(void) {
 			B::mode_position_stop();
@@ -219,11 +264,11 @@ namespace burst{
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
 		} position_ov_voltage_cl_mode_;		
-		
+		#endif		
 
 
 		//============================================
-
+		#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 		void mode_speed_ov_current_stop(void) {
 			B::mode_speed_stop();
 		}
@@ -245,6 +290,7 @@ namespace burst{
 
 
 		private:
+			
 			class speed_ov_current_mode : public dev::mode {
 				friend class acw_t;
 				speed_ov_current_mode(acw_t& _actuator)
@@ -258,7 +304,7 @@ namespace burst{
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
 			} speed_ov_current_mode_;
-
+		#endif
 		protected:
 
 			void mode_current_applay_action(void) {
@@ -293,6 +339,8 @@ namespace burst{
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
 			} current_mode_;
+			
+			#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 		protected:
 
 			void mode_position_ov_current_stop(void) {
@@ -327,7 +375,7 @@ namespace burst{
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
 			} position_ov_current_mode_;
-
+			#endif
 
 		public:
 		acw_t(
@@ -367,12 +415,20 @@ namespace burst{
 			, current_mag(_current_mag)
 			#endif
 			#endif
+				#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 			, speed_ov_voltage_cl_mode_(*this)
+			#endif
 			, voltage_cl_mode_(*this)
+				#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 			, position_ov_voltage_cl_mode_(*this)
+				#endif
+			#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 			, speed_ov_current_mode_(*this)
+			#endif
 			, current_mode_(*this)
+			#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 			, position_ov_current_mode_(*this)
+			#endif
 			, cpi(
 				_config.current.pi //const config_s& _config
 				, _present.current.pi// present_s& _present
@@ -448,15 +504,18 @@ namespace burst{
 
 					push(RT("modes"));
 					{
+						#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 						push(RT("cl"));
 						motion_t<number>::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
 						positioner_t<number>::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
 						pop();
-
+						#endif
+						#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED 
 						push(RT("c"));
 						motion_t<number>::regvar_config(RT("mo"), c.modes.current.motion);
 						positioner_t<number>::regvar_config(RT("po"), c.modes.current.positioner);
 						pop();
+						#endif
 
 					} pop();
 

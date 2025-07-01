@@ -1,6 +1,6 @@
 #include "servo/burst_backend.hpp"
-//#include "mexo/vartree.hpp"
 #include "burst++/vartree.hpp"
+#include "burst++/modules/service.proto.hpp"
 namespace burst {
 	namespace backend {
 
@@ -32,13 +32,13 @@ namespace burst {
 					return query_result::none;
 				}
 			}
-			_tran.header.command = mexo::front::dev::flow_command_ix::echo;
+			_tran.header.command = burst::proto::flow::id::echo;
 			_tran.request = ROBO_TRAN_REQUEST_PUT;
 			_tran.size_actual =  sizeof(last_);
 			*((robo::time_us_t*)_tran.data) = last_;
 			return query_result::success;
 			case state::request:
-			_tran.header.command = mexo::front::dev::flow_command_ix::echo;
+			_tran.header.command = burst::proto::flow::id::echo;
 			_tran.request = ROBO_TRAN_REQUEST_GET;
 			_tran.size_actual = sizeof(last_);			
 			return query_result::success;
@@ -175,8 +175,9 @@ namespace burst {
 		}
 
 		devagent::proto::result devagent::proto::request(robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
-			//todo !!!
-			_tran.header.command = 2;// burst::front::dev::flow_command_ix::var;
+			burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+			*h = {};
+			_tran.header.command = burst::var::request::index;
 			if (step_ == step::idle) {
 				ROBO_JAMPN_F(_var->length() <= _tran.size_max - 2, fail, "invalid var size %s", _var->name());
 				ROBO_JAMPN_F(_var->addr() < 255, fail, "invalid var index ");
@@ -184,16 +185,17 @@ namespace burst {
 				len_ = (uint8_t)_var->length();
 				op_ = _var->actual_status();
 				step_ = step::put;
-				_tran.data[1] = index_;
+				h->ix = index_;
+				//_tran.data[1] = index_;
 				_tran.request = ROBO_TRAN_REQUEST_PUT;
 				if (op_ == op::put) {
-					_tran.data[0] = ::burst::var::request::put;
+					h->query = ::burst::var::request::put;
 					_var->encode(_tran.data + 2);
 					_tran.size_actual = 2 + len_;
 					return result::repeat;
 				}
 				else if (op_ == op::get) {
-					_tran.data[0] = burst::var::request::get;
+					h->query = burst::var::request::get;
 					_tran.size_actual = 2;
 					return result::repeat;
 
@@ -216,11 +218,12 @@ namespace burst {
 		}
 		devagent::proto::result devagent::proto::confirm(const robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
-				ROBO_JAMPN_F(((_tran.data[0] & burst::var::error_mask) == 0), fail, "invalid var answer (%s , %d)", _var->name(), (int)(_tran.data[0] & burst::var::error_mask));
-				ROBO_JAMPN_F(((_tran.data[1]) == index_), fail, "invalid var index (%s , %d,%d) ", _var->name(), (int)(_tran.data[1]));
+				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+				ROBO_JAMPN_F((h->error!= burst::var::error::none), fail, "invalid var answer (%s , %d)", _var->name(), (int)(h->error) );
+				ROBO_JAMPN_F((h->ix == index_), fail, "invalid var index (%s , %d,%d) ", _var->name(), (int)(h->ix));
 				if (op_ == op::put) {
 					if (step_ == step::put) {
-						ROBO_JAMPN_F((_tran.data[0] == burst::var::request::put), fail, "invalid var  operaton (%s, %d) ", _var->name(), _tran.data[0]);
+						ROBO_JAMPN_F((h->query == burst::var::request::put), fail, "invalid var  operaton (%s, %d) ", _var->name(), (int)(h->query));
 						//reset();
 						step_ = step::get;
 						return result::repeat;
@@ -232,7 +235,7 @@ namespace burst {
 				}
 				else {
 					if (op_ == op::get) {
-						ROBO_JAMPN_F((_tran.data[0] == burst::var::request::get), fail, "invalid var operaton (%s, %d) ", _var->name(), _tran.data[0]);
+						ROBO_JAMPN_F((h->query == burst::var::request::get), fail, "invalid var operaton (%s, %d) ", _var->name(), (int)(h->query));
 						if (step_ == step::put) {
 							step_ = step::get;
 							return result::repeat;
@@ -258,18 +261,19 @@ namespace burst {
 				op_ = op::clean;
 				step_ = step::desc_put;
 				_tran.request = ROBO_TRAN_REQUEST_PUT;
-				_tran.data[0] = burst::var::request::index;
+				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+				h->query = burst::var::request::index;
 				*(int32_t*)(_tran.data + 1) = (uint32_t)robo::hash(_desc->name());
 				_tran.size_actual = 5;
 				//todo
-				_tran.header.command = _tran.header.command = 2;// burst::front::dev::flow_command_ix::var;
+				_tran.header.command = burst::proto::flow::id::var;
 				return result::repeat;
 			}
 			else if (step_ == step::desc_get) {
 				step_ = step::desc_get;
 				_tran.request = ROBO_TRAN_REQUEST_GET;
 				_tran.size_actual = 4;
-				_tran.header.command = 0x02;
+				_tran.header.command = burst::proto::flow::id::var;
 				return result::success;
 			}
 			robo_errlog("error proto series (%s)", _desc->name());
@@ -278,7 +282,8 @@ namespace burst {
 		}
 		devagent::proto::result devagent::proto::confirm_desc(const robo_tran_t& _tran, varindex::descriptor* _desc) {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
-				ROBO_JAMPN_F(((_tran.data[0] & burst::var::error_mask) == 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(_tran.data[0] & burst::var::error_mask));
+				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+				ROBO_JAMPN_F((h->error != 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(h->error));
 				if (step_ == step::desc_put) {
 					ROBO_JAMPN_F((_tran.data[0] == burst::var::request::index), fail, "invalid desc operation  (%s, %d) ", _desc->name(), _tran.data[0]);
 					step_ = step::desc_get;
@@ -316,7 +321,7 @@ namespace burst {
 
 		devagent::stream::query_result devagent::flow_serial::query(robo_tran_t& _tran) {
 			//todo подумать
-			_tran.header.command = _tran.header.command = mexo::front::dev::flow_command_ix::serial_1;
+			_tran.header.command = _tran.header.command = burst::proto::flow::id::serial0;
 			switch (state_) {
 			case state::none:
 				_tran.size_actual = 1;

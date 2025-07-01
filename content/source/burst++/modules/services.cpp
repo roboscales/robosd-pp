@@ -15,6 +15,7 @@
 
 #if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT
 #include "net/robosd_flow.hpp"
+#include "burst++/modules/service.proto.hpp"
 #endif
 
 
@@ -624,11 +625,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_ECHO_ENABLED == 1
 
 	#ifndef SERVICE_NET_FLOW_ECHO_SUBA
-	#define SERVICE_NET_FLOW_ECHO_SUBA 0x01
+	#define SERVICE_NET_FLOW_ECHO_SUBA burst::proto::flow::suba::echo
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_ECHO_SUBA_ANSW
-	#define SERVICE_NET_FLOW_ECHO_SUBA_ANSW 0x01
+	#define SERVICE_NET_FLOW_ECHO_SUBA_ANSW burst::proto::flow::ans_suba::echo
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_ECHO_PERFORMER_PATH
@@ -669,11 +670,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_SERIAL0_ENABLED
 	
 	#ifndef SERVICE_NET_FLOW_SERIAL0_SUBA
-	#define SERVICE_NET_FLOW_SERIAL0_SUBA 0x0F
+	#define SERVICE_NET_FLOW_SERIAL0_SUBA burst::proto::flow::suba::serial0
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW
-	#define SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW 0x0F
+	#define SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW burst::proto::flow::ans_suba::serial0
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_SERIAL0_INPUT_BITS
@@ -711,11 +712,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_VAR_ENABLED == 1
 
 	#ifndef SERVICE_NET_FLOW_VAR_SUBA
-	#define SERVICE_NET_FLOW_VAR_SUBA 0x0B
+	#define SERVICE_NET_FLOW_VAR_SUBA burst::proto::flow::suba::var
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_VAR_SUBA_ANSW
-	#define SERVICE_NET_FLOW_VAR_SUBA_ANSW 0x0B
+	#define SERVICE_NET_FLOW_VAR_SUBA_ANSW burst::proto::flow::ans_suba::var
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_VAR_PERFORMER_PATH
