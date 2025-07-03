@@ -1,16 +1,17 @@
 #include <thread>
 #include <iostream>
 #include <chrono>
-#include "im/edev/edev.hpp"
 #include "core/robosd_system.hpp"
+#include "im/edev/edev.hpp"
 #include <fstream> 
 #include <windows.h> 
 #if ROBO_UNICODE_ENABLED ==1
 int wmain(int _argc, robo::cstr _argv[]) 
 #else
-int main(int _argc, robo::cstr _argv[]) 
+int main(int _argc, const char * _argv[]) 
 #endif
 {
+
 	typedef std::chrono::high_resolution_clock Time;
 	typedef std::chrono::duration<double> fsec;
 	#if 0

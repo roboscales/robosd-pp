@@ -24,7 +24,7 @@ namespace robo{
 					A(1, 0) = Km / J;
 					A(1, 1) = -Kv / J;
 
-					EA = arma::expmat(A * owner.sample_time);
+					EA = arma::expmat(A * (float)owner.sample_time);
 					IA = A.i();
 
 					A1 = -Kv / J;

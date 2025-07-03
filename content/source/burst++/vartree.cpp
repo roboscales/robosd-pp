@@ -59,7 +59,7 @@ namespace burst {
 				case tags::push:
 				ROBO_ASSERT(psz>sizeof(robo::char_t))
 				ROBO_ASSERT(path_stack_level < stack_size)
-				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				sz = (int) robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
 				*(path_stack_top) = sz;
 				path_ptr[sz] = 0;
 				path_ptr += sz;
@@ -77,8 +77,8 @@ namespace burst {
 				psz += sz;
 				break;
 				default:
-				ROBO_ASSERT(psz > (int)(std::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t)))
-				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				ROBO_ASSERT(psz > (int)(robo::string::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t)))
+				sz = (int) robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
 				//sz = 0;
 				*(path_stack_top) = sz;
 				path_ptr[sz] = 0;

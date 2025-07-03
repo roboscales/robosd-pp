@@ -6,7 +6,6 @@
 #include "core/robosd_string.hpp"
 namespace robo {
 	namespace edev {
-
 		class ROBO_EXPORT agent {
 		public:
 			class ROBO_EXPORT block {
@@ -103,7 +102,8 @@ namespace robo {
 			static bool begin(cstr _ini);
 			static void finish(void);
 			virtual void set_local_ini(cstr _ini) =0;
-		};
+	};
+
 	}
 }
 extern "C" {

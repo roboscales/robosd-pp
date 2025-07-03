@@ -167,19 +167,16 @@ namespace robo {
 	void* system::env::mem_alloc(size_t _size) {
 		size_t* ptr = (size_t*)malloc(_size + sizeof(size_t));
 		ROBO_APP_ASSERT(ptr!=nullptr);
-		*ptr = _size;
-		ptr++;
 		return ptr;
 	}
 	void system::env::mem_free(void* _memo) {
-		size_t* ptr = (size_t*)(_memo);
-		ptr--;
-		free(ptr);
+		free(_memo);
 	}
 	size_t system::env::mem_size(void* _memo) {
-		size_t* ptr = (size_t*)(_memo);
-		ptr--;
-		return  *ptr +sizeof(size_t);
+		//size_t* ptr = (size_t*)(_memo);
+		//ptr--;
+		//todo ?
+		return 0;
 	}
 }
 #endif

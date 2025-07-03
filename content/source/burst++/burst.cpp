@@ -661,17 +661,17 @@ namespace burst {
 	void board::regvar_conf(void) {
 		using namespace burst::var;
 		if (actual_mode >= mode::tuning) {
-			push("board");
+			push(RT("board"));
 			reg(types::uint8, (burst_present.command), RT("cmd"));
 			reg(types::uint8, (burst_present.status), RT("status"));
-			push("cfg");
+			push(RT("cfg"));
 			reg(types::int32, (instance_.config_->vercion), RT("ver"));
-			push("panics");
+			push(RT("panics"));
 
 			#if BURST_PROTECTION_ENABLED == 1
-			reg(types::time_us, instance_.config_->panics.reset_timeout_us, "reset_tm_us");
+			reg(types::time_us, instance_.config_->panics.reset_timeout_us, RT("reset_tm_us"));
 			#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
-			push("temper");
+			push(RT("temper"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.overhi), RT("overhi"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.hi), RT("hi"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.lo), RT("lo"));

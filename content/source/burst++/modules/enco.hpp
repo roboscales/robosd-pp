@@ -348,7 +348,7 @@ class resolver_driver_s {
 				typename number::long_signal_t sphase;
 				if(phase==0){
 					sphase=0;
-				} else if(sphase>0){
+				} else if(phase>0){
 					sphase=(signal_t)((phase+32767)>>16);
 				} else{
 					sphase=(signal_t)((phase-32767)>>16);

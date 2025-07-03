@@ -506,14 +506,14 @@ namespace burst{
 					{
 						#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 						push(RT("cl"));
-						motion_t<number>::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
-						positioner_t<number>::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
+						B::motion_s::regvar_config(RT("mo"), c.modes.voltage_cl.motion);
+						B::positioner_s::regvar_config(RT("po"), c.modes.voltage_cl.positioner);
 						pop();
 						#endif
 						#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED 
 						push(RT("c"));
-						motion_t<number>::regvar_config(RT("mo"), c.modes.current.motion);
-						positioner_t<number>::regvar_config(RT("po"), c.modes.current.positioner);
+						B::motion_s::regvar_config(RT("mo"), c.modes.current.motion);
+						B::positioner_s::regvar_config(RT("po"), c.modes.current.positioner);
 						pop();
 						#endif
 

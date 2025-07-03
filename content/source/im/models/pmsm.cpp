@@ -51,12 +51,12 @@ namespace robo {
 					A(2, 0) = 0;
 					A(2, 1) = Fm / J;
 					A(2, 2) = - Kv / J;
-					EA1 = arma::expmat(A * owner.sample_time);
+					EA1 = arma::expmat(A * (float)owner.sample_time);
 					EA2.zeros(3, 3);
 					EA2(2, 2) = 1;
 				}
 				void ideal2::set_phase_voltage(float _a_V, float _b_V, float _c_V){
-					voltage.set_abc(_a_V, _b_V, _c_V, electro.position);
+					voltage.set_abc(_a_V, _b_V, _c_V,(float) electro.position);
 				}
 
 				void ideal2::do_run(void){
@@ -103,7 +103,7 @@ namespace robo {
 
 							float els = X(2);
 							electro.position += ( owner.sample_time *(els + electro.speed) / 2. );							
-							electro.phase = fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
+							electro.phase = (float)fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
 							electro.speed = els;
 
 							actuator.position = electro.position / p;
@@ -125,7 +125,7 @@ namespace robo {
 							X(2) -= (float)(owner.sample_time * (actuator.contr_torque / p + X(2)*Kv) / J);
 							float els = X(2);
 							electro.position += (float) ( owner.sample_time *(els + electro.speed)/ 2. );
-							electro.phase = fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
+							electro.phase = (float)(fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>);
 							electro.speed = els;
 							actuator.position = electro.position / p;
 							actuator.speed = electro.speed / p;
@@ -136,7 +136,7 @@ namespace robo {
 							electro.speed = actuator.speed = 0.f;
 						}
 						actuator.driveng_torque = 0.f;
-						current.set_dq(0, 0, electro.position);
+						current.set_dq(0, 0, (float)electro.position);
 					}
 				}
 

@@ -521,7 +521,25 @@ namespace robo {
 
 	#endif
 }
+#if ROBO_APP_ALLOC_TYPE == ROBO_APP_TYPE_WIN
+namespace robo {
+	void* system::env::mem_alloc(size_t _size) {
+		size_t* ptr = (size_t*)malloc(_size + sizeof(size_t));
+		ROBO_APP_ASSERT(ptr != nullptr);
+		return ptr;
+	}
+	void system::env::mem_free(void* _memo) {
+		free(_memo);
+	}
+	size_t system::env::mem_size(void* _memo) {
+		//size_t* ptr = (size_t*)(_memo);
+		//ptr--;
+		//todo ?
+		return _msize(_memo);
+	}
+}
 
+#endif
 
 
 
