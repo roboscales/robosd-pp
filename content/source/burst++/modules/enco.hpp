@@ -285,6 +285,7 @@ class resolver_driver_s {
 		private:
 		present_s &  present_;
 		public:
+
 		template <typename T>  T & present(void) {
 			return reinterpret_cast < T&>(present_);
 		}
@@ -313,10 +314,29 @@ class resolver_driver_s {
 			uint32_t rsin;
 			typename number::signal_t teta;
 			bool enable;
-			typename number::signal_t sn;
+		//	typename number::signal_t sn;
 			burst::resolver_sincos_raw_t<number> raw;
 			bool data_enable;
 		};
+		void present_reg(void) {
+			RESOLVER_PRESENT_S(p);
+
+			using namespace burst::var;
+			push(RT("sico"));
+			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
+			reg(types::const_uint32, p.ref.status, RT("status"));
+			reg(types::const_uint16, p.rphase, RT("rphase"));
+			reg(types::const_uint32, p.rsin, RT("rsin"));
+			reg(number::var::signal, p.teta, RT("teta"));
+
+		//	reg(number::var::signal, p.sn, RT("sn"));
+
+			reg(number::var::signal, p.raw.sn, RT("raw.sn"));
+			reg(number::var::signal, p.raw.cs, RT("raw.cs"));
+
+
+			pop();
+		}
 		bool data_enable(){
 			RESOLVER_PRESENT_S(p);
 			auto tmp = p.data_enable;
@@ -520,6 +540,8 @@ class resolver_driver_s {
 				reg(number::var::const_long_signal, p.acc, RT("acc"));
 			}
 			reg(types::uint32, p.splice.fault, RT("splice_fault"));
+
+			lowdriver_s::present_reg();
 		}
 		
 		virtual void do_regvar_conf(void) {
@@ -533,11 +555,11 @@ class resolver_driver_s {
 				reg(number::var::long_signal, c.offset.position, RT("pos"),true);
 				pop();
 				if (actual_mode >= mode::config) {
-					reg(types::const_uint8, c.resolution, RT("reso"),true);
-					reg(types::const_uint8, c.sence_hi_segment_bits, RT("hsb"),true);
-					reg(types::const_uint8, c.init_count_bits, RT("icb"),true);
-					reg(types::const_uint8, c.inverce, RT("inv"),true);
-					reg(types::const_uint8, c.allwaice_splice, RT("alw"),true);
+					reg(types::uint8, c.resolution, RT("reso"),true);
+					reg(types::uint8, c.sence_hi_segment_bits, RT("hsb"),true);
+					reg(types::uint8, c.init_count_bits, RT("icb"),true);
+					reg(types::uint8, c.inverce, RT("inv"),true);
+					reg(types::uint8, c.allwaice_splice, RT("alw"),true);
 				}
 			}
 		}

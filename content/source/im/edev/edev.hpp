@@ -70,6 +70,9 @@ namespace robo {
 				if (th == 0) {
 					th = new thread(_id);
 				}
+				thread_ref_.attach_to(th->agents_);
+				return true;
+				#if 0
 				auto it = th->agents_.last();
 				if ( (it && it->owner().sample_time == sample_time) || it == nullptr) {
 					thread_ref_.attach_to(th->agents_);
@@ -79,6 +82,7 @@ namespace robo {
 					robo_errlog(RT("different quantization times in the same tgread (id:%d, need:%f, exists: %f)"), _id, it->owner().sample_time, sample_time);
 					return false;
 				}
+				#endif
 			}
 		protected:
 			string type;

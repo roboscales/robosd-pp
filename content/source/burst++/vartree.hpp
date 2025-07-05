@@ -34,7 +34,7 @@ namespace burst {
 			ref_s ref;
 			robo::cstr name;
 		};
-
+		#pragma pack(push, 1)
 		union descriptor {
 			struct {
 				uint16_t tag : 2;
@@ -49,9 +49,10 @@ namespace burst {
 			uint8_t bytes[2];
 			ref_s ref;
 		};
-
+		#pragma pack(pop)	
 		constexpr inline uint16_t descriptor_enco(uint8_t _len, bool _bsign, bool _bconst, bool _real) {
-			return (uint16_t)(((_len & 0x7FF)<<2) + (_bsign ? 0x2000 : 0) + (_bconst ? 0x4000 : 0) + (_real ? 0x8000 : 0) + 1);
+			return (uint16_t)(((_len & 0x3FF)<<2) + (_bsign ? 0x1000 : 0) + (_bconst ? 0x2000 : 0) + (_real ? 0x4000 : 0) + 1);
+			
 		}
 
 		typedef enum {
@@ -125,7 +126,7 @@ namespace burst {
 			, invalid_length = 0x4
 			, invalid_mode = 0x5
 		} error;
-		
+		#pragma pack(push, 1)
 		union header_s{
 			struct{
 				uint16_t query:2;
@@ -134,7 +135,7 @@ namespace burst {
 			};
 			uint16_t data;
 		};
-				
+		#pragma pack(pop)		
 		struct record_s {
 			descriptor desc;
 			robo::cstr name;
@@ -149,8 +150,9 @@ namespace burst {
 		template<typename T>	void reg(types _type, const T& _addr, robo::cstr _name,bool _regonfig_need = false) {
 			record_s* tmp = new record_s;
 			tmp->desc.memo = _type;
-			ROBO_ASSERT( ( _regonfig_need== false) || ((_regonfig_need== true) && (tmp->desc.bconst == 0)  ) )
-			ROBO_APP_ASSERT(sizeof(T) >= tmp->desc.len);
+			ROBO_ASSERT((_regonfig_need == false) || ((_regonfig_need == true) && (tmp->desc.bconst == 0)))
+			auto sz = sizeof(T);
+			ROBO_APP_ASSERT(sz >= tmp->desc.len);
 			tmp->addr = &_addr;
 			tmp->name = _name;
 			tmp->key = 0;

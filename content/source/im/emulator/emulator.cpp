@@ -104,7 +104,14 @@ int main(int _argc, const char * _argv[])
 						auto t1 = Time::now();
 						fsec fs = t1 - t0;
 						auto sec = fs.count();
-						robo::edev::agent::run(sec);
+						//todo ?
+						try{
+							robo::edev::agent::run(sec);
+						}
+						catch (const std::exception& err)
+						{
+							terminated = true;
+						}
 					}
 				});
 			}
@@ -117,7 +124,13 @@ int main(int _argc, const char * _argv[])
 					auto t1 = Time::now();
 					fsec fs = t1 - t0;
 					auto sec = fs.count();
-					robo::edev::agent::backgrounf_run(sec);
+					try {
+						robo::edev::agent::backgrounf_run(sec);
+					}
+					catch (const std::exception& err)
+					{
+						terminated = true;
+					}
 				}
 			}
 		);
