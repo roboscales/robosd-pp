@@ -1,7 +1,6 @@
 #ifndef burst_frontend_hpp
 #define burst_frontend_hpp
 #include "servo/robosd_frontend.hpp"
-#include "servo/mexo_proto.hpp"
 namespace burst {
 	namespace frontend {
 

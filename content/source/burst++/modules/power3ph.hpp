@@ -306,6 +306,8 @@ namespace burst {
 					pop();
 					//uint8_t swm;
 					reg(types::const_uint8, p.swm, RT("swm"));
+					reg(number::var::long_signal, pwm_force, RT("force"));
+
 				}
 			}
 			virtual void do_regvar_conf(void) {

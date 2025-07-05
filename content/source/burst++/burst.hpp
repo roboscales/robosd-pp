@@ -221,7 +221,7 @@ namespace burst {
 	public:
 		struct config_s {
 			int vercion;
-			bool reconfig_on_startup;
+			bool wait_config_on_startup;
 			struct {
 				#if BURST_PROTECTION_ENABLED == 1
 				time_us_t reset_timeout_us;
@@ -244,8 +244,8 @@ namespace burst {
 		static void regvar_conf(void);
 		#endif
 		
-		#ifndef BURST_RECONFIG_ON_STARTUP
-		#define BURST_RECONFIG_ON_STARTUP false
+		#ifndef BURST_WAIT_CONFIG_ON_STARTUP
+		#define BURST_WAIT_CONFIG_ON_STARTUP false
 		#endif
 		
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED ==1 && BURST_PROTECTION_ENABLED == 1
@@ -282,7 +282,7 @@ namespace burst {
 		#endif
 		#define BURST_CONFIG() {\
 				BURST_VERCION\
-				,BURST_RECONFIG_ON_STARTUP\
+				,BURST_WAIT_CONFIG_ON_STARTUP\
 				,{\
 					BURST_PANICS_BOARD_RESET_TIMEOUT_CO()\
 					BURST_PANICS_BOARD_TEMPER_CO()\
@@ -296,9 +296,10 @@ namespace burst {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, raise_fault, ready };
+			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, raise_fault, ready, reconfig };
 			class delegat : public ::robo::delegat::ref<void> {
 				friend class link;
+				friend class board;
 			public:
 				typedef ::robo::list::unsorted<delegat> list;
 				typedef list::ref ref;
@@ -344,11 +345,12 @@ namespace burst {
 						dettach(x);
 					}
 				}
-				void  startup_sucess(void)  {
-					dettach(burst::board::slot::kind::startup);
+				void  finish(void)  {
+					 finish_(*this);
 				}
 			private:
 				links links_;
+				static void finish_(delegat & _delegat);
 			};
 
 			class simple : public ::robo::delegat::simple<delegat, void> {
@@ -430,6 +432,7 @@ namespace burst {
 			slot begin;
 			slot start;
 			slot startup;
+			slot startup_holder;
 			slot realtime;
 			slot backend;
 			slot frontend;
@@ -440,6 +443,7 @@ namespace burst {
 			slot& operator [] (slot::kind _kind);
 			slot& operator [] (int _index);
 			void free(void);
+			slot reconfig;
 		};
 
 	private:
@@ -456,8 +460,11 @@ namespace burst {
 		void frontend_loop_(void);
 		void handle_panic_(void);
 		void setup_(config_s& _config) { config_ = &_config; }
+
 		//void reset_(void);
 		static board instance_;
+		friend class slot::delegat;
+		static void finish_(slot::delegat & _delegat);
 	public:
 		board(void);
 		~board(void);
@@ -481,6 +488,8 @@ namespace burst {
 		static void raise_panic(uint32_t _flag) { instance_.raise_panic_(_flag); };
 		static void reset_panic(uint32_t _flag){ instance_.reset_panic_(_flag); };
 		static void reset_panics(void){ instance_.reset_panics(); };
+		static void reconfig_query(void){  instance_.reconfig_query_count_++;};
+		static bool if_configure(void){ return instance_.present_.status == front::board::statuses::configure;};
 		#if ROBO_APP_SYSTEM_ENABLED
 		friend class robo::system::env;
 		#endif
@@ -506,6 +515,9 @@ namespace burst {
 		void realtime_protection_(void);
 		void frontend_protection_(void);
 		#endif
+		
+		int reconfig_query_count_ = 0;
+		int start_reconfig_(void);
 
 	public:
 		#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1

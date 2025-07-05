@@ -34,6 +34,7 @@ namespace burst {
 				descriptor::queue index_;
 				descriptor::queue request_;
 				descriptor* current_descriptor_ = nullptr;
+
 				enum { packet_offset = 4 };
 			public:
 				class proto : public ::robo::backend::vartable::proto {
@@ -71,7 +72,7 @@ namespace burst {
 			} echo_;
 
 			class proto : public varindex::proto {
-				uint8_t index_ = 0;
+				uint16_t index_ = 0;
 				uint8_t len_ = 0;
 				typedef ::robo::backend::vartable::ivar::status op;
 				op op_ = op::clean;
@@ -87,6 +88,7 @@ namespace burst {
 				virtual result confirm(const robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var);
 				virtual result reques_desc(robo_tran_t& _tran, const varindex::descriptor* _desc);
 				virtual result confirm_desc(const robo_tran_t& _tran, varindex::descriptor* _desc);
+				proto(void) {}
 			};
 
 			class flow_serial : public robo::backend::devagent::tunnel
@@ -133,6 +135,15 @@ namespace burst {
 					_quest->refuse();
 				}
 			}
+			template<typename T> static auto post_var_(quest* _quest, varindex::ivar* _v, const T &_value) {
+				if (!_v->post(
+					_value
+					, answer_(_quest)
+				)) {
+					_quest->refuse();
+				}
+			}
+
 			robo::quest::reaction reacton_(::robo::quest::result _r, ::robo::string * _sv, ::robo::string* _vv=nullptr) {
 				if (_r == robo::quest::result::success) {
 					if(_vv != nullptr ){
@@ -154,6 +165,42 @@ namespace burst {
 					if (_vv != nullptr) {
 						if (_sv != nullptr) {
 							robo_errlog("\t\tquest post var  %s/%s =%s - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), _vv->c_str() , (int)_r);
+							delete _sv;
+						}
+						delete _vv;
+					}
+					else {
+						if (_sv != nullptr) {
+							robo_errlog("\t\tquest var query %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), (int)_r);
+							delete _sv;
+						}
+					}
+					return robo::quest::reaction::terminate;
+				}
+			}
+			template<typename T> robo::quest::reaction reacton_(::robo::quest::result _r, ::robo::string* _sv,  T * _vv = nullptr) {
+				if (_r == robo::quest::result::success) {
+					if (_vv != nullptr) {
+						if (_sv != nullptr) {
+							robo::string s(*_vv);
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest post var  %s/%s = %s  - success", display_alias(), _sv->c_str(), s.c_str());
+							delete _sv;
+						}
+						delete _vv;
+					}
+					else {
+						if (_sv != nullptr) {
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest query var %s/%s  - success", display_alias(), _sv->c_str());
+							delete _sv;
+						}
+					}
+					return robo::quest::reaction::normal;
+				}
+				else {
+					if (_vv != nullptr) {
+						if (_sv != nullptr) {
+							robo::string s(*_vv);
+							robo_errlog("\t\tquest post var  %s/%s =%s - refused, canceled or termibated (%d) ", display_alias(), _sv->c_str(), s.c_str(), (int)_r);
 							delete _sv;
 						}
 						delete _vv;
@@ -198,6 +245,47 @@ namespace burst {
 					);
 			}
 			
+			template<typename T> quest* var_post_quest(::robo::cstr _var, const T & _value, quest* _owner, quest* _sema = nullptr) {
+#if 1
+				::robo::string* sv = new ::robo::string(_var);
+				T * vv = new T;
+				*vv = _value;
+				return ::robo::quest::create(
+					_owner
+					, _sema
+					, ::robo::quest::answer_fabric::create([this, sv, vv](::robo::quest::result _r)->robo::quest::reaction {
+						return this->reacton_(_r, sv, vv);
+						}
+					)
+					, ::robo::quest::request_fabric::create([this, sv, vv](::robo::quest* _quest) {
+							robo::string s(*vv);
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s=%s - start to post", this->display_alias(), sv->c_str(), s.c_str());
+							varindex::ivar* v = dynamic_cast<varindex::ivar*>(vars.find_var(sv->c_str()));
+							if (v) {
+								post_var_(_quest, v, *vv);
+							}
+							else {
+								if (!vars.query(sv->c_str(),
+
+									[this, _quest, vv](varindex::ivar* _var, bool _result) {
+										if (_result) {
+											post_var_(_quest, _var, *vv);
+										}
+										else {
+											_quest->refuse();
+										}
+									}
+
+								)) {
+									_quest->refuse();
+								}
+							}
+						})
+
+					);
+#endif
+			}
+
 			quest* var_post_quest(::robo::cstr _var, ::robo::cstr _value, quest* _owner,quest* _sema = nullptr) {
 
 				::robo::string* sv = new ::robo::string(_var);
@@ -553,8 +641,7 @@ namespace burst {
 			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback)
 				:robo::backend::devagent(_name, _boardagent, _goal, _feedback)
 				, echo_(*this)
-				, vars(*this, varproto, varindex::priority::hi, nullptr, 0) {
-
+				, vars(*this, varproto, varindex::priority::hi, nullptr,0) {
 			}
 		};
 		class servo_s : public robo::backend::servo_s {

@@ -15,6 +15,7 @@
 
 #if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT
 #include "net/robosd_flow.hpp"
+#include "burst++/modules/service.proto.hpp"
 #endif
 
 
@@ -407,15 +408,14 @@ namespace burst{
 				, RT8("vt <CR>")
 				, ::robo::termo::itf::root()
 			);
-
-			class show :public ::robo::termo::command{
+			class showpro {
 				robo::char_t* path_ = nullptr;
 				robo::char_t* path_ptr_ = nullptr;
 				int* path_stack_buffer_ = nullptr;
-				int path_sz_ = 0;					
-				int * path_stack_top_ = 0;
+				int path_sz_ = 0;
+				int* path_stack_top_ = 0;
 				int path_stack_level_ = 0;
-				void end_(void ) {
+				void end_(void) {
 					if (path_) {
 						delete[] path_;
 						path_ = nullptr;
@@ -461,14 +461,14 @@ namespace burst{
 					default:
 						sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
 						*(path_stack_top_) = sz;
-						path_ptr_[sz] = 0;	
-						printf((burst::var::record_s*)ref,path_+1);
+						path_ptr_[sz] = 0;
+						printf((burst::var::record_s*)ref, path_ + 1);
 					}
 				}
 
-				virtual void printf( burst::var::record_s* _rec, robo::cstr _path) = 0;
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path) = 0;
 
-				virtual bool begin(void){
+				bool do_begin(void) {
 					using namespace burst::var;
 					pref = burst::var::first();
 					if (pref) {
@@ -488,22 +488,34 @@ namespace burst{
 							end_();
 							return false;
 						}
-					}	else {
+					}
+					else {
 						return false;
-					}							
+					}
 				}
-				virtual bool loop(void){
-					if( ::robo::termo::itf::busy() ) {
+				bool do_loop(void) {
+					if (::robo::termo::itf::busy()) {
 						return true;
 					}
 					pref++;
 					perform();
-					if ( pref != burst::var::last() ) {
+					if (pref != burst::var::last()) {
 						return true;
-					} else{
+					}
+					else {
 						end_();
 						return false;
 					}
+				}
+			};
+			class show :public ::robo::termo::command, public showpro {
+			protected:
+
+				virtual bool begin(void){
+					return showpro::do_begin();
+				}
+				virtual bool loop(void){
+					return showpro::do_loop();
 				}
 				bool parse_long_arg(const char * _arg, const char * _val){
 					::robo::termo::itf::printf(RT8("argument ""%s"" is not support"), _arg);
@@ -530,30 +542,30 @@ namespace burst{
 				) : command(_name,_note,_usage,&root){
 				}					
 			};
-			class show_fml:public show{
+			class show_fml :public show {
 			protected:
-				virtual void printf(burst::var::record_s* _rec, robo::cstr _path){
-					#if ROBO_UNICODE_ENABLED == 1
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path) {
+#if ROBO_UNICODE_ENABLED == 1
 					robo::string nm;
 					nm.format(RT("%s\t%d\t%x\n\r")
-							  , _path
-							  , (int)_rec->desc.len
-							  , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
+						, _path
+						, (int)_rec->desc.len
+						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
 					nm.ascii([](const char* _buf) {::robo::termo::itf::printf(_buf); });
-					#else
+#else
 					::robo::termo::itf::printf(RT8("%s\t%d\t%x\n\r")
-											   , _path
-											   , (int)_rec->desc.len
-											   , uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET)
+						, _path
+						, (int)_rec->desc.len
+						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET)
 					);
-					#endif
+#endif
 				}
 			public:
 				show_fml(void) :show(
 					RT8("fml")
 					, RT8("vartree freemaster list show")
 					, RT8("fml  <CR>")
-					)
+				)
 				{
 
 				}
@@ -627,9 +639,43 @@ namespace burst{
 
 				}
 			}show_records_;
+
+			class showto_fml_stream :public  showpro {
+				void (*do_print_)(const char* _buf) = nullptr;
+
+				virtual void printf(burst::var::record_s* _rec, robo::cstr _path) {
+#if ROBO_UNICODE_ENABLED == 1
+					robo::string nm;
+					nm.format(RT("%s\t%d\t%x\n\r")
+						, _path
+						, (int)_rec->desc.len
+						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
+					nm.ascii([this](const char* _buf) { this->do_print_(_buf); });
+#else
+					::robo::termo::itf::printf(RT8("%s\t%d\t%x\n\r")
+						, _path
+						, (int)_rec->desc.len
+						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET)
+					);
+#endif
+				}
+			public:
+				void run(void (*_do_print)(const char* _buf)) {
+					do_print_ = _do_print;
+					if (do_begin()) while (do_loop());
+					do_print_ = nullptr;
+				}
+				showto_fml_stream(void)
+				{
+
+				}
+			}showto_fml_stream_;
 		}
 		#endif
 		#endif	
+		void varlist(void (*_do_print)(const char* _buf)) {
+			var::showto_fml_stream_.run(_do_print);
+		}
 		}
 	}
 	#if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT
@@ -644,11 +690,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_ECHO_ENABLED == 1
 
 	#ifndef SERVICE_NET_FLOW_ECHO_SUBA
-	#define SERVICE_NET_FLOW_ECHO_SUBA 0x01
+	#define SERVICE_NET_FLOW_ECHO_SUBA burst::proto::flow::suba::echo
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_ECHO_SUBA_ANSW
-	#define SERVICE_NET_FLOW_ECHO_SUBA_ANSW 0x01
+	#define SERVICE_NET_FLOW_ECHO_SUBA_ANSW burst::proto::flow::ans_suba::echo
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_ECHO_PERFORMER_PATH
@@ -689,11 +735,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_SERIAL0_ENABLED
 	
 	#ifndef SERVICE_NET_FLOW_SERIAL0_SUBA
-	#define SERVICE_NET_FLOW_SERIAL0_SUBA 0x0F
+	#define SERVICE_NET_FLOW_SERIAL0_SUBA burst::proto::flow::suba::serial0
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW
-	#define SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW 0x0F
+	#define SERVICE_NET_FLOW_SERIAL0_SUBA_ANSW burst::proto::flow::ans_suba::serial0
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_SERIAL0_INPUT_BITS
@@ -731,11 +777,11 @@ namespace burst{
 	#if SERVICE_NET_FLOW_VAR_ENABLED == 1
 
 	#ifndef SERVICE_NET_FLOW_VAR_SUBA
-	#define SERVICE_NET_FLOW_VAR_SUBA 0x0B
+	#define SERVICE_NET_FLOW_VAR_SUBA burst::proto::flow::suba::var
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_VAR_SUBA_ANSW
-	#define SERVICE_NET_FLOW_VAR_SUBA_ANSW 0x0B
+	#define SERVICE_NET_FLOW_VAR_SUBA_ANSW burst::proto::flow::ans_suba::var
 	#endif
 
 	#ifndef SERVICE_NET_FLOW_VAR_PERFORMER_PATH

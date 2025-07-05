@@ -577,29 +577,22 @@ namespace robo {
 
 }
 
+#if ROBO_APP_ALLOC_ENABLED == 1
+
 void* operator new(size_t size) {
-	void* tmp;
-	#if ROBO_APP_ALLOC_ENABLED == 1
-	tmp = robo::system::mem::alloc(size);
-	#else
 	ROBO_APP_ASSERT(is_frontend__);
-	tmp = malloc(size);
-	#endif
+	void* tmp;
+	tmp = robo::system::mem::alloc(size);
 	ROBO_APP_ASSERT(tmp != nullptr)
 	return tmp;
 }
 
 void operator delete(void* ptr) {
-	#if ROBO_APP_ALLOC_ENABLED == 1
-	robo::system::mem::free(ptr);
-	#else
 	ROBO_APP_ASSERT(is_frontend__);
-	free(ptr);
-	#endif
-
+	robo::system::mem::free (ptr);
 }
 
-
+#endif
 #if ROBO_APP_SHARED_ENABLED ==1
 namespace robo {
 	static system::shared::map& shareds_(void) {

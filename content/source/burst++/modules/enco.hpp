@@ -2,6 +2,9 @@
 #define burst_enco_hpp
 #include "burst++/modules/actor.hpp"
 namespace burst {
+	#ifndef BURST_ENCO_ONLINE_RESTART
+	#define BURST_ENCO_ONLINE_RESTART 1
+	#endif
 	template<class number> class enco_t : public actor {
 	public:
 		using signal_t = typename number::signal_t;
@@ -28,12 +31,12 @@ namespace burst {
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		virtual void do_regvar_present(void) {
 			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
+			push(RT("counter"));
+			reg(types::uint32, p.counter.fault, RT("fault"));
+			reg(types::uint32, p.counter.total, RT("total"));
+			pop();
 			if (actual_mode >= mode::full) {
-				ACTOR_PRESENT_S(p);
-				push(RT("counter"));
-				reg(types::const_uint32, p.counter.fault, RT("fault"));
-				reg(types::const_uint32, p.counter.total, RT("total"));
-				pop();
 				reg(number::var::const_signal, p.delta_acc, RT("delta_acc"));
 				reg(number::var::const_long_signal, p.position, RT("pos"));
 				reg(types::const_uint8, p.ready, RT("ready"));
@@ -136,17 +139,17 @@ namespace burst {
 			if (actual_mode >= mode::tuning) {
 				ACTOR_CONFIG_S(c);
 				push(RT("offset"));
-				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"));
-				reg(number::var::long_signal, c.offset.position, RT("pos"));
+				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"),true);
+				reg(number::var::long_signal, c.offset.position, RT("pos"),true);
 				pop();
 				if (actual_mode >= mode::config) {
 					push(RT("reso"));
-					reg(types::uint8, c.resolution.round, RT("round"));
-					reg(types::uint8, c.resolution.raw, RT("raw"));
-					reg(types::uint8, c.resolution.actual, RT("actual"));
+					reg(types::uint8, c.resolution.round, RT("round"),true);
+					reg(types::uint8, c.resolution.raw, RT("raw"),true);
+					reg(types::uint8, c.resolution.actual, RT("actual"),true);
 					pop();
-					reg(types::uint8, c.init_count_bits, RT("icb"));
-					reg(types::uint8, c.inverce, RT("inv"));
+					reg(types::uint8, c.init_count_bits, RT("icb"),true);
+					reg(types::uint8, c.inverce, RT("inv"),true);
 				}
 			}
 		}
@@ -181,13 +184,9 @@ namespace burst {
 		virtual void run(void) {
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
-			if (p.ref.ready && (conf.offset.native != offset.native || conf.offset.position != offset.position)) {
-				begin();
-				return;
-			}
+
 			p.ref.counter.total++;
 			bool success = driver::query(p.native.raw);
-
 			if (p.ref.ready) {
 				if (success) {
 					uint32_t tmp = robo::digit::lsh( (uint32_t)p.native.raw, shift.raw);
@@ -223,6 +222,16 @@ namespace burst {
 							p.ref.delta_acc = adtmp;
 						}
 					}
+					
+					#if BURST_ENCO_ONLINE_RESTART
+					if(!board::if_configure()){
+						if (conf.offset.native != offset.native || conf.offset.position != offset.position) {
+							begin();
+							return;
+						}
+					}
+					#endif
+
 				}
 				else {
 					p.ref.counter.fault++;
@@ -276,6 +285,7 @@ class resolver_driver_s {
 		private:
 		present_s &  present_;
 		public:
+
 		template <typename T>  T & present(void) {
 			return reinterpret_cast < T&>(present_);
 		}
@@ -304,10 +314,29 @@ class resolver_driver_s {
 			uint32_t rsin;
 			typename number::signal_t teta;
 			bool enable;
-			typename number::signal_t sn;
+		//	typename number::signal_t sn;
 			burst::resolver_sincos_raw_t<number> raw;
 			bool data_enable;
 		};
+		void present_reg(void) {
+			RESOLVER_PRESENT_S(p);
+
+			using namespace burst::var;
+			push(RT("sico"));
+			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
+			reg(types::const_uint32, p.ref.status, RT("status"));
+			reg(types::const_uint16, p.rphase, RT("rphase"));
+			reg(types::const_uint32, p.rsin, RT("rsin"));
+			reg(number::var::signal, p.teta, RT("teta"));
+
+		//	reg(number::var::signal, p.sn, RT("sn"));
+
+			reg(number::var::signal, p.raw.sn, RT("raw.sn"));
+			reg(number::var::signal, p.raw.cs, RT("raw.cs"));
+
+
+			pop();
+		}
 		bool data_enable(){
 			RESOLVER_PRESENT_S(p);
 			auto tmp = p.data_enable;
@@ -339,7 +368,7 @@ class resolver_driver_s {
 				typename number::long_signal_t sphase;
 				if(phase==0){
 					sphase=0;
-				} else if(sphase>0){
+				} else if(phase>0){
 					sphase=(signal_t)((phase+32767)>>16);
 				} else{
 					sphase=(signal_t)((phase-32767)>>16);
@@ -493,34 +522,44 @@ class resolver_driver_s {
 		virtual void do_regvar_present(void) {
 			enco_t<number>::do_regvar_present();
 			using namespace burst::var;
+			ACTOR_PRESENT_S(p);
 			if (actual_mode >= mode::full) {
-				ACTOR_PRESENT_S(p);
+				push(RT("splice"));
+				reg(types::const_uint32, p.splice.actual, RT("actual"));
+				reg(types::const_uint32, p.splice.prev, RT("prev"));
+				reg(types::const_uint64, p.splice.total, RT("total"));
+				reg(types::const_uint64, p.splice.accum, RT("accum"));
+				reg(types::const_uint32, p.splice.begin, RT("begin"));
+				reg(types::const_int32, p.splice.delta, RT("begin"));
+				pop();
 				push(RT("native"));
-				reg((types)descriptor_enco(sizeof(R), false, true, false), p.native.raw, RT("raw"));
 				reg(types::const_uint32, p.native.ceiled, RT("ceiled"));
 				reg(types::const_int32, p.native.delta, RT("delta"));
 				pop();
 				reg(number::var::const_signal, p.delta, RT("delta"));
 				reg(number::var::const_long_signal, p.acc, RT("acc"));
 			}
+			reg(types::uint32, p.splice.fault, RT("splice_fault"));
+
+			lowdriver_s::present_reg();
 		}
+		
 		virtual void do_regvar_conf(void) {
 			enco_t<number>::do_regvar_conf();
 			using namespace burst::var;
 			if (actual_mode >= mode::tuning) {
 				ACTOR_CONFIG_S(c);
 				push(RT("offset"));
-				reg((types)descriptor_enco(sizeof(R), false, false, false), c.offset.native, RT("native"));
-				reg(number::var::long_signal, c.offset.position, RT("pos"));
+				reg(types::uint32, c.offset.sence_hi, RT("sence_hi"),true);
+				reg(types::uint32, c.offset.native, RT("native"),true);
+				reg(number::var::long_signal, c.offset.position, RT("pos"),true);
 				pop();
 				if (actual_mode >= mode::config) {
-					push(RT("reso"));
-					reg(types::uint8, c.resolution.round, RT("round"));
-					reg(types::uint8, c.resolution.raw, RT("raw"));
-					reg(types::uint8, c.resolution.actual, RT("actual"));
-					pop();
-					reg(types::uint8, c.init_count_bits, RT("icb"));
-					reg(types::uint8, c.inverce, RT("inv"));
+					reg(types::uint8, c.resolution, RT("reso"),true);
+					reg(types::uint8, c.sence_hi_segment_bits, RT("hsb"),true);
+					reg(types::uint8, c.init_count_bits, RT("icb"),true);
+					reg(types::uint8, c.inverce, RT("inv"),true);
+					reg(types::uint8, c.allwaice_splice, RT("alw"),true);
 				}
 			}
 		}
@@ -556,11 +595,22 @@ class resolver_driver_s {
 			
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
-			if (p.ref.ready && (conf.offset.native != offset.native || conf.offset.position != offset.position || p.lowdrv.ref.restart || p.hidrv.ref.restart )) {
-				begin();
-				return;
-			}
 			if (p.ref.ready) {
+				#if BURST_ENCO_ONLINE_RESTART
+				//todo govnocod
+				if(!board::if_configure()){
+					if (conf.offset.native != offset.native || conf.offset.position != offset.position || p.lowdrv.ref.restart || p.hidrv.ref.restart ) {
+						begin();
+						return;
+					}
+				}
+				#else
+				if (p.lowdrv.ref.restart || p.hidrv.ref.restart ) {
+					begin();
+					return;
+				}
+				#endif
+
 				p.ref.counter.total++;
 				hidriver_s::run();
 				if(conf.allwaice_splice){

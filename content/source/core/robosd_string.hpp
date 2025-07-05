@@ -20,6 +20,7 @@ namespace robo {
 	class ROBO_EXPORT string {
 	private:
 		class base_string_;
+		class base_stream_;
 		base_string_* value_ = nullptr;
 		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
@@ -53,6 +54,7 @@ namespace robo {
 		cstr c_str() const;
 		operator cstr () const; //todo осмыслить
 		void clear(void);
+		static size_t strlen( cstr _str);
 		private:
 			struct stream_s{
 				const char_t * memo;
@@ -158,7 +160,7 @@ namespace robo {
 		template <typename T> bool to_number_list(size_t _max_count, T* _values, size_t& _count) {
 			ROBO_LRET_F(scan_numbers<T>(_max_count, _values, _count), "error convert string '%s' to numbers", c_str());
 		}
-
+		const char* ascii(void);
 		void ascii(char* _buf, size_t _len) const;
 		void ascii( ::robo::lambda<  void (const char *)> ) const;
 		void asciib(::robo::lambda<  void(const uint8_t* , size_t)>) const;
@@ -166,8 +168,43 @@ namespace robo {
 		#if ROBO_STRING_UTOA_ENABLED
 		static uint8_t  utoa_n(uint32_t value, uint8_t _n, char_t *  _r, char_t _space );
 		//static uint8_t  itoa_n(int32_t value, uint8_t _n, char_t *  _r, char_t _space );
-		#endif		
-		
+		#endif	
+
+
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+		void from( int8_t _n) {
+			format(RT("%d"),(int) _n);
+		}
+		void from(uint8_t _n) {
+			format(RT("%u"), (unsigned)_n);
+		}
+		void from(int16_t _n) {
+			format(RT("%d"), (int)_n);
+		}
+		void from(uint16_t _n) {
+			format(RT("%u"), (unsigned)_n);
+		}
+		void from(int32_t _n) {
+			format(RT("%d"), (int)_n);
+		}
+		void from(uint32_t _n) {
+			format(RT("%u"), (unsigned)_n);
+		}
+
+		void from(int64_t _n) {
+			format(RT("%lld"), _n);
+		}
+		void from(uint64_t _n) {
+			format(RT("%llu"), _n);
+		}
+		void from(double _n) {
+			format(RT("%f"), _n);
+		}		
+		template<typename T> string(const  T &  _t) {
+			from(_t);
+		}
+
+#endif
 	};
 }
 

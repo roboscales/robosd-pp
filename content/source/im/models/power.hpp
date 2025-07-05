@@ -1,21 +1,21 @@
 #ifndef __power_hpp
 #define __power_hpp
-
+#include "core/robosd_common.hpp"
 namespace robo{
 	namespace edev{
 		namespace power {
-			struct ph3 {
+			struct ROBO_EXPORT ph3 {
 				struct sdq {
 					float d;
 					float q;
 					sdq();
 				};
-				struct sab {
+				struct ROBO_EXPORT sab {
 					float alfa;
 					float beta;
 					sab();
 				};
-				struct sabc {
+				struct ROBO_EXPORT sabc {
 					float A;
 					float B;
 					float C;

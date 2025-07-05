@@ -21,6 +21,13 @@ namespace robo {
 	string::string(void): value_(new base_string_) {
 		*((stds*)value_) = RT("");
 	}
+	size_t string::strlen(cstr _str) {
+		#if ROBO_UNICODE_ENABLED
+		return wcslen(_str);
+		#else
+		return ::strlen(_str);
+#endif
+	}
 
 	string* string::create(void) {
 		return new string;
@@ -114,6 +121,22 @@ namespace robo {
 		#endif
 	}
 	#endif
+	const char * string::ascii(void)  {
+		#if ROBO_UNICODE_ENABLED == 1
+		if (system::env::is_backend()) {
+			ascii((char*)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * 2);
+			return (const char*)string_buffer_backend;
+		}
+		else {
+			system::critical c__;
+			ascii((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * 2);
+			return (const char*)string_buffer_frontend;
+		}
+#else
+		return c_str();
+#endif
+	}
+
 	void string::ascii(char * _buf, size_t _len) const {
 		#if ROBO_UNICODE_ENABLED == 1
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;

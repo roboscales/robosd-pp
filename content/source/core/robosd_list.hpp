@@ -181,13 +181,22 @@ namespace robo {
 			void clean(void) {
 				while (pop());
 			}
-			base_ref<T> * locate(T * _own) {
+			base_ref<T> * locate(const T * _own) {
 				for (base_ref<T>* p = first; p != nullptr; p = p->next) {
 					if (&(p->owner()) == _own) {
 						return p;
 					}
 				}
 				return nullptr;
+			}
+			base_ref<T> * locate(const T & _own) {
+				return locate(&_own);
+			}
+			bool contains(const T & _own) {
+				return locate(_own) != nullptr;
+			}
+			bool contains(const T * _own)  {
+				return locate(_own) != nullptr;
 			}
 		};
 
@@ -372,6 +381,25 @@ namespace robo {
 						last_ = (last_->next_ = &_item);
 					}
 					count_++;
+				}
+
+				bool contains (const T& _t) const {
+					I* prev = nullptr;
+					for (I* it = first_; it; it = it->next_) {
+						if ( it->eq(_t) ) {
+							return true;
+						}
+					}
+					return false;
+				}
+				bool contains (const T* _t) const {
+					I* prev = nullptr;
+					for (I* it = first_; it; it = it->next_) {
+						if ( it->eq(*_t) ) {
+							return true;
+						}
+					}
+					return false;
 				}
 
 				I* extract(const T& _t) {

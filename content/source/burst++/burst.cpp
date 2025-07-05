@@ -222,9 +222,9 @@ namespace burst {
 			{
 				slots_ref_.startup.execute();
 				if(slots_ref_.startup.isempty()){
-					if(config_->reconfig_on_startup){
-						present_.status = front::board::statuses::reconfigured ;
-						present_.command = front::board::commands::reconfig ;
+					if(config_->wait_config_on_startup){
+						present_.status = front::board::statuses::configure ;
+						present_.command = front::board::commands::configure ;
 					} else{
 						reset_panic_(front::board::panics::bits::config);
 						present_.status = front::board::statuses::ready ;
@@ -233,16 +233,39 @@ namespace burst {
 				} 
 				break;
 			}
-			case front::board::statuses::reconfigured:
-				if(present_.command != front::board::commands::reconfig){
-						reset_panic_(front::board::panics::bits::config);
-						present_.status = front::board::statuses::ready ;
+			case front::board::statuses::restart:
+			{
+				slots_ref_.startup.execute();
+				if(slots_ref_.startup.isempty()){
+					reset_panic_(front::board::panics::bits::config);
+					present_.status = front::board::statuses::ready ;
+					slots_ref_.ready.execute();
+				} 
+				break;
+			}
+			
+			case front::board::statuses::configure:
+				if(present_.command != front::board::commands::configure){
+					if(reconfig_query_count_>0){
+						reconfig_query_count_ = 0;
+						slots_ref_.reconfig.execute();
+						while(slots_ref_.startup_holder.delegats_.count()){
+							auto * tmp = slots_ref_.startup_holder.delegats_.pop();
+							ROBO_APP_ASSERT(tmp);
+							tmp->links_.first()->value().attach_to(slots_().startup_holder.delegats_);
+						}
+						present_.status = front::board::statuses::restart ;						
+					} else{
+							reset_panic_(front::board::panics::bits::config);
+							present_.status = front::board::statuses::ready ;
+							slots_ref_.ready.execute();
+					}
 				}
 				break;
 			case front::board::statuses::ready:
-				if(present_.command == front::board::commands::reconfig){
+				if(present_.command == front::board::commands::configure){
 					raise_panic_(front::board::panics::bits::config);
-					present_.status = front::board::statuses::reconfigured ;
+					present_.status = front::board::statuses::configure ;
 				}
 				break;
 			case front::board::statuses::unknown:
@@ -260,6 +283,8 @@ namespace burst {
 		#endif
 		debug_tp_off(front::tp_verb::frontend);
 	}
+	
+
 	void board::handle_panic_(void) {
 		slots_ref_.raise_fault.execute();
 	}
@@ -297,6 +322,9 @@ namespace burst {
 		case slot::kind::ready:
 		return ready;
 
+		case slot::kind::reconfig:
+		return reconfig;
+
 		default:
 		ROBO_APP_CRASH();
 		return dummy;
@@ -313,6 +341,7 @@ namespace burst {
 		raise_fault.free();
 		dummy.free();
 		ready.free();
+		reconfig.free();
 		for (int i = 0; i < slot_count; i++) {
 			periodic[i].free();
 		}
@@ -409,7 +438,19 @@ namespace burst {
 	void dev::switch_to_idle_(void) {
 		switch_to_mode(front::dev::modes::idle);
 	}
+	void board::slot::delegat::finish_(slot::delegat & _delegat){
+		board::finish_(_delegat);
+	}
 
+	void board::finish_(slot::delegat & _delegat){
+		if(_delegat.links_.count() == 1){
+			if(board::instance_.slots_ref_.startup.delegats_.contains(_delegat.links_.first()->value().owner()) ){
+				_delegat.links_.first()->value().attach_to(slots_().startup_holder.delegats_);
+			} else {
+				_delegat.dettach();
+			}
+		}
+	}
 
 
 	void dev::switch_to_mode(int _mode_id) {
@@ -620,17 +661,17 @@ namespace burst {
 	void board::regvar_conf(void) {
 		using namespace burst::var;
 		if (actual_mode >= mode::tuning) {
-			push("board");
+			push(RT("board"));
 			reg(types::uint8, (burst_present.command), RT("cmd"));
 			reg(types::uint8, (burst_present.status), RT("status"));
-			push("cfg");
+			push(RT("cfg"));
 			reg(types::int32, (instance_.config_->vercion), RT("ver"));
-			push("panics");
+			push(RT("panics"));
 
 			#if BURST_PROTECTION_ENABLED == 1
-			reg(types::time_us, instance_.config_->panics.reset_timeout_us, "reset_tm_us");
+			reg(types::time_us, instance_.config_->panics.reset_timeout_us, RT("reset_tm_us"));
 			#if BURST_PANICS_BOARD_TEMPER_ENABLED == 1 
-			push("temper");
+			push(RT("temper"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.overhi), RT("overhi"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.hi), RT("hi"));
 			reg(types::int16, (instance_.config_->panics.temp_pp.lo), RT("lo"));

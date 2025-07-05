@@ -674,6 +674,11 @@ namespace robo {
 					ROBO_LBREAKN(post_a(_s,p ));
 					return true;
 				}
+				template <typename T, typename ... Args> bool post(const T & _t, Args...arg) {
+					performer* p = answer::autonum::fabric::create(arg...);
+					ROBO_LBREAKN(post_a(_t, p));
+					return true;
+				}
 			};
 
 
@@ -695,32 +700,63 @@ namespace robo {
 						return string::to_number(_s, actual.local);
 					}
 				}
+				template<typename R> bool applay_b(const R& _r) {
+					if (sizeof(T) < sizeof(R)) {
+						if (_r< (R)std::numeric_limits<T>::lowest() || _r >(R)std::numeric_limits<T>::max()) {
+							robo::string s(_r);
+						//	"var is't found '%s.%s' ", _vt->own_agent().alias(), _name)
+							robo_errlog("invalid var %s.%s  value   %s", vt().own_agent().display_alias(), name(), s.c_str());
+							return false;
+						}
+					}
+
+					if (is_frontend__) {
+						C::front.local = (T)_r;
+					}
+					else {
+						actual.local = (T)_r;
+					}
+
+					return true;
+				}
+				virtual bool applay(int8_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(uint8_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(int16_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(uint16_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(int32_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(uint32_t _n) {
+					return applay_b(_n);
+				}
+
+				virtual bool applay(int64_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(uint64_t _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(float _n) {
+					return applay_b(_n);
+				}
+				virtual bool applay(double _n) {
+					return applay_b(_n);
+				}
+
 			public:
 				virtual bool put_complete(void) {
 					return actual.remote == actual.local;
 				}
 
 
-
-				/*bool post(performer* _performer) {
-					ROBO_LRET(C::post(_performer));
-				}
-
-				bool post(const T& _value, performer* _performer=nullptr) {
-					actual.local = _value;
-					ROBO_LRET(C::post(_performer));
-				}
-
-				result try_post(const T& _value, performer* _performer=ullptr) {
-					actual.local = _value;
-					if (actual.remote != _value) {
-						ROBO_RET(C::post(_performer), result::resume, result::panic);
-					}
-					else {
-						return result::complete;
-					}
-				}
-				*/
 				bool query(performer* _performer=nullptr) {
 					ROBO_LRET(C::query(_performer));
 				}

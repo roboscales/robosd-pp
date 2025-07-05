@@ -127,6 +127,9 @@ namespace burst{
 				#endif
 			}
 		}
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		void varlist(void (*_do_print)(const char* _buf));
+		#endif
 	}
 }
 

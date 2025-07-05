@@ -66,5 +66,8 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\robosd_app_tuning.hpp">
+      <Filter>robosd++/core/platform/win+vs19</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -443,6 +443,11 @@ namespace robo {
 					ROBO_LBREAKN(post_a(_answer));
 					return true;
 				}
+				template<typename T> bool post_a(const T & _s, performer* _answer = nullptr) {
+					ROBO_LBREAKN(applay(_s));
+					ROBO_LBREAKN(post_a(_answer));
+					return true;
+				}
 				bool query_a(performer* _answer = nullptr);
 
 				enum { invalid_value = -1 };
@@ -464,10 +469,19 @@ namespace robo {
 				typedef map::ref map_ref;
 				status actual_status(void) const  { return status_; }
 
-				virtual bool applay(cstr _s) {
-					return false;
-				}
+				virtual bool applay(cstr _s) = 0;
+				virtual bool applay(int8_t _n) = 0;
+				virtual bool applay(uint8_t _n) = 0;
+				virtual bool applay(int16_t _n) = 0;
+				virtual bool applay(uint16_t _n) = 0;
+				virtual bool applay(int32_t _n) = 0;
+				virtual bool applay(uint32_t _n) = 0;
 
+				virtual bool applay(int64_t _n) = 0;
+				virtual bool applay(uint64_t _n) = 0;
+				virtual bool applay(float _n) = 0;
+				virtual bool applay(double _n) = 0;
+				//template <typename T> virtual bool applay(const T& _t) { return false;  }
 
 				template <typename ... Args> bool query(Args...arg) {
 					return query_a(answer::autonum::fabric::create(arg...));
@@ -475,6 +489,10 @@ namespace robo {
 
 				template <typename ... Args> bool post_a(cstr _s, Args...arg) {				
 					ROBO_LBREAKN(post_a(_s, answer::autonum::fabric::create (arg...)));
+					return true;
+				}
+				template <typename T, typename ... Args> bool post_a(const T & _t, Args...arg) {
+					ROBO_LBREAKN(post_a(_t, answer::autonum::fabric::create(arg...)));
 					return true;
 				}
 

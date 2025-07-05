@@ -1,7 +1,6 @@
 #ifndef burst_service_common_hpp
 #define burst_service_common_hpp
 
-
 #define SERVICE_TYPE_NONE 0
 
 #define SERVICE_FREEMASTER_CONNECT_TYPE_NONE SERVICE_TYPE_NONE
@@ -144,6 +143,7 @@
 #ifndef SERVICE_FREEMASTER_MANUAL_POOL_ENABLED
 #define SERVICE_FREEMASTER_MANUAL_POOL_ENABLED 0
 #endif
-		
+
+
 #endif
 

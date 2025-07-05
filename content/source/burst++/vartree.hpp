@@ -34,23 +34,25 @@ namespace burst {
 			ref_s ref;
 			robo::cstr name;
 		};
-
+		#pragma pack(push, 1)
 		union descriptor {
 			struct {
 				uint16_t tag : 2;
-				uint16_t len : 11;
+				uint16_t len : 10;
 				uint16_t bsign : 1;
 				uint16_t bconst : 1;
 				uint16_t real : 1;
+				uint16_t reconfig_need : 1;
 				//uint16_t fault : 5;
 			};
 			uint16_t memo;
 			uint8_t bytes[2];
 			ref_s ref;
 		};
-
+		#pragma pack(pop)	
 		constexpr inline uint16_t descriptor_enco(uint8_t _len, bool _bsign, bool _bconst, bool _real) {
-			return (uint16_t)(((_len & 0x7FF)<<2) + (_bsign ? 0x2000 : 0) + (_bconst ? 0x4000 : 0) + (_real ? 0x8000 : 0) + 1);
+			return (uint16_t)(((_len & 0x3FF)<<2) + (_bsign ? 0x1000 : 0) + (_bconst ? 0x2000 : 0) + (_real ? 0x4000 : 0) + 1);
+			
 		}
 
 		typedef enum {
@@ -106,42 +108,57 @@ namespace burst {
 		}
 		struct request {
 			enum {
-				index = 0
-				, get = 1
-				, put = 2
+				index = 0x1
+				, get = 0x2
+				, put = 0x3
 				//, page_get = 3
 				//, page_put = 4
 			};
 		};
 		enum {
-			error_mask = 0xf0
-			, max_len = 0x6
+			max_len = 0x6
 		};
 		typedef enum {
-			invalid_key = 0x10
-			, invalid_index = 0x20
-			, invalid_offset = 0x30
-			, invalid_length = 0x40
+			none = 0x0
+			, invalid_key = 0x1
+			, invalid_index = 0x2
+			, invalid_offset = 0x3
+			, invalid_length = 0x4
+			, invalid_mode = 0x5
 		} error;
-
+		#pragma pack(push, 1)
+		union header_s{
+			struct{
+				uint16_t query:2;
+				uint16_t error:4;
+				uint16_t ix:10;
+			};
+			uint16_t data;
+		};
+		#pragma pack(pop)		
 		struct record_s {
 			descriptor desc;
 			robo::cstr name;
 			int key;
-			const void* addr;
+			const void* addr;			
 		};
 		void reg(ref_s* _r);
 
 		void push(robo::cstr _name);
 		void pop(void);
-		template<typename T>	void reg(types _type, const T& _addr, robo::cstr _name) {
+		extern int var_count;
+		template<typename T>	void reg(types _type, const T& _addr, robo::cstr _name,bool _regonfig_need = false) {
 			record_s* tmp = new record_s;
 			tmp->desc.memo = _type;
-			ROBO_APP_ASSERT(sizeof(T) >= tmp->desc.len);
+			ROBO_ASSERT((_regonfig_need == false) || ((_regonfig_need == true) && (tmp->desc.bconst == 0)))
+			auto sz = sizeof(T);
+			ROBO_APP_ASSERT(sz >= tmp->desc.len);
 			tmp->addr = &_addr;
 			tmp->name = _name;
 			tmp->key = 0;
+			tmp->desc.reconfig_need = _regonfig_need;
 			reg( &(tmp->desc.ref) );
+			var_count++;
 		}
 
 		void free(void);
@@ -153,17 +170,17 @@ namespace burst {
 		#endif
 		ref_s** first(void);
 		ref_s** last(void);
-		template<typename R > void varreg(robo::cstr _name, const types& t, const range_s<R>& _range) {
+		template<typename R > void varreg(robo::cstr _name, const types& t, const range_s<R>& _range, bool _regonfig_need=false) {
 			push(_name);
-			reg(t, _range.hi, RT("hi"));
-			reg(t, _range.lo, RT("lo"));
+			reg(t, _range.hi, RT("hi"),_regonfig_need);
+			reg(t, _range.lo, RT("lo"),_regonfig_need);
 			pop();
 		}
-		template<typename R > void varreg(robo::cstr _name, const types& t, const hyst_t<R>& _hyst) {
+		template<typename R > void varreg(robo::cstr _name, const types& t, const hyst_t<R>& _hyst, bool _regonfig_need=false) {
 			push(_name);
 			reg(t, _hyst.overhi, RT("overhi"));
-			reg(t, _hyst.hi, RT("hi"));
-			reg(t, _hyst.lo, RT("lo"));
+			reg(t, _hyst.hi, RT("hi"),_regonfig_need);
+			reg(t, _hyst.lo, RT("lo"),_regonfig_need);
 			reg(t, _hyst.ultralo, RT("ultralo"));
 			pop();
 		}

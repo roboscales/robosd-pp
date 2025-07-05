@@ -4,7 +4,6 @@
 #include "core/robosd_ini.hpp"
 namespace robo {
 	namespace edev {
-
 		agent::block::block(agent& _agent, cstr _name): owner(_agent), name(_name), ref_(*this) {
 			ref_.attach_to(_agent.blocks_);
 			path.format(RT("%s.%s"), owner.name.c_str(), name.c_str());

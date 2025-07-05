@@ -21,8 +21,8 @@ namespace burst{
 		using long_signal_t = typename number::long_signal_t;
 		typedef front::actuator::action_s<number>  action_s;
 		typedef front::actuator::feedback_s<number>  feedback_s;
-		typedef motion_t<number>  motion_t;
-		typedef positioner_t<number>  positioner_t;
+		typedef motion_t<number>  motion_s;
+		typedef positioner_t<number>  positioner_s;
 		struct config_s{
 			burst::dev::config_s dev;
 			struct{
@@ -34,10 +34,15 @@ namespace burst{
 				range_s<signal_t> speed;
 				range_s<long_signal_t> position;
 			} range;
+			#ifndef BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
+			#define BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED 0
+			#endif
+			#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED ==1
 			struct {
-				typename motion_t::config_s motion;
-				typename positioner_t::config_s positioner;
+				typename motion_s::config_s motion;
+				typename positioner_s::config_s positioner;
 			} modes;
+			#endif
 			struct {
 				#if BURST_PROTECTION_ENABLED == 1
 				#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
@@ -59,6 +64,16 @@ namespace burst{
 		#define BURST_PANICS_ACTUATOR_TEMPER_CO(a)
 		#endif
 
+		#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED ==1
+		#define BURST_ACTUATOR_MODES_CO(a)\
+		,{\
+					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
+					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE)\
+			}	
+		#else
+		#define BURST_ACTUATOR_MODES_CO(a)
+		#endif
+		
 		#define ACTUATOR_CONFIG(a) ACTUATOR_CONFIG_(a)
 		#define ACTUATOR_CONFIG_(a)\
 		{\
@@ -72,10 +87,7 @@ namespace burst{
 				, BURST_RANGE_CONFIG(a##_RANGE_SPEED)\
 				, BURST_RANGE_CONFIG(a##_RANGE_POSITION)\
 			}\
-			,{\
-					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE)\
-					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE)\
-			}\
+			BURST_ACTUATOR_MODES_CO(a)\
 			,{\
 				BURST_PANICS_ACTUATOR_TEMPER_CO(a)\
 			}\
@@ -88,8 +100,8 @@ namespace burst{
 		const signal_t& temper;
 		#endif
 	private:
-		motion_t motion_;
-		positioner_t positioner_;
+		motion_s motion_;
+		positioner_s positioner_;
 	public:
 		struct present_s {		
 			dev::present_s dev;
@@ -106,8 +118,8 @@ namespace burst{
 				long_signal_t req;
 				range_s<long_signal_t> range;
 			} position;
-			typename motion_t::present_s motion;
-			typename positioner_t::present_s positioner;
+			typename motion_s::present_s motion;
+			typename positioner_s::present_s positioner;
 		};
 		
 		
@@ -137,7 +149,7 @@ namespace burst{
 		}
 
 		void mode_speed_start(
-			const typename motion_t::config_s& _motion
+			const typename motion_s::config_s& _motion
 			, signal_t& _control
 			, const range_s<signal_t>& _control_range
 			, const satstates& _master_sut_flag
@@ -161,7 +173,6 @@ namespace burst{
 			motion_.begin();
 			psc.on();
 		}
-
 		void mode_speed_stop(void) {
 			psc.off();
 		}
@@ -169,11 +180,13 @@ namespace burst{
 		void mode_speed_runB(void) {
 			motion_.run();
 		}
+		#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
 		private:
 		class speed_ov_voltage_mode : public dev::mode {
 			friend class actuator_t;
 			speed_ov_voltage_mode(actuator_t & _actuator)
 			: dev::mode(front::actuator::modes::speed, _actuator) {}
+		
 		protected:
 			virtual void	applay_action(void) { owner<actuator_t>().mode_speed_applay_action(); }
 			virtual void	start(void) { owner<actuator_t>().mode_speed_ov_voltage_start(); }
@@ -183,6 +196,7 @@ namespace burst{
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
 		} speed_ov_voltage_mode_;
+		#endif
 		protected:
 		void mode_voltage_applay_action(void) {
 			DEV_PRESENT_S(p);
@@ -215,6 +229,7 @@ namespace burst{
 			virtual void	frontend_loop(void) {}
 		} voltage_mode_;
 		protected:
+		
 		void mode_position_applay_action(void) {
 			DEV_PRESENT_S(p);
 			DEV_ACTION_S(a);
@@ -230,8 +245,8 @@ namespace burst{
 		}
 
 		void mode_position_start(
-			const typename motion_t::config_s & _motion
-			, const typename positioner_t::config_s& _positioner
+			const typename motion_s::config_s & _motion
+			, const typename positioner_s::config_s& _positioner
 			, signal_t & _control
 			, const range_s<signal_t> & _control_range
 			, const satstates & _master_sut_flag
@@ -273,6 +288,7 @@ namespace burst{
 			motion_.run();
 			positioner_.run();
 		}
+		#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
 		private:
 		class position_ov_voltage_mode : public dev::mode {
 			friend class actuator_t;
@@ -287,6 +303,7 @@ namespace burst{
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
 		} position_ov_voltage_mode_;		
+		#endif
 		public:
 		actuator_t(
 			int _dev_id
@@ -307,9 +324,13 @@ namespace burst{
 			#endif
 			, motion_(_present.motion, _present.speed.req, _speed)
 			, positioner_(_present.positioner, _present.position.req, _position)
+				#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
 			, speed_ov_voltage_mode_(*this)
+				#endif
 			, voltage_mode_(*this) 
+				#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
 			, position_ov_voltage_mode_(*this) 
+				#endif
 		{
 			using namespace front::actuator::panics;
 			noreset_panic_mask |= (masks::overtemp | masks::lotemp) ;
@@ -348,8 +369,8 @@ namespace burst{
 					reg(number::var::long_signal, p.position.req, RT("req"));
 					varreg(RT("range"), number::var::const_long_signal, p.position.range);
 					pop();
-					motion_t::regvar_present(RT("motion"), p.motion);
-					positioner_t::regvar_present(RT("positioner"), p.positioner);
+					motion_s::regvar_present(RT("motion"), p.motion);
+					positioner_s::regvar_present(RT("positioner"), p.positioner);
 				}
 			} pop();
 		}
@@ -370,7 +391,7 @@ namespace burst{
 					varreg(RT("sp"), number::var::signal, c.range.speed);
 					varreg(RT("po"), number::var::long_signal, c.range.position);
 					pop();
-
+					#if BURST_ACTUATOR_MOVE_OV_VOLTAGE_MODE_ENABLED
 					push(RT("modes"));
 					{
 						push(RT("v"));
@@ -378,7 +399,7 @@ namespace burst{
 						positioner_t::regvar_config(RT("po"), c.modes.positioner);
 						pop();
 					} pop();
-
+					#endif
 					#if BURST_PROTECTION_ENABLED == 1
 					#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
 					push(RT("panic"));

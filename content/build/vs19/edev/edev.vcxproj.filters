@@ -8,10 +8,10 @@
     <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_link.cpp">
       <Filter>im\edev</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp">
+    <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp">
       <Filter>im\model</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp">
+    <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp">
       <Filter>im\model</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\im\models\dcservo.cpp">
@@ -31,10 +31,10 @@
     <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp">
       <Filter>im\edev</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp">
+    <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp">
       <Filter>im\model</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp">
+    <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp">
       <Filter>im\model</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcservo.hpp">

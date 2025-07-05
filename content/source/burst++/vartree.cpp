@@ -8,11 +8,11 @@
 namespace burst {
 	namespace var {
 		robo::char_t path[path_size + 1] = {};
-
+		int var_count = 0;
 		ref_s** index = new ref_s * [pool_size];
 		int count = 0;
 		void reg(ref_s* _r) {
-			ROBO_APP_ASSERT(count < pool_size);
+			ROBO_APP_ASSERT(count < pool_size);			
 			index[count] = _r;
 			count++;
 		}
@@ -59,7 +59,7 @@ namespace burst {
 				case tags::push:
 				ROBO_ASSERT(psz>sizeof(robo::char_t))
 				ROBO_ASSERT(path_stack_level < stack_size)
-				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				sz = (int) robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
 				*(path_stack_top) = sz;
 				path_ptr[sz] = 0;
 				path_ptr += sz;
@@ -77,8 +77,8 @@ namespace burst {
 				psz += sz;
 				break;
 				default:
-				ROBO_ASSERT(psz > (int)(std::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t)))
-				sz = robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
+				ROBO_ASSERT(psz > (int)(robo::string::strlen(((record_s*)(ref))->name)+2* sizeof(robo::char_t)))
+				sz = (int) robo::system::sprintf(path_ptr, psz, RT(".%s"), ((record_s *)(ref))->name);
 				//sz = 0;
 				*(path_stack_top) = sz;
 				path_ptr[sz] = 0;
@@ -100,6 +100,7 @@ namespace burst {
 			for (int i = 0; i < count; ++i,++r) {
 				delete *r;
 			}
+			var_count = 0;
 		}
 		int find(int _key) {
 			ref_s * * r = index;
@@ -124,11 +125,11 @@ namespace burst {
 			return nullptr;
 		}
 
-
-		
-
 		int proto(const  uint8_t* _buf_in, uint8_t* _buf_out) {
-			int   query = _buf_in[0];
+			header_s * pinh = (header_s *)_buf_in;
+			header_s * pouth = (header_s *)_buf_out;
+			int   query = pinh->query;
+			
 			int   ix;
 			
 
@@ -139,14 +140,19 @@ namespace burst {
 				ix = find(key);
 				const record_s* r = get(ix);
 				if (r) {					
-					_buf_out[0] = query;
-					_buf_out[1] = (uint8_t)ix;
+					//_buf_out[0] = query + (uint8_t)((ix&0x300)>>8);
+					//_buf_out[1] = (uint8_t)(ix&0xFF);
+					pouth->query=query;
+					pouth->error=error::none;
+					pouth->ix=ix;
 					_buf_out[2] = r->desc.bytes[0];
 					_buf_out[3] = r->desc.bytes[1];
 				}
 				else {
-					_buf_out[0] = query | invalid_key; //query
-					_buf_out[1] = 0xff;//ix
+					pouth->query=query;
+					pouth->error=error::invalid_key;
+					pouth->ix=0x3ff;
+
 					_buf_out[2] = 0xff;
 					_buf_out[3] = 0xff;
 				}
@@ -154,49 +160,66 @@ namespace burst {
 			}
 			case request::get:
 			{
-				ix = _buf_in[1];
-				//len = _buf_in[2];
-				_buf_out[1] = ix;
+				ix = pinh->ix;
 				const record_s* r = get(ix);
 				if (r) {
 					if ( r->desc.len<=max_len) {
-						_buf_out[0] = query;
+						pouth->query=query;
+						pouth->error=error::none;
+						pouth->ix=ix;
 						{
 							::robo::system::guard g__;
 							std::copy_n((uint8_t*)r->addr, r->desc.len, _buf_out + 2);
 						}
 					}
 					else {
-						_buf_out[0] = query | invalid_length; ;
+						pouth->query=query;
+						pouth->error=error::invalid_length;
+						pouth->ix=ix;
 					}
 					return 2 + r->desc.len;
 				}
 				else {
-					_buf_out[0] = query | invalid_index; ;
+						pouth->query=query;
+						pouth->error=error::invalid_index;
+						pouth->ix=ix;
 					//todo мы не знаем, что за переменная - сервер получит сообщение неверной длины, но  такое возможно при неверном desc
-					return 1;
+					return 2;
 				}
 			}
 			case request::put:
 			{
-				ix = _buf_in[1];
-				//len = _buf_in[2];
-				_buf_out[1] = ix;
+				ix = pinh->ix;
 				const record_s* r = get(ix);
 				if ( r ) {
 					if (r->desc.len <= max_len) {
-						{
-							::robo::system::guard g__;
-							std::copy_n(_buf_in + 2, r->desc.len, (uint8_t*)r->addr);
+						if(r->desc.reconfig_need == 0 || board::if_configure() ){
+							{
+								::robo::system::guard g__;
+								std::copy_n(_buf_in + 2, r->desc.len, (uint8_t*)r->addr);
+							}
+							pouth->query=query;
+							pouth->error=error::none;
+							pouth->ix=ix;
+							if(r->desc.reconfig_need){
+								board::reconfig_query();
+							}
+						}else {
+							pouth->query=query;
+							pouth->error=error::invalid_mode;
+							pouth->ix=ix;
 						}
-						_buf_out[0] = query;
 					}
 					else {
-						_buf_out[0] = query | invalid_length; ;
+						pouth->query=query;
+						pouth->error=error::invalid_length;
+						pouth->ix=ix;
 					}
 				}
 				else {
-					_buf_out[0] = query | invalid_index; ;
+					pouth->query=query;
+					pouth->error=error::invalid_index;
+					pouth->ix=ix;
 				}
 				return 2;
 			}
