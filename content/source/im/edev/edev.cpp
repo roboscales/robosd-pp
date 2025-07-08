@@ -80,7 +80,8 @@ namespace robo {
 		}
 		void agent::run( double time) {
 			for (agent::ref* p = agents_().first(); p; p = p->next()) {
-				p->owner().run_(time);
+				auto& a = p->owner();
+				a.run_(time);
 			}
 		}
 		void agent::backgrounf_run(double time){

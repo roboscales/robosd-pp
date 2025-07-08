@@ -266,11 +266,12 @@ namespace robo {
 		backend_thread_id_ = dummy_thread_id_;
 	}
 
-
+#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_STD
 	time_us_t system::env::realtime_us(void) {
 		std::chrono::steady_clock::time_point now_ = std::chrono::steady_clock::now();
 		return std::chrono::duration_cast<std::chrono::microseconds>(now_ - begin_).count();
 	}
+#endif
 
 	random_t system::env::rand(random_t _max) {
 		return (random_t)std::rand() % _max;

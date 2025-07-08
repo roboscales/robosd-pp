@@ -110,16 +110,18 @@ namespace robo {
 
 #include <windows.h>
 namespace robo {
+	#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_WIN
 	LARGE_INTEGER tickCurrent_;
 	double us_per_tick_;
 	LARGE_INTEGER ticksPerSecond_;
 	LARGE_INTEGER tickNext_;
 	DWORD tick_per_period_;
-	DWORD  step_show_period_;
+	#endif
 	std::thread::id backend_thread_id_;
 	std::thread::id dummy_thread_id_;
-	time_us_t last_time_us_ = 0;
+	DWORD  step_show_period_;
 	DWORD step_show_tick_ = 0;
+	time_us_t last_time_us_ = 0;
 	bool init_ = false;
 
 	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
@@ -151,12 +153,15 @@ namespace robo {
 			system_realtime_disabled_ = true;
 			ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), _period_us));
 		}
+		
+		#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_WIN
+
 		QueryPerformanceFrequency(&ticksPerSecond_);
 		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * _period_us * ticksPerSecond_.QuadPart);
 		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
 		QueryPerformanceCounter(&tickCurrent_);
 		tickNext_.QuadPart = tickCurrent_.QuadPart + _period_us;
-
+		#endif
 		ROBO_LBREAKN_F(_period_us > 0, "clock period is zero!");
 		time_ms_t ms;
 		::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms);
@@ -200,11 +205,13 @@ namespace robo {
 		backend_thread_id_ = dummy_thread_id_;
 	}
 
+#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_WIN
 	time_us_t system::env::realtime_us(void) {
 		QueryPerformanceCounter(&tickCurrent_);
 		double us = us_per_tick_ * tickCurrent_.LowPart;
 		return (time_us_t)(us);
 	}
+#endif
 
 	random_t system::env::rand(random_t _max) {
 		return (random_t)std::rand() % _max;

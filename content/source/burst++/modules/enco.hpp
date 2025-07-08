@@ -333,16 +333,18 @@ class resolver_driver_s {
 
 			reg(number::var::signal, p.raw.sn, RT("raw.sn"));
 			reg(number::var::signal, p.raw.cs, RT("raw.cs"));
+			reg(number::var::signal, p.raw.rphase, RT("raw.rphase"));
 
 
 			pop();
 		}
+		/*
 		bool data_enable(){
 			RESOLVER_PRESENT_S(p);
 			auto tmp = p.data_enable;
 			p.data_enable = false;
 			return tmp;
-		}
+		}*/
 		
 		
 		resolver_sincos_t(present_s& _present)
@@ -393,7 +395,8 @@ class resolver_driver_s {
 				if(p.data_enable){
 					p.rphase = p.raw.rphase;
 					p.rphase+=generator::table_mess_offset;
-					p.rphase%=generator::table_size;
+					while (p.rphase >= generator::table_size)
+						p.rphase -= generator::table_size;
 					p.rsin = generator::sin_array[p.rphase];
 					
 					if(p.rsin>generator::table_mess_th+generator::table_zero){
@@ -407,6 +410,7 @@ class resolver_driver_s {
 					} else {
 						p.ref.status = statuses::wait;
 					}
+					p.data_enable = false;
 				} else {
 						p.ref.status = statuses::fault;
 				}
@@ -652,25 +656,22 @@ class resolver_driver_s {
 							p.ref.delta_acc = adtmp;
 						}
 					}
-				}
-				else {
-					p.ref.counter.fault++;
-					//p.native.delta = p.ref.delta_acc = 0;
-					//to do так как закоментировано - так делать нельзя, та как накапливается ошибка!
-					/*present.native.raw += present.native.delta;
-					present.native.ceiled += (present.native.delta << shift);*/
-					p.ref.delta_acc += p.delta;
-				}
-				if (success) {
 					if (conf.inverce) {
 						p.acc -= p.native.delta;
 					}
 					else {
 						p.acc += p.native.delta;
 					}
-				//todo round_l не катит
+					//todo round_l не катит
 					p.ref.position = p.acc;
 					p.ref.position += conf.offset.position;
+				} else {
+					p.ref.counter.fault++;
+					//p.native.delta = p.ref.delta_acc = 0;
+					//to do так как закоментировано - так делать нельзя, та как накапливается ошибка!
+					/*present.native.raw += present.native.delta;
+					present.native.ceiled += (present.native.delta << shift);*/
+					p.ref.delta_acc += p.delta;
 				}
 			}
 			else 
