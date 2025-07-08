@@ -91,6 +91,7 @@ int main(int _argc, const char * _argv[])
 	ROBO_JAMPN(robo::edev::agent::begin(emu_ini), crash);
 	//robo::system::env::begin();
 	{
+#if 0
 		auto thread_count = robo::edev::agent::threads().count();
 		std::thread** threads = nullptr;
 		if (thread_count) {
@@ -99,6 +100,7 @@ int main(int _argc, const char * _argv[])
 			for (auto* it = robo::edev::agent::threads().first(); it; it = it->next(),++pthread) {
 				robo::edev::agent::thread* th = &(it->owner());
 				(*pthread) = new std::thread([ th, &terminated] {
+					SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 					auto t0 = Time::now();
 					while (!terminated) {
 						auto t1 = Time::now();
@@ -106,9 +108,11 @@ int main(int _argc, const char * _argv[])
 						auto sec = fs.count();
 						//todo ?
 						try{
-							robo::edev::agent::run(sec);
+							//robo::edev::agent::run(sec);
+							th->run(sec);
+
 						}
-						catch (const std::exception& err)
+						catch (const std::exception& /*err*/)
 						{
 							terminated = true;
 						}
@@ -116,7 +120,11 @@ int main(int _argc, const char * _argv[])
 				});
 			}
 		}
-		
+#endif	
+		double next_time_ = 0;
+		double begin_time_ = 0.;
+
+
 		std::thread th(
 			[&]() {
 				auto t0 = Time::now();
@@ -125,7 +133,7 @@ int main(int _argc, const char * _argv[])
 					fsec fs = t1 - t0;
 					auto sec = fs.count();
 					try {
-						robo::edev::agent::backgrounf_run(sec);
+						robo::edev::agent::backgrounf_run(sec - begin_time_);
 					}
 					catch (const std::exception& err)
 					{
@@ -134,17 +142,29 @@ int main(int _argc, const char * _argv[])
 				}
 			}
 		);
+
 		
-		/*
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 		auto t0 = Time::now();
 		while (!terminated) {
 			auto t1 = Time::now();
 			fsec fs = t1 - t0;
-			sec = fs.count();
-			robo::edev::agent::run(sec);
+			auto sec = fs.count();
+			if (begin_time_ == 0.) { 
+				begin_time_ = sec; 
+				next_time_ = sec;
+			}
+			
+			if (sec >= next_time_) {
+				robo::edev::agent::run(next_time_ - begin_time_);
+				next_time_ +=  0.000001;
+			};
+			//robo::edev::agent::backgrounf_run(next_time_ - begin_time_);
 		}
-		*/
+		
+
 		th.join();
+#if 0
 		if (thread_count) {
 			for (int i = 0; i < thread_count; ++i) {
 				std::thread* tmp = threads[i];
@@ -152,6 +172,7 @@ int main(int _argc, const char * _argv[])
 				delete tmp;
 			}
 		}
+#endif
 	}
 crash:
 	robo::edev::agent::finish();
@@ -164,4 +185,3 @@ crash:
 	return 0;
 	
 }
-

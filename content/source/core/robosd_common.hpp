@@ -494,5 +494,9 @@ namespace robo {
 #define ROBO_APP_RTTI_ENABLED 1
 #endif
 
+#ifndef ROBO_APP_REALTIME_TYPE
+#define ROBO_APP_REALTIME_TYPE ROBO_APP_TYPE_SPECIFIC
+#endif
+
 #endif
 
