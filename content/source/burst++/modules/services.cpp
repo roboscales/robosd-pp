@@ -436,7 +436,7 @@ namespace burst{
 					case burst::var::tags::push:
 						if (path_sz_) {
 							if (path_stack_level_ < stack_size) {
-								sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+								sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
 								*(path_stack_top_) = sz;
 								path_ptr_[sz] = 0;
 								path_ptr_ += sz;
@@ -459,7 +459,7 @@ namespace burst{
 						path_sz_ += sz;
 						break;
 					default:
-						sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+						sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
 						*(path_stack_top_) = sz;
 						path_ptr_[sz] = 0;
 						printf((burst::var::record_s*)ref, path_ + 1);
