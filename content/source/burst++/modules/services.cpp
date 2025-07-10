@@ -671,11 +671,12 @@ namespace burst{
 				}
 			}showto_fml_stream_;
 		}
-		#endif
-		#endif	
+			
 		void varlist(void (*_do_print)(const char* _buf)) {
 			var::showto_fml_stream_.run(_do_print);
 		}
+		#endif
+		#endif
 		}
 	}
 	#if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT
