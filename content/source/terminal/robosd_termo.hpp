@@ -95,6 +95,7 @@ namespace robo{
 			virtual bool parse_opt(char _opt) = 0;
 			virtual bool parse_long_opt(const char * _opt) = 0;
 		public:
+			const char * name(){return name_;};  
 			command(
 				const char * _name
 				, const char * _note
