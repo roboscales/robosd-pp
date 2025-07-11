@@ -80,6 +80,9 @@ namespace robo {
 		ROBO_UNUSED(_max);
 		return 0;
 	}
+	ROBO_WEAK random_t system::env::rand_maxd(void) {
+		return 0;
+	}
 
 	ROBO_WEAK void system::env::wakeup(void) {}
 

@@ -277,6 +277,10 @@ namespace robo {
 		return (random_t)std::rand() % _max;
 	}
 
+	random_t system::env::rand_maxd(void) {
+		return RAND_MAX;
+	}
+
 	void system::env::wakeup(void) {}
 
 	void system::env::sleep(void) {

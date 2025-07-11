@@ -308,6 +308,7 @@ namespace robo {
 			public:
 			static time_us_t realtime_us(void);
 			static random_t rand(random_t _max);
+			static random_t rand_maxd();
 			static void wakeup(void);
 			static void sleep(void); //вернуть контекст
 #if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
@@ -325,6 +326,17 @@ namespace robo {
 		};
 #endif
 	public:
+		#if ROBO_APP_ENV_ENABLED == 1
+		template<typename T>
+		static T rand(random_t _reso, const T& _min, const T& _max) {
+			return  robo::rand_t<T,env>(_reso,_min,_max);
+		}
+		template<typename T>
+		static T rand(const T& _min, const T& _max) {
+			return  robo::rand_t<T, env>(env::rand_maxd(), _min, _max);
+		}
+		#endif
+
 		static time_us_t clock_period_us(void);
 		static time_us_t time_us(void);
 		static time_ms_t time_ms(void);

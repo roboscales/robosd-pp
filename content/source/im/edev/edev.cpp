@@ -5,7 +5,7 @@
 namespace robo {
 	namespace edev {
 		agent::block::block(agent& _agent, cstr _name): owner(_agent), name(_name), ref_(*this) {
-			ref_.attach_to(_agent.blocks_);
+			ref_.attach_to(_agent.blocks);
 			path.format(RT("%s.%s"), owner.name.c_str(), name.c_str());
 		}
 
@@ -33,7 +33,7 @@ namespace robo {
 		}
 
 		bool agent::begin_(void) {
-			for (block::ref* p = blocks_.first(); p; p = p->next()) {
+			for (block::ref* p = blocks.first(); p; p = p->next()) {
 				ROBO_LBREAKN(p->owner().load_());
 			}
 
@@ -41,7 +41,7 @@ namespace robo {
 			robo_infolog("emulator agent '%s' was started", name.c_str());
 
 
-			for (block::ref* p = blocks_.first(); p; p = p->next()) {
+			for (block::ref* p = blocks.first(); p; p = p->next()) {
 				p->owner().do_reconfig();
 			}
 
@@ -91,7 +91,7 @@ namespace robo {
 		}
 		void agent::run_(double _time) {
 			if (_time >= next_time_) {
-				for (block::ref* p = blocks_.first(); p; p = p->next()) {
+				for (block::ref* p = blocks.first(); p; p = p->next()) {
 					p->owner().do_run();
 				}
 				next_time_ += sample_time;

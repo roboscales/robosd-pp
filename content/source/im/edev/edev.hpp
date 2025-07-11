@@ -36,13 +36,13 @@ namespace robo {
 			ref ref_;
 			threadref thread_ref_;
 			double next_time_ = 0.;
-			block::list blocks_;
 			void run_(double _time);
 			bool begin_(void);
 			bool attach_(cstr _name, cstr _lib, cstr _type, void* _instance);
 			static bool try_attach_(cstr _name, cstr _lib, cstr _type, void* _instance);
 			static void reconfig_(void);
-
+		protected:
+			block::list blocks;
 		public:
 			class ROBO_EXPORT thread {
 				friend class agent;
