@@ -206,19 +206,30 @@ namespace robo{
 			ihelp_cmd() : node( "help", "display help for current note", "<CR>", itf::root() ){}
 		} help_cmd;
 
+		#ifndef ROBO_TERMO_CMD_WELLCOM_ENABLED
+		#define ROBO_TERMO_CMD_WELLCOM_ENABLED 1
+		#endif
+		#ifndef ROBO_TERMO_CMD_WELLCOM_TEXT
+		#define ROBO_TERMO_CMD_WELLCOM_TEXT "\nRobosd terminal++ 3.0.alpha\n\r\tAndrei Iusupov <a.n.jusupov@gmail.com>\n\r\tFebruary 2020\n\r"
+		#endif
+		#if ROBO_TERMO_CMD_WELLCOM_ENABLED ==  1
 		class iwellcom_cmd : public node {
 		protected:
 			virtual bool begin(void){
 				itf::prints(
-					"\nRobosd terminal++ 3.0.alpha\n\r"
-					"\tAndrei Iusupov <a.n.jusupov@gmail.com>\n\r\tFebruary 2020\n\r"
+				ROBO_TERMO_CMD_WELLCOM_TEXT
 				);
 				return false;
 			}
 		public:
 			iwellcom_cmd() : node("wellcom", "show wellcom", "<CR>", itf::root()){}
 		} wellcom_cmd;
-
+		#endif
+		
+		#ifndef ROBO_TERMO_CMD_EXIT_ENABLED
+		#define ROBO_TERMO_CMD_EXIT_ENABLED 1
+		#endif
+		#if ROBO_TERMO_CMD_EXIT_ENABLED == 1
 		class iexit_cmd : public node {
 		protected:
 			virtual bool begin(void){
@@ -231,7 +242,12 @@ namespace robo{
 		public:
 			iexit_cmd() : node("exit", "exit from terminal", "<CR>", itf::root()){}
 		} exit_cmd;
-
+		#endif
+		
+		#ifndef ROBO_TERMO_CMD_MARKER_ENABLED
+		#define ROBO_TERMO_CMD_MARKER_ENABLED 1
+		#endif
+		#if ROBO_TERMO_CMD_MARKER_ENABLED == 1
 		class imarker_cmd : public node {
 		protected:
 			virtual bool begin(void){
@@ -241,7 +257,12 @@ namespace robo{
 		public:
 			imarker_cmd() : node("***", "fake command after marker received", "<CR>", itf::root()){}
 		} marker_cmd;
-
+		#endif
+		
+		#ifndef ROBO_TERMO_CMD_TEST_ENABLED
+		#define ROBO_TERMO_CMD_TEST_ENABLED 1
+		#endif
+		#if ROBO_TERMO_CMD_TEST_ENABLED == 1
 		class itest_cmd : public command {
 		protected:
 			virtual bool begin(void){
@@ -272,7 +293,8 @@ namespace robo{
 			itest_cmd() : command("test", "test to command string"
 				, "test [ <--,-><option><value> ]  [...] ... <CR>", itf::root()){}
 		} test_cmd;
-
+		#endif
+		
 		void core::process_(char c){
 			char *line = input_buffers_[cur_buf_index_];
 			switch (c){
@@ -862,6 +884,10 @@ namespace robo{
 		void itf::connect(::robo::net::iserial * _serial){
 			core::instance_().connect_to_(_serial);
 		}
+		void itf::connect(const robo::cstr _str ){
+			core::instance_().connect_to_(net::link::query<net::iserial>(_str));
+		}
+
 		bool itf::busy(void){
 			return core::instance_().serial_->busy();
 		}
@@ -880,7 +906,7 @@ namespace robo{
 		){
 		};
 		void abonent::stop(void){
-			itf::connect(0);
+			itf::connect((robo::net::iserial *)nullptr);
 		}
 		void abonent::start(void){
 			itf::connect(this);

@@ -80,6 +80,54 @@ namespace burst {
 			, const_time_us = descriptor_enco(sizeof(time_us_t), false, true, false)
 		} types;
 
+		template<typename T> constexpr types const_unsigned_type(const  T & /*_x*/) {
+			switch (sizeof(T)) {
+			case 1:
+				return types::const_uint8;
+			case 2:
+				return types::const_uint16;
+			case 4:
+				return types::const_uint32;
+			default:
+				return types::const_uint64;
+			}
+		}
+		template<typename T> constexpr types const_signed_type(const  T& /*_x*/) {
+			switch (sizeof(T)) {
+			case 1:
+				return types::const_int8;
+			case 2:
+				return types::const_int16;
+			case 4:
+				return types::const_int32;
+			default:
+				return types::const_int64;
+			}
+		}
+		template<typename T> constexpr types unsigned_type(const  T& /*_x*/) {
+			switch (sizeof(T)) {
+			case 1:
+				return types::uint8;
+			case 2:
+				return types::uint16;
+			case 4:
+				return types::uint32;
+			default:
+				return types::uint64;
+			}
+		}
+		template<typename T> constexpr types signed_type(const  T& /*_x*/) {
+			switch (sizeof(T)) {
+			case 1:
+				return types::int8;
+			case 2:
+				return types::int16;
+			case 4:
+				return types::int32;
+			default:
+				return types::int64;
+			}
+		}
 		static inline robo::cstr type_name(const descriptor & d) {
 			int ix = descriptor_enco(d.len, d.bsign, d.bconst, d.real);
 			switch (ix) {

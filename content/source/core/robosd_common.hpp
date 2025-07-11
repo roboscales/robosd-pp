@@ -31,6 +31,10 @@
 #define ROBO_CHAR wchar_t
 #define ROBO_CONST_STRING wchar_t const *
 
+#ifndef ROBO_APP_MATH_SHIFT_ENABLE
+#define ROBO_APP_MATH_SHIFT_ENABLE 0
+#endif
+
 #ifndef RT
 #define RT(s) RT_(s)
 #define RT_(s) L##s
@@ -283,39 +287,67 @@ namespace robo {
 			return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
 			#endif
 		}
-	
+
+		template <typename T> constexpr T signed_round(const T _src, uint8_t _shift) {
+			auto max = std::numeric_limits<T>::max();
+			auto min = -max;
+			auto r = ((T)1 << (_shift - 1))-1;
+
+			if (_src > 0) {
+				if (_src >= max - r) {
+					return (_src >> _shift) + 1;
+				}
+				else {
+					return ((_src + r) >> _shift);
+				}
+			}
+			else {
+				if (_src <= min + r) {
+				#if ROBO_APP_MATH_SHIFT_ENABLE
+					return (_src >> _shift) - 1;
+				#else
+					return -((-_src) >> _shift) - 1;
+				#endif
+				}
+				else {
+				#if ROBO_APP_MATH_SHIFT_ENABLE
+					return ((_src - r) >> _shift);
+				#else
+					return -((-(_src - r)) >> _shift);
+				#endif
+				}
+			}
+		}
+
+		template <typename T> constexpr T unsigned_round(const T _src, uint8_t _shift) {
+			auto max = std::numeric_limits<T>::max();
+			auto r = ((T)1 << (_shift - 1)) - 1;
+			if (_src >= max - r) {
+				return (_src >> _shift) + 1;
+			}
+			else {
+				return ((_src + r) >> _shift);
+			}
+		}
+
 		template <typename T> constexpr T round(const T _src, uint8_t _shift) {
 			if (_src == 0) {
 				return (T)0;
 			}
 			else {
-				auto max = std::numeric_limits<T>::max();
-				auto min = -max;
-				auto r = ((T)1 << (_shift - 1))-1;
-				if (_src > 0){
-					if (_src >= max - r) {
-						return (_src >> _shift) + 1;
-					}
-					else {
-						return ((_src + r) >> _shift);
-					}
+				if (std::is_signed<T>() == true) {
+					return  signed_round(_src, _shift);
+				} else {
+					return  unsigned_round(_src, _shift);
 				}
-				else {
-					if (_src <= min + r) {
-						#if ROBO_APP_MATH_SHIFT_ENABLE
-						return (_src >> _shift) - 1;
-						#else
-						return -((-_src) >> _shift) - 1;
-						#endif
-					}
-					else {
-						#if ROBO_APP_MATH_SHIFT_ENABLE
-						return ((_src - r) >> _shift);
-						#else
-						return -((-(_src - r)) >> _shift);
-						#endif
-					}
-				}
+			}
+		}
+		template <> constexpr uint64_t round(const uint64_t _src, uint8_t _shift) {
+			if (_src == 0) {
+				return 0;
+			}
+			else {
+				return  unsigned_round(_src, _shift);
 			}
 		}
 		template <typename D, typename S > D constexpr pack(const S& _x, uint8_t _shift) {

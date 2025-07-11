@@ -448,6 +448,8 @@ namespace robo {
 
         struct zero_ord_holder_s :public actor_s {
             typename actor_s::config_s actor;
+            struct config_s {
+            };
             zero_ord_holder_s(counter_s& _counter,  signal_s& _input, const config_s& _config)
                 : actor_s(_counter, _input, _config.actor) {
             }

@@ -131,6 +131,10 @@ namespace burst{
 				::robo::termo::itf::connect(&termo_abonent);
 				::robo::termo::itf::set_prompt(">");
 				#endif
+				#if SERVICE_TERMO_CONNECT_TYPE == SERVICE_TERMO_CONNECT_TYPE_DIRRECT
+				::robo::termo::itf::connect(SERVICE_TERMO_SERIAL);
+				::robo::termo::itf::set_prompt(">");
+				#endif
 				#if ROBO_APP_BURST_VARTREE_ENABLED
 				burst::var::reg(burst::var::const_uint32, time_us, RT("tm_us"));
 				#endif
@@ -179,8 +183,15 @@ namespace burst{
 				, SETTINGS_LOAD
 				, SETTINGS_RESET
 				#endif
+				#ifndef SERVICE_RESET_ENABLE
+				#define SERVICE_RESET_ENABLE 0
+				#endif
+				#if SERVICE_RESET_ENABLE == 1
 				, RESET
+				#endif
+				#if ROBO_APP_ALLOC_ENABLED ==1	
 				, MEMO
+				#endif
 			} kind;
 		private:
 			kind kind_;
@@ -221,11 +232,13 @@ namespace burst{
 						termo_abonent_printf("error");
 					}
 				#endif
+				#if SERVICE_RESET_ENABLE == 1
 				case	RESET:
 					break;
+				#endif
+				#if ROBO_APP_ALLOC_ENABLED ==1							
 				case	MEMO:
 					{
-						#if ROBO_APP_ALLOC_ENABLED ==1							
 						const robo::system::mem::stat & ms = robo::system::get_mem_statistic();
 							
 						::robo::termo::itf::printf(RT8("used: %d (%d)\n\r"), ms.used.size,ms.used.count);
@@ -234,9 +247,9 @@ namespace burst{
 						#if SERVICE_TERMO_PRINT_TYPE == SERVICE_TERMO_PRINT_TYPE_KEIL
 						__heapstats(&statprint_,nullptr);
 						#endif
-						#endif
 					}
 					break;
+				#endif
 				case	UNKNOWN:
 					::robo::termo::itf::prints("unknown command\n\r");
 					break;
@@ -249,12 +262,16 @@ namespace burst{
 				: node(_name, _note, _usage, _parent), kind_(_kind){
 			}
 		};
+		#if SERVICE_NET_FLOW_COMMAND_ENABLED == 1  || SERVICE_SETTINGS_STORE_ENABLE == 1 || SERVICE_RESET_ENABLE == 1 ||  ROBO_APP_ALLOC_ENABLED ==1	
+		
 		static ::robo::termo::node root(
 				RT8("burst")
 				, RT8("burst commands")
 				, RT8("addr <CR>")
 				, robo::termo::itf::root()
 			);
+		#endif
+		#if SERVICE_RESET_ENABLE == 1
 		static imexo_cmd reset(
 				imexo_cmd::kind::RESET
 				, RT8("reset")
@@ -262,6 +279,8 @@ namespace burst{
 				, RT8("<CR>")
 				, &root
 			);
+		#endif
+		#if ROBO_APP_ALLOC_ENABLED ==1	
 		static imexo_cmd memo(
 				imexo_cmd::kind::MEMO
 				, RT8("memo")
@@ -269,6 +288,7 @@ namespace burst{
 				, RT8("<CR>")
 				, &root
 			);
+		#endif
 
 		#if SERVICE_NET_FLOW_COMMAND_ENABLED == 1
 		static ::robo::termo::node flow(
@@ -331,7 +351,7 @@ namespace burst{
 		);
 		#endif
 
-		#if MEXO_SETTINGS_STORE_ENABLE == 1
+		#if SERVICE_SETTINGS_STORE_ENABLE == 1
 
 		static termo_command_t settings =
 		{
@@ -416,7 +436,7 @@ namespace burst{
 					case burst::var::tags::push:
 						if (path_sz_) {
 							if (path_stack_level_ < stack_size) {
-								sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+								sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
 								*(path_stack_top_) = sz;
 								path_ptr_[sz] = 0;
 								path_ptr_ += sz;
@@ -439,7 +459,7 @@ namespace burst{
 						path_sz_ += sz;
 						break;
 					default:
-						sz = robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+						sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
 						*(path_stack_top_) = sz;
 						path_ptr_[sz] = 0;
 						printf((burst::var::record_s*)ref, path_ + 1);
@@ -651,11 +671,12 @@ namespace burst{
 				}
 			}showto_fml_stream_;
 		}
-		#endif
-		#endif	
+			
 		void varlist(void (*_do_print)(const char* _buf)) {
 			var::showto_fml_stream_.run(_do_print);
 		}
+		#endif
+		#endif
 		}
 	}
 	#if SERVICE_NET_FLOW_TYPE == SERVICE_NET_FLOW_TYPE_DEFAULT

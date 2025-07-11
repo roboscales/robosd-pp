@@ -135,7 +135,7 @@ int main(int _argc, const char * _argv[])
 					try {
 						robo::edev::agent::backgrounf_run(sec - begin_time_);
 					}
-					catch (const std::exception& err)
+					catch (const std::exception& /*err*/)
 					{
 						terminated = true;
 					}

@@ -325,6 +325,7 @@ class resolver_driver_s {
 			push(RT("sico"));
 			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
 			reg(types::const_uint32, p.ref.status, RT("status"));
+			reg(types::const_uint8,  p.ref.restart, RT("restart"));
 			reg(types::const_uint16, p.rphase, RT("rphase"));
 			reg(types::const_uint32, p.rsin, RT("rsin"));
 			reg(number::var::signal, p.teta, RT("teta"));
@@ -421,7 +422,7 @@ class resolver_driver_s {
 	};
 
 			
-	template<class driver> struct resolver_driver_t: public burst::resolver_driver_s{
+	template<class driver> struct resolver_driver_t: public burst::resolver_driver_s, public driver {
 		using B =  burst::resolver_driver_s;		
 		using statuses = B::statuses;		
 
@@ -440,6 +441,17 @@ class resolver_driver_s {
 			}	else {
 				p.ref.status = statuses::fault;
 			}
+		}
+		
+		void present_reg(void) {
+			RESOLVER_PRESENT_S(p);
+			using namespace burst::var;
+			push(RT("rsd"));
+			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
+			reg(types::const_uint32, p.ref.status, RT("status"));
+			reg(types::const_uint8, p.ref.restart, RT("restart"));
+			reg(const_unsigned_type(p.raw), p.raw, RT("raw"));
+			pop();
 		}
 	};
 	
@@ -518,7 +530,7 @@ class resolver_driver_s {
 			long_signal_t acc;
 			typename hidriver_s::present_s hidrv;
 			typename lowdriver_s::present_s lowdrv;
-
+			uint32_t svt0[3];
 		};
 		
 		
@@ -534,7 +546,7 @@ class resolver_driver_s {
 				reg(types::const_uint64, p.splice.total, RT("total"));
 				reg(types::const_uint64, p.splice.accum, RT("accum"));
 				reg(types::const_uint32, p.splice.begin, RT("begin"));
-				reg(types::const_int32, p.splice.delta, RT("begin"));
+				reg(types::const_int32, p.splice.delta, RT("delta"));
 				pop();
 				push(RT("native"));
 				reg(types::const_uint32, p.native.ceiled, RT("ceiled"));
@@ -542,10 +554,18 @@ class resolver_driver_s {
 				pop();
 				reg(number::var::const_signal, p.delta, RT("delta"));
 				reg(number::var::const_long_signal, p.acc, RT("acc"));
+				push(RT("srvt"));
+				reg(types::const_uint32, p.svt0[0], RT("0"));
+				reg(types::const_uint32, p.svt0[1], RT("1"));
+				reg(types::const_uint32, p.svt0[2], RT("2"));
+				pop();
 			}
 			reg(types::uint32, p.splice.fault, RT("splice_fault"));
 
-			lowdriver_s::present_reg();
+			if (actual_mode >= mode::full) {
+				lowdriver_s::present_reg();
+				hidriver_s::present_reg();
+			}
 		}
 		
 		virtual void do_regvar_conf(void) {
@@ -577,7 +597,7 @@ class resolver_driver_s {
 			B::begin();
 			ACTOR_CONFIG_S(cfg);
 			ACTOR_PRESENT_S(p);
-			shift.raw = (32 - cfg.resolution);
+			shift.raw = (cfg.sence_hi_segment_bits+ hidriver_s::resolution - cfg.resolution);
 	
 			p = {};
 			//p.abs = {};
@@ -623,12 +643,14 @@ class resolver_driver_s {
 				}
 				bool success = p.hidrv.ref.status == statuses::ready;
 				if (success) {
-					p.hires.delta = robo::digit::rsh( (int32_t) (p.hidrv.ref.ceiled - p.hires.prev), conf.sence_hi_segment_bits ) ;
+					p.hires.delta = robo::digit::rsh( (int32_t) (p.hidrv.ref.ceiled - p.hires.prev),/* conf.sence_hi_segment_bits*/(32 - hidriver_s::resolution));
+					//21 bit
 					p.hires.prev = p.hidrv.ref.ceiled;
 
 					p.native.ceiled += p.hires.delta;
-
-					p.native.delta = robo::digit::rsh(p.hires.delta, shift.raw);
+					
+					p.native.delta = p.hires.delta;
+					//p.native.delta = robo::digit::rsh(p.hires.delta, shift.raw);
 					long_signal_t dtmp;
 					if (conf.inverce) {
 						dtmp = -p.native.delta;
@@ -663,7 +685,7 @@ class resolver_driver_s {
 						p.acc += p.native.delta;
 					}
 					//todo round_l не катит
-					p.ref.position = p.acc;
+					p.ref.position = robo::digit::rsh(p.acc, shift.raw) ;
 					p.ref.position += conf.offset.position;
 				} else {
 					p.ref.counter.fault++;
@@ -707,8 +729,10 @@ class resolver_driver_s {
 							if (conf.inverce) {
 								tmp = 0xFFFFFFFF - tmp;
 							}
-							p.acc = robo::digit::rsh(((long_signal_t)tmp), shift.raw);
-							p.ref.position = p.acc;
+							
+							p.acc = robo::digit::rsh( (long_signal_t)tmp, 32- (hidriver_s::resolution + conf.sence_hi_segment_bits) );
+
+							p.ref.position = robo::digit::rsh(p.acc, shift.raw);
 							p.ref.position += conf.offset.position;
 
 							if (start_pause_tick == 0) {
@@ -751,19 +775,19 @@ class resolver_driver_s {
 			
 			//uint32_t vt1 = (uint16_t)resolve_machine_tetta;
 
-			static volatile uint32_t svt0[3];
-			svt0[0]	= p.upper_bits + p.low_bits ; 
-			svt0[1] = svt0[0] - (1L<<( 32-conf.sence_hi_segment_bits)); 	
-			svt0[2] = svt0[0] + (1L<<( 32-conf.sence_hi_segment_bits)); 	
+			
+			p.svt0[0]	= p.upper_bits + p.low_bits ; 
+			p.svt0[1] = p.svt0[0] - (1L<<( 32-conf.sence_hi_segment_bits));
+			p.svt0[2] = p.svt0[0] + (1L<<( 32-conf.sence_hi_segment_bits));
 
-			int32_t resolver_delta = 1<<31;
+			int32_t resolver_delta = std::numeric_limits<int32_t>::max();
 			auto result = p.upper_reference ;
 
 			for (int n  = 0; n < 3; n++) { 
-				int32_t tmp_delta = (int32_t)(svt0[n] - p.upper_reference);
+				int32_t tmp_delta = (int32_t)(p.svt0[n] - p.upper_reference);
 				if (abs(tmp_delta) < abs(resolver_delta)) {
 					resolver_delta = tmp_delta;
-					result = svt0[n];
+					result = p.svt0[n];
 				}
 			}
 			p.splice.actual = result;

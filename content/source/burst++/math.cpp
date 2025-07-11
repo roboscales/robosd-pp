@@ -193,7 +193,7 @@ constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
 				if ( abs_y<=abs_x){
 					ret = _atan( (int15::usignal_t) ((65536L*abs_y)/abs_x));
 				}  else {
-					ret = pi_div_2 - _atan((int15::usignal_t) (65536L*abs_x)/abs_y );
+					ret = pi_div_2 - _atan((int15::usignal_t) ((65536L*abs_x)/abs_y) );
 				}
 				if (_x<0){
 					if (_y<0) {

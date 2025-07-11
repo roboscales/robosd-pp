@@ -95,6 +95,7 @@ namespace robo{
 			virtual bool parse_opt(char _opt) = 0;
 			virtual bool parse_long_opt(const char * _opt) = 0;
 		public:
+			const char * name(){return name_;};  
 			command(
 				const char * _name
 				, const char * _note
@@ -149,6 +150,7 @@ namespace robo{
 			static void put(char  _ch);
 			static command * root();
 			static void connect(::robo::net::iserial * _serial);
+			static void connect(const robo::cstr _str );
 			static bool busy(void);
 
 		};

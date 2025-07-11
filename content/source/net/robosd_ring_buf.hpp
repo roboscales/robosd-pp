@@ -12,19 +12,19 @@ template< uint8_t BITS, class DATA_T = uint8_t> class ROBO_EXPORT ring_t
 {
 public:
 	// определяем псевдоним для индексов
-	static const unsigned SIZE = (1 << BITS);
+	static const size_t SIZE = (1 << BITS);
 private:
 	// память под буфер
 	int test;
 
 	DATA_T _data[SIZE];
 	// количество чтений
-	unsigned _readCount;
+	size_t _readCount;
 	// количество записей
-	unsigned _writeCount;
+	size_t _writeCount;
 	// маска для индексов
-	static const unsigned _mask = SIZE - 1;
-	static const unsigned _masksz = (1 << (BITS + 1)) - 1;
+	static const size_t _mask = SIZE - 1;
+	static const size_t _masksz = (1 << (BITS + 1)) - 1;
 public:
 	// запись в буфер
 	inline void put(DATA_T value)
@@ -46,18 +46,18 @@ public:
 	// полон ли буфер
 	inline bool full(void)const
 	{
-		return ((unsigned)(_writeCount - _readCount) & (unsigned)~(_mask)) != 0;
+		return ((size_t)(_writeCount - _readCount) & (size_t)~(_mask)) != 0;
 	}
 	// количество элементов в буфере
-	unsigned count(void)const
+	size_t count(void)const
  	{
 		return (_writeCount - _readCount) & _masksz;
 	}
-	unsigned space(void)const
+	size_t space(void)const
 	{
 		return SIZE - count();
 	}
-	unsigned size(void)const
+	size_t size(void)const
 	{
 		return SIZE;
 	}
@@ -74,7 +74,7 @@ public:
 	virtual ~ring_t(void){
 		clear();
 	}
-	bool put(const DATA_T * _data, unsigned _count){
+	bool put(const DATA_T * _data, size_t _count){
 		if (SIZE - count() >= _count){
 			while (_count--)
 				put(*_data++);
@@ -85,10 +85,10 @@ public:
 		}
 	}
 
-	unsigned get(DATA_T * _data, unsigned __max_count){
-		unsigned _count = count();
+	size_t get(DATA_T * _data, size_t __max_count){
+		size_t _count = count();
 		if (__max_count < _count) _count = __max_count;
-		unsigned sz = _count;
+		size_t sz = _count;
 		while (sz--){
 			*_data++ = get();
 		}
