@@ -152,6 +152,7 @@ namespace robo{
 			static void connect(::robo::net::iserial * _serial);
 			static void connect(const robo::cstr _str );
 			static bool busy(void);
+			static void echo_off(void);
 
 		};
 #if ROBO_APP_PROTO_SWITCH_ENABLED ==1

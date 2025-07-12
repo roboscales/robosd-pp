@@ -102,12 +102,7 @@ namespace robo {
 
 	template<typename T>
 	constexpr T g = T(9.8066);
-	
-	template<typename T, typename R>
-	T rand_t(random_t _reso, const T& _min, const T& _max) {
-		return (T)R::rand(_reso) / _reso * (_max - _min) + _min;
-	}
-
+		
 	double constexpr csqrt_helper(double x, double curr, double prev) {
 		return curr == prev
 			? curr
@@ -387,7 +382,11 @@ namespace robo {
 			}
 		}
 	}
-	
+	template<typename T, typename R>
+	T rand_t(random_t _reso, const T& _min, const T& _max) {
+		return ((T)R::rand(_reso)) / _reso * (_max - _min) + _min;
+	}
+
 	constexpr   double catan2(double y, double x){
 		if( y ==0. && x==0.) return 0.;
     const double atan_tbl[] = {

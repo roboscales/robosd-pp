@@ -98,7 +98,9 @@ namespace robo{
 			va_end(args);
 		};
 
-
+		void itf::echo_off(void){
+			core::instance_().echo_ = false;
+		}
 		void itf::printfa(const char* _format, va_list _args){
 			string::format_stream(*core::instance_().serial_,_format,_args);
 		};
