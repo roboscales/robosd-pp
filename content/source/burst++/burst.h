@@ -19,6 +19,5 @@ void burst_core_crash_(const char * _function, const char * _file, int _line);
 #if defined(__cplusplus)
 }
 #endif
-				
-				
+
 #endif

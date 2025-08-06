@@ -183,6 +183,8 @@ namespace robo {
 	};
 
 
+	
+	
 	/*
 	template<typename  T, int N> void copy(std::initializer_list<T>  _src, T(&_dst)[N]) {
 		size_t n = _src.end() - _src.begin();
@@ -533,6 +535,9 @@ namespace robo {
 #ifndef ROBO_APP_REALTIME_TYPE
 #define ROBO_APP_REALTIME_TYPE ROBO_APP_TYPE_SPECIFIC
 #endif
+
+
+
 
 #endif
 
