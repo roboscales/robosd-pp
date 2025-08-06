@@ -1,5 +1,6 @@
 #include "net/robosd_can.hpp"
 #include "core/robosd_log.hpp"
+#include "core/robosd_autonum.hpp"
 namespace robo {
 	namespace net {
 		static ican::map & cans_(void) {
@@ -17,9 +18,20 @@ namespace robo {
 		void ican::set_on_receive(on_receive_f* _on_receive) {
 			on_receive = _on_receive == nullptr ? &can_dummy_on_receive : _on_receive;
 		}
+#if ROBO_AUTONUM_ENABLED == 1
+		void ican::set_on_receive( void (* _simple)( ican&, uint32_t, const uint8_t*, uint8_t) ){
+			set_on_receive(robo::delegat::ausimple(_simple));
+		}
+#endif
 		void ican::set_on_event(on_event_f* _on_event) {
 			on_event = _on_event == nullptr ? &can_dummy_on_event : _on_event;
 		}
+#if ROBO_AUTONUM_ENABLED == 1
+		void ican::set_on_event(void (*_simple)(ican&, event)) {
+			set_on_event(robo::delegat::ausimple(_simple));
+		}
+#endif
+
 		bool ican::reg(cstr _caption) {
 			ref_.set_key(hash(_caption));
 			ROBO_LRET(ref_.attach_to(cans_()));

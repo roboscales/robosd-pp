@@ -83,7 +83,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\arma-ref\bin\Win32</LibraryPath>
   </PropertyGroup>
@@ -91,7 +91,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\arma-ref\bin\x64</LibraryPath>
   </PropertyGroup>
@@ -99,7 +99,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\arma-ref\bin\Win32</LibraryPath>
   </PropertyGroup>
@@ -107,7 +107,7 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\arma-ref\bin\x64</LibraryPath>
   </PropertyGroup>

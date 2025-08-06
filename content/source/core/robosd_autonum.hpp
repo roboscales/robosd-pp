@@ -121,6 +121,7 @@ namespace robo {
 					template<typename ... xArgs> static simple* create(R(*_delegat) (Args ... args), xArgs ... xargs) {
 						return new simple(_delegat, xargs...);
 					}
+
 				};
 
 				class ROBO_EXPORT uni
@@ -181,6 +182,9 @@ namespace robo {
 		}
 		template <typename R, typename ... Args>
 		using autonum_fabric = autonum::fabric < autonum::performer<R, Args...>, R, Args... >;
+		template<typename R, typename ... Args> autonum::performer<R, Args...>* ausimple(R(*_delegat) (Args ... args)) { 
+			return autonum_fabric<R,Args...>::create(_delegat);
+		}
 	}
 }
 #endif

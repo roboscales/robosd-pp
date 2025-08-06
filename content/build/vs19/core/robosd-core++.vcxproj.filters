@@ -31,6 +31,9 @@
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_autonum.cpp">
       <Filter>robosd++/core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp">
+      <Filter>robosd++/core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_common.hpp">
@@ -66,8 +69,11 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\robosd_app_tuning.hpp">
+    <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\config\robosd_app_tuning.hpp">
       <Filter>robosd++/core/platform/win+vs19</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">
+      <Filter>robosd++/core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

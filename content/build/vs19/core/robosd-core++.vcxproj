@@ -71,26 +71,26 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -171,6 +171,7 @@
     <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_log.cpp" />
     <ClCompile Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\platform\win+vs19\robosd-system-win.cpp" />
+    <ClCompile Include="..\..\..\robosd-ref\core\robosd_app.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_autonum.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\..\robosd-ref\core\robosd_system_native.cpp" />
@@ -188,7 +189,8 @@
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring.hpp" />
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_ring_buf.hpp" />
     <ClInclude Include="$(SolutionDir)..\..\..\..\reference\robosd-ref\core\robosd_string.hpp" />
-    <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\config\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

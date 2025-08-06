@@ -146,6 +146,8 @@ int main(int _argc, const char * _argv[])
 		
 		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 		auto t0 = Time::now();
+		double sec_stat_acc = 0.;
+		int cnt =0;
 		while (!terminated) {
 			auto t1 = Time::now();
 			fsec fs = t1 - t0;
@@ -155,11 +157,26 @@ int main(int _argc, const char * _argv[])
 				next_time_ = sec;
 			}
 			
-			if (sec >= next_time_) {
-				robo::edev::agent::run(next_time_ - begin_time_);
-				next_time_ +=  0.000001;
-			};
+			//if (sec >= next_time_) {
+				//robo::edev::agent::run(next_time_ - begin_time_);
+				//next_time_ +=  0.000001;
+			//};
 			//robo::edev::agent::backgrounf_run(next_time_ - begin_time_);
+			robo::edev::agent::run(sec - begin_time_);
+			auto t2 = Time::now();
+			fsec dfc = t2 - t1;
+			auto dsec = dfc.count();
+			sec_stat_acc += dsec;
+			cnt++;
+			if (cnt == 1000000) {
+				auto dt = 1000000. * sec_stat_acc / cnt;
+				if (dt > 0.1) {
+					robo_infolog("run period us: %f", dt);
+				}
+				cnt = 0;
+				sec_stat_acc = 0;
+			}
+
 		}
 		
 

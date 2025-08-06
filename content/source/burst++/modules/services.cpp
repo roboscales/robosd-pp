@@ -156,7 +156,7 @@ namespace burst{
 				robo::termo::itf::poll();
 				#endif
 				#if SERVICE_SWITCH_PORT0_ENABLED  == 1 || SERVICE_SWITCH_PORT1_ENABLED  == 1
-				g_time_us_t = robo::system::env::realtime_us();
+				g_time_us_t = robo::system::time_us();
 				robo::net::proto::switcher::core::poll(g_time_us_t - tick_prev_us);
 				time_us =  tick_prev_us = g_time_us_t;
 				#endif
