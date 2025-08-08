@@ -18,7 +18,7 @@ namespace robo {
 		delete value_;
 	}
 
-	string::string(void): value_(new base_string_) {
+	string::string(void): value_(create_value_()) {
 		*((stds*)value_) = RT("");
 	}
 	size_t string::strlen(cstr _str) {
@@ -34,16 +34,18 @@ namespace robo {
 	}
 
 
-	string::string(const string& _src) : value_(_src.value_==nullptr? new base_string_():new base_string_(*(_src.value_))) {}
+	string::string(const string& _src) : value_(_src.value_==nullptr? create_value_() :new base_string_(*(_src.value_))) {}
 	
+	string::base_string_ * string::create_value_(void) {
+		return new base_string_;
+	}
 
 	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
-
-	string::string(cstr _format, va_list _args) : value_(new base_string_) {
+	string::string(cstr _format, va_list _args) : value_(create_value_()) {
 		ROBO_ALARMN(format(_format, _args))
 	}
 
-	string::string(cstr _format, ...) : value_(new base_string_) {
+	string::string(cstr _format, ...) : value_(create_value_()) {
 		va_list args;
 		va_start(args, _format);
 		ROBO_ALARMN(format(_format, args))

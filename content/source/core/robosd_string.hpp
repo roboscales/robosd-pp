@@ -22,6 +22,7 @@ namespace robo {
 		class base_string_;
 		class base_stream_;
 		base_string_* value_ = nullptr;
+		static base_string_ * create_value_();
 		//std::basic_string<char_t, std::char_traits<char_t>, std::allocator<char_t> > value_;
 	public:
 		virtual ~string(void);
@@ -200,7 +201,8 @@ namespace robo {
 		void from(double _n) {
 			format(RT("%f"), _n);
 		}		
-		template<typename T> string(const  T &  _t) {
+		
+		template<typename T> string(const  T& _t):value_(create_value_()) {
 			from(_t);
 		}
 

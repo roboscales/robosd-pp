@@ -4,7 +4,9 @@
 #include "core/robosd_log.hpp"
 #include "net/robosd_can_flow_bus.hpp"
 #include "net/platform/can/emulator/emu_can.hpp"
+#include "net/robosd_can_flow_module.hpp"
 namespace MODULE_NAME{
+#if 0
 	class phys {
 		robo::net::can_flow_bus::packet* incomm_= nullptr;
 		//const robo::net::can_flow_bus::packet* outcomm_ = nullptr;
@@ -86,116 +88,18 @@ namespace MODULE_NAME{
 			can_.set_on_event(&on_can_event_);
 		}
 	};
-	class module : public robo::app::module {
-		module(void)
-			: robo::app::module(MODULE_NAME_STR) {}
-		typedef robo::net::master_t<phys, robo::net::can_flow_bus::packet> driver;
-		robo::net:: can_flow_bus** buses_ = nullptr;
-		driver** drivers_ = nullptr;
-		int bus_count_ = 0;
-
-	protected:
-		/*
-		robo::net::can_flow_bus::packet pk;
-		robo::net::can_flow_bus::packet res;
-		*/
-		virtual void backend_loop(void) {
-			driver** d = drivers_;
-			for (int i = 0; i < bus_count_; ++i, ++d) {
-				(*d)->phys::poll();
-				(*d)->poll();
-			}
-		}
-		virtual void frontend_loop(void) {
-			/*
-			static robo::time_us_t last_us = 0;
-			robo::time_us_t now_us = robo::system::env::time_us();
-			static bool odd = false;
-			static uint8_t counter = 0;
-			if (now_us - last_us > 1000000) {
-				last_us = now_us;
-				if (odd) {
-					pk.id.value = 0x0A1;
-					pk.len = 1;
-					pk.values[0] = 1;
-					drivers_[0]->exchange(pk, &res, nullptr);
-					//drivers_[1]->exchange(pk, &res, nullptr);
-				}
-				else {
-					pk.id.value = 0x2A1;
-					pk.len = 1;
-					pk.values[0] = counter++;
-					drivers_[0]->exchange(pk, nullptr, nullptr);
-					//pk.values[0]++;
-					//drivers_[1]->exchange(pk, nullptr, nullptr);
-				}
-				odd = !odd;
-			}*/
-		}
-		virtual bool do_load(void) { 
-			ROBO_LBREAKN(robo::app::module::do_load());
-			ROBO_LBREAKN(robo::ini::load(current_path(), RT("BUS_COUNT"), bus_count_));
-			if (bus_count_ > 0) {
-				buses_ = new robo::net::can_flow_bus * [bus_count_];
-				drivers_ = new driver * [bus_count_];
-				robo::net::can_flow_bus** b = buses_;
-				driver** d = drivers_;
-				for (int i = 0; i < bus_count_; ++i, ++b, ++d) {
-					(*b) = nullptr;
-					(*d) = nullptr;
-				}
-
-				b = buses_;
-				d = drivers_;
-				for (int i = 0; i < bus_count_; ++i, ++b, ++d) {
-					robo::string name(RT("channel-%d"), i + 1);
-					(*d) = new driver(name, this);
-					ROBO_LBREAKN((*d)!=nullptr)
-					name.format(RT("bus-%d"), i+1);
-					(*b) = new robo::net::can_flow_bus(name,this,**d);
-					ROBO_LBREAKN((*b) != nullptr);					
-				}
-			}
-			return true; 
-		}
-		virtual bool do_start(void) {
-			driver** d = drivers_;
-			for (int i = 0; i < bus_count_; ++i, ++d) {
-				(*d)->start();
-			}
+#endif
+	class phys: public robo::net::emu_can::port {
+	public:
+		using B = robo::net::emu_can::port;
+		bool load(robo::cstr _current, robo::cstr _common) {
+			ROBO_LBREAKN(robo::ini::load(_common, _current, RT("CHANNEL"), channel));
+			ROBO_LBREAKN(robo::ini::load(_common, _current, RT("REPEAT_MAX_COUNT"), repeat_max_count));
 			return true;
 		}
-		virtual void do_stop(void) {
-			driver** d = drivers_;
-			for (int i = 0; i < bus_count_; ++i, ++d) {
-				(*d)->stop();
-			}
-		}
-		virtual void do_clean(void) {
-
-			if (buses_ != nullptr) {
-				robo::net::can_flow_bus** b = buses_;
-				for (int i = 0; i < bus_count_; ++i,++b) {
-					if ((*b)!=nullptr) delete (*b);
-				}
-				delete[] buses_;
-				buses_ = nullptr;
-			}
-			if (drivers_ != nullptr) {
-				driver** d = drivers_;
-				for (int i = 0; i < bus_count_; ++i, ++d) {
-					if ((*d) != nullptr) delete (*d);
-				}
-				delete[] drivers_;
-				drivers_ = nullptr;
-			}
-		}
-	public:
-		static module& instance(void) {
-			static module instance_;
-			return instance_;
-		}
 	};
+	static const inline robo::char_t nm[] = MODULE_NAME_STR;
+	using module = robo::net::can::flow_module_t< robo::net::can::flow_phys_t<phys >, nm>;
 }
 
 #include "core/robosd_system_module_reg.hpp"
