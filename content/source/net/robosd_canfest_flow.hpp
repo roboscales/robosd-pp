@@ -22,10 +22,11 @@ namespace robo {
 				bool load(robo::cstr _current, robo::cstr _common) {
 					ROBO_LBREAKN(B::load(_current, _common));
 					ROBO_LBREAKN(robo::ini::load(_common, _current, RT("pdo_number"), pdo_number));
+					ROBO_LBREAKN(S::attach(this, pdo_number);
 					return true;
 				}
 			};
 		}
 	}
 }
-#endif
+#end
