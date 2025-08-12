@@ -18,8 +18,8 @@ namespace robo {
 			typedef  ::robo::list::unique<node, int> map;
 			typedef  list::ref ref;
 			typedef  map::ref mref;
-			robo::string store_name_;
-			robo::string display_alias_;
+			string store_name_;
+			string display_alias_;
 			node* owner_ = nullptr;
 			ref ref_;
 			mref own_ref_;
@@ -132,7 +132,7 @@ namespace robo {
 			void clean(void);
 			cstr name(void) { return name_; }
 			//void push_path(string& _path);
-			robo::cstr tree_path(void);
+			cstr tree_path(void);
 			state actual_state(void) { return actual_state_; }
 			const cstr alias(void) {
 				if (alias_.length() != 0) {
@@ -191,7 +191,7 @@ namespace robo {
 
 			void* handle_ = nullptr;
 			module* module_ = nullptr;
-			robo::string lib_;
+			string lib_;
 
 			ref ref_;
 

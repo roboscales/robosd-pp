@@ -1,5 +1,5 @@
 #define MODULE_NAME  emu_can
-#define MODULE_NAME_STR RT("emu_can")
+#define MODULE_NAME_STR RT("emu_can_flow")
 #include "core/robosd_app.hpp"
 #include "core/robosd_log.hpp"
 #include "net/robosd_can_flow_bus.hpp"

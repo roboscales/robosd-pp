@@ -223,7 +223,7 @@ namespace robo {
 
 	bool string::load(cstr _first_section, cstr _second_section, cstr _key) {
 		if (!tryload(_first_section, _key)) {
-			ROBO_LRET_F(tryload(_second_section, _key), "error load string %s/%s", _second_section, _key);
+			ROBO_LRET_F(tryload(_second_section, _key), "error load string %s (or %s) /%s", _first_section, _second_section, _key);
 		}
 		else {
 			return true;

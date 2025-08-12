@@ -118,25 +118,27 @@ namespace robo {
 				//open();
 			}
 			void port::poll(void) {
-				switch (shared_->out.state) {
-				case PACKET_REFUSE:
-					shared_->out.state = PACKET_EMPTY;
-					(*on_event)(*this, event::fault);
-				break;
-				case PACKET_COMPLETE:
-					shared_->out.state = PACKET_EMPTY;
-					confirm_count++;
-				break;
-				}
-				switch (shared_->received.state) {
-				case PACKET_REFUSE:
-					shared_->received.state = PACKET_EMPTY;
-					(* on_event)(*this, event::fault);
-				break;
-				case PACKET_COMPLETE:
-					shared_->received.state = PACKET_EMPTY;
-					(*on_receive)(*this, shared_->received.id, shared_->received.data, shared_->received.size);
-				break;
+				if (shared_) {
+					switch (shared_->out.state) {
+					case PACKET_REFUSE:
+						shared_->out.state = PACKET_EMPTY;
+						(*on_event)(*this, event::fault);
+						break;
+					case PACKET_COMPLETE:
+						shared_->out.state = PACKET_EMPTY;
+						confirm_count++;
+						break;
+					}
+					switch (shared_->received.state) {
+					case PACKET_REFUSE:
+						shared_->received.state = PACKET_EMPTY;
+						(*on_event)(*this, event::fault);
+						break;
+					case PACKET_COMPLETE:
+						shared_->received.state = PACKET_EMPTY;
+						(*on_receive)(*this, shared_->received.id, shared_->received.data, shared_->received.size);
+						break;
+					}
 				}
 			}
 
