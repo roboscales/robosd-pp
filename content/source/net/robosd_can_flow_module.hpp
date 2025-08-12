@@ -36,10 +36,13 @@ namespace robo {
 						}
 					}
 					D /*robo::net::can::sysworxx::port*/ can_instance;
+					virtual bool do_send(ican& _ican, uint32_t _id, const uint8_t * _data, uint8_t _len) {
+						ROBO_LRET (_ican.send(_id, _data, _len));
+					}
 				public:
 					virtual void send(const bus::packet* _outcomm) {
 						if (can_instance.ready()) {
-							if (can_instance.send(_outcomm->id.value, _outcomm->values, _outcomm->len)) {
+							if (do_send(can_instance,_outcomm->id.value, _outcomm->values, _outcomm->len)) {
 								outcomm_ = _outcomm;
 								//confirm();
 							}
