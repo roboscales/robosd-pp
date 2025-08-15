@@ -111,6 +111,15 @@ namespace robo {
 				}
 			}
 
+			bool msg::put( uint8_t _data) {
+				if (1 <= port_.max_size()) {
+					*data_ = _data;
+					return true;
+				}
+				else {
+					return false;
+				}
+			}
 			bool msg::put(const uint8_t* _data, size_t _offset, size_t _size) {
 				if (_size + _offset <= size_) {
 					std::copy_n(_data, _size, data_ + _offset);
@@ -343,6 +352,7 @@ namespace robo {
 					page_ = 0;
 					m->put(page_);
 					m->put(snapshot_.data(), 1, sz);
+					put_answer(m);
 					actual_size_ = snapshot_.size() - sz;
 					actual_ = snapshot_.data() + sz;
 				}
@@ -371,8 +381,8 @@ namespace robo {
 				}
 			}
 
-			void snapshot_proto::post_page_(size_t _page) {
-				if (page_ == 0) {
+			void snapshot_proto::post_page_(uint8_t _page) {
+				if (_page == 0) {
 					update_and_post();
 				}
 				else {
@@ -389,7 +399,7 @@ namespace robo {
 					m->set_size(out_sz + 1);
 					m->put(page_);
 					m->put(snapshot_.data() + offset, 1, out_sz);
-
+					put_answer(m);
 					offset += out_sz;
 					actual_size_ = snapshot_.size() - offset;
 					actual_ = snapshot_.data() + offset;

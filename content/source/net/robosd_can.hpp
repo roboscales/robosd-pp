@@ -39,7 +39,6 @@ namespace robo {
 			virtual bool ready(void) = 0;
 			virtual void reset(void) = 0;
 			virtual void poll(void) = 0;
-
 			ican(void);
 			virtual bool reg(cstr _caption);
 			virtual void unreg(void);

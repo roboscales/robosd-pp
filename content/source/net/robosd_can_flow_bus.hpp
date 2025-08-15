@@ -11,8 +11,8 @@ namespace robo {
 			namespace flow {
 				class bus : public backend::bus {
 				public:
-					enum { master_buf_size = 10, idle_id = 0xFF, packet_size = 8 };
-					struct packet : public stack_t<uint8_t, uint8_t, packet_size> {
+					enum { master_buf_size = 10, idle_id = 0xFF, max_packet_size = 8 };
+					struct packet : public stack_t<uint8_t, uint8_t, max_packet_size> {
 						flow_msg_can_id_t id;
 					};
 					typedef  imaster_t<packet> driver;
@@ -23,6 +23,7 @@ namespace robo {
 					uint16_t wait_id_ = idle_id;
 					::robo::delegat::owned_fabric<void, bool>::member<bus > confirm_delegat_;
 				protected:
+					
 					virtual bool do_load(void);
 
 
@@ -37,13 +38,13 @@ namespace robo {
 					virtual bool ready(void);
 				public:
 					bus(cstr _name, app::module* _owner, driver& _driver);
+					void set_max_packets_size(uint8_t _sz);
 				};
-
 				class ROBO_EXPORT xphys : public ican {
 				protected:
 					ican* can_instance = nullptr;
 				public:
-					string name;
+					string name;					
 					bool load(cstr _section, cstr _common);
 					void clean(void);
 					bool open(void);

@@ -40,6 +40,8 @@ namespace robo {
 						ROBO_LRET (_ican.send(_id, _data, _len));
 					}
 				public:
+					//message_.tran.size_max =
+					virtual uint8_t get_packet_max_size(void) { return 8; };
 					virtual void send(const bus::packet* _outcomm) {
 						if (can_instance.ready()) {
 							if (do_send(can_instance,_outcomm->id.value, _outcomm->values, _outcomm->len)) {
@@ -146,7 +148,7 @@ namespace robo {
 								robo::string name(RT("channel-%d"), i + 1);
 								(*d) = new driver(name, this);
 								ROBO_LBREAKN((*d) != nullptr)
-									name.format(RT("bus-%d"), i + 1);
+								name.format(RT("bus-%d"), i + 1);
 								(*b) = new bus(name, this, **d);
 								ROBO_LBREAKN((*b) != nullptr);
 							}
@@ -155,7 +157,9 @@ namespace robo {
 					}
 					virtual bool do_start(void) {
 						driver** d = drivers_;
-						for (int i = 0; i < bus_count_; ++i, ++d) {
+						bus** b = buses_;
+						for (int i = 0; i < bus_count_; ++i, ++d,++b) {
+							(*b)->set_max_packets_size( (*d)->get_packet_max_size() );
 							(*d)->start();
 						}
 						return true;

@@ -19,7 +19,7 @@ namespace MODULE_NAME{
 			return true;
 		}
 		virtual bool do_start(void) {
-			ROBO_LBREAKN( instance.open(false) );
+			ROBO_LBREAKN( instance.open(true) );
 			return true;
 		}
 		virtual void poll(void) {

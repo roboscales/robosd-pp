@@ -21,6 +21,7 @@ namespace robo {
 						instance(cstr _instance_name);
 						virtual void set_handle(::robo::net::ican& _ican) = 0;
 					public:
+						virtual uint8_t get_packet_max_size(void) { return 7;  };
 						virtual bool is_flow_id(uint16_t _id) = 0;
 						virtual void do_can_receive(uint32_t _id, const uint8_t* _data, uint8_t _len) = 0;
 						virtual uint16_t encode_id(uint32_t _id, const uint8_t* _data) = 0;
@@ -28,6 +29,7 @@ namespace robo {
 
 						//virtual canfest_table* create(void) = 0;
 						static instance* attach(cstr _instance_name, ::robo::net::ican& _ican);
+
 					};
 
 					template<typename D> class ROBO_EXPORT phys_t : public ::robo::net::can::flow::phys_t<D>
@@ -76,6 +78,8 @@ namespace robo {
 							instance_ = nullptr;
 							B::do_close();
 						}
+					public:
+						virtual uint8_t get_packet_max_size(void) { return instance_->get_packet_max_size();  }
 						
 					};
 				}

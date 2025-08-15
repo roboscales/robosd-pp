@@ -5,6 +5,7 @@ namespace robo {
 			namespace flow {
 				bool bus::do_load(void) {
 					ROBO_LBREAKN(::robo::backend::bus::do_load());
+					//message_.tran.size_max =  get_packet_size();
 					return true;
 				}
 				void bus::exchange_confirm(bool _result) {
@@ -93,7 +94,11 @@ namespace robo {
 					: robo::backend::bus(_name, _owner)
 					, confirm_delegat_(*this, &bus::exchange_confirm)
 					, driver_(_driver) {
-					message_.tran.size_max = packet_size;
+					message_.tran.size_max = max_packet_size;
+				}
+				void bus::set_max_packets_size(uint8_t _sz) {
+					ROBO_APP_ASSERT(_sz<= max_packet_size)
+					message_.tran.size_max = _sz;					
 				}
 
 				bool xphys::send(uint32_t _id, const uint8_t* _data, uint8_t _len) {
