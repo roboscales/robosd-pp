@@ -177,11 +177,11 @@ namespace burst {
 		devagent::proto::result devagent::proto::request(robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
 			burst::var::header_s* h = (burst::var::header_s*)_tran.data;
 			*h = {};
-			_tran.header.command = burst::var::request::index;
+			_tran.header.command = burst::proto::flow::id::var;
 			if (step_ == step::idle) {
 				ROBO_JAMPN_F(_var->length() <= _tran.size_max - 2, fail, "invalid var size %s", _var->name());
-				ROBO_JAMPN_F(_var->addr() < 255, fail, "invalid var index ");
-				index_ = (uint8_t)_var->addr();
+				ROBO_JAMPN_F(_var->addr() < 1024, fail, "invalid var index ");
+				index_ = _var->addr();
 				len_ = (uint8_t)_var->length();
 				op_ = _var->actual_status();
 				step_ = step::put;
@@ -219,7 +219,7 @@ namespace burst {
 		devagent::proto::result devagent::proto::confirm(const robo_tran_t& _tran, ::robo::backend::vartable::ivar* _var) {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
 				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
-				ROBO_JAMPN_F((h->error!= burst::var::error::none), fail, "invalid var answer (%s , %d)", _var->name(), (int)(h->error) );
+				ROBO_JAMPN_F((h->error== burst::var::error::none), fail, "invalid var answer (%s , %d)", _var->name(), (int)(h->error) );
 				ROBO_JAMPN_F((h->ix == index_), fail, "invalid var index (%s , %d,%d) ", _var->name(), (int)(h->ix));
 				if (op_ == op::put) {
 					if (step_ == step::put) {
@@ -283,7 +283,7 @@ namespace burst {
 		devagent::proto::result devagent::proto::confirm_desc(const robo_tran_t& _tran, varindex::descriptor* _desc) {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
 				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
-				ROBO_JAMPN_F((h->error != 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(h->error));
+				ROBO_JAMPN_F((h->error == 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(h->error));
 				if (step_ == step::desc_put) {
 					ROBO_JAMPN_F((_tran.data[0] == burst::var::request::index), fail, "invalid desc operation  (%s, %d) ", _desc->name(), _tran.data[0]);
 					step_ = step::desc_get;
@@ -294,7 +294,8 @@ namespace burst {
 					burst::var::descriptor d;
 					d.bytes[0] = _tran.data[2];
 					d.bytes[1] = _tran.data[3];
-					_desc->setup_recprd(type_name(d), _tran.data[1], d.len);
+					burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+					_desc->setup_recprd(type_name(d),h->ix, d.len);
 					reset();
 					return result::success;
 				}
