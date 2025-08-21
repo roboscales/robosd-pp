@@ -6,8 +6,8 @@ namespace robo {
 	template <typename D> class pinout_base_t : public D{
 		enum class state{ on =1,off = 0} state_ = state::off;
 		protected:
-		pinout_base(void):D(){}
-		~pinout_base(void){}
+		pinout_base_t(void):D(){}
+		~pinout_base_t(void){}
 		void on(void){				
 			if(state_==state::off){
 				D::on();
@@ -34,26 +34,57 @@ namespace robo {
 		}
 	};
 
+	template <typename D> class pinout_t : public D{
+		public:
+		pinout_t(void):D(){}
+		~pinout_t(void){}
+		void on(void){				
+			D::on();
+		}
+		void off(void){
+			D::off();
+		}
+		void toggle(void){
+			if(D::active()){
+				D::off();
+			} else {
+				D::on();
+			}
+		}
+		bool active(void){
+			return D::active();
+		}
+		template<typename T> pinout_t & operator = (const T & _src ){
+			if( (bool)_src){
+				on();
+			} else{
+				off();
+			}
+			return *this;
+		}
+		operator bool() const{ return D::active(); }
 
-	template <typename D> class pinoutcom_s : public pinout_base<D>{
-		static pinout_s & instance_(){
-			static pinout_s instance__;
+	};
+
+	template <typename D> class pinoutcom_s : public pinout_base_t<D>{
+		static pinoutcom_s & instance_(){
+			static pinoutcom_s instance__;
 			return instance__;
 		}
 	public:
-		static void on(void) { instance_().pinout_base<D>::on(); } 
-		static void off(void) { instance_().pinout_base<D>::off(); } 
-		static void toggle(void) { instance_().pinout_base<D>::toggle(); } 
-		static bool active(void) { return instance_().pinout_base<D>::active(); } 
+		static void on(void) { instance_().pinout_base_t<D>::on(); } 
+		static void off(void) { instance_().pinout_base_t<D>::off(); } 
+		static void toggle(void) { instance_().pinout_base_t<D>::toggle(); } 
+		static bool active(void) { return instance_().pinout_base_t<D>::active(); } 
 	};
 
-	template <typename D> class pinout : public pinout_base<D>{
+	template <typename D> class pinout : public pinout_base_t<D>{
 		static pinout instance_;
 	public:
-		static void on(void) { instance_.pinout_base<D>::on(); } 
-		static void off(void) { instance_.pinout_base<D>::off(); } 
-		static void toggle(void) { instance_.pinout_base<D>::toggle(); } 
-		static bool active(void) { return instance_.pinout_base<D>::active(); } 
+		static void on(void) { instance_.pinout_base_t<D>::on(); } 
+		static void off(void) { instance_.pinout_base_t<D>::off(); } 
+		static void toggle(void) { instance_.pinout_base_t<D>::toggle(); } 
+		static bool active(void) { return instance_.pinout_base_t<D>::active(); } 
 		static void perform( uint8_t _command) { 
 			switch (_command){
 				case 1: on(); break;
@@ -76,8 +107,8 @@ namespace robo {
 			static void off(void) {  }
 	};
 	
-	template< class P, class T> class blink_driver_t : public ::robo::pinout_base<P>, public T {
-		using A = ::mexo::pinout_base<P>;
+	template< class P, class T> class blink_driver_t : public ::robo::pinout_base_t<P>, public T {
+		using A = ::robo::pinout_base_t<P>;
 	protected:
 		virtual void operator ()(void){
 			A::toggle();
@@ -92,7 +123,7 @@ namespace robo {
 		void stop(void){ T::stop();}
 	};
 	
-	
+	#if 0
 	
 	template< class P, class T> class blink_t : public ::robo::timer_t<blink_driver_t<P,T> > {
 		using A = ::robo::pinout_base<P>;
@@ -124,7 +155,7 @@ namespace robo {
 
 	};
 	template <class P, class T>  blink_t<P,T> blink_t<P,T>::instance_;
-	
+	#endif
 }
 
 #endif

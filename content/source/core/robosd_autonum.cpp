@@ -1,4 +1,5 @@
 #include "robosd_autonum.hpp"
+#if ROBO_AUTONUM_ENABLED
 namespace robo {
 	namespace delegat {
 		namespace autonum {
@@ -48,3 +49,4 @@ namespace robo {
 		}
 	}
 }
+#endif

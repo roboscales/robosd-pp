@@ -106,6 +106,39 @@ namespace robo {
 						commands command;
 						states  state;
 					};
+					
+					template <typename D> class pin_t : public D{
+						public:
+						pin_t(void):D(){}
+						~pin_t(void){}
+						void on(void){				
+							D::on();
+						}
+						void off(void){
+							D::off();
+						}
+						void toggle(void){
+							if(D::active()){
+								D::off();
+							} else {
+								D::on();
+							}
+						}
+						bool active(void){
+							return D::active();
+						}
+						template<typename T> pin_t & operator = (const T & _src ){
+							if( (bool)_src){
+								on();
+							} else{
+								off();
+							}
+							return *this;
+						}
+						operator bool() const{ return D::active(); }
+
+					};
+	
 					template <typename D> class base_t : public D{			
 						 present_s & present_;
 						public:
