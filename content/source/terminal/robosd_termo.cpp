@@ -24,7 +24,7 @@ namespace robo{
 			bool terminated_ = true;
 			//bool external_echo_;
 			command::list execs_;
-
+			bool abonent_stream_ = false;
 			//void add_command_(command *);
 			void start_of_line_(void);
 			typedef enum { NULLMATCH, FULLMATCH, PARTMATCH, UNMATCH, MATCH, AMBIG } match;
@@ -65,6 +65,7 @@ namespace robo{
 				, serial_(&robo::net::serial_dummy::instance())				
 				{
 			}
+			
 			void connect_to_(::robo::net::iserial * _serial){
 				if (serial_){
 					serial_->reset();
@@ -113,6 +114,16 @@ namespace robo{
 				}
 			}
 		};
+		size_t itf::get(uint8_t & _data){
+			return core::instance_().serial_->get(_data);
+		}
+		void itf::serial_enter(void){
+			core::instance_().abonent_stream_ = true;
+		}
+		void itf::serial_leave(void){
+			core::instance_().abonent_stream_ = false;
+		}
+
 		void itf::put(char  _ch){
 			if( core::instance_().serial_->space() > 0){
 				core::instance_().serial_->put(_ch);
@@ -833,7 +844,7 @@ namespace robo{
 		}
 
 		void core::poll_(void){
-
+			if(!abonent_stream_){
 			size_t sz = serial_->available();
 			if (sz){
 				uint8_t tmp;
@@ -842,7 +853,7 @@ namespace robo{
 				}
 				itf::events().alive();
 			}
-
+			}
 			command::ref * r = execs_.first();
 			if (r){
 				command * cm = &r->owner();
