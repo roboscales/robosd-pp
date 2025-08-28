@@ -321,7 +321,7 @@ class resolver_driver_s {
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		void present_reg(void) {
 			RESOLVER_PRESENT_S(p);
-
+			#if ROBO_APP_BURST_VARTREE_ENABLED
 			using namespace burst::var;
 			push(RT("sico"));
 			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
@@ -339,6 +339,7 @@ class resolver_driver_s {
 
 
 			pop();
+			#endif
 		}
 		#endif
 		/*
@@ -446,7 +447,9 @@ class resolver_driver_s {
 		}
 		#if ROBO_APP_BURST_VARTREE_ENABLED
 		void present_reg(void) {
+			#if ROBO_APP_BURST_VARTREE_ENABLED
 			RESOLVER_PRESENT_S(p);
+			
 			using namespace burst::var;
 			push(RT("rsd"));
 			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
@@ -454,6 +457,7 @@ class resolver_driver_s {
 			reg(types::const_uint8, p.ref.restart, RT("restart"));
 			reg(const_unsigned_type(p.raw), p.raw, RT("raw"));
 			pop();
+			#endif
 		}
 		#endif
 	};
