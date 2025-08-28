@@ -72,10 +72,10 @@ namespace robo {
 					public:
 					pin_t(void):D(){}
 					~pin_t(void){}
-					bool active(void){
-						return D::active();
+					bool get(void){
+						return D::get();
 					}
-					operator bool() const{ return D::active(); }
+					operator bool() const{ return D::get(); }
 
 				};		
 			}				

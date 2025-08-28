@@ -255,10 +255,10 @@ namespace burst {
 							tmp->links_.first()->value().attach_to(slots_().startup_holder.delegats_);
 						}
 						present_.status = front::board::statuses::restart ;						
-					} else{
-							reset_panic_(front::board::panics::bits::config);
-							present_.status = front::board::statuses::ready ;
-							slots_ref_.ready.execute();
+					} else {
+						reset_panic_(front::board::panics::bits::config);
+						present_.status = front::board::statuses::ready ;
+						slots_ref_.ready.execute();
 					}
 				}
 				break;

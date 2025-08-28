@@ -318,6 +318,7 @@ class resolver_driver_s {
 			burst::resolver_sincos_raw_t<number> raw;
 			bool data_enable;
 		};
+		#if ROBO_APP_BURST_VARTREE_ENABLED
 		void present_reg(void) {
 			RESOLVER_PRESENT_S(p);
 
@@ -339,6 +340,7 @@ class resolver_driver_s {
 
 			pop();
 		}
+		#endif
 		/*
 		bool data_enable(){
 			RESOLVER_PRESENT_S(p);
@@ -442,7 +444,7 @@ class resolver_driver_s {
 				p.ref.status = statuses::fault;
 			}
 		}
-		
+		#if ROBO_APP_BURST_VARTREE_ENABLED
 		void present_reg(void) {
 			RESOLVER_PRESENT_S(p);
 			using namespace burst::var;
@@ -453,6 +455,7 @@ class resolver_driver_s {
 			reg(const_unsigned_type(p.raw), p.raw, RT("raw"));
 			pop();
 		}
+		#endif
 	};
 	
 	template<class number, class hidriver_s,class lowdriver_s> class resolver_x2_t : public enco_t<number>,public hidriver_s, public lowdriver_s {

@@ -850,7 +850,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_A_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_A_MODBUS_RTU_MASTER_US 20000
 				#endif
-				//dispetcher_t dispetcher(SERVICE_RS485_A_MODBUS_RTU_MASTER_US);
+				dispetcher_t dispetcher(SERVICE_RS485_A_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}
@@ -894,7 +894,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_B_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_B_MODBUS_RTU_MASTER_US 20000
 				#endif
-				//dispetcher_t dispetcher(SERVICE_RS485_B_MODBUS_RTU_MASTER_US);
+				dispetcher_t dispetcher(SERVICE_RS485_B_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}
@@ -937,7 +937,7 @@ namespace burst{
 				#ifndef SERVICE_RS485_C_MODBUS_RTU_MASTER_US
 				#define SERVICE_RS485_C_MODBUS_RTU_MASTER_US 20000
 				#endif
-				//dispetcher_t dispetcher(SERVICE_RS485_C_MODBUS_RTU_MASTER_US);
+				dispetcher_t dispetcher(SERVICE_RS485_C_MODBUS_RTU_MASTER_US);
 				void prf::modbus_rtu_master::confirm(){
 						dispetcher.confirm();
 				}

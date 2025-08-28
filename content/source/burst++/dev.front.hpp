@@ -12,7 +12,7 @@
 namespace burst {
 	namespace front {
 		namespace board {
-			enum class commands {none = 0,configure};
+			enum class commands {none = 0,configure=1};
 			enum class statuses{ unknown = 0, startuped, configure, restart, ready};
 
 			namespace panics {

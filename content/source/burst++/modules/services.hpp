@@ -78,12 +78,12 @@ namespace burst{
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
 				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
 				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
-				//extern modbus_rtu_servo_t modbus_rtu_servo;
+				extern modbus_rtu_servo_t modbus_rtu_servo;
 				#endif
 				
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
 				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
-				//extern dispetcher_t dispetcher;
+				extern dispetcher_t dispetcher;
 				#endif
 				
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_SERIAL
@@ -96,12 +96,12 @@ namespace burst{
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
 				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
 				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
-				//extern modbus_rtu_servo_t modbus_rtu_servo;
+				extern modbus_rtu_servo_t modbus_rtu_servo;
 				#endif
 
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
 				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
-				//extern dispetcher_t dispetcher;
+				extern dispetcher_t dispetcher;
 				#endif
 				
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_SERIAL
@@ -113,12 +113,12 @@ namespace burst{
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_SLAVE
 				ROBOSD_MODBUS_RTU_SLAVE_SERVO(servo);
 				typedef ::robo::net::modbus::rtu::slave_t<prf::modbus_rtu_slave,  servo > modbus_rtu_servo_t;				
-				//extern modbus_rtu_servo_t modbus_rtu_servo;
+				extern modbus_rtu_servo_t modbus_rtu_servo;
 				#endif
 				
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
 				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
-				//extern dispetcher_t dispetcher;
+				extern dispetcher_t dispetcher;
 				#endif
 
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_SERIAL
