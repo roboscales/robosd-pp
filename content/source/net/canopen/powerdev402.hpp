@@ -179,8 +179,8 @@ namespace robo {
 						Action: The drive self-tests and/or self-initializes.
 					*/
 					void reset(void) {
-						ROBO_APP_ASSERT(state_ == states::start);
 						state_ = states::not_ready_to_switch_on;
+						robo_infolog("%u ds402::reset", (unsigned)system::time_us());
 					}
 
 					/*State Transition 1: NOT READY TO SWITCH ON -> SWITCH ON DISABLED
@@ -189,7 +189,8 @@ namespace robo {
 					*/
 					void initialized_successfully(void) {
 						ROBO_APP_ASSERT(state_ == states::not_ready_to_switch_on);
-						state_ = states::switch_on_disabled;
+						state_ = states::ready_to_switch_on;
+						robo_infolog("%u ds402::initialized_successfully", (unsigned)system::time_us());
 					}
 
 				private:
@@ -219,6 +220,7 @@ namespace robo {
 						default:
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::shutdown_", (unsigned)system::time_us());
 					}
 
 					/*
@@ -234,6 +236,7 @@ namespace robo {
 						else {
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::switch_on_", (unsigned)system::time_us());
 					}
 
 					/*
@@ -255,6 +258,7 @@ namespace robo {
 						default:
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::enable_operation_", (unsigned)system::time_us());
 					}
 
 					/*
@@ -270,6 +274,7 @@ namespace robo {
 						else {
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::disable_operation_", (unsigned)system::time_us());
 					}
 					/*
 						State Transition 7: READY TO SWITCH ON->SWITCH ON DISABLED
@@ -302,6 +307,7 @@ namespace robo {
 						default:
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::quick_stop_", (unsigned)system::time_us());
 					}
 				public:
 					/*
@@ -317,6 +323,7 @@ namespace robo {
 						else {
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::quick_stop_complete", (unsigned)system::time_us());
 					}
 				private:
 					/*
@@ -351,6 +358,7 @@ namespace robo {
 						default:
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::disable_voltage_", (unsigned)system::time_us());
 					}
 				public:
 					/*
@@ -367,6 +375,7 @@ namespace robo {
 						default:
 							state_ = states::fault_reaction_active;
 						}
+						robo_infolog("%u ds402::fault", (unsigned)system::time_us());
 					}
 
 					/*
@@ -382,6 +391,7 @@ namespace robo {
 						else {
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::fault_reaction_completed", (unsigned)system::time_us());
 					}
 				private:
 					/*
@@ -397,9 +407,13 @@ namespace robo {
 						else {
 							panic(ROBO_APP_PROC_NAME, state_);
 						}
+						robo_infolog("%u ds402::fault_reset_", (unsigned)system::time_us());
 					}
 
 					commands decode_command_(uint16_t _cvv) {
+						if (_cvv == 0) {
+							 return commands::none;
+						}
 						controlworld_s _cv;
 						_cv.value = _cvv;
 						if (_cv.fault_reset) {
@@ -446,28 +460,30 @@ namespace robo {
 					}
 					void poll(void) {
 						auto cmd = decode_command_(read_object_uint16_t(objects::controlword,0));
-						if (command_ != cmd) {
-							command_ = cmd;
-							switch (command_) {
-							case commands::disable_operation:
-								disable_operation_();
-								break;
-							case commands::disable_voltage:
-								disable_voltage_();
-								break;
-							case commands::enable_operation:
-								enable_operation_();
-								break;
-							case commands::fault_reset:
-								fault_reset_();
-								break;
-							case commands::quick_stop:
-								quick_stop_();
-								break;
+						if (cmd!= commands::none) {
+							if (command_ != cmd) {
+								robo_infolog("%u ds402::command %d (old: %d) is received", (unsigned)system::time_us(), (int)cmd, (int)command_);
+								command_ = cmd;
+								switch (command_) {
+								case commands::disable_operation:
+									disable_operation_();
+									break;
+								case commands::disable_voltage:
+									disable_voltage_();
+									break;
+								case commands::enable_operation:
+									enable_operation_();
+									break;
+								case commands::fault_reset:
+									fault_reset_();
+									break;
+								case commands::quick_stop:
+									quick_stop_();
+									break;
+								}
 							}
+							write_object(objects::controlword, 0, (uint16_t)0);
 						}
-						write_object(objects::controlword, 0, (uint16_t)0);
-						
 						statusword_S statusword;
 						statusword.value = read_object_uint16_t(objects::statusword,0) & 0b00000000;
 

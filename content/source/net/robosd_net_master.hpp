@@ -214,6 +214,15 @@ namespace robo{
 				virtual void dispetcher_confirm(void) = 0;
 				virtual void dispetcher_refuse(const E & ) = 0;
 				virtual bool dispetcher_ready(void) = 0;
+				/*bool dispetcher_request(void){
+					robo::system::critical g__;
+					if(do_dispetcher_request()){
+						statistic.request++;
+						return true;
+					} else {
+						return true;
+					}
+				}*/
 				virtual bool dispetcher_request(void) = 0;
 			public:
 				statistic_s<E> statistic = {};

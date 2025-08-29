@@ -296,7 +296,7 @@ namespace burst {
 		class slots;
 		class slot {
 		public:
-			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, raise_fault, ready, reconfig };
+			enum class kind { begin = slot_count, start, startup, realtime, backend, frontend, halt, ready, reconfig };
 			class delegat : public ::robo::delegat::ref<void> {
 				friend class link;
 				friend class board;
@@ -436,7 +436,7 @@ namespace burst {
 			slot realtime;
 			slot backend;
 			slot frontend;
-			slot raise_fault;
+			slot halt;
 			slot periodic[slot_count];
 			slot dummy;
 			slot ready;

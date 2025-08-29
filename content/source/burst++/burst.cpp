@@ -265,6 +265,7 @@ namespace burst {
 			case front::board::statuses::ready:
 				if(present_.command == front::board::commands::configure){
 					raise_panic_(front::board::panics::bits::config);
+					slots_ref_.halt.execute();
 					present_.status = front::board::statuses::configure ;
 				}
 				break;
@@ -286,7 +287,7 @@ namespace burst {
 	
 
 	void board::handle_panic_(void) {
-		slots_ref_.raise_fault.execute();
+		slots_ref_.halt.execute();
 	}
 	board::slots& board::slots_(void) {
 		static board::slots slots__;
@@ -316,8 +317,8 @@ namespace burst {
 		case slot::kind::frontend:
 		return frontend;
 
-		case slot::kind::raise_fault:
-		return raise_fault;
+		case slot::kind::halt:
+		return halt;
 
 		case slot::kind::ready:
 		return ready;
@@ -338,7 +339,7 @@ namespace burst {
 		//control.free();
 		backend.free();
 		frontend.free();
-		raise_fault.free();
+		halt.free();
 		dummy.free();
 		ready.free();
 		reconfig.free();
@@ -499,7 +500,7 @@ namespace burst {
 
 		if (action_.mode != present_.mode) {
 			guard__;
-			if (present_.panic != 0) {
+			if (present_.panic != 0 && board::if_configure() ) {
 				action_.mode = front::dev::modes::idle;
 				switch_to_idle_();
 			}

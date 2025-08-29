@@ -184,6 +184,7 @@ namespace robo{
 							active_ = nullptr;
 						}
 					}
+
 					virtual void dispetcher_refuse(const errors & _err){
 						if(active_ != nullptr){
 							active_->owner().refuse(_err);

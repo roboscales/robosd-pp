@@ -314,7 +314,7 @@ namespace robo {
 			action_s& goal_;
 			feedback_s& feedback_;
 		protected:
-			::robo::time_us_t  discovery_period_us = 1000000;
+			::robo::time_us_t  discovery_period_us = 500000;
 			
 			virtual bool agent_apply_action(commands _command) {
 				if (_command == commands::sw2dirrect) {

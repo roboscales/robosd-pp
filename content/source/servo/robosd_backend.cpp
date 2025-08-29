@@ -489,9 +489,10 @@ namespace robo {
 				if (now - request_begin_us_ >= timeout_us_) {
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-						if (broken_obj->feedback<devagent>().state.local != common::devagent::state_s::locals::discovery) {
+						//if (broken_obj->feedback<devagent>().state.local != common::devagent::state_s::locals::discovery) 
+						{
 							ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object %s 0x%x", display_alias(), now - request_begin_us_, now, request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
-						}
+						} 
 					}
 					else {
 						ROBO_ALARM_F("bus %s refuse current message by timeout %u %u %u by object 'unknown'", display_alias(), now - request_begin_us_, now, request_begin_us_);
@@ -509,7 +510,7 @@ namespace robo {
 				{
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
-				//		ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
+						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
 					}
 					else {
 						ROBO_ALARM_F("bus %s refuse current message (time: %u) by object 'unknown'", display_alias(), request_begin_us_);
