@@ -145,7 +145,7 @@ namespace burst {
 
 	};	
 	
-	template< class number, class driver>  class analog_input_t : public actor {
+	template< class number, class driver>  class analog_input_t : public actor, public driver {
 		using R = typename driver::raw_t;
 		enum {N = driver::channel_count};
 		using signal_t = typename number::signal_t;
@@ -298,16 +298,15 @@ namespace burst {
 		virtual void convert(void) {
 			ACTOR_PRESENT_S(p);
 			signal_t * v = p.values;
-			R * n = p.raw;
+			R tmp_raw[N]; 
+			R * n = tmp_raw;
 			converter ** c = converters;
+			{
+				::robo::system::guard g__;
+				std::copy_n(p.raw,N,tmp_raw);
+			}
 			for (int i = 0; i < N; ++i, ++n, ++v, ++c) {
-				R  tmp;
-				{
-					::robo::system::guard g__;
-					tmp = *n;
-				}
-				
-				*v = (**c)(tmp);
+				*v = (**c)(*n);
 			}
 		}
 

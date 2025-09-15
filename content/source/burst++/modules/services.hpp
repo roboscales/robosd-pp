@@ -7,6 +7,7 @@
 
 namespace burst{
 	namespace service {
+		struct dummy_guard{};
 		namespace rs485{
 			#if SERVICE_RS485_A_TAG != SERVICE_RS485_TAG_NONE
 			namespace A{
@@ -82,7 +83,10 @@ namespace burst{
 				#endif
 				
 				#if SERVICE_RS485_A_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
-				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				#ifndef SERVICE_RS485_TAG_MODBUS_A_GUARD 
+				#define SERVICE_RS485_TAG_MODBUS_A_GUARD dummy_guard
+				#endif
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master , SERVICE_RS485_TAG_MODBUS_A_GUARD> dispetcher_t;
 				extern dispetcher_t dispetcher;
 				#endif
 				
@@ -100,7 +104,10 @@ namespace burst{
 				#endif
 
 				#if SERVICE_RS485_B_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
-				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				#ifndef SERVICE_RS485_TAG_MODBUS_B_GUARD 
+				#define SERVICE_RS485_TAG_MODBUS_B_GUARD dummy_guard
+				#endif
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master,SERVICE_RS485_TAG_MODBUS_B_GUARD > dispetcher_t;
 				extern dispetcher_t dispetcher;
 				#endif
 				
@@ -117,7 +124,10 @@ namespace burst{
 				#endif
 				
 				#if SERVICE_RS485_C_TAG == SERVICE_RS485_TAG_MODBUS_RTU_MASTER
-				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master > dispetcher_t;
+				#ifndef SERVICE_RS485_TAG_MODBUS_C_GUARD 
+				#define SERVICE_RS485_TAG_MODBUS_C_GUARD dummy_guard
+				#endif
+				typedef  robo::net::modbus::rtu::dispetcher_t< prf::modbus_rtu_master, SERVICE_RS485_TAG_MODBUS_C_GUARD  > dispetcher_t;
 				extern dispetcher_t dispetcher;
 				#endif
 

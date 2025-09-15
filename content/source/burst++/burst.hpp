@@ -543,7 +543,26 @@ namespace burst {
 	typedef robo::prf::led_base_t<tp_driver, unsigned int &>  tp_t;
 	extern tp_t tp;
 	#endif
-
+/*
+	делай так
+	burst::timer_t<burst::board::slot::kind, burst::board::slot::simple >
+	timer (burst::board::slot::kind::frontend, (burst::time_us_t)5000, false,
+			 [] {
+			 }
+		);
+	
+	илм так
+	
+	burst::timer_t<burst::board::slot::kind, burst::board::slot::simple >
+		timer (burst::board::slot::kind::frontend,
+			 [] {
+			 }
+		);
+	...
+	timer.start();
+	timer.stop();
+	
+*/
 	template< class K, class D> class timer_t : public D {
 	public:
 		using tm = time_us_t;

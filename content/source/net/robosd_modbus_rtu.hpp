@@ -487,10 +487,10 @@ namespace robo{
 						typedef ::robo::net::modbus::rtu::errors::frame errors;
 				};	
 					
-				template < class D > class  dispetcher_t 
-					: public  robo::net::modbus::dispetcher_t<machine_t<D>> {
+				template < class D, class G > class  dispetcher_t 
+					: public  robo::net::modbus::dispetcher_t<machine_t<D>, G> {
 						public:
-							dispetcher_t(robo::time_us_t _timeout_us) : robo::net::modbus::dispetcher_t<machine_t<D>> (_timeout_us){
+							dispetcher_t(robo::time_us_t _timeout_us) : robo::net::modbus::dispetcher_t<machine_t<D>,G> (_timeout_us){
 							}
 				};
 					

@@ -589,6 +589,38 @@ namespace burst {
 			}
 		}
 		
+	
+		struct discret2signal {
+				
+				const struct config_s {
+					struct{
+						range_s <signal_t> signal;
+						range_s <discret_t> raw;
+					} range;
+				} & config;
+				
+				#define DISCRET2SIGNAL_CONFIG(a) DISCRET2SIGNAL_CONFIG_(a)
+				#define DISCRET2SIGNAL_CONFIG_(a)\
+				{\
+					{\
+						BURST_RANGE_CONFIG(a##_SIGNAL)\
+						,BURST_RANGE_CONFIG(a##_RAW)\
+					}\
+				}
+				
+				signal_t gain = 0;
+					
+				//typedef fixed_point<digit> types;
+				void reconfig(void) {
+					gain = (config.range.signal.hi - config.range.signal.lo) / (config.range.raw.hi - config.range.raw.lo);
+				}
+				discret2signal(const config_s & _config): config(_config){}
+				signal_t run( const discret_t & _raw ) {
+					if (_raw > config.range.raw.hi) return config.range.signal.hi;
+					if (_raw < config.range.raw.lo) return config.range.signal.lo;
+					return config.range.signal.lo + gain * (_raw - config.range.raw.lo);
+				}
+			};
 	};
 
 	#if 0

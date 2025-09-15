@@ -3,10 +3,11 @@
 #include "core/robosd_list.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_net_trafic.hpp"
+#include <algorithm>
 namespace robo{
 	namespace net{
 		namespace modbus{
-			template < class M > class dispetcher_t : public M{
+			template < class M , class G > class dispetcher_t : public M{
 				public:
 					typedef typename  M::errors errors;
 					class regs;
@@ -43,17 +44,19 @@ namespace robo{
 						typedef ::robo::list::unsorted<regs> list;
 						typedef typename list::ref ref;
 					protected:
+						bool check_prev;
 						device_c & device;
 						dispetcher_t & dispetcher;
 						uint16_t regaddr; //Адрес первого регистра 
 						uint16_t count; //Количество регистров
 						uint16_t * memo;
+						uint16_t * prev = nullptr;
 						void set ( uint16_t * _memo){ 
-							robo::system::guard g__;
+							G g__;
 							std::copy_n(memo,count,_memo); 
 						}
 						void get ( const uint16_t * _memo){ 
-							robo::system::guard g__;
+							G g__;
 							std::copy_n(_memo,count,memo); 
 						}
 					private:
@@ -66,7 +69,8 @@ namespace robo{
 						virtual void on_refuse(const errors & _err) = 0;
 					public:
 						bool active(void) { return active_; }
-						void activate(void) { active_ = true; };
+						void resume(void) { active_ = true; };
+						void pause(void){active_ = false;};
 						statistic_s<errors> statistic = {};
 						void request(void){
 							on_request();
@@ -93,6 +97,7 @@ namespace robo{
 							, uint16_t _regaddr
 							, uint16_t _count
 							, bool _continues
+							, bool _check_prev
 						)
 						: ref_(*this)
 						, dispetcher(_dispetcher)
@@ -101,11 +106,19 @@ namespace robo{
 						, count(_count)
 						, continues_(_continues)
 						, active_(_continues)
+						, check_prev(_check_prev)
 						{
 							memo =  new uint16_t[_count];
 							ref_.attach_to(_dispetcher.regs_);
+							if(check_prev){
+								prev= new uint16_t [_count];
+								std::fill_n(prev,_count,0xFFFF);
+							}
 						}
-						~regs(void) { if(memo) delete[] memo; }
+						~regs(void) { 
+							if(memo) delete[] memo; 
+							if(prev) delete[] prev; 
+						}
 					};
 				
 					class outcom : public regs{
@@ -118,30 +131,54 @@ namespace robo{
 							, uint16_t _count
 							, const uint16_t * _src
 							, bool _continues = true
+							, bool _check_prev = true
 						): regs(
 							_dispetcher
 							, _device
 							,_regaddr
 							,_count
 							, _continues
+							, _check_prev
 						), src_(_src){
 						}
 					protected:
 						virtual void on_request(void){
-							regs::get(src_);
+							if(! regs::check_prev) {
+								regs::get(src_);
+							} 
+					
 							if(regs::count == 1){
 								regs::dispetcher.write_reg(regs::device.devaddr,regs::regaddr,regs::memo[0]);
 							} else {
 								regs::dispetcher.write_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 							}
 						}
+						virtual bool exchange_need(void){
+							if(! regs::check_prev) {
+								return regs::exchange_need();
+							} else if(regs::exchange_need()) {
+								regs::get(src_);
+								if(  std::equal( regs::memo,  regs::memo+regs::count, regs::prev ) ){
+									return false;
+								} else{
+									return true;
+								}								
+							} else{
+									return false;
+							}
+						}
 						virtual void on_confirm(void){
+							if(regs::check_prev) {
+								std::copy_n( regs::memo,  regs::count, regs::prev);
+							}
 						}
 						virtual void on_refuse(const errors & _err){
 						}
+
 					};
 					class incom : public regs{
 						uint16_t * dst_;
+						robo::delegat::ref<void> * on_update_;
 					public:
 						incom(
 							dispetcher_t & _dispetcher
@@ -150,11 +187,16 @@ namespace robo{
 							, uint16_t _count
 							, uint16_t * _dst
 							, bool _continues = true
+							, robo::delegat::ref<void> * on_update =nullptr
 						): regs(
 							_dispetcher
 							,_device
 							,_regaddr
-							,_count, _continues), dst_(_dst){
+							,_count, _continues,on_update!=nullptr), dst_(_dst), on_update_(on_update){
+								if(regs::check_prev) {
+									regs::get(dst_);
+									std::copy_n( regs::memo,  regs::count, regs::prev);
+								}
 						}
 						virtual void on_request(void){
 							/*
@@ -164,10 +206,17 @@ namespace robo{
 								regs::dispetcher.read_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 							}
 							*/
+							
 							regs::dispetcher.read_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 						}
 						virtual void on_confirm(void){
 							regs::set(dst_);
+							if(regs::check_prev){
+								if(! std::equal( regs::memo,  regs::memo+regs::count, regs::prev )){
+									std::copy_n( regs::memo,  regs::count, regs::prev);
+									if(on_update_) (* on_update_)();
+								}
+							}
 						}
 						virtual void on_refuse(const errors & _err){
 						}
