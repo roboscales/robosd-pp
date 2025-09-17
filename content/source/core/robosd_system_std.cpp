@@ -62,12 +62,13 @@ namespace robo {
 	};
 
 	void set_consol_color_(consol_color_t text, consol_color_t background) {
-		#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE	
 		system::printf(consol_colors_[text]);
 		system::printf((cstr)background_colors_[background]);
 		#endif
 	}
-
+	#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+	#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 	void system::env::print(robo::log::verb _verb, cstr _format, va_list _args) {
 		switch (_verb) {
 		case robo::log::verb::error:
@@ -109,6 +110,8 @@ namespace robo {
 		system::printf(RT("\n\r"));
 		set_consol_color_(White, Black);
 	}
+	#endif
+	#endif
 }
 #endif
 #endif
@@ -212,8 +215,8 @@ namespace robo {
 	void system::env::finish(void) {
 	}
 	void system::env::frontend_loop(void) {}
-	bool system::env::start(unsigned int & /*_tmp*/ ) { return true; }
-	void system::env::stop(void) {  }
+//	bool system::env::start(unsigned int & /*_tmp*/ ) { return true; }
+	//void system::env::stop(void) {  }
 	void system::env::backend_loop(void) {
 #if ROBO_APP_MODULE_ENABLED == 1
 		if (++step_show_tick_ == step_show_period_) {

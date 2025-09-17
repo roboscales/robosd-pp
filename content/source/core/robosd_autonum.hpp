@@ -51,7 +51,7 @@ namespace robo {
 					}
 					ref(void)
 						: rbref_(*this)
-						#if ROBO_APP_SYSTEM_ENABLED
+						#if ROBO_APP_ENV_ENABLED
 						, isfrontend_(system::env::is_frontend())
 						#else
 						, isfrontend_(true)

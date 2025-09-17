@@ -4,22 +4,13 @@
 #error error of using robosd_target.hpp
 #endif
 
-#ifdef ROBO_APP_DYNAMIC_LIB
-#define ROBO_EXPORT  _declspec(dllexport)
-#else
-	#ifdef ROBO_APP_DYNAMIC_APP
-	#define ROBO_EXPORT  _declspec(dllexport)
-	#else
-	#define ROBO_EXPORT 
-	#endif
-#endif
+#define ROBO_EXPORT 
 
-#define ROBO_APP_PROC_NAME __FUNCTION__
+#define ROBO_APP_PROC_NAME __func__
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__
 #define ROBO_UNUSED(x) ((void)(x))
-#define ROBO_WEAK __weak
-//__attribute__((weak))
+#define ROBO_WEAK __attribute__((weak))
 
 #ifndef ROBO_APP_DMA_BUFFER
 #define ROBO_APP_DMA_BUFFER
@@ -28,5 +19,7 @@
 #ifndef ROBO_APP_ALIGN_32BYTES
 #define ROBO_APP_ALIGN_32BYTES(x)
 #endif
+
+#define ROBO_EXPORT_RUNTIME_DECL
 
 
