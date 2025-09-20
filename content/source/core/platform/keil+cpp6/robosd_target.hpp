@@ -18,8 +18,7 @@
 #define ROBO_APP_PROC_FILE __FILE__
 #define ROBO_APP_PROC_LINE __LINE__
 #define ROBO_UNUSED(x) ((void)(x))
-#define ROBO_WEAK __weak
-//__attribute__((weak))
+#define ROBO_WEAK __attribute__((weak))
 
 #ifndef ROBO_APP_DMA_BUFFER
 #define ROBO_APP_DMA_BUFFER
