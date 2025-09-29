@@ -725,7 +725,10 @@ class resolver_driver_s {
 							p.splice.accum += p.splice.total;
 														
 							if  (start_pause_tick==0){
-								p.splice.begin = (uint32_t) robo::digit::round(p.splice.accum,conf.init_count_bits);
+								uint32_t begin_coarse = (uint32_t) robo::digit::round(p.splice.accum,conf.init_count_bits);
+								uint32_t index = begin_coarse>> (32-conf.sence_hi_segment_bits);
+								p.splice.begin = index*(1<<(32-conf.sence_hi_segment_bits));
+								p.splice.begin += (p.hidrv.ref.ceiled>>conf.sence_hi_segment_bits);
 								p.native.ceiled = p.splice.begin;
 								p.hires.prev = p.hidrv.ref.ceiled;
 							} else{
