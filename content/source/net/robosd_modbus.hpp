@@ -1,6 +1,7 @@
 #ifndef robosd_net_modbus_hpp
 #define robosd_net_modbus_hpp
 #include "core/robosd_list.hpp"
+#include "core/robosd_delegat.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_net_trafic.hpp"
 #include <algorithm>
@@ -69,7 +70,8 @@ namespace robo{
 						virtual void on_refuse(const errors & _err) = 0;
 					public:
 						bool active(void) { return active_; }
-						void resume(void) { active_ = true; };
+						void resume(void) { active_ = true; continues_ = true;};
+						void pulse(void) { active_ = true; continues_ = false; };
 						void pause(void){active_ = false;};
 						statistic_s<errors> statistic = {};
 						void request(void){
@@ -90,23 +92,26 @@ namespace robo{
 						virtual bool exchange_need(void){
 							return device.exchange_need() && active_;
 						}
-
+						enum class actives { on,off};
+						enum class continues { on, off };
+						enum class freshes { on, off };
 						regs(
 							dispetcher_t & _dispetcher
 							, device_c & _device
 							, uint16_t _regaddr
 							, uint16_t _count
-							, bool _continues
-							, bool _check_prev
+							, actives _active
+							, continues _continues
+							, freshes _check_prev
 						)
 						: ref_(*this)
 						, dispetcher(_dispetcher)
 						, device(_device)
 						, regaddr(_regaddr)
 						, count(_count)
-						, continues_(_continues)
-						, active_(_continues)
-						, check_prev(_check_prev)
+						, continues_(_continues== continues::on)
+						, active_(_active == actives::on)
+						, check_prev(_check_prev == freshes::on)
 						{
 							memo =  new uint16_t[_count];
 							ref_.attach_to(_dispetcher.regs_);
@@ -130,13 +135,15 @@ namespace robo{
 							, uint16_t _regaddr
 							, uint16_t _count
 							, const uint16_t * _src
-							, bool _continues = true
-							, bool _check_prev = true
+							, typename regs::actives _active
+							, typename regs::continues _continues
+							, typename regs::freshes _check_prev
 						): regs(
 							_dispetcher
 							, _device
 							,_regaddr
 							,_count
+							, _active
 							, _continues
 							, _check_prev
 						), src_(_src){
@@ -186,13 +193,18 @@ namespace robo{
 							, uint16_t _regaddr
 							, uint16_t _count
 							, uint16_t * _dst
-							, bool _continues = true
+							, typename regs::actives _active
+							, typename regs::continues _continues
 							, robo::delegat::ref<void> * on_update =nullptr
 						): regs(
 							_dispetcher
 							,_device
 							,_regaddr
-							,_count, _continues,on_update!=nullptr), dst_(_dst), on_update_(on_update){
+							,_count
+							, _active
+							, _continues
+							, on_update !=nullptr ? regs::freshes::on : regs::freshes::off
+						), dst_(_dst), on_update_(on_update){
 								if(regs::check_prev) {
 									regs::get(dst_);
 									std::copy_n( regs::memo,  regs::count, regs::prev);
