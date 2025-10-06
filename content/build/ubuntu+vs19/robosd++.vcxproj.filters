@@ -36,49 +36,82 @@
     <None Include="robosd++-Release.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\platform\ubuntu\robosd-system-linux.cpp">
+    <ClInclude Include="..\..\robosd-ref\core\robosd_app.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_system_std.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_autonum.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_string.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_common.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_system.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_delegat.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_system_weak.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_event.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_app.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_ini.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\reference\robosd-ref\core\robosd_log.cpp">
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_lambda.hpp">
       <Filter>Source files</Filter>
-    </ClCompile>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_list.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_log.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_static_array.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_string.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_system.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_system_module_reg.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\robosd-ref\core\robosd_system_native.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="..\..\robosd-ref\core\robosd_list.hpp.bak">
+      <Filter>Source files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\reference\robosd-ref\core\platform\ubuntu\robosd_target.hpp">
+    <ClCompile Include="..\..\robosd-ref\core\robosd_alocator.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\source\common\robosd_app_tuning.hpp">
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_app.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\reference\robosd-ref\core\robosd_string.hpp">
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_autonum.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\reference\robosd-ref\core\robosd_system.hpp">
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_log.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\reference\robosd-ref\core\robosd_app.hpp">
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_string.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\reference\robosd-ref\core\robosd_log.hpp">
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_system.cpp">
       <Filter>Source files</Filter>
-    </ClInclude>
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_system_native.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_system_std.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\robosd-ref\core\robosd_system_weak.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
