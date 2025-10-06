@@ -4,7 +4,7 @@ namespace robo{
 		namespace modbus{		
 			#if 0
 			phy::phy(void): entry_(nullptr), ref_(*this,0){
-				//некому вызывать функции, которыебы задействовали entry_
+				//РЅРµРєРѕРјСѓ РІС‹Р·С‹РІР°С‚СЊ С„СѓРЅРєС†РёРё, РєРѕС‚РѕСЂС‹РµР±С‹ Р·Р°РґРµР№СЃС‚РІРѕРІР°Р»Рё entry_
 			};
 			phy * phy::dummy_(void){
 				static class dummy:public phy{
@@ -43,7 +43,7 @@ namespace robo{
 			entry * entry::dummy_(void){
 				static class dummy:public entry{
 				public:
-				//некому вызывать функции, которыебы задействовали phy_
+				//РЅРµРєРѕРјСѓ РІС‹Р·С‹РІР°С‚СЊ С„СѓРЅРєС†РёРё, РєРѕС‚РѕСЂС‹РµР±С‹ Р·Р°РґРµР№СЃС‚РІРѕРІР°Р»Рё phy_
 					dummy():entry(nullptr){};
 				protected:
 				} dummy__;
