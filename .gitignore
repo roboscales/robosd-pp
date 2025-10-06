@@ -35,3 +35,8 @@
 /content/source/mexo/*.bak
 /content/source/lxi
 /content/build/vs19/fmdirrect/.vs/fmd-test/v16
+/content/build/ubuntu+vs19/core/robosd-core++/VisualGDB/Debug
+/content/build/ubuntu+vs19/core/robosd-core++/.visualgdb
+/content/build/ubuntu+vs19/test/robosd-core++/.visualgdb
+/content/build/ubuntu+vs19/test/test/VisualGDB/Debug
+/content/build/ubuntu+vs19/test/test/.visualgdb/CodeDB/test-Debug-VisualGDB
