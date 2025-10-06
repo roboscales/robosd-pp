@@ -21,5 +21,5 @@
 #endif
 
 #define ROBO_EXPORT_RUNTIME_DECL
-
+#define ROBO_EXPORT_RUNTIME
 

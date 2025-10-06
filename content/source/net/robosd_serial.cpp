@@ -1,9 +1,9 @@
 #include "net/robosd_serial.hpp"
-
+#include <cstring>
 namespace robo {
 	namespace net {
 		bool  iserial::puts(const char *_s){
-				return put( (const uint8_t *)_s, strlen(_s) );
+				return put( (const uint8_t *)_s, std::strlen(_s) );
 		}
 
 		

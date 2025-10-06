@@ -1,4 +1,4 @@
-#include "burst++\modules\actor.hpp"
+#include "burst++/modules/actor.hpp"
 namespace burst{
 	
 	actor::actor(const config_s& _config, present_s& _present)

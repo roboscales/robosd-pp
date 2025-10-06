@@ -43,6 +43,7 @@ namespace robo {
 		HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 		SetConsoleTextAttribute(hStdOut, (WORD)((background << 4) | text));
 	}
+	#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 	void system::env::print(robo::log::verb _verb, cstr _format, va_list _args) {
 		system::guard g__;
 		switch (_verb) {
@@ -85,6 +86,7 @@ namespace robo {
 		system::printf(RT("\n\r"));
 		set_win_consol_color_(White, Black);
 	}
+	#endif
 }
 #endif
 

@@ -5,6 +5,7 @@
 #include "robosd_target.hpp"
 #include <limits>
 #include <algorithm>
+#include <type_traits>
 
 #ifndef ROBO_TYPE_RANDOM
 #define ROBO_TYPE_RANDOM int
@@ -268,7 +269,7 @@ namespace robo {
 		return _x;
 	}
 	
-	//СЃРјРµС‰РµРЅРёРµ РІРїСЂР°РІРѕ СЃ РѕРєСЂСѓРіР»РµРЅРёРµРј
+	//смещение вправо с округлением
 	namespace digit{
 		template <typename T> constexpr T rsh(T _x, int8_t _sh) {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
@@ -281,9 +282,15 @@ namespace robo {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
 			return _x << _sh;
 			#else
-			return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
+			if constexpr ( std::is_signed<T>::value ) {
+				return _x > 0 ? (_x << _sh) : (-((-_x) << _sh));
+			}
+			else {
+				return  (_x << _sh);
+			}
 			#endif
 		}
+
 
 		template <typename T> constexpr T signed_round(const T _src, uint8_t _shift) {
 			auto max = std::numeric_limits<T>::max();

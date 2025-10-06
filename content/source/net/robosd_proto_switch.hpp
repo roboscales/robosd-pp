@@ -2,8 +2,8 @@
 #define __robosd_proto_switch_h
 #include "core/robosd_common.hpp"
 
-#ifndef APP_PROTO_SWITCH_ENABLED 
-#define APP_PROTO_SWITCH_ENABLED 0
+#ifndef ROBO_APP_PROTO_SWITCH_ENABLED 
+#define ROBO_APP_PROTO_SWITCH_ENABLED 0
 #endif
 
 #if ROBO_APP_PROTO_SWITCH_ENABLED ==1

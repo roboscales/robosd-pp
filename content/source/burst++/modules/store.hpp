@@ -1,7 +1,7 @@
 #ifndef burst_store_hpp
 #define burst_store_hpp
 #include <stdint.h>
-#include "burst++\burst_common.hpp"
+#include "burst++/burst_common.hpp"
 namespace burst {
 	namespace  store {
 		enum class result { empty = 0, full = 1, panic = 2};

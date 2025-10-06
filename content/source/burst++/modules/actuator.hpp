@@ -104,7 +104,7 @@ namespace burst{
 		positioner_s positioner_;
 	public:
 		struct present_s {		
-			dev::present_s dev;
+			burst::dev::present_s dev;
 			struct {
 				signal_t des;
 				signal_t req;

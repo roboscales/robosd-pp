@@ -2,6 +2,7 @@
 #include "core/robosd_string.hpp"
 #include "core/robosd_ring_buf.hpp"
 #include <stdarg.h>
+#include <cstring>
 
 #if ROBO_APP_TERMINAL_ENABLED == 1
 
