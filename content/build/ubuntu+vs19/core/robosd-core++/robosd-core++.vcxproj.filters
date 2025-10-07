@@ -45,6 +45,12 @@
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_system_native.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\robosd-ref\core\platform\ubuntu\robosd-system-ubuntu.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_log.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_string.hpp">
@@ -63,6 +69,9 @@
       <Filter>Source files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\app\digital-tween\projects\ubuntu+vs19\robosd_app_tuning.hpp">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_log.hpp">
       <Filter>Source files</Filter>
     </ClInclude>
   </ItemGroup>

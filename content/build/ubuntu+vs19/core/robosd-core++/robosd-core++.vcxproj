@@ -33,6 +33,7 @@
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)$\obj\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>lib$(ProjectName)</TargetName>
+    <PreserveSubdirectoriesForObjectFiles>false</PreserveSubdirectoriesForObjectFiles>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.ubuntu.x64</ToolchainID>
@@ -64,8 +65,10 @@
     <None Include="robosd-core++-Release.vgdbsettings" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\robosd-ref\core\platform\ubuntu\robosd-system-ubuntu.cpp" />
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_app.cpp" />
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_autonum.cpp" />
+    <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_log.cpp" />
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_string.cpp" />
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_system.cpp" />
     <ClCompile Include="..\..\..\..\robosd-ref\core\robosd_system_native.cpp" />
@@ -75,6 +78,7 @@
     <ClInclude Include="..\..\..\..\..\app\digital-tween\projects\ubuntu+vs19\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_app.hpp" />
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_autonum.hpp" />
+    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_log.hpp" />
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_string.hpp" />
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system.hpp" />
     <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system_native.hpp" />

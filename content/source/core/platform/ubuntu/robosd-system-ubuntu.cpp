@@ -1,7 +1,8 @@
 #include "core/robosd_system.hpp"
 
 #include <sys/stat.h>
-#include <fcntl.h>
+//#include <fcntl.h>
+#include <filesystem>
 #include <fstream>
 #include <errno.h>
 #include <dlfcn.h>
@@ -196,6 +197,9 @@ void system::lib::free(void* _instance) {
 }
 
 int cp(const char *to, const char *from){
+	std::filesystem::copy(from,to);
+	return 0;
+#if 0
 	int fd_to, fd_from;
 	char buf[4096];
 	ssize_t nread;
@@ -251,6 +255,7 @@ out_error:
 
 	errno = saved_errno;
 	return -1;
+#endif
 }
 bool system::lib::copy(cstr _src, cstr _dst) {
 	ROBO_LBREAKN_F(cp(_dst, _src) == 0, RT("error copy lib from '%s' to '%s'"), _src,_dst);
