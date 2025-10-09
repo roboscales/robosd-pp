@@ -44,6 +44,7 @@ namespace robo {
 		protected:
 			block::list blocks;
 		public:
+			friend class thread;
 			class ROBO_EXPORT thread {
 				friend class agent;
 				friend class threads;
@@ -61,11 +62,18 @@ namespace robo {
 				thread(int _id): ref_(*this, _id) {
 					ref_.attach_to(threads());
 				}
+				virtual ~thread(void) {
+					agent::threadref *p = nullptr;
+					while (agent::threadref *p = agents_.first()) {
+						p->dettach();
+					}
+				}
 			};
 				
 			static thread::list& threads(void);
 		private:
-			bool attach_to_thread_(int _id) {
+		  
+		  bool attach_to_thread_(int _id) {
 				auto th = threads().find(_id);
 				if (th == 0) {
 					th = new thread(_id);
@@ -95,8 +103,13 @@ namespace robo {
 			virtual void do_reconfig(void) = 0;
 			virtual void do_finish(void) = 0;
 			agent(void) :ref_(*this,-1), thread_ref_(*this){}
-		public:
-			virtual void perform_command(int /*_cmd*/) {};
+			virtual ~agent(void) {
+				ref_.dettach();
+				thread_ref_.dettach();
+			}
+
+		public : 
+			virtual void perform_command(int /*_cmd*/){};
 			double sample_time;
 			static agent* find(int _id);
 			static agent* find(cstr __name);

@@ -71,7 +71,7 @@ namespace burst {
 			static void boot_begin() {};
 			static bool do_boot() { return true; };
 			static void boot_complete(void) {}
-			static satstates set_pwm(const A& /*_pwm*/) {}
+			static satstates set_pwm(const A & /*_pwm*/) { return satstates::none; }
 			static void shutdown_begin(void) {}
 			static bool do_shutdown(void) { return true; }
 			static void shutdown_complete(void) {}

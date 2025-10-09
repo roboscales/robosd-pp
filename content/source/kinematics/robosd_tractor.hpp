@@ -54,9 +54,9 @@ namespace robo {
 
 		template< typename  T, typename  S> class numbers_t: public S {
 		public:
-			
+		  typedef T type;
 
-			constexpr numbers_t(void): S() {
+		  constexpr numbers_t(void) : S() {
 				::std::fill_n(S::memo, S::size, T(0));
 			}
 
@@ -261,7 +261,7 @@ namespace robo {
 		}
 		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const numbers_t<T,C>& _src1, const T& _t) {
 			numbers_t tmp(_src1);
-			return tmp *= _t;
+			return tmp /= _t;
 		}
 		template<typename T, typename C> constexpr numbers_t<T,C> operator* (const T& _t , const numbers_t<T,C>& _src1 ) {
 			numbers_t tmp(_src1);
@@ -269,7 +269,7 @@ namespace robo {
 		}
 		template<typename T, typename C>constexpr numbers_t<T,C> operator / (const T& _t, const numbers_t<T,C>& _src1) {
 			numbers_t tmp(_src1);
-			return tmp *= _t;
+			return tmp /= _t;
 		}
 		
 		template<typename T, typename C> constexpr numbers_t<T,C> operator + (const numbers_t<T,C>& _src1, const numbers_t<T,C>& _src2) {
@@ -1221,10 +1221,10 @@ namespace robo {
 
 		template<typename T> class matrix3x3_s {
 		public:
-			enum { size = 9 };
+		  enum { n = 3,	 size = n * n };
 			union {
 				T memo[size];
-				T rows[3][3];
+				T rows[n][n];
 				struct {
 					T xx;
 					T xy;
@@ -1282,7 +1282,9 @@ namespace robo {
 				ROBO_LBREAKN(ini::load_arr(_path, key, memo, size));
 				return true;
 			}
-
+			T  & operator () (int _index1,int _index2) {
+				return memo[_index2*3+_index1];
+			}
 		};
 		template<class T> using matrix3x3_t = numbers_t <T, matrix3x3_s<T> >;
 
@@ -1523,7 +1525,83 @@ namespace robo {
 		template<typename T> vector3_t<T> operator / ( vector3_t<T>& b, matrix_axis_t<T>& a) {
 			return a.itransform() *(b - a.offset);
 		}
-		
+		//===========================================================
+		template <typename T>
+		class matrix2x2_s {
+		  public:
+			enum {  n = 2, size = n*n};
+			union {
+				T memo[size];
+				T rows[2][2];
+				struct {
+					T xx;
+					T xy;
+					T yx;
+					T yy;
+				};
+			};
+
+			void mult(const matrix2x2_s &a, const matrix2x2_s &b) {
+				xx = a.xx * b.xx + a.xy * b.yx;
+				xy = a.xx * b.xy + a.xy * b.yy;
+				yx = a.yx * b.xx + a.yy * b.yx;
+				yy = a.yx * b.xy + a.yy * b.yy;
+			}
+			
+			bool load(cstr _path, cstr key) {
+				ROBO_LBREAKN(ini::load_arr(_path, key, memo, size));
+				return true;
+			}
+			T &operator()(int _index1, int _index2) {
+				return memo[_index2 * 3 + _index1];
+			}
+		};
+		template <class T>
+		using matrix2x2_t = numbers_t<T, matrix2x2_s<T>>;
+
+		template <typename T>
+		constexpr matrix2x2_t<T> operator*(const matrix2x2_t<T> &_src1, const matrix2x2_t<T> &_src2) {
+			matrix2x2_t<T> tmp;
+			tmp.mult(_src1, _src2);
+			return tmp;
+		}
+		template <typename T>
+		struct vector2_s {
+		  public:
+			enum { size = 2 };
+			union {
+				T memo[size];
+				struct {
+					T x;
+					T y;
+				};
+			};
+			T &mult(const vector2_s &b) {
+				return  x * b.y - y * b.x;
+			}
+
+			template <typename S>
+			void operator<<(const S &_src) {
+				x = _src.x;
+				y = _src.y;
+			}
+
+			template <typename S>
+			void operator>>(S &_dst) {
+				_dst.x = x;
+				_dst.y = y;
+			}
+		};
+		template <class T>
+		using vector2_t = numbers_t<T, vector3_s<T>>;
+		template <typename T>
+		vector2_t<T> operator*(const matrix2x2_t<T> &a, const vector2_t<T> &c) {
+			vector2_t<T> tmp;
+			tmp.x = a.xx * c.x + a.xy * c.y;
+			tmp.y = a.yx * c.x + a.yy * c.y;
+			return tmp;
+		}
+		//===========================================================
 		template<typename T> class kinematic_t {
 		public:
 			static inline const T pi = ::robo::pi<T>;

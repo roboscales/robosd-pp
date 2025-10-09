@@ -461,7 +461,28 @@ namespace robo {
 		}
 		return result;
 	}
-	
+
+	template <typename M>
+	M expm(const M & _A, typename M::type _eps){
+		M R = {};
+		using T = typename M::type;
+		for (int i = 0; i < M::n; ++i) {
+			R(i, i) = (T)1.;
+		}
+		auto ATN = _A;
+		R += ATN;
+		double nf = 1;
+		for (int i = 2; i <= 28; ++i) {
+			ATN = ATN * _A;
+			nf = nf * i;
+			auto D = ATN / nf;
+			R += D;
+			if (D.norma() < _eps) {
+				return R;
+			}
+		}
+		return R;
+	}
 }
 
 

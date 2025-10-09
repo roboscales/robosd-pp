@@ -9,10 +9,12 @@
 #include <signal.h>
 #include <errno.h>
 #include <string.h>
+#include <linux/limits.h>
+#include <unistd.h>
+#include <stdio.h>
 namespace robo {
-	bool robo_os_PI_file_exists_(cstr _fn) {	
+	bool robo_os_PI_file_exists_(cstr _fn) {
 		struct stat sb;
-		//int result = stat(_fn, &sb);
 		FILE *in = NULL;
 		if ((in = fopen(_fn, "rb")) == NULL) {
 			return false;
@@ -184,9 +186,13 @@ void* system::lib::proc_get(void* _handle, cstr _proc_name) {
 	return proc;
 }
 void* system::lib::load(cstr _lib_name) {
-	dlerror();    
-    void *_pinst = dlopen(_lib_name, RTLD_NOW);
-	ROBO_BREAKN_F(_pinst != nullptr, nullptr, RT("error open lib '%s %S'"), _lib_name,dlerror());
+	dlerror();
+	void *_pinst = dlopen(_lib_name, RTLD_NOW);
+	#if ROBO_UNICODE_ENABLED
+		ROBO_BREAKN_F(_pinst != nullptr, nullptr, RT("error open lib '%s %S'"), _lib_name, dlerror());
+	#else
+		ROBO_BREAKN_F(_pinst != nullptr, nullptr, RT("error open lib '%s %s'"), _lib_name, dlerror());
+	#endif
 	return _pinst;
 }
 void system::lib::free(void* _instance) {
@@ -199,70 +205,13 @@ void system::lib::free(void* _instance) {
 int cp(const char *to, const char *from){
 	std::filesystem::copy(from,to);
 	return 0;
-#if 0
-	int fd_to, fd_from;
-	char buf[4096];
-	ssize_t nread;
-	int saved_errno;
-
-	fd_from = open(from, O_RDONLY);
-	if (fd_from < 0)
-		return -1;
-
-	fd_to = open(to, O_WRONLY | O_CREAT | O_EXCL, 0666);
-	if (fd_to < 0)
-		goto out_error;
-
-	while (nread = read(fd_from, buf, sizeof buf), nread > 0)
-	{
-		char *out_ptr = buf;
-		ssize_t nwritten;
-
-		do {
-			nwritten = write(fd_to, out_ptr, nread);
-
-			if (nwritten >= 0)
-			{
-				nread -= nwritten;
-				out_ptr += nwritten;
-			}
-			else if (errno != EINTR)
-			{
-				goto out_error;
-			}
-		} while (nread > 0);
-	}
-
-	if (nread == 0)
-	{
-		if (close(fd_to) < 0)
-		{
-			fd_to = -1;
-			goto out_error;
-		}
-		close(fd_from);
-
-		/* Success! */
-		return 0;
-	}
-
-out_error:
-	saved_errno = errno;
-
-	close(fd_from);
-	if (fd_to >= 0)
-		close(fd_to);
-
-	errno = saved_errno;
-	return -1;
-#endif
 }
 bool system::lib::copy(cstr _src, cstr _dst) {
 	ROBO_LBREAKN_F(cp(_dst, _src) == 0, RT("error copy lib from '%s' to '%s'"), _src,_dst);
 	return true;
 }
 bool system::lib::remove(cstr _lib_name) {
-	ROBO_LBREAKN_F(remove(_lib_name) != 0, RT("error remove lib '%s'"), _lib_name);		
+	ROBO_LBREAKN_F(std::remove(_lib_name) == 0, RT("error remove lib '%s'"), _lib_name);		
 	return true;
 }
 }

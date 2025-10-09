@@ -1,5 +1,6 @@
 #include "im/models/dcservo.hpp"
 #include "core/robosd_ini.hpp"
+#include <math.h>
 namespace robo{
 	namespace edev{
 		namespace joint {

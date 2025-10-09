@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{c91e7aa8-1d4d-42a5-8af9-8c09f457cf2c}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{66f1e592-d0de-420f-b194-4f94aa95a033}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{ce52c036-00d4-4ed1-a74c-5ff55a8f1f31}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="VisualGDB settings">
+      <UniqueIdentifier>{73384632-c20b-4ca8-9fed-c3a727b2c489}</UniqueIdentifier>
+      <Extensions>vgdbsettings</Extensions>
+    </Filter>
+    <Filter Include="Source files\im">
+      <UniqueIdentifier>{9a5501ec-832e-43e4-a4fb-40d934e464dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\models">
+      <UniqueIdentifier>{ea6ecbae-8b46-4d88-92c1-c79a3c769cd7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="edev-Debug.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="edev-Release.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\robosd-ref\im\edev\edev.cpp">
+      <Filter>Source files\im</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_link.cpp">
+      <Filter>Source files\im</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\dcmachine.cpp">
+      <Filter>Source files\models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\dcservo.cpp">
+      <Filter>Source files\models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp">
+      <Filter>Source files\models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\pmsm.cpp">
+      <Filter>Source files\models</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp">
+      <Filter>Source files\models</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp">
+      <Filter>Source files\im</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp">
+      <Filter>Source files\im</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp">
+      <Filter>Source files\models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\dcservo.hpp">
+      <Filter>Source files\models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\gearbox.hpp">
+      <Filter>Source files\models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp">
+      <Filter>Source files\models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\im\models\power.hpp">
+      <Filter>Source files\models</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

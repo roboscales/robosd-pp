@@ -39,4 +39,8 @@
 /content/build/ubuntu+vs19/core/robosd-core++/.visualgdb
 /content/build/ubuntu+vs19/test/robosd-core++/.visualgdb
 /content/build/ubuntu+vs19/test/test/VisualGDB/Debug
-/content/build/ubuntu+vs19/test/test/.visualgdb/CodeDB/test-Debug-VisualGDB
+/content/build/ubuntu+vs19/test/test/.visualgdb
+/content/build/ubuntu+vs19/edev/.visualgdb
+/content/build/ubuntu+vs19/emulator/.visualgdb
+/content/build/ubuntu+vs19/robosd-core++/.visualgdb
+/content/build/ubuntu+vs19/test/.visualgdb

@@ -2,20 +2,38 @@
 #define __dcmachine_hpp
 
 #include "im/edev/joint_link.hpp"
+#ifdef ARMADILLO_ENABLED
+#define ARMADILLO_ENABLED 0
+#endif
+#if ARMADILLO_ENABLED
 #include <armadillo>
+#endif
+#if ARMADILLO_ENABLED == 0
+#include "kinematics/robosd_tractor.hpp"
+#endif
 namespace robo{
 	namespace edev{
 		namespace joint {
 			namespace dcmachine {
 				class ROBO_EXPORT ideal2 : public agent::block {
 				private:
+#if ARMADILLO_ENABLED
 					arma::fmat A;
 					arma::fmat IA;
 					arma::fmat EA;
 					arma::fmat X;
 					arma::fmat Xmax;
 					arma::fmat U;
-
+#else
+				  using matrix2x2 = robo::tractor::matrix2x2_t<double>;
+				  using vector2_s = robo::tractor::vector2_t<double>;
+				  matrix2x2 A;
+				  matrix2x2 IA;
+				  matrix2x2 EA;
+				  vector2_s X;
+				  vector2_s Xmax;
+				  vector2_s U;
+#endif
 					float  A1 = 0.f;
 					float IA1 = 0.f;
 					float EA1 = 0.f;

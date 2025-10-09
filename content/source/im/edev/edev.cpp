@@ -125,13 +125,13 @@ namespace robo {
 				ROBO_LBREAKN(type.load(sec.c_str(), RT("TYPE")));
 				ROBO_LBREAKN(lib.load(type.c_str(), RT("LIB")));
 				ROBO_LBREAKN_F(system::lib::exists(lib), "module '%s' isn't found", lib.c_str());
-				lib_copy.format(RT("~%s-%s-%d"), name.c_str(), lib.c_str(), i);
+				lib_copy.format(RT("+%s-%s-%d"), name.c_str(), lib.c_str(), i);
 				if (system::lib::exists(lib_copy)) {
 					ROBO_LBREAKN(system::lib::remove(lib_copy));
 				}
 				ROBO_LBREAKN(system::lib::copy(lib,lib_copy));
 				ROBO_LBREAKN(system::lib::exists(lib_copy));//paranoia
-				void* instance = system::lib::load(lib_copy);
+				void *instance = system::lib::load(lib_copy);
 				ROBO_LBREAKN_F(instance != nullptr, "lib '%s' isn't found  ", lib_copy.c_str());
 				if (!agent::try_attach_(name, lib_copy,  type,  instance)) {
 					system::lib::free(instance);

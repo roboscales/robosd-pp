@@ -25,14 +25,14 @@ namespace robo{
 		int serialovtcp::create_socket() {
 			int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 			if (sockfd < 0) {
-				robo_errlog("socket() failed: %s",strerror(errno))
+				robo_errlog("socket() failed: %s", strerror(errno));
 				return -1;
 			}
 			
 			// Устанавливаем SO_REUSEADDR
 			int optval = 1;
 			if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0) {
-				robo_errlog("setsockopt(SO_REUSEADDR) failed: %s",strerror(errno))
+				robo_errlog("setsockopt(SO_REUSEADDR) failed: %s", strerror(errno));
 				close(sockfd);
 				return -1;
 			}
@@ -43,12 +43,12 @@ namespace robo{
 		int serialovtcp::set_socket_nonblocking(int fd) {
 			int flags = fcntl(fd, F_GETFL, 0);
 			if (flags < 0) {
-				robo_errlog("fcntl(F_GETFL) failed: %s",strerror(errno))
+				robo_errlog("fcntl(F_GETFL) failed: %s", strerror(errno));
 				return -1;
 			}
 			
 			if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-				robo_errlog("fcntl(F_SETFL) failed: %s",strerror(errno))
+				robo_errlog("fcntl(F_SETFL) failed: %s", strerror(errno));
 				return -1;
 			}
 			
@@ -62,7 +62,7 @@ namespace robo{
 			int client_fd = accept(server_socket_, (struct sockaddr*)&client_addr, &client_len);
 			if (client_fd < 0) {
 				if (errno != EAGAIN && errno != EWOULDBLOCK) {
-					robo_errlog("accept() failed: %s",strerror(errno))
+					robo_errlog("accept() failed: %s", strerror(errno));
 				}
 				return -1;
 			}
@@ -111,14 +111,14 @@ namespace robo{
 			server_addr.sin_port = htons(port_);
 			
 			if (::bind(server_socket_, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-				robo_errlog("bind() failed: %s",strerror(errno))
+				robo_errlog("bind() failed: %s", strerror(errno));
 				close_socket(server_socket_);
 				return false;
 			}
 			
 			// Начинаем слушать
 			if (listen(server_socket_, BACKLOG) < 0) {
-				robo_errlog("listen() failed: %s",strerror(errno))
+				robo_errlog("listen() failed: %s", strerror(errno));
 				close_socket(server_socket_);
 				return false;
 			}
@@ -126,8 +126,8 @@ namespace robo{
 			return true;
 		}
 		bool serialovtcp::open(cstr _name){
-			ROBO_LBREAKN(robo::ini::load(_name, RT("port"), port_));
-			ROBO_LBREAKN(start());
+			ROBO_LBREAKN_F(robo::ini::load(_name, RT("port"), port_), RT("%s error load port %d "), _name, port_);
+			ROBO_LBREAKN_F(start(), RT("%s error start"), _name );
 			return true;
 		}
 		bool serialovtcp::start() {
@@ -193,7 +193,7 @@ namespace robo{
 				
 				if (ret < 0) {
 					if (errno != EINTR) {
-						robo_errlog("poll() failed: %s",strerror(errno))
+						robo_errlog("poll() failed: %s", strerror(errno));
 						break;
 					}
 					continue;
@@ -205,14 +205,14 @@ namespace robo{
 						int new_client = accept_connection();
 						if (new_client >= 0) {
 							if (client_connected_) {
-								robo_infolog("Rejecting new connection (port %d) - single client mode", port_)
+								robo_infolog("Rejecting new connection (port %d) - single client mode", port_);
 								close_socket(new_client);
 							} else {
 								client_socket_ = new_client;
 								client_connected_ = true;
-								
-								robo_infolog("Client (addr %s, port %d) connected - single client mode", client_address_.c_str(), port_)
-								
+
+								robo_infolog("Client (addr %s, port %d) connected - single client mode", client_address_.c_str(), port_);
+
 								// Очищаем буферы при новом подключении
 								{
 									std::lock_guard<std::mutex> lock(input_mutex_);
@@ -246,7 +246,7 @@ namespace robo{
 				
 				if (ret < 0) {
 					if (errno != EINTR) {
-						robo_errlog("poll() in read_loop failed: %s",strerror(errno))
+						robo_errlog("poll() in read_loop failed: %s", strerror(errno));
 						break;
 					}
 					continue;
@@ -264,7 +264,7 @@ namespace robo{
 							break;
 						} else {
 							if (errno != EAGAIN && errno != EWOULDBLOCK) {
-								robo_errlog("recv() failed: %s",strerror(errno))
+								robo_errlog("recv() failed: %s", strerror(errno));
 								break;
 							}
 						}
@@ -328,14 +328,14 @@ namespace robo{
 							total_sent += bytes_sent;
 						} else if (bytes_sent < 0) {
 							if (errno != EAGAIN && errno != EWOULDBLOCK) {
-								robo_errlog("send() failed: %s", strerror(errno) )
+								robo_errlog("send() failed: %s", strerror(errno));
 								break;
 							}
 						}
 					}
 					
 					if (fds[0].revents & (POLLHUP | POLLERR)) {
-						robo_infolog("Client connection lost during write (port %d)", port_ )
+						robo_infolog("Client connection lost during write (port %d)", port_);
 						break;
 					}
 				}
@@ -400,7 +400,7 @@ namespace robo{
 			
 			// Проверяем доступное пространство
 			if (space() < _size) {
-				robo_errlog("Not enough space to send data (size %d)",_size)
+				robo_errlog("Not enough space to send data (size %d)", _size);
 				return false;
 			}
 			

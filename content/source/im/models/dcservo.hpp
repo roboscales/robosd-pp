@@ -3,7 +3,8 @@
 
 #include "im/models/power.hpp"
 #include "im/models/dcmachine.hpp"
-#include <armadillo>
+
+
 namespace robo{
 	namespace edev{
 		namespace joint {

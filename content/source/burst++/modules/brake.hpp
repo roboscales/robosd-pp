@@ -37,7 +37,7 @@ template <class number> class brake_time_machine_t : public brake
 		using parameter_t = typename number::parameter_t;
 		using signal_t = typename number::signal_t;
 		using long_signal_t = typename number::long_signal_t;
-		typedef pi_t<number>  pi_t;
+		typedef pi_t<number>  pi_s;
 
 		struct config_s {
 			struct {
@@ -48,7 +48,7 @@ template <class number> class brake_time_machine_t : public brake
 			struct {
 				signal_t force;
 				signal_t normal;
-				typename pi_t::config_s pi;
+				typename pi_s::config_s pi;
 			} current;
 
 			struct {
@@ -87,7 +87,7 @@ template <class number> class brake_time_machine_t : public brake
 			} pwm;
 			struct {
 				signal_t req;
-				typename pi_t::present_s pi;
+				typename pi_s::present_s pi;
 			} current;
 		};
 
@@ -100,7 +100,7 @@ template <class number> class brake_time_machine_t : public brake
 		ps::control& psc;
 
 	private:
-		pi_t pi_;
+		pi_s pi_;
 		const config_s& config_;
 		present_s& present_;
 		robo::time_us_t last_us_ = 0;
@@ -228,7 +228,7 @@ template <class number> class brake_time_machine_t : public brake
 					push(RT("c"));
 					reg(number::var::signal, config_.current.force, RT("force"));
 					reg(number::var::signal, config_.current.normal, RT("normal"));
-					pi_t::regvar_config(RT("pi"), config_.current.pi);
+					pi_s::regvar_config(RT("pi"), config_.current.pi);
 					pop();
 
 					push(RT("tm"));

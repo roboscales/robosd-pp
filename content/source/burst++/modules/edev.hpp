@@ -2,6 +2,9 @@
 #define burst_edev_hpp
 #include "core/robosd_common.hpp"
 #include "im/edev/edev.hpp"
+#include "core/robosd_ini.hpp"
+#include <math.h>
+#include "im/models/power.hpp"
 
 namespace burst {
 	namespace edev {
@@ -110,12 +113,12 @@ namespace burst {
 		};
 		template< typename T> class ssi_resolver_t :public agent_t<T>::block {
 		public:
-			T& position; // rad положение датчика
-			uint8_t resolution;// = 15;// pp Разрешение датчика положения , 
+			T& position; // rad РїРѕР»РѕР¶РµРЅРёРµ РґР°С‚С‡РёРєР°
+			uint8_t resolution;// = 15;// pp Р Р°Р·СЂРµС€РµРЅРёРµ РґР°С‚С‡РёРєР° РїРѕР»РѕР¶РµРЅРёСЏ , 
 			uint8_t poles;// = 32;
-			float gain;// = (float)((1L << 14) * poles) / ::robo::pi<float>;// pp /rad коэффициент между попугаями драйвера и углом поворота роторашарнира
-			float noizeMag = 0;//rad амплитуда шума на датчике а рад
-			uint8_t noizeBit = 0;//bit  Шум датчика относительно драйвера
+			float gain;// = (float)((1L << 14) * poles) / ::robo::pi<float>;// pp /rad РєРѕСЌС„С„РёС†РёРµРЅС‚ РјРµР¶РґСѓ РїРѕРїСѓРіР°СЏРјРё РґСЂР°Р№РІРµСЂР° Рё СѓРіР»РѕРј РїРѕРІРѕСЂРѕС‚Р° СЂРѕС‚РѕСЂР°С€Р°СЂРЅРёСЂР°
+			float noizeMag = 0;//rad Р°РјРїР»РёС‚СѓРґР° С€СѓРјР° РЅР° РґР°С‚С‡РёРєРµ Р° СЂР°Рґ
+			uint8_t noizeBit = 0;//bit  РЁСѓРј РґР°С‚С‡РёРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РґСЂР°Р№РІРµСЂР°
 			uint32_t packet = 0;
 			float offset_grad = 0.;
 			float offset_rad = 0.;
@@ -126,12 +129,12 @@ namespace burst {
 				, poles(_poles)
 				//, gear_ratio(_gear_ratio)
 			{
-				gain = (float)((1L << (resolution - 1))) / ::robo::pi<float>;// pp /rad коэффициент между попугаями драйвера и углом поворота роторашарнира
+				gain = (float)((1L << (resolution - 1))) / ::robo::pi<float>;// pp /rad РєРѕСЌС„С„РёС†РёРµРЅС‚ РјРµР¶РґСѓ РїРѕРїСѓРіР°СЏРјРё РґСЂР°Р№РІРµСЂР° Рё СѓРіР»РѕРј РїРѕРІРѕСЂРѕС‚Р° СЂРѕС‚РѕСЂР°С€Р°СЂРЅРёСЂР°
 			}
 
 			virtual void do_run(void) {
 				//140-150ns
-				//1. Фактическое положение датчика в радианах						
+				//1. Р¤Р°РєС‚РёС‡РµСЃРєРѕРµ РїРѕР»РѕР¶РµРЅРёРµ РґР°С‚С‡РёРєР° РІ СЂР°РґРёР°РЅР°С…						
 				float noize = ::robo::system::rand(-noizeMag, noizeMag);
 				//noizeMag* (float)(rand() % 1000 - 500) / 500.f;
 				double tmp = gain * fmod(position * poles + offset_rad + noize, 2.f * ::robo::pi<float>);
@@ -167,14 +170,14 @@ namespace burst {
 		};
 		template<typename T> class sicos_resolver_t :public agent_t<T>::block {
 		public:
-			T& position; // rad положение  датчика  (с учетом смещения и знака)
-			//генератор синуса
+			T& position; // rad РїРѕР»РѕР¶РµРЅРёРµ  РґР°С‚С‡РёРєР°  (СЃ СѓС‡РµС‚РѕРј СЃРјРµС‰РµРЅРёСЏ Рё Р·РЅР°РєР°)
+			//РіРµРЅРµСЂР°С‚РѕСЂ СЃРёРЅСѓСЃР°
 			struct {
 				float value = 0.f;
 				float phase = 0.f;
 				robo::time_us_t offset_us = 0;
 			} outcom;
-			//жаннве СКВТ
+			//Р¶Р°РЅРЅРІРµ РЎРљР’Рў
 			struct {
 				struct {
 					float sn = 0;
@@ -189,12 +192,12 @@ namespace burst {
 					uint32_t cs = 0;
 				} adc;
 				float gain;
-				float ampV;//rad амплитуда sincos
-				float zeroV;//rad амплитуда sincos
-				uint8_t resolution;//bit  разрядность
-				float noizeMagV;//rad амплитуда шума на датчике
+				float ampV;//rad Р°РјРїР»РёС‚СѓРґР° sincos
+				float zeroV;//rad Р°РјРїР»РёС‚СѓРґР° sincos
+				uint8_t resolution;//bit  СЂР°Р·СЂСЏРґРЅРѕСЃС‚СЊ
+				float noizeMagV;//rad Р°РјРїР»РёС‚СѓРґР° С€СѓРјР° РЅР° РґР°С‚С‡РёРєРµ
 				float revV;//
-				uint8_t noizeBit;//bit  Шум датчика относительно драйвера
+				uint8_t noizeBit;//bit  РЁСѓРј РґР°С‚С‡РёРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РґСЂР°Р№РІРµСЂР°
 				float max;
 			} incom = {};
 			sicos_resolver_t(agent_t<T>& _agent, robo::cstr _name, T& _position)
@@ -208,7 +211,7 @@ namespace burst {
 			}
 			uint32_t mess_n(float _value) {
 				float tmp = _value * incom.gain;
-				if (tmp > 0.)  tmp += 0.5; else if (tmp < 0.)	tmp -= 0.5; // округление данных датчика
+				if (tmp > 0.)  tmp += 0.5; else if (tmp < 0.)	tmp -= 0.5; // РѕРєСЂСѓРіР»РµРЅРёРµ РґР°РЅРЅС‹С… РґР°С‚С‡РёРєР°
 				if (tmp < 0.) tmp = 0.;
 				if (tmp > incom.max) tmp = incom.max;
 				return (uint32_t)tmp;
@@ -254,7 +257,7 @@ namespace burst {
 
 			virtual void do_run(void) {
 				//150-170ns
-				//1. Фактическое положение датчика в радианах						
+				//1. Р¤Р°РєС‚РёС‡РµСЃРєРѕРµ РїРѕР»РѕР¶РµРЅРёРµ РґР°С‚С‡РёРєР° РІ СЂР°РґРёР°РЅР°С…						
 				
 				//????? todo
 				//	outcom.phase = robo::pi<float>*(robo::system::env::realtime_us()) * RESOLVER_SINCOS_DRIVER_FREQ * 2 / 1000000.f;
@@ -282,9 +285,9 @@ namespace burst {
 				uint32_t B;
 				uint32_t C;
 			} adc = {};
-			int driverNoizeBit; //Шум датчика тока относительно драйвера
-			int driverMax; //максимальный ток относительно АЦП
-			int driverZero; // ноль ток относительно АЦП
+			int driverNoizeBit; //РЁСѓРј РґР°С‚С‡РёРєР° С‚РѕРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РґСЂР°Р№РІРµСЂР°
+			int driverMax; //РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ С‚РѕРє РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РђР¦Рџ
+			int driverZero; // РЅРѕР»СЊ С‚РѕРє РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РђР¦Рџ
 			float noizeMag;
 			float senceMax;
 			float gain;
@@ -299,7 +302,7 @@ namespace burst {
 			uint32_t sence_current(float _value) {
 				float noize = ::robo::system::rand(-noizeMag, noizeMag);
 				float tmp = (_value + noize) * gain;
-				if (tmp > 0)  tmp += 0.5; else if (tmp < 0)	tmp -= 0.5; // округление данных датчика
+				if (tmp > 0)  tmp += 0.5; else if (tmp < 0)	tmp -= 0.5; // РѕРєСЂСѓРіР»РµРЅРёРµ РґР°РЅРЅС‹С… РґР°С‚С‡РёРєР°
 
 				int32_t ret = driverZero + (int32_t)tmp;
 				if (ret < 0) ret = 0;

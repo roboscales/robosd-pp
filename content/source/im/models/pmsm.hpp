@@ -1,14 +1,28 @@
 #ifndef __im_edev_joint_pmsm_hpp
 #define __im_edev_joint_pmsm_hpp
 #include "im/edev/joint_link.hpp"
+
 #include "im/models/power.hpp"
+
+#ifdef ARMADILLO_ENABLED
+#define ARMADILLO_ENABLED 0
+#endif
+
+
+#if ARMADILLO_ENABLED
 #include <armadillo>
+#endif
+
+#if ARMADILLO_ENABLED == 0
+#include "kinematics/robosd_tractor.hpp"
+#endif
 namespace robo{
 	namespace edev{
 		namespace joint{
 			namespace pmsm{
 				class ROBO_EXPORT  ideal2 : public agent::block {
 				private:
+#if ARMADILLO_ENABLED
 					arma::fmat A;
 					arma::fmat IA;
 					arma::fmat EA1;
@@ -16,6 +30,17 @@ namespace robo{
 					arma::fmat X;
 					arma::fmat Xmax;
 					arma::fmat U;
+#else
+					using matrix3x3 = robo::tractor::matrix3x3_t<double>;
+					using vector3_s = robo::tractor::vector3_t<double>;
+					matrix3x3 A;
+					matrix3x3 IA;
+					matrix3x3 EA1;
+					matrix3x3 EA2;
+					vector3_s X;
+					vector3_s Xmax;
+					vector3_s U;
+#endif
 					float ws = 0;
 					float ws2 = 0;
 					float ro_ = 0;

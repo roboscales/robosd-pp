@@ -84,9 +84,9 @@ namespace robo{
 			std::thread write_thread_;
 			
 			// Константы
-			static const size_t MAX_BUFFER_SIZE = 64 * 1024; // 64KB
-			static const size_t MAX_SINGLE_WRITE = 16 * 1024; // 16KB
-			static const int BACKLOG = 1; // Только один клиент в очереди
+			static inline const size_t MAX_BUFFER_SIZE = 64 * 1024; // 64KB
+			static inline const size_t MAX_SINGLE_WRITE = 16 * 1024; // 16KB
+			static inline const int BACKLOG = 1; // Только один клиент в очереди
 		};
 	}
 }
