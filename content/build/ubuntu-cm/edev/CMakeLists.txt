@@ -5,6 +5,8 @@ set(SRC
 	${ROBOSD_SOURCE}/im/models/power.cpp
 	${ROBOSD_SOURCE}/im/models/pmsm.cpp
 	${ROBOSD_SOURCE}/im/models/gearbox.cpp
+	${ROBOSD_SOURCE}/im/models/dcservo.cpp
+	${ROBOSD_SOURCE}/im/models/dcmachine.cpp
 )
 
 # Создание динамической библиотеки

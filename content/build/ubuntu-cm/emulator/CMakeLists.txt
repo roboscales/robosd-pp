@@ -17,7 +17,7 @@ target_include_directories(emulator PUBLIC
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}/core/platform/ubuntu>
 )
 
-target_link_libraries(emulator PRIVATE  robosd-core++ edev armadillo dl rt )
+target_link_libraries(emulator PRIVATE  robosd-core++ edev pthread dl )
 
 # Настройка путей вывода
 set_target_properties(emulator PROPERTIES

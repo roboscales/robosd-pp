@@ -1,11 +1,10 @@
 project(robosd-core++ VERSION 1.0.0 LANGUAGES CXX)
 set(SRC
-	${ROBOSD_SOURCE}/core/robosd_system.cpp
-	${ROBOSD_SOURCE}/core/robosd_system.cpp
 	${ROBOSD_SOURCE}/core/robosd_app.cpp
 	${ROBOSD_SOURCE}/core/robosd_autonum.cpp
 	${ROBOSD_SOURCE}/core/robosd_log.cpp
 	${ROBOSD_SOURCE}/core/robosd_string.cpp
+	${ROBOSD_SOURCE}/core/robosd_system.cpp
 	${ROBOSD_SOURCE}/core/robosd_system_native.cpp
 	${ROBOSD_SOURCE}/core/robosd_system_std.cpp
 	${ROBOSD_SOURCE}/core/robosd_system_weak.cpp
