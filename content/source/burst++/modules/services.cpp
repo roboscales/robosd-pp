@@ -644,20 +644,12 @@ namespace burst{
 				void (*do_print_)(const char* _buf) = nullptr;
 
 				virtual void printf(burst::var::record_s* _rec, robo::cstr _path) {
-#if ROBO_UNICODE_ENABLED == 1
 					robo::string nm;
 					nm.format(RT("%s\t%d\t%x\n\r")
 						, _path
 						, (int)_rec->desc.len
 						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
 					nm.ascii([this](const char* _buf) { this->do_print_(_buf); });
-#else
-					::robo::termo::itf::printf(RT8("%s\t%d\t%x\n\r")
-						, _path
-						, (int)_rec->desc.len
-						, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET)
-					);
-#endif
 				}
 			public:
 				void run(void (*_do_print)(const char* _buf)) {

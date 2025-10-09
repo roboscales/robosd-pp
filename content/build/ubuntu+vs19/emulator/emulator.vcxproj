@@ -58,7 +58,7 @@
       <LibrarySearchDirectories>$(SolutionDir)bin\$(Platform)\$(Configuration)\;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
     </Link>
     <Link>
-      <AdditionalLibraryNames>robosd-core++;edev;pthread;dl;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <AdditionalLibraryNames>robosd-core++;edev;pthread;dl;rt%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
@@ -73,7 +73,7 @@
       <LibrarySearchDirectories>$(SolutionDir)bin\$(Platform)\$(Configuration)\;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
     </Link>
     <Link>
-      <AdditionalLibraryNames>robosd-core++;edev;pthread;dl;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <AdditionalLibraryNames>robosd-core++;edev;pthread;dl;rt%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

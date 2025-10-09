@@ -202,12 +202,12 @@ namespace robo {
 	#endif
 	
 	#if ROBO_APP_SHARED_ENABLED ==1
-	bool system::shared::driver_open(cstr _name, size_t _sz) {
+	ROBO_WEAK bool system::shared::driver_open(cstr _name, size_t _sz) {
 		ROBO_UNUSED(_name);
 		ROBO_UNUSED(_sz);
 		return false;
 	}
-	void system::shared::driver_close(void) {
+	ROBO_WEAK void system::shared::driver_close(void) {
 	}
 	#endif
 }

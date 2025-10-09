@@ -141,6 +141,7 @@
       <DebuggedProgram>$(TargetPath)</DebuggedProgram>
       <GDBServerPort>2000</GDBServerPort>
       <ProgramArguments />
+      <WorkingDirectory>/media/sf_BUCEPHA-UBUNTU/damper/content/app/digital-tween/projects/ubuntu+vs19/bin/VisualGDB/Debug</WorkingDirectory>
       <ArgumentEscapingMode>Auto</ArgumentEscapingMode>
     </LaunchGDBSettings>
     <GenerateCtrlBreakInsteadOfCtrlC>false</GenerateCtrlBreakInsteadOfCtrlC>

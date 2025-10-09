@@ -62,11 +62,11 @@ namespace robo{
 			// Состояние сервера
 			std::atomic<bool> is_running_{false};
 			std::atomic<bool> client_connected_{false};
+			
 			std::atomic<int> server_socket_{-1};
 			std::atomic<int> client_socket_{-1};
 			uint16_t port_=0;
 			std::string client_address_;
-			
 			// Буферы данных
 			std::vector<uint8_t> input_buffer_;
 			mutable std::mutex input_mutex_;
@@ -80,9 +80,9 @@ namespace robo{
 			// Потоки
 			std::thread server_thread_;
 			std::thread client_handler_thread_;
-			std::thread read_thread_;
-			std::thread write_thread_;
-			
+			std::thread * read_thread_ = nullptr;
+			std::thread *write_thread_ = nullptr;
+			void close_client_connection(void);
 			// Константы
 			static inline const size_t MAX_BUFFER_SIZE = 64 * 1024; // 64KB
 			static inline const size_t MAX_SINGLE_WRITE = 16 * 1024; // 16KB

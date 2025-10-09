@@ -74,13 +74,6 @@
     <None Include="robosd-core++-Release.vgdbsettings" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\app\digital-tween\projects\ubuntu+vs19\robosd_app_tuning.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_app.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_autonum.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_log.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_string.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system.hpp" />
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system_native.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_autonum.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_delegat.hpp" />

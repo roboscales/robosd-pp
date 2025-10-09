@@ -1,7 +1,6 @@
 #include "core/robosd_system.hpp"
 
 #include <sys/stat.h>
-//#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <errno.h>
@@ -13,6 +12,20 @@
 #include <unistd.h>
 #include <stdio.h>
 namespace robo {
+	void show_err(cstr _sender) {
+		if (errno) {
+#if ROBO_UNICODE_ENABLED
+			robo_errlog("%s failed with error %d: %S", _sender, errno, strerror(errno));
+#else
+			robo_errlog("%s failed with error %d: %s", _sender, errno, strerror(errno));
+#endif
+			errno = 0;
+		}
+		else {
+			robo_errlog("%s failed with no system error", _sender);
+		}
+	}
+	
 	bool robo_os_PI_file_exists_(cstr _fn) {
 		struct stat sb;
 		FILE *in = NULL;
@@ -27,126 +40,6 @@ namespace robo {
 }
 #if ROBO_APP_SYSTEM_ENABLED  == 1
 
-#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_LINUX
-
-#include <pthread.h>
-namespace robo {
-	double us_per_tick_;
-	DWORD tick_per_period_;
-	std::thread::id backend_thread_id_;
-	std::thread::id dummy_thread_id_;
-	DWORD  step_show_period_;
-	DWORD step_show_tick_ = 0;
-	time_us_t last_time_us_ = 0;
-
-
-	bool init_ = false;
-	bool system::env::begin(void) {
-		init_ = true;
-		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_LINUX
-		//todo
-		#endif 
-		switch_to_realtime_();
-		return true;
-	}
-	void system::env::finish(void) {
-		switch_to_normal_();
-		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_LINUX
-		#endif
-		init_ = false;
-	}
-	//todo костыль
-	bool system_realtime_disabled_ = false;
-	bool system::env::start(time_us_t & _period_us) {
-		if (_period_us == 0) {
-			system_realtime_disabled_ = true;
-			ROBO_LBREAKN(::robo::ini::load(RT("SETTINGS"), RT("TIMER_PERIOD_US"), _period_us));
-		}
-		#if 0
-		#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_LINUX
-
-		QueryPerformanceFrequency(&ticksPerSecond_);
-		tick_per_period_ = (DWORD)(1.0 / 1000000.0 * _period_us * ticksPerSecond_.QuadPart);
-		us_per_tick_ = 1000000.0 / ticksPerSecond_.QuadPart;
-		QueryPerformanceCounter(&tickCurrent_);
-		tickNext_.QuadPart = tickCurrent_.QuadPart + _period_us;
-		#endif
-		#endif
-		
-		ROBO_LBREAKN_F(_period_us > 0, "clock period is zero!");
-		time_ms_t ms;
-		::robo::ini::try_load(RT("SETTINGS"), RT("TIMER_SHOW_PERIOD_MS"), ms);
-		step_show_period_ = 1000 * ms / _period_us;
-		last_time_us_ = realtime_us();
-		return true;
-	}
-
-	void system::env::stop(void) {}
-
-	#if ROBO_APP_MODULE_ENABLED == 1
-	result system::env::startup(void) {
-		return result::complete;
-	}
-	result system::env::shutdown(void) {
-		return result::complete;
-	}
-	#endif
-
-	void system::env::backend_loop(void) {
-		if (++step_show_tick_ == step_show_period_) {
-			robo_infolog("tick  %3.3f", 0.000001 * realtime_us());
-			step_show_tick_ = 0;
-		}
-
-	}
-	
-
-	bool system::env::is_frontend(void) {
-		return backend_thread_id_ != std::this_thread::get_id();
-	}
-
-	bool system::env::is_backend(void) {
-		return backend_thread_id_ == std::this_thread::get_id();
-	}
-	void system::env::fall(void) {
-		backend_thread_id_ = std::this_thread::get_id();
-	}
-
-	void system::env::comeback(void) {
-		backend_thread_id_ = dummy_thread_id_;
-	}
-
-#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_LINUX
-	time_us_t system::env::realtime_us(void) {
-		QueryPerformanceCounter(&tickCurrent_);
-		double us = us_per_tick_ * tickCurrent_.LowPart;
-		return (time_us_t)(us);
-	}
-#endif
-
-	random_t system::env::rand(random_t _max) {
-		return (random_t)std::rand() % _max;
-	}
-	random_t system::env::rand_maxd(void) {
-		return RAND_MAX;
-	}
-	void system::env::wakeup(void) {}
-
-	void system::env::sleep(void) {
-		Sleep(0);
-	}
-	#if ROBO_APP_OS_TYPE == ROBO_APP_TYPE_LINUX
-	void system::env::switch_to_realtime(void) {
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-	}
-
-	void system::env::switch_to_normal(void) {
-		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-	}	
-	#endif
-	
-}
-#endif
 	
 #if ROBO_APP_CONSOL_ENABLED == 1
 #if ROBO_APP_CONSOL_TYPE ==  ROBO_APP_TYPE_LINUX
@@ -162,8 +55,6 @@ namespace robo {
 		sigemptyset(&act.sa_mask);                                                             
 		sigaddset(&act.sa_mask, SIGINT); 
 		ROBO_LBREAKN_F(sigaction(SIGINT, &act, 0) == 0, "sigaction error %d: %s", errno, strerror(errno));
-		
-		//ROBO_LBREAKN_F(signal(SIGINT, robo_consol_break__) == 0, "sigaction error %d: %s", errno, strerror(errno));
 		return true;
 	}
 	
@@ -215,6 +106,109 @@ bool system::lib::remove(cstr _lib_name) {
 	return true;
 }
 }
+#endif
+
+#if ROBO_APP_SHARED_TYPE == ROBO_APP_TYPE_LINUX
+#include <unistd.h>
+#include <semaphore.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include "core/robosd_string.hpp"
+namespace robo {
+	class system::shared::driver {
+		friend class shared;
+		int handle = -1;
+		string name;
+		size_t sz = 0;
+		void *memo = MAP_FAILED;
+		bool open(cstr _name, size_t _sz) {
+			handle = -1;
+			name = _name;
+			sz = _sz;
+
+			// Get shared memory
+			if ((handle = shm_open(name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) == -1) {
+				robo_errlog("shm_open %s", name.c_str());
+				show_err("shm_open");
+				goto broke;
+			}
+			if (ftruncate(handle, sz) == -1) {
+				show_err("ftruncate");
+				goto broke;
+			}
+
+			if ((memo = mmap(
+				NULL
+				, sz
+				, PROT_READ | PROT_WRITE
+				, MAP_SHARED
+				, handle
+				,0)
+			) == MAP_FAILED) {
+				robo_errlog("mmap %s", name.c_str());
+				show_err("mmap");
+				goto broke;
+			}
+			return true;
+		broke:
+			close();
+			return false;
+		}
+		void close(void) {
+			if (memo != MAP_FAILED) {
+				if (munmap(memo, sz) == -1) {
+					robo_errlog("munmap %s", name.c_str());
+					show_err("munmap");
+				}
+				memo = MAP_FAILED;
+			}
+
+			if (handle != -1) {
+				if (shm_unlink(name.c_str()) != 0) {
+					robo_errlog("shm_unlink %s", name.c_str());
+					show_err("shm_unlink");
+				}
+				handle = -1;
+			}
+		}
+		void lock(void) {
+			if (mlock(memo, sz) != 0) {
+				robo_errlog("mlock %s", name.c_str());
+				show_err("mlock");
+			}
+		}
+		void unlock(void) {
+			if (munlock(memo, sz) != 0) {
+				robo_errlog("mlock %s", name.c_str());
+				show_err("mlock");
+			}
+		}
+	};
+	system::shared::shared(void) : driver_(new driver), ref_(*this, -1) {
+	}
+	system::shared::~shared(void) {
+		delete driver_;
+	}
+	bool system::shared::driver_open(cstr _name, size_t _sz) {
+		return driver_->open(_name, _sz);
+	}
+	void system::shared::driver_close(void) {
+		driver_->close();
+	}
+	void system::shared::driver_lock(void) {
+		driver_->lock();
+	}
+	void system::shared::driver_unlock(void) {
+		driver_->unlock();
+	}
+	size_t system::shared::size(void) {
+		return driver_->sz;
+	}
+	void *system::shared::memo(void) {
+		return driver_->memo;
+	}
+} // namespace robo
+
 #endif
 
 #endif

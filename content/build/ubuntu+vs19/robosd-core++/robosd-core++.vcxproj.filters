@@ -27,27 +27,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\app\digital-tween\projects\ubuntu+vs19\robosd_app_tuning.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_app.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_autonum.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_log.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_string.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\robosd-ref\core\robosd_system_native.hpp">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">
       <Filter>Source files</Filter>
     </ClInclude>

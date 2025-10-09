@@ -58,7 +58,7 @@ namespace robo{
 		int serialovtcp::accept_connection() {
 			struct sockaddr_in client_addr;
 			socklen_t client_len = sizeof(client_addr);
-			
+
 			int client_fd = accept(server_socket_, (struct sockaddr*)&client_addr, &client_len);
 			if (client_fd < 0) {
 				if (errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -141,16 +141,48 @@ namespace robo{
 			robo_infolog("TCP serial server started on port %d",port_);
 			return true;
 		}
+		void serialovtcp::close_client_connection(void) {
+			if (client_connected_) {
 
+				// Закрываем сокеты чтобы выйти из блокирующих вызовов
+				client_connected_ = false;
+				close_socket(client_socket_);
+				if (read_thread_) {
+					if (read_thread_->joinable()) {
+						read_thread_->join();
+					}
+					delete read_thread_;
+					read_thread_ = nullptr;
+				}
+				//if (write_thread_->joinable()) {
+				write_thread_->join();
+				//}
+				delete write_thread_;
+				write_thread_ = nullptr;
+
+				// Очищаем буферы
+				{
+					std::lock_guard<std::mutex> lock(input_mutex_);
+					input_buffer_.clear();
+				}
+				{
+					std::lock_guard<std::mutex> lock(output_mutex_);
+					std::queue<std::vector<uint8_t>> empty;
+					std::swap(output_queue_, empty);
+					output_queue_size_ = 0;
+				}
+				robo_infolog("Session for client %s is closed  ", client_address_.c_str());
+				client_address_.clear();
+			}
+		}
 		void serialovtcp::stop() {
 			if (!is_running_) return;
 			
 			is_running_ = false;
-			
-			// Закрываем сокеты чтобы выйти из блокирующих вызовов
-			close_socket(client_socket_);
+
+			close_client_connection();
 			close_socket(server_socket_);
-			
+
 			// Ждем завершения потоков
 			if (server_thread_.joinable()) {
 				server_thread_.join();
@@ -158,28 +190,6 @@ namespace robo{
 			if (client_handler_thread_.joinable()) {
 				client_handler_thread_.join();
 			}
-			if (read_thread_.joinable()) {
-				read_thread_.join();
-			}
-			if (write_thread_.joinable()) {
-				write_thread_.join();
-			}
-			
-			// Очищаем буферы
-			{
-				std::lock_guard<std::mutex> lock(input_mutex_);
-				input_buffer_.clear();
-			}
-			{
-				std::lock_guard<std::mutex> lock(output_mutex_);
-				std::queue<std::vector<uint8_t>> empty;
-				std::swap(output_queue_, empty);
-				output_queue_size_ = 0;
-			}
-			
-			client_connected_ = false;
-			client_address_.clear();
-			
 			robo_infolog("TCP serial server (port %d) stopped ",port_);
 		}
 
@@ -226,8 +236,13 @@ namespace robo{
 								}
 								
 								// Запускаем потоки для работы с клиентом
-								read_thread_ = std::thread(&serialovtcp::read_loop, this);
-								write_thread_ = std::thread(&serialovtcp::write_loop, this);
+								read_thread_ = new std::thread(&serialovtcp::read_loop, this);
+								write_thread_ = new std::thread(&serialovtcp::write_loop, this);
+								read_thread_->join();
+								delete read_thread_;
+								read_thread_ = nullptr;
+								close_client_connection();
+
 							}
 						}
 					}
@@ -255,13 +270,16 @@ namespace robo{
 				if (ret > 0) {
 					if (fds[0].revents & POLLIN) {
 						ssize_t bytes_read = recv(client_socket_, buffer, sizeof(buffer), 0);
-						
+						if (!client_connected_)
+							return;
+
 						if (bytes_read > 0) {
 							add_to_input_buffer(buffer, bytes_read);
 						} else if (bytes_read == 0) {
 							// Клиент отключился
-							robo_infolog("Client (port %d) disconnected ", port_);
-							break;
+							//close_client_connection();
+							robo_infolog("Client %s (port %d) disconnected ", client_address_.c_str(), port_);
+							return;
 						} else {
 							if (errno != EAGAIN && errno != EWOULDBLOCK) {
 								robo_errlog("recv() failed: %s", strerror(errno));
@@ -271,17 +289,13 @@ namespace robo{
 					}
 					
 					if (fds[0].revents & (POLLHUP | POLLERR)) {
+						//close_client_connection();
 						robo_infolog("Client (port %d) connection lost", port_);
-						break;
+						return;
 					}
 				}
 			}
-			
-			// Очищаем состояние клиента
-			client_connected_ = false;
-			close_socket(client_socket_);
-			client_socket_ = -1;
-			client_address_.clear();
+
 		}
 
 		void serialovtcp::write_loop() {
@@ -341,7 +355,7 @@ namespace robo{
 				}
 				
 				if (total_sent > 0) {
-					//std::cout << "Sent " << total_sent << " bytes to client" << std::endl;
+					//robo_infolog("Sent %d bytes to client", total_sent);
 				}
 			}
 		}
@@ -420,9 +434,19 @@ namespace robo{
 			return put(&_data,1);
 		}
 
-		void serialovtcp::reset(void) {
-			stop();
-			start();
+		void serialovtcp::reset(void){
+			// Очищаем буферы
+			{
+				std::lock_guard<std::mutex> lock(input_mutex_);
+				input_buffer_.clear();
+			}
+			{
+				std::lock_guard<std::mutex> lock(output_mutex_);
+				std::queue<std::vector<uint8_t>> empty;
+				std::swap(output_queue_, empty);
+				output_queue_size_ = 0;
+			}
+			
 		}
 
 		size_t serialovtcp::space() {
