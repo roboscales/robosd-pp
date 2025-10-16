@@ -18,7 +18,7 @@ add_library(edev SHARED ${SRC} )
 
 # Включение заголовков
 target_include_directories(edev PUBLIC
-    $<BUILD_INTERFACE:${ROOT_DIR}>
+    $<BUILD_INTERFACE:${ROOT_DIR}/../../source/platform/ubuntu>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}/core/platform/ubuntu>
 )
