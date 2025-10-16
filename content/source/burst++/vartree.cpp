@@ -33,8 +33,9 @@ namespace burst {
 		#endif
 		
 		void reindex(void) {
+			
 			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
-			//todo посчитать
+			//todo РїРѕСЃС‡РёС‚Р°С‚СЊ
 			robo::char_t * path = new robo::char_t [path_size + 1];
 			int * path_stack_buffer = new int [stack_size];
 
@@ -183,7 +184,7 @@ namespace burst {
 						pouth->query=query;
 						pouth->error=error::invalid_index;
 						pouth->ix=ix;
-					//todo мы не знаем, что за переменная - сервер получит сообщение неверной длины, но  такое возможно при неверном desc
+					//todo РјС‹ РЅРµ Р·РЅР°РµРј, С‡С‚Рѕ Р·Р° РїРµСЂРµРјРµРЅРЅР°СЏ - СЃРµСЂРІРµСЂ РїРѕР»СѓС‡РёС‚ СЃРѕРѕР±С‰РµРЅРёРµ РЅРµРІРµСЂРЅРѕР№ РґР»РёРЅС‹, РЅРѕ  С‚Р°РєРѕРµ РІРѕР·РјРѕР¶РЅРѕ РїСЂРё РЅРµРІРµСЂРЅРѕРј desc
 					return 2;
 				}
 			}

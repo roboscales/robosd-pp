@@ -6,18 +6,15 @@ set(SRC
 # Создание динамической библиотеки
 add_executable(emulator ${SRC} )
 
-# Зависимость от mathlib
-#target_link_libraries(emulator PUBLIC mathlib)
-
 
 # Включение заголовков
 target_include_directories(emulator PUBLIC
-    $<BUILD_INTERFACE:${ROOT_DIR}>
+    $<BUILD_INTERFACE:${ROOT_DIR}/../../source/platform/ubuntu>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}/core/platform/ubuntu>
 )
 
-target_link_libraries(emulator PRIVATE  robosd-core++ edev pthread dl )
+target_link_libraries(emulator PRIVATE  robosd-core++ edev pthread dl rt )
 
 # Настройка путей вывода
 set_target_properties(emulator PROPERTIES

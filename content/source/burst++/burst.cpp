@@ -162,12 +162,13 @@ namespace burst {
 			guard__;
 			burst_present.status= front::board::statuses::startuped;
 			slots_ref_.begin.execute();
+
 			ROBO_ASSERT(config_);
 			//ROBO_APP_ASSERT(::mexo::node::begin());
 			#if ROBO_APP_NET_FLOW_ENABLED == 1
 			::robo::net::flow::machine::begin();
 			#endif
-			
+
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			regvar_conf();
 			#endif

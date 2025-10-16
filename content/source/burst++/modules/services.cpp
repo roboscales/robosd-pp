@@ -463,6 +463,7 @@ namespace burst{
 						*(path_stack_top_) = sz;
 						path_ptr_[sz] = 0;
 						printf((burst::var::record_s*)ref, path_ + 1);
+						
 					}
 				}
 
@@ -493,10 +494,7 @@ namespace burst{
 						return false;
 					}
 				}
-				bool do_loop(void) {
-					if (::robo::termo::itf::busy()) {
-						return true;
-					}
+				bool do_perform(void) {
 					pref++;
 					perform();
 					if (pref != burst::var::last()) {
@@ -506,6 +504,13 @@ namespace burst{
 						end_();
 						return false;
 					}
+				}
+				
+				bool do_loop(void) {
+					if (::robo::termo::itf::busy()) {
+						return true;
+					}
+					return do_perform();
 				}
 			};
 			class show :public ::robo::termo::command, public showpro {
@@ -657,6 +662,14 @@ namespace burst{
 					if (do_begin()) while (do_loop());
 					do_print_ = nullptr;
 				}
+				void fast_run(void (*_do_print)(const char *_buf)) {
+					do_print_ = _do_print;
+					if (do_begin())
+						while (do_perform())
+							;
+					do_print_ = nullptr;
+				}
+
 				showto_fml_stream(void)
 				{
 
@@ -665,7 +678,7 @@ namespace burst{
 		}
 			
 		void varlist(void (*_do_print)(const char* _buf)) {
-			var::showto_fml_stream_.run(_do_print);
+			var::showto_fml_stream_.fast_run(_do_print);
 		}
 		#endif
 		#endif

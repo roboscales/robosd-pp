@@ -24,7 +24,8 @@ namespace robo{
            virtual void poll(void){};
         public:
            const string & alias(void) const { return alias_; }
-           bool busy(void) { return (space_max() > space()); };
+           bool busy(void) {
+			   return (space_max() > space()); };
            link(void);
            virtual ~link(void);
            virtual void reset(void) = 0;

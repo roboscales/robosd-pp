@@ -127,7 +127,7 @@ namespace robo {
 			sz = _sz;
 
 			// Get shared memory
-			if ((handle = shm_open(name.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) == -1) {
+			if ((handle = shm_open(name.c_str(), O_RDWR | O_CREAT, S_IRWXU | S_IRWXO)) == -1) {
 				robo_errlog("shm_open %s", name.c_str());
 				show_err("shm_open");
 				goto broke;

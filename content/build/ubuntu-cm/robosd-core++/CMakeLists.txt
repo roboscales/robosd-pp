@@ -20,7 +20,7 @@ add_library(robosd-core++ SHARED ${SRC} )
 
 # Включение заголовков
 target_include_directories(robosd-core++ PUBLIC
-    $<BUILD_INTERFACE:${ROOT_DIR}>
+    $<BUILD_INTERFACE:${ROOT_DIR}/../../source/platform/ubuntu>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}>
     $<BUILD_INTERFACE:${ROBOSD_SOURCE}/core/platform/ubuntu>
 )
