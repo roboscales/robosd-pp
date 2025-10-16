@@ -64,6 +64,7 @@ namespace robo{
 						ref ref_;
 						bool active_;
 						bool continues_;
+						bool first_;
 					protected:
 						virtual void on_request(void) = 0;
 						virtual void on_confirm(void) = 0;
@@ -221,10 +222,13 @@ namespace robo{
 							
 							regs::dispetcher.read_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 						}
+						bool first = false;
+						void first_update() { first = true; }
 						virtual void on_confirm(void){
 							regs::set(dst_);
-							if(regs::check_prev){
-								if(! std::equal( regs::memo,  regs::memo+regs::count, regs::prev )){
+							if(regs::check_prev ){
+								if( first || ! std::equal( regs::memo,  regs::memo+regs::count, regs::prev ) ){
+									first = false;
 									std::copy_n( regs::memo,  regs::count, regs::prev);
 									if(on_update_) (* on_update_)();
 								}
