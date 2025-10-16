@@ -269,7 +269,7 @@ namespace robo {
 		return _x;
 	}
 	
-	//смещение вправо с округлением
+	//СЃРјРµС‰РµРЅРёРµ РІРїСЂР°РІРѕ СЃ РѕРєСЂСѓРіР»РµРЅРёРµРј
 	namespace digit{
 		template <typename T> constexpr T rsh(T _x, int8_t _sh) {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
