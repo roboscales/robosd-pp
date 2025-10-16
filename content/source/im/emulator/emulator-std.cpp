@@ -23,7 +23,7 @@ int main(int _argc, const char * _argv[])
 		emu_ini = _argv[1];
 	}
 	else{
-		emu_ini = RT("/home/anyusupov/sourcetree/damper/content/reference/settings-ref/im/dap-robot-lx.ini");
+		emu_ini = RT("/home/anyusupov/damper/content/reference/settings-ref/im/dap-robot-lx.ini");
 	}
 	
 	bool terminated = false;
