@@ -549,5 +549,24 @@ namespace robo {
 
 #endif
 
+#if ROBO_APP_TIMELOG_TYPE == ROBO_APP_TYPE_WIN
+#include <windows.h>
+namespace robo{
+	namespace winlogger {
+		LARGE_INTEGER tickCurrent_;
+		double ns_per_tick_;
+		LARGE_INTEGER ticksPerSecond_;
+	}
 
+system::timelog_driver::timelog_driver(void) {
+	QueryPerformanceFrequency(&winlogger::ticksPerSecond_);
+	winlogger::ns_per_tick_ = 1000000000.0 / winlogger::ticksPerSecond_.QuadPart;
+}
+uint32_t system::timelog_driver::time_ns(void) {
+	QueryPerformanceCounter(&winlogger::tickCurrent_);
+	double ns = winlogger::ns_per_tick_ * winlogger::tickCurrent_.LowPart;
+	return (uint32_t) ns;
+}
+}
+#endif
 

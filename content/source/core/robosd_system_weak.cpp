@@ -212,3 +212,14 @@ namespace robo {
 	#endif
 }
 
+#if ROBO_APP_TIMELOG_TYPE == ROBO_APP_TYPE_WIN
+#include <windows.h>
+namespace robo {
+
+	ROBO_WEAK system::timelog_driver::timelog_driver(void) {
+	}
+	ROBO_WEAK uint32_t system::timelog_driver::time_ns(void) {
+		return 0;
+	}
+}
+#endif

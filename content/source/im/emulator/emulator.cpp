@@ -129,6 +129,7 @@ int main(int _argc, const char * _argv[])
 			[&]() {
 				auto t0 = Time::now();
 				while (!terminated) {
+					robo_logger(11);
 					auto t1 = Time::now();
 					fsec fs = t1 - t0;
 					auto sec = fs.count();

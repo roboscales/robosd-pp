@@ -192,6 +192,7 @@
     <ClInclude Include="..\..\..\..\app\srt-digital-tween\projects\vs2019\config\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_system.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\prf\timelogger.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
