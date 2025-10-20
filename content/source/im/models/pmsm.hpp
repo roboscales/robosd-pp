@@ -4,7 +4,7 @@
 
 #include "im/models/power.hpp"
 
-#ifdef ARMADILLO_ENABLED
+#ifndef ARMADILLO_ENABLED
 #define ARMADILLO_ENABLED 0
 #endif
 

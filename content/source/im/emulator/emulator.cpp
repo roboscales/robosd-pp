@@ -170,8 +170,8 @@ int main(int _argc, const char * _argv[])
 			if (dsec > 0.000005) {
 				sec_stat_acc += dsec;
 				cnt++;
-				if (cnt == 10000) {
-					auto dt = 1000000. * sec_stat_acc / cnt;
+				if (cnt == 1000) {
+					auto dt = 1000000 * sec_stat_acc / cnt;
 					if (dt > 0.1) {
 						robo_infolog("run period us: %f", dt);
 					}

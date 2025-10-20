@@ -71,9 +71,9 @@ namespace robo {
 		fault_file_ = _file;
 		fault_function_ = _function;
 		fault_line_ = _line;
-		#if ROBO_APP_DEBUG_LOG_ENABLED
-		::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" system panic \r\n\t%S\r\n\t%S - %d"), fault_function_, fault_file_, fault_line_);
-		#endif
+		//#if ROBO_APP_DEBUG_LOG_ENABLED
+		//::robo::log::print(robo::log::verb::error, robo::log::mask::disabled, RT(" system panic \r\n\t%S\r\n\t%S - %d"), fault_function_, fault_file_, fault_line_);
+		//#endif
 		#if ROBO_APP_ENV_ENABLED == 1
 		system::env::abort();
 		#else
@@ -580,7 +580,7 @@ namespace robo {
 #if ROBO_APP_ALLOC_ENABLED == 1
 
 void* operator new(size_t size) {
-	ROBO_APP_ASSERT(is_frontend__);
+	//ROBO_APP_ASSERT(is_frontend__);
 	void* tmp;
 	tmp = robo::system::mem::alloc(size);
 	ROBO_APP_ASSERT(tmp != nullptr)
@@ -588,7 +588,7 @@ void* operator new(size_t size) {
 }
 
 void operator delete(void* ptr) {
-	ROBO_APP_ASSERT(is_frontend__);
+	//ROBO_APP_ASSERT(is_frontend__);
 	robo::system::mem::free (ptr);
 }
 

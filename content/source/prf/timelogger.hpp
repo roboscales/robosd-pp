@@ -48,6 +48,7 @@ namespace robo {
 						uint32_t now = P::time_ns();
 						p.ns = now - begin_;
 						begin_ = now;
+						p.event = _event;
 						cnt++;
 					}
 				}

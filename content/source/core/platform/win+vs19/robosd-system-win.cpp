@@ -111,6 +111,7 @@ namespace robo {
 #if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_WIN
 
 #include <windows.h>
+#include <atomic>
 namespace robo {
 	#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_WIN
 	LARGE_INTEGER tickCurrent_;
@@ -125,17 +126,20 @@ namespace robo {
 	DWORD step_show_tick_ = 0;
 	time_us_t last_time_us_ = 0;
 	bool init_ = false;
+	
+	std::atomic<bool> locked=false;
+	std::atomic<bool> realtime = false;
 
 	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 	CRITICAL_SECTION critical_;
-	CRITICAL_SECTION guard_;
+	//CRITICAL_SECTION guard_;
 	#endif 
 
 	bool system::env::begin(void) {
 		init_ = true;
 		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 		InitializeCriticalSection(&critical_);
-		InitializeCriticalSection(&guard_);
+		//InitializeCriticalSection(&guard_);
 		#endif 
 		switch_to_realtime_();
 		return true;
@@ -144,7 +148,7 @@ namespace robo {
 		switch_to_normal_();
 		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 		DeleteCriticalSection(&critical_);
-		DeleteCriticalSection(&guard_);
+		//DeleteCriticalSection(&guard_);
 		#endif
 		init_ = false;
 	}
@@ -200,10 +204,13 @@ namespace robo {
 		return backend_thread_id_ == std::this_thread::get_id();
 	}
 	void system::env::fall(void) {
+		while (locked);
+		realtime = true;
 		backend_thread_id_ = std::this_thread::get_id();
 	}
 
 	void system::env::comeback(void) {
+		realtime = false;
 		backend_thread_id_ = dummy_thread_id_;
 	}
 
@@ -255,31 +262,39 @@ void system::env::critical_leave(void) {
 }
 
 system::guard::op system::env::enter(void) {
+	/*
 	if (init_) {
-		EnterCriticalSection(&guard_);
+		//EnterCriticalSection(&guard_);
 		return system::guard::op::enter;
 	}
 	else {
 		return system::guard::op::skip;
 	}
+	*/
+	while (realtime);
+	locked = true;
+	return system::guard::op::enter;
 }
 
 void system::env::leave(void) {
-	LeaveCriticalSection(&guard_);
+	locked = false;
+	//LeaveCriticalSection(&guard_);
 }
 
 system::guard::op  system::env::lock(void) {
+	/*
 	if (init_) {
-		EnterCriticalSection(&guard_);
+		//EnterCriticalSection(&guard_);
 		return system::guard::op::enter;
 	}
 	else {
 		return system::guard::op::skip;
-	}
+	}*/
+	return system::guard::op::skip;
 }
 
 void system::env::unlock(void) {
-	LeaveCriticalSection(&guard_);
+	//LeaveCriticalSection(&guard_);
 }
 }
 #endif
