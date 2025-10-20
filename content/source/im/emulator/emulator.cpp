@@ -166,17 +166,18 @@ int main(int _argc, const char * _argv[])
 			auto t2 = Time::now();
 			fsec dfc = t2 - t1;
 			auto dsec = dfc.count();
-			sec_stat_acc += dsec;
-			cnt++;
-			if (cnt == 1000000) {
-				auto dt = 1000000. * sec_stat_acc / cnt;
-				if (dt > 0.1) {
-					robo_infolog("run period us: %f", dt);
+			if (dsec > 0.000005) {
+				sec_stat_acc += dsec;
+				cnt++;
+				if (cnt == 10000) {
+					auto dt = 1000000. * sec_stat_acc / cnt;
+					if (dt > 0.1) {
+						robo_infolog("run period us: %f", dt);
+					}
+					cnt = 0;
+					sec_stat_acc = 0;
 				}
-				cnt = 0;
-				sec_stat_acc = 0;
 			}
-
 		}
 		
 

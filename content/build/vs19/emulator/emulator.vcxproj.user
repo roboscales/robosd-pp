@@ -4,24 +4,24 @@
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest+sysworx.ini</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest-dt.ini</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest+sysworx.ini</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest-dt.ini</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest+sysworx.ini</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest-dt.ini</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</LocalDebuggerWorkingDirectory>
-    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest+sysworx.ini</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>$(SolutionDir)..\..\..\..\reference\settings-ref\im\srt-robot-canfest-dt.ini</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>
