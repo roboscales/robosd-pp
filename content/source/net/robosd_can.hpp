@@ -34,7 +34,7 @@ namespace robo {
 			virtual void set_on_event(void (*_simple)( ican&, event) );
 
 			//virtual bool open(bool _owned_view = false) = 0;
-			virtual void close(void) = 0;
+			//virtual void close(void) = 0;
 			virtual bool send(uint32_t _id, const  uint8_t* _buf, uint8_t  _len) = 0;
 			virtual bool ready(void) = 0;
 			virtual void reset(void) = 0;
@@ -53,8 +53,8 @@ namespace robo {
 		private:
 			can_dummy(void) :ican() {}
 		public:
-			virtual bool open(bool _owned_view = false) { return false; }
-			virtual void close(void) {}
+			//virtual bool open(bool _owned_view = false) { return false; }
+			//virtual void close(void) {}
 			virtual bool send(uint32_t /*_id*/, const uint8_t* /*_buf*/, uint8_t  /*_len*/) { return false; }
 			virtual bool ready(void) { return false; }
 			virtual void reset(void) {}

@@ -32,9 +32,9 @@ namespace robo {
 
 					};
 
-					template<typename D> class ROBO_EXPORT phys_t : public ::robo::net::can::flow::phys_t<D>
+					class ROBO_EXPORT xphys : public ::robo::net::can::flow::xphys
 					{
-						using B = ::robo::net::can::flow::phys_t<D>;
+						using B = ::robo::net::can::flow::xphys;
 						instance* instance_ = nullptr;
 					protected:
 						virtual void do_can_receive(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {
@@ -68,15 +68,15 @@ namespace robo {
 							ROBO_LBREAKN(proto_name.load(_common, _current, RT("proto")));
 							return true;
 						}
-						virtual bool do_open(void) {
-							ROBO_LBREAKN(B::do_open());
-							instance_ = instance::attach(proto_name, B::can_instance);
+						virtual bool do_start(void) {
+							ROBO_LBREAKN(B::do_start());
+							instance_ = instance::attach(proto_name, *B::can_);
 							ROBO_LBREAKN(instance_);
 							return true;
 						}
-						virtual void do_close(void) {
+						virtual void do_stop(void) {
 							instance_ = nullptr;
-							B::do_close();
+							B::do_stop();
 						}
 					public:
 						virtual uint8_t get_packet_max_size(void) { return instance_->get_packet_max_size();  }

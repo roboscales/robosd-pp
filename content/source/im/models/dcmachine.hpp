@@ -2,7 +2,7 @@
 #define __dcmachine_hpp
 
 #include "im/edev/joint_link.hpp"
-#ifdef ARMADILLO_ENABLED
+#ifndef ARMADILLO_ENABLED
 #define ARMADILLO_ENABLED 0
 #endif
 #if ARMADILLO_ENABLED

@@ -552,7 +552,7 @@ namespace burst {
 				return true;
 			}
 
-			quest* post_startup_vars(robo::cstr _sect, quest* _owner, quest* _sema = nullptr) {
+			quest* post_startup_vars_quest(robo::cstr _sect, quest* _owner, quest* _sema = nullptr) {
 
 				//todo
 				//список строк заканивается двумя нулями

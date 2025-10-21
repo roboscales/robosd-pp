@@ -8,6 +8,9 @@ namespace robo {
 	namespace net {
 		namespace can {
 			namespace flow {
+
+				
+#if 0
 				template <typename D> class ROBO_EXPORT phys_t {
 					bus::packet* incomm_ = nullptr;
 					const bus::packet* outcomm_ = nullptr;
@@ -106,6 +109,7 @@ namespace robo {
 						//can_instance.set_on_event(&on_can_instanceevent_);
 					}
 				};
+#endif
 				template<typename P, cstr N> class ROBO_EXPORT module_t
 					: public robo::app::module {
 					module_t(void)
@@ -195,6 +199,7 @@ namespace robo {
 						return instance_;
 					}
 				};
+
 			}
 		}
 	}

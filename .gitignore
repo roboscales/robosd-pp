@@ -44,3 +44,5 @@
 /content/build/ubuntu+vs19/emulator/.visualgdb
 /content/build/ubuntu+vs19/robosd-core++/.visualgdb
 /content/build/ubuntu+vs19/test/.visualgdb
+/content/doc/burst/*.bkp
+/content/doc/burst/.$servo_can_flow_modules.drawio.dtmp
