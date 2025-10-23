@@ -300,7 +300,11 @@ namespace robo {
 			, boardagent_(_boardagent)
 			, bus_ref_(*this, 0)
 			, goal_(_goal)
-			, feedback_(_feedback)	{
+			, feedback_(_feedback)
+			, devdiscovery_(*this)
+			, devstopped_(*this)
+			, devconfigure_(*this)
+		{
 		}
 
 		router::record* devagent::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
@@ -315,32 +319,17 @@ namespace robo {
 				return rec;
 			}
 		}
-		using actuals = devagent::statuses::actuals;
-		actuals devagent::actual_status(commands::locals _command) {
-			static const actuals tb[] =
-			{
-				//icommand
-				//stop = 0,			sw2service = 1,		reset_panic = 2,	sw2independed = 3,		sw2dirrect = 4,		halt = 5
-				//busy
-				actuals::busy,		actuals::busy,		actuals::busy,		actuals::busy,			actuals::busy,		actuals::busy,
-				//configure
-				actuals::busy,		actuals::busy,		actuals::busy,		actuals::busy,			actuals::busy,		actuals::configure,
-				//panic
-				actuals::panic,		actuals::panic,		actuals::busy,		actuals::panic,			actuals::panic,		actuals::panic,
-				//ready
-				actuals::ready,		actuals::service,	actuals::ready,		actuals::independed,	actuals::dirrect,	actuals::busy,
-				//run
-				actuals::busy,		actuals::service,	actuals::panic,		actuals::independed,	actuals::dirrect,	actuals::busy,
-				//unknown
-				actuals::unknown,	actuals::unknown,	actuals::unknown,	actuals::unknown,		actuals::unknown,	actuals::unknown
-			};
 
-			if (feedback_.status.connection == statuses::connections::stable) {
-				return tb[((int)feedback_.status.remote * 6) + (int)_command];
-			}
-			else {
-				return statuses::actuals::disconnected;
-			}
+		void  devagent::discovery_begin(void) {
+			robo::system::guard g__;
+			devcontroller.switchto(&devdiscovery_);
+			incom_total = trafic.incom.success.bytes.total;
+		}
+		void  devagent::do_discovery_complete(void) {
+			devcontroller.switchto(&devconfigure_);
+		};
+		void devagent::do_configure_complete(void) {
+			devcontroller.switchto(&devstopped_);
 		}
 
 
@@ -827,7 +816,7 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				if (own_agent().feedback<devagent>().status.connection !=  statuses::connections::discovery) {
+				if (own_agent().feedback<devagent>().status.local !=  statuses::locals::discovery) {
 					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 				}
 			}
@@ -873,13 +862,14 @@ namespace robo {
 		}
 
 		bool devagent::exchabge_enabled(void) {
-			return feedback_.status.connection == statuses::connections::stable || feedback_.status.connection == statuses::connections::discovery;
+			return feedback_.status.local != statuses::locals::disabled;
 		}
+#if 0
 		bool devagent::configure_complete(void) {
 			ROBO_LBREAKN( feedback_.status.actual == statuses::actuals::configure );			
 			return true;
 		}
-
+#endif
 
 		bool devagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
@@ -894,19 +884,21 @@ namespace robo {
 			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
-				feedback_.status.connection = statuses::connections::discovery;
+				//feedback_.status.connection = statuses::connections::discovery;
+				discovery_begin();
+				devcontroller.run();
 				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
 				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			}
 			else {
-				feedback_.status.connection = statuses::connections::disabled;
+
 			}
 			return true;
 		}
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			if (feedback_.status.connection == statuses::connections::discovery) {
+			if (feedback_.status.local != statuses::locals::disabled) {
 				bus* b = find<bus>(bus_alias_);
 				bus_ref_.set_key(dev_id_.value);
 				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);

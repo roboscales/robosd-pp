@@ -12,6 +12,7 @@
 #include "core/robosd_convert.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_serial.hpp"
+#include "core/robosd_stateflow.hpp"
 namespace robo {
 	namespace backend {
 
@@ -313,70 +314,306 @@ namespace robo {
 			action_s& goal_;
 			feedback_s& feedback_;
 		protected:
-			::robo::time_us_t  discovery_period_us = 500000;
+			::robo::time_us_t  discovery_period_us = 5000000;
 			
-			virtual bool agent_apply_action(commands _command) {
+			virtual bool agent_apply_action(const commands & _command) {
 				if (_command.local == commands::locals::sw2dirrect) {
 					return true;
 				}
 				else {
-					goal_.command = _command;
 					return false;
 				}
 			}
 
 			virtual void agent_uppdate_feedback(void) {
-				feedback_.status.actual = actual_status(goal_.command.local);
+
+				//feedback_.status.actual = actual_status(goal_.command.local);
 			}
 
-			bool exchabge_enabled(void);
-			bool configure_complete(void);
+			#if 0
+			enum class locals {
+				disabled = 0, // анент исключен из обмена
+				discovery = 1, //поиск исполнительного устройства
+				lost = 3, //обмен потерян
+				configure = 4, //
+				panic = 5,//устрйоство находится в аварии
+				dirrect = 6, //устройство работает под прямым управлдением системы управления верхнего уровня
+				stopped = 7, //устройство работает под автономным  управлдением
+				independed = 8, //устройство работает под автономным  управлдением
+				service = 9, //устройство работает под управлдением стороннего ПО
+			}  local;
+#endif		
+			static inline cstr locals_names[] = {
+				RT("disabled")
+				, RT("discovery")
+				, RT("lost")
+				, RT("configure")
+				, RT("panic")
+				, RT("dirrect")
+				, RT("stopped")
+				, RT("independed")
+				, RT("service")
+			};
 
+
+			void doTerminate(void) {
+				robo_errlog("\n\t\t---------------------%s is termibated and exit from mode %s -------------------- \n", display_alias(), locals_names[(int)feedback_.status.local]);
+				feedback_.status.local = statuses::locals::disabled;
+
+			}
+			friend class devnode;
+			class devnode;
+			devnode* actual_devnode = nullptr;
+			controller devcontroller;
+			class devnode : public controller::node {
+			protected:
+				devagent& dev;
+				devagent::feedback_s& feedback;
+				devagent::action_s& goal;
+				statuses::locals status;
+				virtual void onEnter(void) {
+					robo_warninglog("\n\t\t---------------------%s switch mode from '%s to '%s'--------------------- \n", dev.display_alias(), locals_names[(int)feedback.status.local], locals_names[(int)status]);
+					feedback.status.local = status;
+					dev.actual_devnode = this;
+				};
+				virtual result doEnter(void) { return result::success; };
+				virtual void onExecute(void) {};
+				virtual void doExecute(void) {};
+				virtual void onLeave(void) {};
+				virtual result doLeave(void) { return result::success; }
+				virtual void onFinish(void) { feedback.status.local = statuses::locals::disabled; dev.actual_devnode = nullptr;  };
+				virtual void onTerminate(void) { dev.doTerminate(); };
+				virtual void onIdle(void) {};
+			public:
+				devnode(devagent& _devagent, statuses::locals _status) :
+					dev(_devagent)
+					, status(_status)
+					, feedback(_devagent.feedback<devagent>())
+					, goal(_devagent.goal<devagent>())
+				{}
+				virtual ~devnode(void) {}
+			};
+			size_t incom_total=0;
+#if 0
+			virtual void discovery_begin(void) {
+
+				//Сначала найдем устройство в сети
+				create_discovery_quest(
+					//После нахождения переведем его в состояние конфигурации
+					var_post_quest(
+						RT("board.cmd")
+						, (int)burst::front::board::commands::configure
+						//Записываем переменные из ini файла в устройство
+						, post_startup_vars_quest(
+							RT("startup")
+							//Заканчиваем  конфигурацию устройства
+							, var_post_quest(
+								RT("board.cmd")
+								, (int)burst::front::board::commands::none
+								//Последний квест ждем состояния платы "ready"
+								, create_configure_quest(nullptr)
+							)
+						)
+
+					)			
+				);
+				::robo::quest::post();
+			}
+#endif
+			public:
+			void exchanhge_disable(void) {
+				robo::system::guard g__;
+				devcontroller.terminate();
+			}
+			void discovery_begin(void);
+			void poll(void) { 
+				devcontroller.run(); 
+			};
+			protected:
+			virtual void do_discovery_begin(void) {
+				goal_.command.remote = commands::remotes::stop;
+			}
+			virtual void do_discovery_complete(void);
+			virtual bool do_discovery_check(void) {
+				return trafic.incom.success.bytes.total - incom_total > 0;
+			};
+			virtual void do_discovery_refuse(void) {
+				exchanhge_disable();
+			}
+
+
+			virtual void do_configure_start(void) {
+				goal_.command.remote = commands::remotes::halt;
+			}
+			virtual bool do_configure_started(void) {
+				return feedback_.status.remote == statuses::remotes::configure;
+			}
+			virtual void on_configure_execute(void) {
+			}
+			virtual bool do_configure_execute(void) {
+				return ! configure_successed_;
+			}
+			virtual void do_configure_complete(void);
+			void configute_confirm(void) {
+				configure_successed_ = true;
+			}
+			virtual void configure_refuse(void) {
+				exchanhge_disable();
+			}
+			virtual void do_configure_finish(void) {
+				goal_.command.remote = commands::remotes::stop;
+			}
+			virtual bool do_configure_finished(void) {
+				return feedback_.status.remote == statuses::remotes::ready;
+			}
+
+			virtual void do_stop_request(void) {
+				goal_.command.remote = commands::remotes::stop;
+			}
+			virtual bool is_stopped(void) {
+				return feedback_.status.remote == statuses::remotes::ready;
+			}
+			virtual void do_stop_refuse(void) {
+				exchanhge_disable();
+			}
+			virtual void do_stop_success(void) {
+			}
+			private:
+
+			bool configure_successed_ = false;
+			friend class discovery_s;
+			class discovery_s : public devnode {
+				robo::time_us_t us;
+			protected:
+				virtual void onExecute(void) {
+					dev.discovery_begin();
+					us = robo::system::time_us();
+					robo_infolog("\n\t\t---------------------%s discovery start -------------------- \n", dev.display_alias());
+				};
+				virtual void doExecute(void) {
+					if (dev.do_discovery_check()) {
+						robo_infolog("\n\t\t---------------------%s discovery compleete -------------------- \n", dev.display_alias());
+						dev.do_discovery_complete();
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							robo_warninglog("\n\t\t---------------------%s discovery refuse -------------------- \n", dev.display_alias());
+							dev.do_discovery_refuse();
+						}
+					}
+				}
+				
+			public:
+				discovery_s(devagent& _devagent) : devnode(_devagent, statuses::locals::discovery) {}
+			} devdiscovery_;
+			friend class devconfigure_s;
+			class devconfigure_s : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_configure_start();
+					robo_infolog("\n\t\t---------------------%s configure request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.do_configure_started()) {
+						us = ::robo::system::time_us();
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.configure_refuse();
+							robo_warninglog("\n\t\t---------------------%s configure refuse -------------------- \n", dev.display_alias());
+						}
+						return result::wait;
+					}
+				};
+				virtual void onExecute(void) {
+					dev.on_configure_execute();
+					dev.configure_successed_ = false;
+					robo_infolog("\n\t\t---------------------%s configure start -------------------- \n", dev.display_alias());
+
+				};
+				
+				virtual void doExecute(void) {
+					if ( dev.do_configure_execute()) {
+						dev.do_configure_complete();
+						robo_infolog("\n\t\t---------------------%s configure compleete -------------------- \n", dev.display_alias());
+					}
+				}
+				devconfigure_s(devagent& _devagent) : devnode(_devagent, statuses::locals::configure) {}
+			} devconfigure_;
+			
+			friend class devstopped_s;
+			class devstopped_s : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s stopped request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped() ) {
+						robo_infolog("\n\t\t---------------------%s is stopped  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s stopped refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
+				virtual void onExecute(void) {
+					dev.do_stop_success();
+				};
+
+				virtual void doExecute(void) {
+				}
+				devstopped_s(devagent& _devagent) : devnode(_devagent, statuses::locals::stopped) {}
+			} devstopped_;
+
+			class devlost : public devnode {
+			public:
+				devlost(devagent& _devagent) : devnode(_devagent, statuses::locals::lost) {}
+			};
+
+			class devpanic : public devnode {
+			public:
+				devpanic(devagent& _devagent) : devnode(_devagent, statuses::locals::panic) {}
+			};
+
+			class devdirrect : public devnode {
+			public:
+				devdirrect(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+
+
+			class devindepended : public devnode {
+			public:
+				devindepended(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+			class devservice : public devnode {
+			public:
+				devservice(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+			protected:
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual bool do_start(void);
-			/*
-			#if ROBO_APP_MEXO_VAR_ENABLED == 1
-			quest* var_query_quest(quest* _owner, ::robo::cstr _var) {
-
-				::robo::string* sv = new ::robo::string(_var);
-
-				return ::robo::quest::create(
-					_owner,
-
-					[this, sv](::robo::quest* _quest) {
-
-						robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s - start query", this->alias(), sv->c_str());
-
-						if (!vars.query(sv->c_str(), [this, _quest, sv](varindex::ivar* _var, bool _result) {
-							if (_result) {
-								_quest->confirm();
-							}
-							else {
-								_quest->refuse();
-							}
-										})
-							) {
-							_quest->refuse();
-						};
-					}
-					, [this, sv](::robo::quest::result r)->robo::quest::reaction {
-
-						if (r == robo::quest::result::success) {
-							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: %s/%s  - success", this->alias(), sv->c_str());
-							delete sv;
-							return robo::quest::reaction::normal;
-						}
-						else {
-							robo_errlog("\t\tquest: %s/%s  - refused, canceled or termibated (%d) ", this->alias(), sv->c_str(), (int)r);
-							delete sv;
-							return robo::quest::reaction::terminate;
-						}
-					}
-					);
-			}
-			#endif*/
+			
 		public:
+			bool exchabge_enabled(void);
 			//статистика  трафика
 			itrafic trafic;
 			
@@ -392,7 +629,8 @@ namespace robo {
 			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
 			//тенкущий (вычисляемый) статус
-			statuses::actuals actual_status(commands::locals _command);
+			//statuses::locals actual_status(commands::locals _command);
+			 
 			//тенкущая команда
 			commands actual_command(void) { return goal_.command; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
@@ -411,21 +649,7 @@ namespace robo {
 				//goal_.
 				//feedback_.status.local = statuses::locals::ready;
 			};
-			void exchanhge_disable(void) {
-				feedback_.status.connection = statuses::connections::disabled;
-				stop();
-			}
-			virtual void on_configute_refuse(void) {
-				exchanhge_disable();
-			};
-			virtual void on_discovery_complete(void) {
-				feedback_.status.connection = statuses::connections::stable;
-				feedback_.status.actual = actual_status(goal_.command.local);
-			};
-			virtual void on_discovery_refuse(void) {
-				exchanhge_disable();
-			};
-
+#if 0
 			virtual  ::robo::quest* do_create_discovery_quest(void) {
 				using q = ::robo::quest;
 				return ::robo::quest::create(
@@ -458,7 +682,8 @@ namespace robo {
 					);
 
 			}
-
+#endif
+#if 0
 			::robo::quest* create_discovery_quest(::robo::quest* _owner) {
 				robo_infolog("====================================================================================\n\t\tquest: '%s discovery' is started) \n====================================================================================", this->display_alias());
 				return ::robo::quest::create(
@@ -475,7 +700,7 @@ namespace robo {
 						}
 						}
 				);				
-			}
+			}*/
 
 			::robo::quest* create_configure_quest(::robo::quest* _owner, ::robo::quest* _sema = nullptr) {
 				using q = ::robo::quest;
@@ -506,6 +731,7 @@ namespace robo {
 				);
 
 			}
+			#endif
 
 		};
 
