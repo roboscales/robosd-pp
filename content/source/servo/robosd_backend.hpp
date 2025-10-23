@@ -326,7 +326,7 @@ namespace robo {
 			}
 
 			virtual void agent_uppdate_feedback(void) {
-				feedback_.status.summary = actual_status(goal_.command.local);
+				feedback_.status.actual = actual_status(goal_.command.local);
 			}
 
 			bool exchabge_enabled(void);
@@ -392,34 +392,35 @@ namespace robo {
 			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
 			//тенкущий (вычисляемый) статус
-			statuses::summaries actual_status(commands::locals _command);
+			statuses::actuals actual_status(commands::locals _command);
 			//тенкущая команда
 			commands actual_command(void) { return goal_.command; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
 			
 			virtual bool check_configure_complete(void) {
-				switch (feedback_.status.summary) {
-				case statuses::summaries::ready:
-				case statuses::summaries::service:
-				case statuses::summaries::independed:
-				case statuses::summaries::dirrect:
+				switch (feedback_.status.remote) {
+				case statuses::remotes::ready:
+				case statuses::remotes::run:
 					return true;
 				default:
 					return false;
 				}
 			}
 			virtual void on_configute_complete(void) {
-				feedback_.status.local = statuses::locals::ready;
+
+				//goal_.
+				//feedback_.status.local = statuses::locals::ready;
 			};
 			void exchanhge_disable(void) {
-				feedback_.status.local = statuses::locals::disabled;
+				feedback_.status.connection = statuses::connections::disabled;
 				stop();
 			}
 			virtual void on_configute_refuse(void) {
 				exchanhge_disable();
 			};
 			virtual void on_discovery_complete(void) {
-				feedback_.status.local = statuses::locals::ready;
+				feedback_.status.connection = statuses::connections::stable;
+				feedback_.status.actual = actual_status(goal_.command.local);
 			};
 			virtual void on_discovery_refuse(void) {
 				exchanhge_disable();
