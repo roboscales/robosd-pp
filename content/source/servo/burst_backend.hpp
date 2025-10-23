@@ -246,7 +246,6 @@ namespace burst {
 			}
 			
 			template<typename T> quest* var_post_quest(::robo::cstr _var, const T & _value, quest* _owner, quest* _sema = nullptr) {
-#if 1
 				::robo::string* sv = new ::robo::string(_var);
 				T * vv = new T;
 				*vv = _value;
@@ -283,7 +282,6 @@ namespace burst {
 						})
 
 					);
-#endif
 			}
 
 			quest* var_post_quest(::robo::cstr _var, ::robo::cstr _value, quest* _owner,quest* _sema = nullptr) {

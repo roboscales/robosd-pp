@@ -228,7 +228,7 @@ namespace burst {
 						present_.command = front::board::commands::configure ;
 					} else{
 						reset_panic_(front::board::panics::bits::config);
-						present_.status = front::board::statuses::ready ;
+						present_.status = front::board::statuses::normal ;
 						slots_ref_.ready.execute();
 					}
 				} 
@@ -239,7 +239,7 @@ namespace burst {
 				slots_ref_.startup.execute();
 				if(slots_ref_.startup.isempty()){
 					reset_panic_(front::board::panics::bits::config);
-					present_.status = front::board::statuses::ready ;
+					present_.status = front::board::statuses::normal;
 					slots_ref_.ready.execute();
 				} 
 				break;
@@ -258,12 +258,12 @@ namespace burst {
 						present_.status = front::board::statuses::restart ;						
 					} else {
 						reset_panic_(front::board::panics::bits::config);
-						present_.status = front::board::statuses::ready ;
+						present_.status = front::board::statuses::normal;
 						slots_ref_.ready.execute();
 					}
 				}
 				break;
-			case front::board::statuses::ready:
+			case front::board::statuses::normal:
 				if(present_.command == front::board::commands::configure){
 					raise_panic_(front::board::panics::bits::config);
 					slots_ref_.halt.execute();

@@ -286,7 +286,6 @@ namespace robo {
 				virtual ~exchange(void);
 				virtual query_result first_query(robo_tran_t& _tran);
 			};
-			typedef common::devagent::state_s state_s;
 			typedef common::devagent::commands commands;
 			typedef common::devagent::statuses statuses;
 			typedef common::devagent::action_s action_s;
@@ -317,7 +316,7 @@ namespace robo {
 			::robo::time_us_t  discovery_period_us = 500000;
 			
 			virtual bool agent_apply_action(commands _command) {
-				if (_command == commands::sw2dirrect) {
+				if (_command.local == commands::locals::sw2dirrect) {
 					return true;
 				}
 				else {
@@ -327,7 +326,7 @@ namespace robo {
 			}
 
 			virtual void agent_uppdate_feedback(void) {
-				feedback_.status = actual_status(goal_.command);
+				feedback_.status.summary = actual_status(goal_.command.local);
 			}
 
 			bool exchabge_enabled(void);
@@ -393,27 +392,34 @@ namespace robo {
 			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
 			//тенкущий (вычисляемый) статус
-			statuses actual_status(commands _command);
+			statuses::summaries actual_status(commands::locals _command);
 			//тенкущая команда
 			commands actual_command(void) { return goal_.command; };
-			const state_s & actual_state(void) { return  feedback_.state; };
 			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
+			
 			virtual bool check_configure_complete(void) {
-				return feedback_.state.local == state_s::locals::configure;
+				switch (feedback_.status.summary) {
+				case statuses::summaries::ready:
+				case statuses::summaries::service:
+				case statuses::summaries::independed:
+				case statuses::summaries::dirrect:
+					return true;
+				default:
+					return false;
+				}
 			}
 			virtual void on_configute_complete(void) {
-				feedback_.state.local = state_s::locals::ready;
+				feedback_.status.local = statuses::locals::ready;
 			};
 			void exchanhge_disable(void) {
-				feedback_.state.local = state_s::locals::disabled;
-				feedback<robo::backend::devagent>().state.local = state_s::locals::disabled;
+				feedback_.status.local = statuses::locals::disabled;
 				stop();
 			}
 			virtual void on_configute_refuse(void) {
 				exchanhge_disable();
 			};
 			virtual void on_discovery_complete(void) {
-				feedback_.state.local = state_s::locals::configure;
+				feedback_.status.local = statuses::locals::ready;
 			};
 			virtual void on_discovery_refuse(void) {
 				exchanhge_disable();

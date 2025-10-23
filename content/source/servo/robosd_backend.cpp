@@ -315,31 +315,36 @@ namespace robo {
 				return rec;
 			}
 		}
-
-		devagent::statuses devagent::actual_status(commands _command) {
-			static const statuses tb[] =
+		using summaries = devagent::statuses::summaries;
+		summaries devagent::actual_status(commands::locals _command) {
+			static const summaries tb[] =
 			{
 				//icommand
-				//stop = 0,			sw2service = 1,		raise_fault = 2,	sw2independed = 3,	sw2dirrect = 4,		reset_fault = 5
-				//unknown
-				statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,	statuses::unknown,
-				//fault
-				statuses::fault,	statuses::fault,	statuses::fault,	statuses::fault,	statuses::fault,	statuses::busy,
+				//stop = 0,			sw2service = 1,		reset_panic = 2,	sw2independed = 3,		sw2dirrect = 4,		configure = 5,		halt = 6
+				//busy
+				summaries::busy,	summaries::busy,	summaries::busy,	summaries::busy,		summaries::busy,	summaries::busy,	summaries::busy,
+				//configure
+				summaries::busy,	summaries::trabl,	summaries::trabl,	summaries::trabl,		summaries::trabl,	summaries::configure, summaries::configure,
+				//panic
+				summaries::panic,	summaries::panic,	summaries::busy,	summaries::panic,		summaries::panic,	summaries::panic,	summaries::panic,
 				//ready
-				statuses::idle,		statuses::service,	statuses::busy,		statuses::independed,statuses::dirrect,	statuses::busy
+				summaries::ready,	summaries::service,	summaries::ready,	summaries::independed,	summaries::dirrect,	summaries::busy,	summaries::busy,
+				//run
+				summaries::busy,	summaries::service,	summaries::busy,	summaries::independed,	summaries::dirrect,	summaries::busy,	summaries::busy,
+				//unknown
+				summaries::unknown,	summaries::unknown,	summaries::unknown,	summaries::unknown,		summaries::unknown,	summaries::unknown, summaries::unknown
 			};
-			switch (feedback_.state.local) {
-			case state_s::locals::unknown:
-			return statuses::unknown;
-			case state_s::locals::disabled:
-			return statuses::disabled;
-			case state_s::locals::discovery:
-			case state_s::locals::configure:
-			return statuses::busy;
-			case state_s::locals::ready:
-			return tb[((int)feedback_.state.remote.status * 6) + (int)_command];
+			switch (feedback_.status.local) {
+			case statuses::locals::unknown:
+				return statuses::summaries::unknown;
+			case statuses::locals::disabled:
+				return statuses::summaries::disabled;
+			case statuses::locals::discovery:
+				return statuses::summaries::discovery;
+			case statuses::locals::lost:
+				return statuses::summaries::lost;
 			default:
-			return statuses::unknown;
+				return tb[((int)feedback_.status.remote * 6) + (int)_command];
 			}
 		}
 
@@ -827,7 +832,7 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				if (own_agent().feedback<devagent>().state.local != state_s::locals::discovery) {
+				if (own_agent().feedback<devagent>().status.local !=  statuses::locals::discovery) {
 					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 				}
 			}
@@ -873,11 +878,11 @@ namespace robo {
 		}
 
 		bool devagent::exchabge_enabled(void) {
-			return feedback_.state.local > state_s::locals::disabled; 
+			return feedback_.status.local > statuses::locals::disabled;
 		}
 		bool devagent::configure_complete(void) {
-			ROBO_LBREAKN(feedback_.state.local == state_s::locals::configure);
-			feedback_.state.local = state_s::locals::ready;
+			ROBO_LBREAKN( feedback_.status.summary == statuses::summaries::configure );
+			feedback_.status.local = statuses::locals::ready;
 			return true;
 		}
 
@@ -895,19 +900,19 @@ namespace robo {
 			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
 			if (tmp) {
-				feedback_.state.local = state_s::locals::discovery;
+				feedback_.status.local = statuses::locals::discovery;
 				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
 				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			}
 			else {
-				feedback_.state.local = state_s::locals::disabled;
+				feedback_.status.local = statuses::locals::disabled;
 			}
 			return true;
 		}
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			if (feedback_.state.local == state_s::locals::discovery) {
+			if (feedback_.status.local == statuses::locals::discovery) {
 				bus* b = find<bus>(bus_alias_);
 				bus_ref_.set_key(dev_id_.value);
 				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);

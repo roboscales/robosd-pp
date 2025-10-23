@@ -1,11 +1,7 @@
 #ifndef dev_front_hpp
 #define dev_front_hpp
 
-#ifdef ROBO_APP_BURST_SERVO_SIDE
 #include "servo/robosd_proto.hpp"
-#endif
-#ifdef ROBO_APP_BURST_SIDE
-#endif
 
 #include <stdint.h>
 
@@ -13,7 +9,7 @@ namespace burst {
 	namespace front {
 		namespace board {
 			enum class commands {none = 0,configure=1};
-			enum class statuses{ unknown = 0, startuped, configure, restart, ready};
+			enum class statuses{ unknown = 0, startuped, configure, restart, normal};
 
 			namespace panics {
 				struct bits {
@@ -65,33 +61,30 @@ namespace burst {
 				};
 			}
 			struct modes { enum { idle = 0 }; };
+
 			struct action_s {
 				#ifdef ROBO_APP_BURST_SERVO_SIDE
-				robo::common::devagent::action_s agent;
+				robo::common::devagent::action_s command;
 				#endif
+				#ifdef ROBO_APP_BURST_SIDE
+				robo::common::devagent::commands::remote command;
+				#endif
+
 				uint32_t mode;
 				bool action_actual;
 			};
 			struct feedback_s {
 				#ifdef ROBO_APP_BURST_SERVO_SIDE
-				robo::common::devagent::feedback_s agent;
+				robo::common::devagent::feedback_s status;
+				#endif
+				#ifdef ROBO_APP_BURST_SIDE
+					robo::common::devagent::statuses::remote status;
 				#endif
 				uint32_t mode;
 				bool fault;
 			};
-			/*
-			struct flow_command_ix {
-				enum {
-					echo = 1
-					, var = 2
-					, serial_1 = 3
-					, serial_2 = 4
-					, serial_m = 5
-					, snapshot = 6
-					, goal = 7
-				};
-			};
-			*/
+
+
 		}
 	}
 }
