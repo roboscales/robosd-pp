@@ -157,35 +157,6 @@ namespace robo {
 		}
 
 
-		void command::execute_(void) {
-			if (performer_ == nullptr) {
-				configure_();
-				ROBO_VBREAKN(performer_ != nullptr);
-			};
-			(*performer_)(*this);
-		}
-
-		void command::configure_(void) {
-			{
-				system::guard g__;
-				performer_ = performer::map_().find(id_);
-			}
-			ROBO_ALARMN_F(performer_ != nullptr, "command performer '%s' is't found", name_);
-		}
-
-		void command::configure(void) {
-			queue::post(&configure_delegat_, signal::performer::priority::hi);
-		}
-
-		void command::execute(void) {
-			queue::post(&execute_delegat_, signal::performer::priority::hi);
-		}
-
-		command::performer::map& command::performer::map_(void) {
-			static map instance_;
-			return instance_;
-		}
-
 		#if		ROBO_APP_MODULE_ENABLED == 1
 		bool vartable::ivar::query_(void) {
 			ROBO_LBREAKN(begin_hook());
@@ -422,7 +393,14 @@ namespace robo {
 				tuple_ = nullptr;
 			}
 		}
-
+		shared::action::action(
+			shared* _owner
+			, void (shared::* _member) (void)
+		)
+			: owner_(_owner)
+			, member_(_member)
+			, run_(*this, &action::execute_) {
+		}
 
 		void shared::action::attach(tuple* _tuple) {
 			bool need = false;
@@ -520,6 +498,18 @@ namespace robo {
 		shared::core& shared::core_(void) {
 			static core core__;
 			return core__;
+		}
+		shared::core::~core(void) {
+			tuple* tmp;
+			while ((tmp = pool_.pop()) != nullptr)
+				delete tmp;
+		}
+		bool shared::is_my_action_(void* _begin, void* _end) {
+			return _begin <= action_addr_begin_ && action_addr_end_ <= _end;
+		}
+
+		bool shared::is_my_feedback_(void* _begin, void* _end) {
+			return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
 		}
 	}
 
@@ -758,6 +748,105 @@ namespace robo {
 	void frontend::varindex::record::pop(void) {
 		ROBO_VBREAKN_F(current_()->branch(), RT("the current node has no parent "))
 		current_() = current_()->branch();
+	}
+
+	frontend::servo::servo(robo::cstr _name, robo::app::module& _module)
+		: robo::app::node(_name, &_module), reboot_termo_cmd_(*this){
+	}
+
+	bool frontend::servo::do_load(void) {
+		ROBO_LBREAKN(robo::app::node::do_load())
+		
+		#if ROBO_APP_TERMINAL_ENABLED
+		termoserial_name_.tryload(current_path(), RT("termo_serial"));
+		#endif
+		return true;
+	}
+
+	
+
+	bool frontend::servo::do_start(void) {
+		ROBO_LBREAKN(robo::app::node::do_start())
+
+#if ROBO_APP_TERMINAL_ENABLED
+		termoserial_ = robo::net::iserial::query<robo::net::iserial>(termoserial_name_.c_str());
+		if (termoserial_) {
+			robo::termo::itf::connect(termoserial_);
+
+			robo::termo::itf::set_prompt(robo::string(RT("%s>"), alias() ).ascii() );
+			robo::termo::itf::exec("w\n\r");
+			robo::termo::itf::new_line();
+		}
+#endif
+		return true;
+	}
+#if ROBO_APP_TERMINAL_ENABLED
+	frontend::servo::root_termo_cmd::root_termo_cmd(void)
+		: ::robo::termo::node(
+			RT8("servo")
+			, RT8("servo commands")
+			, RT8("servo <CR>")
+			, robo::termo::itf::root()
+		) {
+	}
+	bool frontend::servo::reboot_termo_cmd_s::begin(void) {
+		return servo_.reconfig_command(nullptr,nullptr);
+	}
+	bool frontend::servo::reboot_termo_cmd_s::parse_long_arg(const char* _arg, const char* _val) {
+		return true;
+	}
+	bool frontend::servo::reboot_termo_cmd_s::parse_arg(char _arg, const char* _val) {
+		return true;
+	}
+	frontend::servo::reboot_termo_cmd_s::reboot_termo_cmd_s(servo& _servo) 
+		: ::robo::termo::node(
+			"reconfig"
+			, " devagent reconfig  "//const char * note; 
+			, "reconfig <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+#endif
+	frontend::devagent::devagent(robo::cstr _name, robo::app::node& _owner, action_s& _goal, feedback_s& _feedback)
+		: app::node(_name, &_owner)
+		, goal_(_goal)
+		, feedback_(_feedback)
+		, devdiscovery_(*this)
+		, devstopped_(*this)
+		, devconfigure_(*this)
+	{
+	}
+	bool frontend::devagent::do_load(void) {
+		ROBO_LBREAKN(robo::app::node::do_load());
+		bool tmp;
+		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("ENABLED"), tmp));
+
+		if (tmp) {
+			//feedback_.status.connection = statuses::connections::discovery;
+			discovery_begin();
+			devcontroller.run();
+		}
+		return true;
+	}
+	void frontend::devagent::do_clean(void) {
+		robo::app::node::do_clean();
+	}
+	bool frontend::devagent::do_start(void) {
+		ROBO_LBREAKN(robo::app::node::do_start());
+		return true;
+	}
+	void   frontend::devagent::discovery_begin(void) {
+		robo::system::guard g__;
+		devcontroller.switchto(&devdiscovery_);
+		//incom_total = trafic.incom.success.bytes.total;
+	}
+	void   frontend::devagent::do_discovery_complete(void) {
+		devcontroller.switchto(&devconfigure_);
+	};
+	void  frontend::devagent::do_configure_complete(void) {
+		//configure_quest_ = nullptr;
+		devcontroller.switchto(&devstopped_);
 	}
 
 }

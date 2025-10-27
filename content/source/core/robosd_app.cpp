@@ -499,6 +499,9 @@ namespace robo {
 			backend::queue::poll();
 			backend::task::machine::execute();
 			#endif
+			#if ROBO_APP_TERMINAL_ENABLED
+			::robo::termo::itf::poll();
+			#endif
 		}
 
 		machine& machine::root() {

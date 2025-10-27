@@ -5,6 +5,10 @@
 namespace burst {
 	namespace backend {
 		class devagent : public robo::backend::devagent {
+		public:
+			typedef frontend::devagent::action_s action_s;
+			typedef frontend::devagent::feedback_s feedback_s;
+			typedef frontend::devagent::config_s config_s;
 		protected:
 			class varindex : public ::robo::backend::vartable {
 			public:
@@ -112,10 +116,8 @@ namespace burst {
 				virtual ~flow_serial(void);
 			} * * flow_serials_ = nullptr;
 			int flow_serials_count_ = 0;
-
 		protected:
 			typedef ::robo::quest quest;
-
 			static auto answer_(quest* _quest) {
 				return 
 					[_quest](varindex::ivar* _var, bool _result) {
@@ -515,16 +517,19 @@ namespace burst {
 					return nullptr;
 				}
 			};
-			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _sect) {
+			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _startup) {
+				auto& tmp = feedback<devagent>();
+				
+				ROBO_LBREAKN_F(tmp.dev.status == statuses::configure, RT("device % is't configured mode"), display_alias());
 				const size_t N = ROBO_STRING_BUFFER_SIZE;
 				robo::char_t keys[N];
 
-				robo::string startup;
+				//robo::string startup;
 
-				ROBO_LBREAKN_F(startup.load(current_path(), defaults_path(), _sect), "var's section %s for %s isn't found", _sect, display_alias());
+				//ROBO_LBREAKN_F(startup.load(current_path(), defaults_path(), _sect), "var's section %s for %s isn't found", _sect, display_alias());
 
 				size_t sz = 0;
-				::robo::system::ini::load_data(keys, N, startup.c_str(), nullptr, sz);
+				::robo::system::ini::load_data(keys, N, _startup, nullptr, sz);
 				ROBO_LBREAKN_F((sz < N - 2), "var's list for %s is oversized (%u)", display_alias(), sz);
 
 				robo::char_t* bg = keys;
@@ -534,7 +539,7 @@ namespace burst {
 						robo::cstr r = RT("#");
 						if (*bg != r[0]) {
 							robo::string value;
-							if (!value.load(startup, bg)) {
+							if (!value.load(_startup, bg)) {
 								return false;
 							}
 							else {
@@ -549,21 +554,21 @@ namespace burst {
 
 				return true;
 			}
-
-			quest* post_startup_vars_quest(robo::cstr _sect, quest* _owner, quest* _sema = nullptr) {
+		public:
+			quest* post_startup_vars_quest(robo::cstr _startup, quest* _owner, quest* _sema = nullptr) {
 
 				//todo
 				//список строк заканивается двумя нулями
 				quest* end_load = ::robo::quest::create(
 					_owner
 					, nullptr
-					, [this,_sect](::robo::quest::result _r)->robo::quest::reaction {
+					, [this, _startup](::robo::quest::result _r)->robo::quest::reaction {
 						if (_r == robo::quest::result::success) {
-							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'load startup var's ' for %s/%s  - success", display_alias(),_sect);
+							robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'load startup var's ' for %s/%s  - success", display_alias(), _startup);
 							return robo::quest::reaction::normal;
 						}
 						else {
-							robo_errlog("\t\tquest: 'load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sect, (int)_r);
+							robo_errlog("\t\tquest: 'load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _startup, (int)_r);
 							return robo::quest::reaction::terminate;
 						}
 					}
@@ -571,18 +576,18 @@ namespace burst {
 				quest* begin_load = ::robo::quest::create(
 					end_load
 					, _sema
-					, [this, _sect](::robo::quest::result _r)->robo::quest::reaction {
+					, [this, _startup](::robo::quest::result _r)->robo::quest::reaction {
 						if (_r == robo::quest::result::success) {
-							robo_detaillog(6, robo::log::mask::disabled, "\tquest: 'begin load startup var's ' for %s/%s  - success", display_alias(), _sect);
+							robo_detaillog(6, robo::log::mask::disabled, "\tquest: 'begin load startup var's ' for %s/%s  - success", display_alias(), _startup);
 							return robo::quest::reaction::normal;
 						}
 						else {
-							robo_errlog("\tquest: 'begin load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sect, (int)_r);
+							robo_errlog("\tquest: 'begin load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _startup, (int)_r);
 							return robo::quest::reaction::terminate;
 						}
 					}
 				);
-				if (!post_startup_vars_(end_load, begin_load, _sect)) {
+				if (!post_startup_vars_(end_load, begin_load, _startup)) {
 					begin_load->terminate();
 					if(_sema)
 						_sema->terminate();
@@ -593,9 +598,10 @@ namespace burst {
 				}
 
 			}
+		protected:
 			virtual bool do_load(void) {
-
 				ROBO_LBREAKN(robo::backend::devagent::do_load());
+				
 				if ( robo::ini::try_load(current_path(), defaults_path(), RT("flow_serial_count"), flow_serials_count_) ) {
 					if (flow_serials_count_ > 0) {
 						flow_serials_ = new flow_serial * [flow_serials_count_];
@@ -628,16 +634,12 @@ namespace burst {
 				}
 				robo::backend::devagent::do_clean();
 			}
-		protected:
-			//to do сделать иерархию
-			//typedef mexo::common::devagent::action_s action_s;
-			//typedef mexo::common::devagent::feedback_s feedback_s;
-			typedef robo::common::devagent::feedback_s feedback_s;
-			typedef robo::common::devagent::action_s action_s;
+			typedef robo::frontend::devagent::feedback_s feedback_s;
+			typedef robo::frontend::devagent::action_s action_s;
 			proto varproto;
 			varindex vars;
-			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback)
-				:robo::backend::devagent(_name, _boardagent, _goal, _feedback)
+			devagent(robo::cstr _name, robo::backend::boardagent& _boardagent, action_s& _goal, feedback_s& _feedback, frontend::devagent & _agent )
+				:robo::backend::devagent(_name, _boardagent, _goal, _feedback, _agent)
 				, echo_(*this)
 				, vars(*this, varproto, varindex::priority::hi, nullptr,0) {
 			}

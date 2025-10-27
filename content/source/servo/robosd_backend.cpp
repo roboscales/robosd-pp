@@ -295,16 +295,16 @@ namespace robo {
 		timer::~timer() {}
 		#if ROBO_APP_MODULE_ENABLED  == 1
 
-		devagent::devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback)
+		
+		devagent::devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback, frontend::devagent& _frontagent)
 			: app::node(_name, &_boardagent)
 			, boardagent_(_boardagent)
 			, bus_ref_(*this, 0)
 			, goal_(_goal)
 			, feedback_(_feedback)
-			, devdiscovery_(*this)
-			, devstopped_(*this)
-			, devconfigure_(*this)
+			, frontagent_(_frontagent)
 		{
+			frontagent_.setup_backend(this);
 		}
 
 		router::record* devagent::resolve(int _bus_id, robo_tran_header_p  _tran_header) {
@@ -319,19 +319,6 @@ namespace robo {
 				return rec;
 			}
 		}
-
-		void  devagent::discovery_begin(void) {
-			robo::system::guard g__;
-			devcontroller.switchto(&devdiscovery_);
-			incom_total = trafic.incom.success.bytes.total;
-		}
-		void  devagent::do_discovery_complete(void) {
-			devcontroller.switchto(&devconfigure_);
-		};
-		void devagent::do_configure_complete(void) {
-			devcontroller.switchto(&devstopped_);
-		}
-
 
 		devagent::stream::query_result devagent::query(devagent::stream::msg* _msg) {
 			if (exchabge_enabled()) {
@@ -459,7 +446,7 @@ namespace robo {
 		void bus::tick1sec_(void) {
 			trafic.tick1sec();
 			for (devagent::bus_ref* _ref = agents_.first(); _ref; _ref = _ref->next()) {
-				_ref->owner().trafic.tick1sec();
+				_ref->owner().feedback<devagent>().trafic.tick1sec();
 			}
 		}
 
@@ -648,18 +635,18 @@ namespace robo {
 				stream_->confirm(tran);
 				if (tran.status == ROBO_TRAN_REFUSE) {
 					if (tran.request == ROBO_TRAN_REQUEST_GET) {
-						stream_->own_agent().trafic.incom.refuse.inc(tran.size_actual);
+						stream_->own_agent().feedback<devagent>().trafic.incom.refuse.inc(tran.size_actual);
 					}
 					else {
-						stream_->own_agent().trafic.outcom.refuse.inc(tran.size_actual);
+						stream_->own_agent().feedback<devagent>().trafic.outcom.refuse.inc(tran.size_actual);
 					}
 				}
 				else {
 					if (tran.request == ROBO_TRAN_REQUEST_GET) {
-						stream_->own_agent().trafic.incom.success.inc(tran.size_actual);
+						stream_->own_agent().feedback<devagent>().trafic.incom.success.inc(tran.size_actual);
 					}
 					else {
-						stream_->own_agent().trafic.outcom.success.inc(tran.size_actual);
+						stream_->own_agent().feedback<devagent>().trafic.outcom.success.inc(tran.size_actual);
 					}
 				}
 			}
@@ -816,7 +803,7 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				if (own_agent().feedback<devagent>().status.local !=  statuses::locals::discovery) {
+				if (own_agent().goal<devagent>().command !=  commands::discovery) {
 					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 				}
 			}
@@ -862,14 +849,8 @@ namespace robo {
 		}
 
 		bool devagent::exchabge_enabled(void) {
-			return feedback_.status.local != statuses::locals::disabled;
+			return goal_.action != actions::disable;
 		}
-#if 0
-		bool devagent::configure_complete(void) {
-			ROBO_LBREAKN( feedback_.status.actual == statuses::actuals::configure );			
-			return true;
-		}
-#endif
 
 		bool devagent::do_load(void) {
 			ROBO_LBREAKN(app::node::do_load());
@@ -883,37 +864,27 @@ namespace robo {
 
 			ROBO_LBREAKN(ini::load(current_path(), defaults_path(),  RT("ENABLED"), tmp));
 
-			if (tmp) {
-				//feedback_.status.connection = statuses::connections::discovery;
-				discovery_begin();
-				devcontroller.run();
-				ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
-				ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
-			}
-			else {
-
-			}
+			ROBO_LBREAKN(bus_alias_.load(current_path(), defaults_path(),  RT("BUS_ALIAS")));
+			ROBO_LBREAKN(router_alias_.load(current_path(), defaults_path(), RT("ROUTER_ALIAS")));
 			return true;
 		}
 
 		bool devagent::do_start(void) {
 			ROBO_LBREAKN(app::node::do_start());
-			if (feedback_.status.local != statuses::locals::disabled) {
-				bus* b = find<bus>(bus_alias_);
-				bus_ref_.set_key(dev_id_.value);
-				//			robo::system::printf(RT("%s - bus: %s - %p "), alias(), bus_alias_.c_str(), (void*)b);
-				if (b) {
-					ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
-					dev_id_.bus = b->id();
-				}
-				else {
-					ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), display_alias(), dev_id_.value)
-				}
+			bus* b = find<bus>(bus_alias_);
+			bus_ref_.set_key(dev_id_.value);
 
-				router_ = find<router>(router_alias_);
-				ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), display_alias(), dev_id_.value);
-				robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
+			if (b) {
+				ROBO_LBREAKN(bus_ref_.attach_to(b->agents_));
+				dev_id_.bus = b->id();
 			}
+			else {
+				ROBO_LBREAK_F("bus is't found by name '%s' for  object '%s' (0x%x)", bus_alias_.c_str(), display_alias(), dev_id_.value)
+			}
+
+			router_ = find<router>(router_alias_);
+			ROBO_LBREAKN_F(router_ != nullptr, "router is't found by name '%s' for  object '%s' (0x%x)", router_alias_.c_str(), display_alias(), dev_id_.value);
+			robo_infolog("agent '%s' sucsess loaded with id (0x%x)", alias(), dev_id_.value);
 			return true;
 		}
 
@@ -1083,6 +1054,7 @@ namespace robo {
 		}
 
 		#endif
+
 		class loop : public robo::app::module {
 			loop(void)
 				: robo::app::module(RT("backend-loop")) {
@@ -1097,6 +1069,9 @@ namespace robo {
 			}
 			virtual void frontend_loop(void) {
 				::robo::frontend::queue::poll();				
+				#if ROBO_APP_TERMINAL_ENABLED
+				::robo::termo::itf::poll() ;
+				#endif
 			}
 			virtual bool do_start(void) {			
 				return true;

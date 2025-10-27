@@ -23,12 +23,13 @@ namespace robo {
 	class controller {
 	protected:
 		class base {
-		protected:
-			friend class controller;
+		public:
 			enum class result {
 				wait = false,
 				success = true
 			};
+		protected:
+			friend class controller;
 			enum class commands {
 				stop = 0,
 				start = 1

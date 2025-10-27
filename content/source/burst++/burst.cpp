@@ -253,7 +253,7 @@ namespace burst {
 						while(slots_ref_.startup_holder.delegats_.count()){
 							auto * tmp = slots_ref_.startup_holder.delegats_.pop();
 							ROBO_APP_ASSERT(tmp);
-							tmp->links_.first()->value().attach_to(slots_().startup_holder.delegats_);
+							tmp->links_.first()->value().attach_to(slots_().startup.delegats_);
 						}
 						present_.status = front::board::statuses::restart ;						
 					} else {

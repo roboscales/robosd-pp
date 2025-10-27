@@ -20,7 +20,9 @@
 #include "core/robosd_app.hpp"
 
 #include "core/robosd_tree.hpp"
-
+#include "terminal/robosd_termo.hpp"
+#include "core/robosd_stateflow.hpp"
+#include "net/robosd_net_trafic.hpp"
 namespace robo {
 	class ROBO_EXPORT dev_id_t {
 	public:
@@ -97,6 +99,197 @@ namespace robo {
 	class ROBO_EXPORT event :public signal {
 	public:
 		void raise();
+	};
+	class ROBO_EXPORT quest : protected signal::performer {
+	public:
+		enum class result { refuse, success, cancel, broke };
+		enum class reaction { normal, terminate };
+		using request_fabric = ::robo::delegat::autonum_fabric<void, quest*>;
+		using answer_fabric = ::robo::delegat::autonum_fabric< reaction, result >;
+
+		using request = request_fabric::ref;
+		using answer = answer_fabric::ref;
+	private:
+		typedef robo::list::unsorted<quest> list;
+		typedef list::ref ref;
+		int use_ = 0;
+		void  happyend_(void);
+		void  owned_refuse_(void);
+		void  owned_confirm_(void);
+
+		void release(void) {
+			ref* r = childs_.last();
+			while (r) {
+				quest* tmp = &(r->owner());
+				r = r->prev();
+				tmp->release();
+			}
+
+			if (use_ > 0) {
+				use_--;
+			}
+			else {
+				delete this;
+			}
+		}
+
+		class backend_core {
+			friend class quest;
+			list top_;
+			int counter_ = 0;
+			/*void inc(void) {
+				robo_infolog("\t\tbackend quest ++ (%d)", ++counter_);
+			}
+			void dec(void) {
+				robo_infolog("\t\tbackend quest -- (%d)", --counter_);
+			}*/
+			void request(void);
+			static backend_core& instance_(void);
+		};
+
+
+		class counter {
+			friend class quest;
+			int counter_ = 0;
+			void inc(void) {
+				robo_infolog("\t\t++ quest counter ++ (%d)", ++counter_);
+			}
+			void dec(void) {
+				robo_infolog("\t\t-- quest counter -- (%d)", --counter_);
+			}
+			static counter& instance_(void) {
+				static counter  instance__;
+				return instance__;
+			}
+		};
+		class frontend_core {
+			friend class quest;
+			list top_;
+			void request(void);
+			static frontend_core& instance_(void) {
+				static frontend_core  instance__;
+				return instance__;
+			}
+		};
+		friend class backend_core;
+		friend class frontend_core;
+
+		ref ref_;
+		ref sema_ref_;
+		ref top_ref_;
+		list childs_;
+		list owned_;
+		quest* owner_;
+		request* request_;
+		answer* answer_;
+		bool isfrontend_;
+		enum class status { none, run, confirm, refuse, discarde } status_ = status::none;
+		void post_answer_(status _status);
+		quest(
+			quest* _owner
+			, quest* _sema
+			, request* _request
+			, answer* _answer
+		);
+	protected:
+		virtual  void  operator ()(void);
+
+	public:
+		static quest* create(
+			quest* _owner
+			, quest* _sema
+			, answer* _answer
+			, request* _request = request_fabric::create([](quest* _q) {  _q->confirm();  })
+		) {
+			if (_owner != nullptr) {
+				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
+				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(), nullptr);
+			}
+			return new quest(
+				_owner
+				, _sema
+				, _request
+				, _answer
+			);
+		}
+		static quest* create(
+			quest* _owner
+			, quest* _sema
+			, lambda<reaction(result)> _answer
+			, lambda<void(quest*)> _request = [](quest* _q) {  _q->confirm();  }
+		) {
+			return create(
+				_owner
+				, _sema
+				, answer_fabric::create(_answer)
+				, request_fabric::create(_request)
+			);
+		}
+
+		template <class C> static quest* create(
+			quest* _owner
+			, quest* _sema
+			, C& _instance
+			, reaction(C::* _answer) (result)
+			, void(C::* _request)(quest*)
+		) {
+			return create(
+				_owner
+				, _sema
+				, answer_fabric::create(_instance, _answer)
+				, request_fabric::create(_instance, _request)
+			);
+		}
+		virtual ~quest(void) {
+			ref* r = childs_.last();
+			while (r) {
+				quest* tmp = &(r->owner());
+				r = r->prev();
+				tmp->ref_.dettach();
+				tmp->top_ref_.dettach();
+				tmp->owner_ = nullptr;
+			}
+
+			while ((r = owned_.last()) != nullptr) {
+				quest* tmp = &(r->owner());
+				if (tmp->status_ == status::confirm) {
+					tmp->happyend_();
+				}
+				else {
+					tmp->terminate();
+				}
+			}
+
+			if (answer_) {
+				switch (status_) {
+				case status::confirm:
+					(*answer_)(result::success);
+					break;
+				case status::refuse:
+					(*answer_)(result::refuse);
+					break;
+				case status::run:
+					(*answer_)(result::broke);
+					break;
+				case status::none:
+					(*answer_)(result::cancel);
+					break;
+				case status::discarde:
+					break;
+					//	(*answer_)(result::cancel);
+						//} else if()
+				}
+				answer_->dettach();
+			}
+			if (request_) {
+				request_->dettach();
+			}
+			counter::instance_().dec();
+		}
+		static void post(void);
+		void confirm(void);
+		void refuse(void);
+		void terminate(void);
 	};
 
 	
@@ -182,52 +375,6 @@ namespace robo {
 			}
 		};
 
-
-		class ROBO_EXPORT command {
-		public:
-			class ROBO_EXPORT  performer {
-				friend class command;
-			public:
-				typedef list::unique <performer, int> map;
-				typedef map::ref ref;
-			private:
-				ref ref_;
-				static map& map_(void);
-			public:
-				virtual  void  operator ()(command& _command) = 0;
-				performer(cstr _name) : ref_(*this, hash(_name)) {
-					ROBO_ALARMN(ref_.attach_to(map_()));;
-				}
-				virtual ~performer(void) {};
-			};
-
-			template <class C> class ROBO_EXPORT member
-				: public  delegat::member < performer, C, void > {
-			public:
-				member(C* _instance, void (C::* _member) (void))
-					: delegat::member < performer, C, void, command&  >(_instance, _member) {}
-			};
-
-		private:
-			performer* performer_ = nullptr;
-			signal::performer* confirm_;
-			signal::owned::member<command> execute_delegat_;
-			signal::owned::member<command> configure_delegat_;
-			void execute_(void);
-			void configure_(void);
-			int id_;
-			cstr name_;
-		public:
-			void configure(void);
-			void execute(void);
-			command(cstr _name, signal::performer* _confirm = nullptr)
-				: confirm_(_confirm)
-				, execute_delegat_(*this, &command::execute_)
-				, configure_delegat_(*this, &command::configure_)
-				, id_(hash(_name))
-				, name_(_name) {}
-		};
-
 		class shared {
 		public:
 			typedef robo::list::unsorted<shared> list;
@@ -261,10 +408,7 @@ namespace robo {
 				action(
 					shared* _owner
 					, void (shared::* _member) (void)
-				)
-					: owner_(_owner)
-					, member_(_member)
-					, run_(*this, &action::execute_) {}
+				);
 
 				void attach(tuple* _tuple);
 			};
@@ -279,22 +423,13 @@ namespace robo {
 				void apply_action_(void* _begin, void* _end, signal::performer* _on_apply_action);
 				void update_feedback_(void* _begin, void* _end, signal::performer* _on_update_feedback_);
 				void exchange_(void* _begin, void* _end, signal::performer* _on_update_feedback_);
-				~core(void) {
-					tuple* tmp;
-					while ((tmp = pool_.pop()) != nullptr)
-						delete tmp;
-				}
-
+				~core(void);
 			};
 
 			static core& core_(void);
-			bool is_my_action_(void* _begin, void* _end) {
-				return _begin <= action_addr_begin_ && action_addr_end_ <= _end;
-			}
+			bool is_my_action_(void* _begin, void* _end);
 		
-			bool is_my_feedback_(void* _begin, void* _end) {
-				return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
-			}
+			bool is_my_feedback_(void* _begin, void* _end);
 
 		protected:
 			virtual void apply_action(void) = 0;
@@ -336,14 +471,6 @@ namespace robo {
 			virtual ~shared(void) {}
 		};
 
-
-
-
-		/*const struct {
-			const cstr u8 = RT("u8");
-			const cstr u16 = RT("u16");
-			const cstr u32 = RT("u32");
-		} type_names;*/
 		namespace varindex {
 			
 			class node : public ::robo::tree::item {
@@ -610,204 +737,417 @@ namespace robo {
 		};
 
 		class ROBO_EXPORT servo : public robo::app::node {
+			virtual bool reconfig_command(const char* _arg, const char* _val) { return false;  };
+			#if ROBO_APP_TERMINAL_ENABLED
+			robo::string termoserial_name_;
+			robo::net::iserial* termoserial_ = nullptr;
+			class root_termo_cmd : public ::robo::termo::node {
+			public:
+				root_termo_cmd(void);
+			} root_termo_cmd_;
+				
+				class reboot_termo_cmd_s : public ::robo::termo::node {
+					servo & servo_;
+				protected:
+					virtual bool begin(void);
+					virtual bool parse_long_arg(const char* _arg, const char* _val);
+					virtual bool parse_arg(char _arg, const char* _val);
+				public:
+					reboot_termo_cmd_s(servo& _servo);
+				} reboot_termo_cmd_;
+			#endif
+
 		public:
-			servo(robo::cstr _name, robo::app::module& _module)
-				: robo::app::node(_name, &_module) {}
+			servo(robo::cstr _name, robo::app::module& _module);
+		protected:
+			virtual bool do_load(void);
+			virtual bool do_start(void);
 		};
 
 		#endif
+
+		class devagent : public app::node {
+			app::node* backend_ = nullptr;
+		public:
+			void post_to(void);
+			typedef robo::devagent::common::action_s action_s;
+			struct common {
+				typedef robo::devagent::common::feedback_s feedback_s;
+			};
+			struct commands {
+				using locals = ::robo::devagent::locals::commands;
+				using remotes = ::robo::devagent::remotes::commands;
+			};
+			struct statuses {
+				using locals = ::robo::devagent::locals::statuses;
+				using remotes = ::robo::devagent::remotes::statuses;
+			};
+			struct feedback_s {
+				common::feedback_s dev;
+				robo::net::trafic_s trafic;
+			};
+
+			typedef robo::devagent::common::action_s action_s;
+			typedef robo::devagent::common::config_s config_s;
+
+			template <typename F> typename F::feedback_s& feedback(void) {
+				return reinterpret_cast <typename F::feedback_s&>(feedback_);
+			}
+
+			template <typename A> typename A::action_s& goal(void) {
+				return reinterpret_cast <typename A::action_s&> (goal_);
+			}
+
+			template <typename A> typename A::action_s& action(void) {
+				return reinterpret_cast <typename A::action_s&> (action_);
+			}
+
+		private:
+			action_s& action;
+			action_s& goal;
+			feedback_s& feedback_;
+			statuses::locals status_ = statuses::locals::disabled;
+		protected:
+			::robo::time_us_t  discovery_period_us = 5000000;
+
+
+#if 0
+			enum class locals {
+				disabled = 0, // анент исключен из обмена
+				discovery = 1, //поиск исполнительного устройства
+				lost = 3, //обмен потерян
+				configure = 4, //
+				panic = 5,//устрйоство находится в аварии
+				dirrect = 6, //устройство работает под прямым управлдением системы управления верхнего уровня
+				stopped = 7, //устройство работает под автономным  управлдением
+				independed = 8, //устройство работает под автономным  управлдением
+				service = 9, //устройство работает под управлдением стороннего ПО
+			}  local;
+#endif		
+			static inline cstr locals_names[] = {
+				RT("disabled")
+				, RT("startup")
+				, RT("discovery")
+				, RT("lost")
+				, RT("configure")
+				, RT("panic")
+				, RT("dirrect")
+				, RT("stopped")
+				, RT("independed")
+				, RT("service")
+			};
+
+
+			void doTerminate(void) {
+				robo_errlog("\n\t\t---------------------%s is termibated and exit from mode %s -------------------- \n", display_alias(), locals_names[(int)status_]);
+				status_ = statuses::locals::disabled;
+			}
+			friend class devnode;
+			class devnode;
+			devnode* actual_devnode = nullptr;
+			controller devcontroller;
+			
+			class devnode : public controller::node {
+			protected:
+				devagent& dev;
+				devagent::feedback_s& feedback;
+				devagent::action_s& goal;
+				statuses::locals status;
+
+				virtual void onEnter(void) {
+					robo_warninglog("\n\t\t---------------------%s switch mode from '%s to '%s'--------------------- \n", dev.display_alias(), locals_names[(int)dev.status_], locals_names[(int)status]);
+					dev.actual_devnode = this;
+					dev.status_ = status;
+				};
+				virtual result doEnter(void) { return result::success; };
+				virtual void onExecute(void) {};
+				virtual void doExecute(void) {};
+				virtual void onLeave(void) {};
+				virtual result doLeave(void) { return result::success; }
+				virtual void onFinish(void) { dev.actual_devnode = nullptr; };
+				virtual void onTerminate(void) { dev.doTerminate(); };
+				virtual void onIdle(void) {};
+			public:
+				devnode( devagent& _devagent, statuses::locals _status) :
+					dev(_devagent)
+					, status(_status)
+					, feedback(_devagent.feedback<devagent>())
+					, goal(_devagent.goal<devagent>())
+				{}
+				virtual ~devnode(void) {}
+			};
+			size_t incom_total = 0;
+		public:
+			statuses::locals status(void) { return status_; };
+			void exchanhge_disable(void) {
+				robo::system::guard g__;
+				devcontroller.terminate();
+			}
+			void discovery_begin(void);
+			void poll(void) {
+				devcontroller.run();
+			};
+		protected:
+			virtual void do_discovery_begin(void) {
+				action_
+				goal_.command = commands::locals::discovery;
+				goal_.action = commands::remotes::stop ;
+				incom_total = feedback_.trafic.incom.success.bytes.total;
+			}
+			virtual void do_discovery_complete(void);
+			virtual bool do_discovery_check(void) {
+				return feedback_.trafic.incom.success.bytes.total - incom_total > 0;
+			};
+			virtual void do_discovery_refuse(void) {
+				exchanhge_disable();
+			}
+
+
+			virtual void do_configure_start(void) {
+				goal_.action = commands::remotes::halt;
+			}
+			virtual bool do_configure_started(void) {
+				return feedback_.dev.status == statuses::remotes::configure;
+			}
+			virtual robo::quest* configure_expansion_create(robo::quest* _quest) {
+				return _quest;
+			}
+
+			virtual void on_configure_execute(void) {
+				//configure_quest_ = 
+				//::robo::quest::create(
+				configure_expansion_create(
+					::robo::quest::create(
+						nullptr
+						, nullptr
+						, [this](::robo::quest::result _r)->robo::quest::reaction {
+							if (_r == robo::quest::result::success) {
+								//robo_detaillog(6, robo::log::mask::disabled, "\t\tquest: 'load startup var's ' for %s/%s  - success", display_alias(), _sect);
+								configute_confirm();
+								return robo::quest::reaction::normal;
+							}
+							else {
+								//robo_errlog("\t\tquest: 'load startup var's' for  %s/%s  - refused, canceled or termibated (%d) ", display_alias(), _sect, (int)_r);
+								configure_refuse();
+								return robo::quest::reaction::terminate;
+							}
+						}
+					)
+				);
+				//, nullptr
+				//, nullptr
+				//);
+				quest::post();
+				//if (configure_quest_) {
+					//configure_quest_->confirm();
+				//}
+			}
+			virtual devnode::result do_configure_execute(void) {
+				return  configure_status_;
+			}
+			virtual void do_configure_complete(void);
+			void configute_confirm(void) {
+				goal_.action = commands::remotes::stop;
+				configure_status_ = devnode::result::success;
+			}
+			virtual void configure_refuse(void) {
+				exchanhge_disable();
+			}
+
+			virtual void do_stop_request(void) {
+				goal_.action = commands::remotes::stop;
+			}
+			virtual bool is_stopped(void) {
+				return feedback_.dev.status == statuses::remotes::ready;
+			}
+			virtual void do_stop_refuse(void) {
+				exchanhge_disable();
+			}
+			virtual void do_stop_success(void) {
+			}
+			commands::locals local_command_old_ = commands::locals::none;
+			void confirm_command(void) {
+
+			}
+			virtual void do_check_command(void) {
+				if (local_command_old_ != goal_.command) {
+					local_command_old_ = goal_.command;
+					switch (local_command_old_) {
+					case commands::locals::stop:
+					case commands::locals::reset_panic:
+					case commands::locals::sw2dirrect:
+					case commands::locals::sw2independed:
+					case commands::locals::sw2service:
+						break;
+
+					case commands::locals::halt:
+						devcontroller.switchto(&devconfigure_);
+						break;
+					default:
+						break;
+						//common::devagent::commands::locals::none;
+					}
+				}
+			}
+		public:
+			void setup_backend(app::node* _backend) { backend_ = _backend; };
+		protected:
+			app::node * backend(void) {
+				return backend_	;
+			}
+		private:
+
+			devnode::result configure_status_ = devnode::result::wait;
+			friend class discovery_s;
+			class discovery_s : public devnode {
+				robo::time_us_t us;
+			protected:
+				virtual void onExecute(void) {
+					dev.do_discovery_begin();
+					us = robo::system::time_us();
+					robo_infolog("\n\t\t---------------------%s discovery start -------------------- \n", dev.display_alias());
+				};
+				virtual void doExecute(void) {
+					if (dev.do_discovery_check()) {
+						robo_infolog("\n\t\t---------------------%s discovery compleete -------------------- \n", dev.display_alias());
+						dev.do_discovery_complete();
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							robo_warninglog("\n\t\t---------------------%s discovery refuse -------------------- \n", dev.display_alias());
+							dev.do_discovery_refuse();
+						}
+					}
+				}
+
+			public:
+				discovery_s(devagent& _devagent) : devnode(_devagent, statuses::locals::discovery) {}
+			} devdiscovery_;
+			friend class devconfigure_s;
+			class devconfigure_s : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_configure_start();
+					robo_infolog("\n\t\t---------------------%s configure request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.do_configure_started()) {
+						us = ::robo::system::time_us();
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.configure_refuse();
+							robo_warninglog("\n\t\t---------------------%s configure refuse -------------------- \n", dev.display_alias());
+						}
+						return result::wait;
+					}
+				};
+				virtual void onExecute(void) {
+					dev.on_configure_execute();
+					dev.configure_status_ = devnode::result::wait;
+					robo_infolog("\n\t\t---------------------%s configure start -------------------- \n", dev.display_alias());
+
+				};
+
+				virtual void doExecute(void) {
+					if (dev.do_configure_execute() == result::success) {
+						dev.do_configure_complete();
+						robo_infolog("\n\t\t---------------------%s configure compleete -------------------- \n", dev.display_alias());
+					}
+				}
+				devconfigure_s(devagent& _devagent) : devnode(_devagent, statuses::locals::configure) {}
+			} devconfigure_;
+
+			friend class devstopped_s;
+			class devstopped_s : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s stopped request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped()) {
+						robo_infolog("\n\t\t---------------------%s is stopped  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s stopped refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
+				virtual void onExecute(void) {
+					dev.do_stop_success();
+				};
+
+				virtual void doExecute(void) {
+					dev.do_check_command();
+				}
+				devstopped_s(devagent& _devagent) : devnode(_devagent, statuses::locals::stopped) {}
+			} devstopped_;
+
+			class devlost : public devnode {
+			public:
+				devlost(devagent& _devagent) : devnode(_devagent, statuses::locals::lost) {}
+			};
+
+			class devpanic : public devnode {
+			public:
+				devpanic(devagent& _devagent) : devnode(_devagent, statuses::locals::panic) {}
+			};
+
+			class devdirrect : public devnode {
+			public:
+				devdirrect(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+
+
+			class devindepended : public devnode {
+			public:
+				devindepended(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+			class devservice : public devnode {
+			public:
+				devservice(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
+			};
+
+		protected:
+
+			virtual bool do_load(void);
+			virtual void do_clean(void);
+			virtual bool do_start(void);
+
+		public:
+
+			devagent(robo::cstr _name, robo::app::node & _owner, action_s& _goal, feedback_s& _feedback);
+
+			virtual bool check_configure_complete(void) {
+				switch (feedback_.dev.status) {
+				case statuses::remotes::ready:
+				case statuses::remotes::run:
+					return true;
+				default:
+					return false;
+				}
+			}
+			virtual void on_configute_complete(void) {
+			};
+		};
 	}
 	//todo 
-	class ROBO_EXPORT quest :  protected signal::performer {
-	public:
-		enum class result { refuse, success, cancel, broke };
-		enum class reaction { normal, terminate};
-		using request_fabric = ::robo::delegat::autonum_fabric<void, quest*>;
-		using answer_fabric = ::robo::delegat::autonum_fabric< reaction, result >;
-
-		using request = request_fabric::ref ;
-		using answer = answer_fabric::ref ;
-	private:
-		typedef robo::list::unsorted<quest> list;
-		typedef list::ref ref;
-		int use_ = 0;
-		void  happyend_(void);
-		void  owned_refuse_(void);
-		void  owned_confirm_(void);
-
-		void release(void) {
-			ref* r = childs_.last();
-			while (r) {
-				quest* tmp = &(r->owner());
-				r = r->prev();
-				tmp->release();
-			}
-
-			if (use_ > 0) {
-				use_--;
-			}
-			else {
-				delete this;
-			}
-		}
-		
-		class backend_core {
-			friend class quest;
-			list top_;
-			int counter_=0;
-			/*void inc(void) {
-				robo_infolog("\t\tbackend quest ++ (%d)", ++counter_);
-			}
-			void dec(void) {
-				robo_infolog("\t\tbackend quest -- (%d)", --counter_);
-			}*/
-			void request(void);
-			static backend_core& instance_(void);
-		};
-		
-
-		class counter {
-			friend class quest;
-			int counter_ = 0;
-			void inc(void) {
-				robo_infolog("\t\t++ quest counter ++ (%d)", ++counter_);
-			}
-			void dec(void) {
-				robo_infolog("\t\t-- quest counter -- (%d)", --counter_);
-			}
-			static counter& instance_(void) {
-				static counter  instance__;
-				return instance__;
-			}
-		};
-		class frontend_core {
-			friend class quest;
-			list top_;
-			void request(void);
-			static frontend_core& instance_(void) {
-				static frontend_core  instance__;
-				return instance__;
-			}
-		};
-		friend class backend_core;
-		friend class frontend_core;
-
-		ref ref_;
-		ref sema_ref_;
-		ref top_ref_;
-		list childs_;
-		list owned_;
-		quest* owner_;
-		request* request_;
-		answer* answer_;
-		bool isfrontend_;
-		enum class status { none, run, confirm, refuse, discarde } status_ = status::none;
-		void post_answer_(status _status);
-		quest(
-			quest* _owner
-			, quest* _sema
-			, request* _request
-			, answer* _answer
-		);
-	protected:
-		virtual  void  operator ()(void);
-
-	public:
-		static quest* create(
-			quest* _owner
-			, quest* _sema
-			, answer* _answer
-			, request* _request =  request_fabric::create( [](quest* _q) {  _q->confirm();  } )
-		) {
-			if (_owner != nullptr) {
-				ROBO_BREAKN(_owner->status_ == status::none, nullptr);
-				ROBO_BREAKN(_owner->isfrontend_ == robo::system::env::is_frontend(), nullptr);
-			}
-			return new quest(
-				_owner
-				, _sema
-				, _request
-				, _answer
-			);
-		}
-		static quest* create(
-			quest* _owner
-			, quest* _sema
-			, lambda<reaction(result)> _answer
-			, lambda<void(quest*)> _request = [](quest* _q) {  _q->confirm();  }
-		) {
-			return create(
-				_owner
-				, _sema
-				, answer_fabric::create(_answer)
-				, request_fabric::create(_request)
-			);
-		}
-
-		template <class C> static quest* create(
-			quest* _owner
-			, quest* _sema
-			, C & _instance
-			, reaction (C::* _answer) (result)
-			, void(C::* _request)(quest *)
-		) {
-			return create(
-				_owner
-				, _sema
-				, answer_fabric::create(_instance, _answer)
-				, request_fabric::create(_instance, _request)
-			);
-		}
-		virtual ~quest(void) {
-			ref* r = childs_.last();
-			while (r) {
-				quest* tmp = &(r->owner());
-				r = r->prev();
-				tmp->ref_.dettach();
-				tmp->top_ref_.dettach();
-				tmp->owner_ = nullptr;
-			}
-
-			while ( (r = owned_.last())!=nullptr ) {
-				quest* tmp = &(r->owner());
-				if (tmp->status_ == status::confirm) {
-					tmp->happyend_();
-				}
-				else {
-					tmp->terminate();
-				}
-			}
-
-			if (answer_) {
-				switch (status_) {
-				case status::confirm:
-					(*answer_)(result::success);
-					break;
-				case status::refuse:
-					(*answer_)(result::refuse);
-					break;
-				case status::run:
-					(*answer_)(result::broke);
-					break;
-				case status::none:
-					(*answer_)(result::cancel);
-					break;
-				case status::discarde:
-					break;
-				//	(*answer_)(result::cancel);
-					//} else if()
-				}
- 				answer_->dettach();
-			}
-			if (request_) {
-				request_->dettach();
-			}
-			counter::instance_().dec();
-		}
-		static void post(void);
-		void confirm(void);
-		void refuse(void);
-		void terminate(void);
-	};
 }
 #endif

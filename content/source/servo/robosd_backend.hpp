@@ -5,14 +5,13 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_app.hpp"
 #include "core/robosd_tran.h"
-#include "core/robosd_tran.h"
 #include "net/robosd_net_trafic.hpp"
 #include "core/robosd_tran.h"
 #include "core/robosd_ini.hpp"
 #include "core/robosd_convert.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_serial.hpp"
-#include "core/robosd_stateflow.hpp"
+
 namespace robo {
 	namespace backend {
 
@@ -163,7 +162,7 @@ namespace robo {
 		public:
 			typedef  ::robo::list::sorted<devagent, int> bus_index;
 			typedef  bus_index::ref bus_ref;
-			
+
 			class ROBO_EXPORT stream : public app::node {
 			public:
 
@@ -287,11 +286,12 @@ namespace robo {
 				virtual ~exchange(void);
 				virtual query_result first_query(robo_tran_t& _tran);
 			};
-			typedef common::devagent::commands commands;
-			typedef common::devagent::statuses statuses;
-			typedef common::devagent::action_s action_s;
-			typedef common::devagent::feedback_s feedback_s;
-			typedef common::devagent::config_s config_s;
+			typedef frontend::devagent::commands::locals commands;
+			typedef frontend::devagent::commands::remotes actions;
+			typedef frontend::devagent::statuses::remotes statuses;
+			typedef frontend::devagent::action_s action_s;
+			typedef frontend::devagent::feedback_s feedback_s;
+			typedef frontend::devagent::config_s config_s;
 			template <typename F> typename F::feedback_s & feedback(void) {
 				return reinterpret_cast <typename F::feedback_s&>(feedback_);
 			}
@@ -308,16 +308,14 @@ namespace robo {
 			string bus_alias_;
 			string router_alias_;
 			router* router_ = nullptr;
-			//state_s actual_state_;
 			stream::list streams_;
-			//commands actual_command_ = commands::stop;
 			action_s& goal_;
 			feedback_s& feedback_;
+
 		protected:
-			::robo::time_us_t  discovery_period_us = 5000000;
 			
 			virtual bool agent_apply_action(const commands & _command) {
-				if (_command.local == commands::locals::sw2dirrect) {
+				if (_command == commands::sw2dirrect) {
 					return true;
 				}
 				else {
@@ -330,292 +328,14 @@ namespace robo {
 				//feedback_.status.actual = actual_status(goal_.command.local);
 			}
 
-			#if 0
-			enum class locals {
-				disabled = 0, // анент исключен из обмена
-				discovery = 1, //поиск исполнительного устройства
-				lost = 3, //обмен потерян
-				configure = 4, //
-				panic = 5,//устрйоство находится в аварии
-				dirrect = 6, //устройство работает под прямым управлдением системы управления верхнего уровня
-				stopped = 7, //устройство работает под автономным  управлдением
-				independed = 8, //устройство работает под автономным  управлдением
-				service = 9, //устройство работает под управлдением стороннего ПО
-			}  local;
-#endif		
-			static inline cstr locals_names[] = {
-				RT("disabled")
-				, RT("discovery")
-				, RT("lost")
-				, RT("configure")
-				, RT("panic")
-				, RT("dirrect")
-				, RT("stopped")
-				, RT("independed")
-				, RT("service")
-			};
+		protected:
 
-
-			void doTerminate(void) {
-				robo_errlog("\n\t\t---------------------%s is termibated and exit from mode %s -------------------- \n", display_alias(), locals_names[(int)feedback_.status.local]);
-				feedback_.status.local = statuses::locals::disabled;
-
-			}
-			friend class devnode;
-			class devnode;
-			devnode* actual_devnode = nullptr;
-			controller devcontroller;
-			class devnode : public controller::node {
-			protected:
-				devagent& dev;
-				devagent::feedback_s& feedback;
-				devagent::action_s& goal;
-				statuses::locals status;
-				virtual void onEnter(void) {
-					robo_warninglog("\n\t\t---------------------%s switch mode from '%s to '%s'--------------------- \n", dev.display_alias(), locals_names[(int)feedback.status.local], locals_names[(int)status]);
-					feedback.status.local = status;
-					dev.actual_devnode = this;
-				};
-				virtual result doEnter(void) { return result::success; };
-				virtual void onExecute(void) {};
-				virtual void doExecute(void) {};
-				virtual void onLeave(void) {};
-				virtual result doLeave(void) { return result::success; }
-				virtual void onFinish(void) { feedback.status.local = statuses::locals::disabled; dev.actual_devnode = nullptr;  };
-				virtual void onTerminate(void) { dev.doTerminate(); };
-				virtual void onIdle(void) {};
-			public:
-				devnode(devagent& _devagent, statuses::locals _status) :
-					dev(_devagent)
-					, status(_status)
-					, feedback(_devagent.feedback<devagent>())
-					, goal(_devagent.goal<devagent>())
-				{}
-				virtual ~devnode(void) {}
-			};
-			size_t incom_total=0;
-#if 0
-			virtual void discovery_begin(void) {
-
-				//Сначала найдем устройство в сети
-				create_discovery_quest(
-					//После нахождения переведем его в состояние конфигурации
-					var_post_quest(
-						RT("board.cmd")
-						, (int)burst::front::board::commands::configure
-						//Записываем переменные из ini файла в устройство
-						, post_startup_vars_quest(
-							RT("startup")
-							//Заканчиваем  конфигурацию устройства
-							, var_post_quest(
-								RT("board.cmd")
-								, (int)burst::front::board::commands::none
-								//Последний квест ждем состояния платы "ready"
-								, create_configure_quest(nullptr)
-							)
-						)
-
-					)			
-				);
-				::robo::quest::post();
-			}
-#endif
-			public:
-			void exchanhge_disable(void) {
-				robo::system::guard g__;
-				devcontroller.terminate();
-			}
-			void discovery_begin(void);
-			void poll(void) { 
-				devcontroller.run(); 
-			};
-			protected:
-			virtual void do_discovery_begin(void) {
-				goal_.command.remote = commands::remotes::stop;
-			}
-			virtual void do_discovery_complete(void);
-			virtual bool do_discovery_check(void) {
-				return trafic.incom.success.bytes.total - incom_total > 0;
-			};
-			virtual void do_discovery_refuse(void) {
-				exchanhge_disable();
-			}
-
-
-			virtual void do_configure_start(void) {
-				goal_.command.remote = commands::remotes::halt;
-			}
-			virtual bool do_configure_started(void) {
-				return feedback_.status.remote == statuses::remotes::configure;
-			}
-			virtual void on_configure_execute(void) {
-			}
-			virtual bool do_configure_execute(void) {
-				return ! configure_successed_;
-			}
-			virtual void do_configure_complete(void);
-			void configute_confirm(void) {
-				configure_successed_ = true;
-			}
-			virtual void configure_refuse(void) {
-				exchanhge_disable();
-			}
-			virtual void do_configure_finish(void) {
-				goal_.command.remote = commands::remotes::stop;
-			}
-			virtual bool do_configure_finished(void) {
-				return feedback_.status.remote == statuses::remotes::ready;
-			}
-
-			virtual void do_stop_request(void) {
-				goal_.command.remote = commands::remotes::stop;
-			}
-			virtual bool is_stopped(void) {
-				return feedback_.status.remote == statuses::remotes::ready;
-			}
-			virtual void do_stop_refuse(void) {
-				exchanhge_disable();
-			}
-			virtual void do_stop_success(void) {
-			}
-			private:
-
-			bool configure_successed_ = false;
-			friend class discovery_s;
-			class discovery_s : public devnode {
-				robo::time_us_t us;
-			protected:
-				virtual void onExecute(void) {
-					dev.discovery_begin();
-					us = robo::system::time_us();
-					robo_infolog("\n\t\t---------------------%s discovery start -------------------- \n", dev.display_alias());
-				};
-				virtual void doExecute(void) {
-					if (dev.do_discovery_check()) {
-						robo_infolog("\n\t\t---------------------%s discovery compleete -------------------- \n", dev.display_alias());
-						dev.do_discovery_complete();
-					}
-					else {
-						if (::robo::system::time_us() - us > dev.discovery_period_us) {
-							robo_warninglog("\n\t\t---------------------%s discovery refuse -------------------- \n", dev.display_alias());
-							dev.do_discovery_refuse();
-						}
-					}
-				}
-				
-			public:
-				discovery_s(devagent& _devagent) : devnode(_devagent, statuses::locals::discovery) {}
-			} devdiscovery_;
-			friend class devconfigure_s;
-			class devconfigure_s : public devnode {
-				robo::time_us_t us;
-			public:
-				virtual void onEnter(void) {
-					devnode::onEnter();
-					dev.do_configure_start();
-					robo_infolog("\n\t\t---------------------%s configure request -------------------- \n", dev.display_alias());
-					us = robo::system::time_us();
-				};
-				virtual result doEnter(void) {
-					if (dev.do_configure_started()) {
-						us = ::robo::system::time_us();
-						return  result::success;
-					}
-					else {
-						if (::robo::system::time_us() - us > dev.discovery_period_us) {
-							dev.configure_refuse();
-							robo_warninglog("\n\t\t---------------------%s configure refuse -------------------- \n", dev.display_alias());
-						}
-						return result::wait;
-					}
-				};
-				virtual void onExecute(void) {
-					dev.on_configure_execute();
-					dev.configure_successed_ = false;
-					robo_infolog("\n\t\t---------------------%s configure start -------------------- \n", dev.display_alias());
-
-				};
-				
-				virtual void doExecute(void) {
-					if ( dev.do_configure_execute()) {
-						dev.do_configure_complete();
-						robo_infolog("\n\t\t---------------------%s configure compleete -------------------- \n", dev.display_alias());
-					}
-				}
-				devconfigure_s(devagent& _devagent) : devnode(_devagent, statuses::locals::configure) {}
-			} devconfigure_;
-			
-			friend class devstopped_s;
-			class devstopped_s : public devnode {
-				robo::time_us_t us;
-			public:
-				virtual void onEnter(void) {
-					devnode::onEnter();
-					dev.do_stop_request();
-					robo_infolog("\n\t\t---------------------%s stopped request -------------------- \n", dev.display_alias());
-					us = robo::system::time_us();
-				};
-				virtual result doEnter(void) {
-					if (dev.is_stopped() ) {
-						robo_infolog("\n\t\t---------------------%s is stopped  -------------------- \n", dev.display_alias());
-						return  result::success;
-					}
-					else {
-						if (::robo::system::time_us() - us > dev.discovery_period_us) {
-							dev.do_stop_refuse();
-							robo_warninglog("\n\t\t---------------------%s stopped refuse -------------------- \n", dev.display_alias());
-							return result::success;
-						}
-						else {
-							return result::wait;
-						}
-					}
-				};
-				virtual void onExecute(void) {
-					dev.do_stop_success();
-				};
-
-				virtual void doExecute(void) {
-				}
-				devstopped_s(devagent& _devagent) : devnode(_devagent, statuses::locals::stopped) {}
-			} devstopped_;
-
-			class devlost : public devnode {
-			public:
-				devlost(devagent& _devagent) : devnode(_devagent, statuses::locals::lost) {}
-			};
-
-			class devpanic : public devnode {
-			public:
-				devpanic(devagent& _devagent) : devnode(_devagent, statuses::locals::panic) {}
-			};
-
-			class devdirrect : public devnode {
-			public:
-				devdirrect(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
-
-
-
-			class devindepended : public devnode {
-			public:
-				devindepended(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
-
-			class devservice : public devnode {
-			public:
-				devservice(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
-
-			protected:
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 			virtual bool do_start(void);
 			
 		public:
 			bool exchabge_enabled(void);
-			//статистика  трафика
-			itrafic trafic;
 			
 			//идентификатор устройства
 			const dev_id_t& dev_id(void) { return dev_id_; };
@@ -626,115 +346,16 @@ namespace robo {
 			//функция для диспетчера, определяющая запись в таблице маршрутизации
 			router::record* resolve(int _bus_id, robo_tran_header_p  _tran_header);
 
-			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback);
 
-			//тенкущий (вычисляемый) статус
-			//statuses::locals actual_status(commands::locals _command);
-			 
+			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback, frontend::devagent & _frontagent);
+
 			//тенкущая команда
 			commands actual_command(void) { return goal_.command; };
-			//void dev_set_id(uint8_t _addr) { dev_id_.address = _addr; };
-			
-			virtual bool check_configure_complete(void) {
-				switch (feedback_.status.remote) {
-				case statuses::remotes::ready:
-				case statuses::remotes::run:
-					return true;
-				default:
-					return false;
-				}
-			}
-			virtual void on_configute_complete(void) {
-
-				//goal_.
-				//feedback_.status.local = statuses::locals::ready;
-			};
-#if 0
-			virtual  ::robo::quest* do_create_discovery_quest(void) {
-				using q = ::robo::quest;
-				return ::robo::quest::create(
-					nullptr
-					, nullptr
-					, [this](q::result r)->q::reaction {
-						if (r == q::result::success) {
-
-							return q::reaction::normal;
-						}
-						else {
-							return q::reaction::terminate;
-						}
-					}
-
-					, [this](q* _q) {
-						::robo::backend::timer::core::start(
-							::robo::signal::autonum::create([_q, this] {
-								if (trafic.incom.success.bytes.total > 0) {
-									on_discovery_complete();
-									_q->confirm();
-								}
-								else {
-									on_discovery_refuse();
-									_q->refuse();
-								}
-								}, true
-							), discovery_period_us);
-					}
-					);
-
-			}
-#endif
-#if 0
-			::robo::quest* create_discovery_quest(::robo::quest* _owner) {
-				robo_infolog("====================================================================================\n\t\tquest: '%s discovery' is started) \n====================================================================================", this->display_alias());
-				return ::robo::quest::create(
-					_owner,
-					do_create_discovery_quest(),
-					[this](robo::quest::result r)->robo::quest::reaction {
-						if (r == robo::quest::result::success) {
-							robo_infolog("====================================================================================\n\t\tquest: '%s discovery' success finished (A response was received) \n====================================================================================", this->display_alias());
-							return robo::quest::reaction::normal;
-						}
-						else {
-							robo_errlog("====================================================================================\n\t\tquest: '%s discovery' terminated (object isn't found) \n====================================================================================", this->display_alias());
-							return robo::quest::reaction::normal;
-						}
-						}
-				);				
-			}*/
-
-			::robo::quest* create_configure_quest(::robo::quest* _owner, ::robo::quest* _sema = nullptr) {
-				using q = ::robo::quest;
-				return q::create(
-					_owner
-					, _sema
-					, [this](robo::quest::result r)->robo::quest::reaction {
-						if (r == robo::quest::result::success) {
-							robo_infolog("====================================================================================\n\t\tquest: '%s configure' success finished\n====================================================================================", this->display_alias());
-							return robo::quest::reaction::normal;
-						}
-						else {
-							robo_errlog("====================================================================================\n\t\tquest: '%s configure' terminated\n====================================================================================", this->display_alias());
-							return robo::quest::reaction::terminate;
-						}
-						}
-					
-					, [this](q* _q) {
-						if (check_configure_complete()) {
-							on_configute_complete();
-							_q->confirm();
-						}
-						else {
-							on_configute_refuse();
-							_q->refuse();
-						}								
-					}
-				);
-
-			}
-			#endif
-
+			private:
+				frontend::devagent& frontagent_;
+			protected:
+				frontend::devagent& frontagent(void) { return frontagent_; };
 		};
-
 		class ROBO_EXPORT bus : public app::node {
 		public:
 			typedef ::robo::list::unique<bus, int> index;
@@ -772,7 +393,7 @@ namespace robo {
 			virtual bool do_load(void);
 			virtual void do_clean(void);
 		public:
-			itrafic trafic;
+			net::trafic_s trafic;
 			int id(void) { return index_ref_.key(); }
 			bus(cstr _name, app::module* _owner);
 			virtual ~bus(void);
@@ -786,7 +407,8 @@ namespace robo {
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
 			typedef typename D::config_s config_s;
-			template <typename A> const A& action_cast(void) {
+			typedef typename D::frontagent_s frontagent_s;
+			template <typename A> const A& action(void) {
 				return reinterpret_cast <const A&>(front_.action);
 			}
 			config_s & config(void) {
@@ -809,8 +431,12 @@ namespace robo {
 			feedback_s feedback_;
 		protected:
 			virtual void apply_action(void) {
-				if (D::agent_apply_action( action_cast<devagent::action_s>().command) ) {
+				auto & fr = action<devagent::action_s>();
+				auto & rl = goal<devagent::action_s>();
+				if (D::agent_apply_action(fr.command) ) {
 					goal_ = front_.action;
+				} else {
+					//goal_.
 				}
 			}
 
@@ -820,8 +446,8 @@ namespace robo {
 				front_.goal = goal_;
 			}
 		public:
-			protdevagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config)
-				: D(_name, _boardagent, goal_, feedback_)
+			protdevagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config, frontagent_s & _frontagent)
+				: D(_name, _boardagent, goal_, feedback_, _frontagent)
 				, front_(_action, _goal, _feedback,_config)
 				, ::robo::frontend::shared(
 					(void*)(&_action)
@@ -836,18 +462,26 @@ namespace robo {
 			typedef typename D::feedback_s feedback_s;
 			typedef typename D::config_s config_s;
 			typedef typename D::content_s content_s;
-			protdevagent_t(cstr _name, boardagent& _boardagent, content_s& _content) :
-				protdevagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config) {}
-			/*			devagent_t(cstr _name, boardagent& _boardagent, content_s* _content, Args ... _args) :
-				devagent_b<D, Args...>(_name, _boardagent, _content->action, _content->goal, _content->feedback, _content->config, _args ...)	{}
-			devagent_t(cstr _name, boardagent& _boardagent, const action_s & _action, action_s& _goal, feedback_s& _feedback, config_s & _config, Args ... _args) :
-				devagent_b<D, Args...>(_name, _boardagent, _action, _goal, _feedback, _config, _args ...){}*/
+			typedef typename D::frontagent_s frontagent_s;
+			protdevagent_t(cstr _name, boardagent& _boardagent, content_s& _content, frontagent_s& _frontagent) :
+				protdevagent_b<D>(_name, _boardagent, _content.action, _content.goal, _content.feedback, _content.config, _frontagent) {}
 		};
 
 		class servo_s : public  robo::app::node {
 		public:
+			robo::string store_ini;
+			virtual bool do_load(void) {
+				store_ini = robo::system::ini::source();
+				ROBO_LBREAKN(robo::app::node::do_start());
+				return true;
+			}
+			virtual bool do_start(void) {
+				ROBO_LBREAKN(robo::app::node::do_start());
+				ROBO_LBREAKN(robo::system::ini::begin(store_ini));
+				return true; 
+			}
 			servo_s(robo::cstr _name, robo::app::module& _module)
-				: robo::app::node(_name, &_module) {}
+				: robo::app::node(_name, &_module){}
 		};
 
 		class boardagent : public app::node {
@@ -1355,11 +989,6 @@ namespace robo {
 					T remote;
 				} actual_;
 			public:
-				/*
-				fvar(vartable& _vartable, const record& _instance)
-					: fvar_t<T>(_vartable, _instance, front_.local, front_.remote, actual_.local, actual_.remote) {
-				}
-				*/
 				fvar(vartable& _vartable, cstr _name, cstr _converter = nullptr)
 					: fvar_t<T>(_vartable, _name, _converter, front_.local, front_.remote, actual_.local, actual_.remote) {}
 			};
@@ -1390,6 +1019,8 @@ namespace robo {
 			ivar::queue queue_;
 			ivar* current_ = nullptr;
 		};
+		
+		
 		/*
 		namespace process {
 			class base;
