@@ -10,10 +10,10 @@ namespace burst {
 			return _quest;
 		}
 		bool devagent::do_load(void) {
+			ROBO_LBREAKN(robo::frontend::devagent::do_load());
 			if (status() != statuses::locals::disabled) {
 				ROBO_LBREAKN_F(startup_section.load(current_path(), defaults_path(), RT("startup")), "var's section %s for %s isn't found", RT("startup"), display_alias());
 			}
-			ROBO_LBREAKN(robo::frontend::devagent::do_load());
 			return true;
 		}
 		servo::servo(robo::cstr _name, robo::app::module& _module)

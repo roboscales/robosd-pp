@@ -286,19 +286,21 @@ namespace robo {
 				virtual ~exchange(void);
 				virtual query_result first_query(robo_tran_t& _tran);
 			};
-			typedef frontend::devagent::commands::locals commands;
-			typedef frontend::devagent::commands::remotes actions;
-			typedef frontend::devagent::statuses::remotes statuses;
+			
+			//typedef frontend::devagent::commands::locals commands;
+			typedef frontend::devagent::modes modes;
+			typedef frontend::devagent::statuses statuses; 
 			typedef frontend::devagent::action_s action_s;
 			typedef frontend::devagent::feedback_s feedback_s;
 			typedef frontend::devagent::config_s config_s;
-			template <typename F> typename F::feedback_s & feedback(void) {
+
+			template <typename F> typename F::feedback_s& feedback(void) {
 				return reinterpret_cast <typename F::feedback_s&>(feedback_);
 			}
+
 			template <typename A> typename A::action_s& goal(void) {
 				return reinterpret_cast <typename A::action_s& > (goal_);
 			}
-
 		
 		private:
 			boardagent& boardagent_;
@@ -311,22 +313,41 @@ namespace robo {
 			stream::list streams_;
 			action_s& goal_;
 			feedback_s& feedback_;
-
 		protected:
 			
-			virtual bool agent_apply_action(const commands & _command) {
-				if (_command == commands::sw2dirrect) {
-					return true;
+			virtual void apply_action(void) {
+				auto& front_action = frontagent().action<frontend::devagent>();
+				auto& front_goal = frontagent().goal<frontend::devagent>();
+				auto& gl = goal<frontend::devagent>();
+				switch (frontagent().status()) {
+				case statuses::locals::disabled: // анент исключен из обмена
+					gl.mode = modes::disable;
+					break;
+				case statuses::locals::discovery: //поиск исполнительного устройства
+					gl.mode = modes::stop;
+					break;
+				case statuses::locals::lost: //обмен потерян
+					gl.mode = modes::disable;
+					break;
+				case statuses::locals::configure: //
+					gl.mode = modes::halt;
+					break;
+				case statuses::locals::panic://устрйоство находится в аварии
+					gl.mode = modes::stop;
+					break;
+				case statuses::locals::dirrect: //устройство работает под прямым управлдением системы управления верхнего уровня
+					break;
+				case statuses::locals::stopped: //устройство работает под автономным  управлдением
+					gl.mode = modes::stop;
+					break;
+				case statuses::locals::independed: //устройство работает под автономным  управлдением
+					break;
+				case statuses::locals::service: //устройство работает под управлением стороннего ПО
+					break;
 				}
-				else {
-					return false;
-				}
+				front_goal = front_action;
 			}
-
-			virtual void agent_uppdate_feedback(void) {
-
-				//feedback_.status.actual = actual_status(goal_.command.local);
-			}
+			//virtual void agent_uppdate_feedback(void) = 0;
 
 		protected:
 
@@ -350,7 +371,7 @@ namespace robo {
 			devagent(cstr _name, boardagent& _boardagent, action_s& _goal, feedback_s& _feedback, frontend::devagent & _frontagent);
 
 			//тенкущая команда
-			commands actual_command(void) { return goal_.command; };
+			//commands actual_command(void) { return goal_.command; };
 			private:
 				frontend::devagent& frontagent_;
 			protected:
@@ -408,47 +429,33 @@ namespace robo {
 			typedef typename D::feedback_s feedback_s;
 			typedef typename D::config_s config_s;
 			typedef typename D::frontagent_s frontagent_s;
-			template <typename A> const A& action(void) {
-				return reinterpret_cast <const A&>(front_.action);
-			}
-			config_s & config(void) {
-				return front_.config;
-			}
+			typedef typename D::config_s config_s;
+
 		private:
-			struct front_s {
-				const action_s& action;
-				action_s& goal;
-				feedback_s& feedback;
-				config_s & config;
-				front_s(
-					const action_s& _action
-					, action_s& _goal
-					, feedback_s& _feedback
-					,config_s& config
-				) : action(_action), goal(_goal), feedback(_feedback), config(config) {}
-			} front_;
 			action_s goal_;
 			feedback_s feedback_;
 		protected:
 			virtual void apply_action(void) {
-				auto & fr = action<devagent::action_s>();
-				auto & rl = goal<devagent::action_s>();
-				if (D::agent_apply_action(fr.command) ) {
-					goal_ = front_.action;
-				} else {
-					//goal_.
+
+				if ( frontagent().status() == statuses::locals::dirrect ) {
+					auto& front_action = D::frontagent().action<D>();
+					auto& front_goal = D::frontagent().goal<D>();
+					front_goal = front_action;
+				}
+				else {
+					D::apply_action();
 				}
 			}
 
 			virtual void uppdate_feedback(void) {
-				D::agent_uppdate_feedback();
-				front_.feedback = feedback_;
-				front_.goal = goal_;
+//				D::agent_uppdate_feedback();
+
+				D::frontagent().feedback<D>() = feedback_;
+				D::frontagent().goal<D>() = goal_;
 			}
 		public:
 			protdevagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config, frontagent_s & _frontagent)
 				: D(_name, _boardagent, goal_, feedback_, _frontagent)
-				, front_(_action, _goal, _feedback,_config)
 				, ::robo::frontend::shared(
 					(void*)(&_action)
 					, (void*)((uint8_t*)(&_action) + sizeof(action_s) / sizeof(uint8_t))

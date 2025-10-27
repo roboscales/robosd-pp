@@ -10,8 +10,8 @@ namespace burst {
 			robo::string startup_section;
 			virtual quest* configure_expansion_create(quest* _quest);
 		public:
-			devagent(robo::cstr _name, robo::app::node& _owner, action_s& _goal, feedback_s& _feedback)
-				: robo::frontend::devagent(_name,_owner,_goal, _feedback) {}
+			devagent(robo::cstr _name, robo::app::node& _owner, action_s& _action, action_s& _goal, feedback_s& _feedback)
+				: robo::frontend::devagent(_name,_owner, _action, _goal, _feedback) {}
 			virtual bool do_load(void);
 		};
 		class servo : public robo::frontend::servo {

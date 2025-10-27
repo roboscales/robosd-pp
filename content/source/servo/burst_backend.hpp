@@ -520,7 +520,7 @@ namespace burst {
 			bool post_startup_vars_(quest * _owner, quest * _sema, robo::cstr _startup) {
 				auto& tmp = feedback<devagent>();
 				
-				ROBO_LBREAKN_F(tmp.dev.status == statuses::configure, RT("device % is't configured mode"), display_alias());
+				ROBO_LBREAKN_F(tmp.dev.status == statuses::remotes::configure, RT("device % is't configured mode"), display_alias());
 				const size_t N = ROBO_STRING_BUFFER_SIZE;
 				robo::char_t keys[N];
 

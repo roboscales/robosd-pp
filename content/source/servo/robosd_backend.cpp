@@ -803,7 +803,7 @@ namespace robo {
 			if (state_ != state::stopped) {
 				state_ = state::panic;
 				events.on_panic.raise();
-				if (own_agent().goal<devagent>().command !=  commands::discovery) {
+				if ( own_agent().frontagent().status() !=  statuses::locals::discovery ) {
 					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 				}
 			}
@@ -849,7 +849,7 @@ namespace robo {
 		}
 
 		bool devagent::exchabge_enabled(void) {
-			return goal_.action != actions::disable;
+			return  frontagent().status() != statuses::locals::disabled ;
 		}
 
 		bool devagent::do_load(void) {

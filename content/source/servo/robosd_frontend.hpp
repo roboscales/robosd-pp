@@ -770,25 +770,22 @@ namespace robo {
 			app::node* backend_ = nullptr;
 		public:
 			void post_to(void);
-			typedef robo::devagent::common::action_s action_s;
+			typedef robo::devagent::action_s action_s;
 			struct common {
-				typedef robo::devagent::common::feedback_s feedback_s;
+				typedef robo::devagent::feedback_s feedback_s;
 			};
-			struct commands {
-				using locals = ::robo::devagent::locals::commands;
-				using remotes = ::robo::devagent::remotes::commands;
-			};
-			struct statuses {
-				using locals = ::robo::devagent::locals::statuses;
-				using remotes = ::robo::devagent::remotes::statuses;
-			};
+			using commands = ::robo::devagent::commands;
+			using modes = ::robo::devagent::modes;
+			
+			using statuses = ::robo::devagent::statuses;
+
 			struct feedback_s {
 				common::feedback_s dev;
 				robo::net::trafic_s trafic;
 			};
 
-			typedef robo::devagent::common::action_s action_s;
-			typedef robo::devagent::common::config_s config_s;
+			typedef robo::devagent::action_s action_s;
+			typedef robo::devagent::config_s config_s;
 
 			template <typename F> typename F::feedback_s& feedback(void) {
 				return reinterpret_cast <typename F::feedback_s&>(feedback_);
@@ -803,8 +800,8 @@ namespace robo {
 			}
 
 		private:
-			action_s& action;
-			action_s& goal;
+			action_s& action_;
+			action_s& goal_;
 			feedback_s& feedback_;
 			statuses::locals status_ = statuses::locals::disabled;
 		protected:
@@ -826,7 +823,6 @@ namespace robo {
 #endif		
 			static inline cstr locals_names[] = {
 				RT("disabled")
-				, RT("startup")
 				, RT("discovery")
 				, RT("lost")
 				, RT("configure")
@@ -851,7 +847,7 @@ namespace robo {
 			protected:
 				devagent& dev;
 				devagent::feedback_s& feedback;
-				devagent::action_s& goal;
+				devagent::action_s& action;
 				statuses::locals status;
 
 				virtual void onEnter(void) {
@@ -872,7 +868,7 @@ namespace robo {
 					dev(_devagent)
 					, status(_status)
 					, feedback(_devagent.feedback<devagent>())
-					, goal(_devagent.goal<devagent>())
+					, action(_devagent.action<devagent>())
 				{}
 				virtual ~devnode(void) {}
 			};
@@ -887,11 +883,9 @@ namespace robo {
 			void poll(void) {
 				devcontroller.run();
 			};
+			
 		protected:
 			virtual void do_discovery_begin(void) {
-				action_
-				goal_.command = commands::locals::discovery;
-				goal_.action = commands::remotes::stop ;
 				incom_total = feedback_.trafic.incom.success.bytes.total;
 			}
 			virtual void do_discovery_complete(void);
@@ -904,7 +898,6 @@ namespace robo {
 
 
 			virtual void do_configure_start(void) {
-				goal_.action = commands::remotes::halt;
 			}
 			virtual bool do_configure_started(void) {
 				return feedback_.dev.status == statuses::remotes::configure;
@@ -947,7 +940,6 @@ namespace robo {
 			}
 			virtual void do_configure_complete(void);
 			void configute_confirm(void) {
-				goal_.action = commands::remotes::stop;
 				configure_status_ = devnode::result::success;
 			}
 			virtual void configure_refuse(void) {
@@ -955,7 +947,6 @@ namespace robo {
 			}
 
 			virtual void do_stop_request(void) {
-				goal_.action = commands::remotes::stop;
 			}
 			virtual bool is_stopped(void) {
 				return feedback_.dev.status == statuses::remotes::ready;
@@ -965,28 +956,27 @@ namespace robo {
 			}
 			virtual void do_stop_success(void) {
 			}
-			commands::locals local_command_old_ = commands::locals::none;
 			void confirm_command(void) {
 
 			}
 			virtual void do_check_command(void) {
-				if (local_command_old_ != goal_.command) {
-					local_command_old_ = goal_.command;
-					switch (local_command_old_) {
-					case commands::locals::stop:
-					case commands::locals::reset_panic:
-					case commands::locals::sw2dirrect:
-					case commands::locals::sw2independed:
-					case commands::locals::sw2service:
+				if (action_.command != commands::none) {
+					switch (action_.command) {
+					case commands::stop:
+					case commands::reset_panic:
+					case commands::sw2dirrect:
+					case commands::sw2independed:
+					case commands::sw2service:
 						break;
 
-					case commands::locals::halt:
+					case commands::halt:
 						devcontroller.switchto(&devconfigure_);
 						break;
 					default:
 						break;
 						//common::devagent::commands::locals::none;
 					}
+					action_.command = commands::none;
 				}
 			}
 		public:
@@ -996,7 +986,7 @@ namespace robo {
 				return backend_	;
 			}
 		private:
-
+			
 			devnode::result configure_status_ = devnode::result::wait;
 			friend class discovery_s;
 			class discovery_s : public devnode {
@@ -1133,7 +1123,7 @@ namespace robo {
 
 		public:
 
-			devagent(robo::cstr _name, robo::app::node & _owner, action_s& _goal, feedback_s& _feedback);
+			devagent(robo::cstr _name, robo::app::node & _owner, action_s& _action,  action_s& _goal, feedback_s& _feedback);
 
 			virtual bool check_configure_complete(void) {
 				switch (feedback_.dev.status) {
