@@ -18,6 +18,7 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_autonum.hpp"
 #include "core/robosd_app.hpp"
+#include "core/robosd_list.hpp"
 
 #include "core/robosd_tree.hpp"
 #include "terminal/robosd_termo.hpp"
@@ -328,11 +329,31 @@ namespace robo {
 				if (frontend_performer_) frontend_performer_->attach();
 				if (backend_performer_) backend_performer_->attach();
 			}
+			timer()
+				: frontend_performer_(nullptr)
+				, start_delegat_(*this, &timer::start_)
+				, stop_delegat_(*this, &timer::stop_)
+				, execute_delegat_(*this, &timer::execute_)
+				, backend_performer_(nullptr) {
+			}
+			void start(time_us_t _period, signal::performer* _frontend_performer, bool _once = false, signal::performer* _backend_performer = nullptr) {
+				if (frontend_performer_) frontend_performer_->dettach();
+				if (backend_performer_) backend_performer_->dettach();
+				frontend_performer_ = _frontend_performer;
+				backend_performer_ = _backend_performer;
+				execute_delegat_.set_once(_once);
+				if (frontend_performer_) frontend_performer_->attach();
+				if (backend_performer_) backend_performer_->attach();
+				start(_period);
+			}
 			virtual ~timer(void) {
 				if (frontend_performer_) frontend_performer_->dettach();
 				if (backend_performer_) backend_performer_->dettach();
 			}
+			void pend(void);
 		};
+
+
 
 		class ROBO_EXPORT repeater : public signal::performer {
 			time_us_t period_;
@@ -347,7 +368,7 @@ namespace robo {
 			void start(time_us_t _period) { period_ = _period;  start(); }
 			void stop(void) { timer_.stop(); }
 		};
-
+	
 
 		class ROBO_EXPORT pulse {
 			signal::performer* frontend_performer_;
@@ -374,7 +395,8 @@ namespace robo {
 				}
 			}
 		};
-
+	
+#if 0
 		class shared {
 		public:
 			typedef robo::list::unsorted<shared> list;
@@ -414,6 +436,7 @@ namespace robo {
 			};
 
 			action apply_action_;
+			action update_feedback_;
 			action update_feedback_;
 			action exchange_;
 
@@ -470,6 +493,8 @@ namespace robo {
 			}
 			virtual ~shared(void) {}
 		};
+	
+#endif
 
 		namespace varindex {
 			
@@ -736,40 +761,20 @@ namespace robo {
 
 		};
 
-		class ROBO_EXPORT servo : public robo::app::node {
-			virtual bool reconfig_command(const char* _arg, const char* _val) { return false;  };
-			#if ROBO_APP_TERMINAL_ENABLED
-			robo::string termoserial_name_;
-			robo::net::iserial* termoserial_ = nullptr;
-			class root_termo_cmd : public ::robo::termo::node {
-			public:
-				root_termo_cmd(void);
-			} root_termo_cmd_;
-				
-				class reboot_termo_cmd_s : public ::robo::termo::node {
-					servo & servo_;
-				protected:
-					virtual bool begin(void);
-					virtual bool parse_long_arg(const char* _arg, const char* _val);
-					virtual bool parse_arg(char _arg, const char* _val);
-				public:
-					reboot_termo_cmd_s(servo& _servo);
-				} reboot_termo_cmd_;
-			#endif
-
-		public:
-			servo(robo::cstr _name, robo::app::module& _module);
-		protected:
-			virtual bool do_load(void);
-			virtual bool do_start(void);
-		};
-
-		#endif
 
 		class devagent : public app::node {
+			friend class servo;
 			app::node* backend_ = nullptr;
 		public:
-			void post_to(void);
+			using list = robo::list::unsorted<devagent> ;
+			using ref = list:: ref;
+
+		private:
+			ref ref_;
+			ref index_ref_;
+		public:
+
+
 			typedef robo::devagent::action_s action_s;
 			struct common {
 				typedef robo::devagent::feedback_s feedback_s;
@@ -804,39 +809,16 @@ namespace robo {
 			action_s& goal_;
 			feedback_s& feedback_;
 			statuses::locals status_ = statuses::locals::disabled;
+		
 		protected:
 			::robo::time_us_t  discovery_period_us = 5000000;
 
 
-#if 0
-			enum class locals {
-				disabled = 0, // анент исключен из обмена
-				discovery = 1, //поиск исполнительного устройства
-				lost = 3, //обмен потерян
-				configure = 4, //
-				panic = 5,//устрйоство находится в аварии
-				dirrect = 6, //устройство работает под прямым управлдением системы управления верхнего уровня
-				stopped = 7, //устройство работает под автономным  управлдением
-				independed = 8, //устройство работает под автономным  управлдением
-				service = 9, //устройство работает под управлдением стороннего ПО
-			}  local;
-#endif		
-			static inline cstr locals_names[] = {
-				RT("disabled")
-				, RT("discovery")
-				, RT("lost")
-				, RT("configure")
-				, RT("panic")
-				, RT("dirrect")
-				, RT("stopped")
-				, RT("independed")
-				, RT("service")
-			};
-
-
 			void doTerminate(void) {
-				robo_errlog("\n\t\t---------------------%s is termibated and exit from mode %s -------------------- \n", display_alias(), locals_names[(int)status_]);
-				status_ = statuses::locals::disabled;
+				robo_errlog("\n\t\t---------------------%s is termibated and exit from mode %S -------------------- \n", display_alias(), robo::devagent::statuses::locals_names[(int)status_]);
+				robo::system::guard g__;
+				status_ = statuses::locals::disconnected;
+				ref_.attach_to(devagent::disconnected_());
 			}
 			friend class devnode;
 			class devnode;
@@ -851,7 +833,7 @@ namespace robo {
 				statuses::locals status;
 
 				virtual void onEnter(void) {
-					robo_warninglog("\n\t\t---------------------%s switch mode from '%s to '%s'--------------------- \n", dev.display_alias(), locals_names[(int)dev.status_], locals_names[(int)status]);
+					robo_warninglog("\n\t\t---------------------%s switch mode from '%S to '%S'--------------------- \n", dev.display_alias(), robo::devagent::statuses::locals_names[(int)dev.status_], robo::devagent::statuses::locals_names[(int)status]);
 					dev.actual_devnode = this;
 					dev.status_ = status;
 				};
@@ -875,25 +857,29 @@ namespace robo {
 			size_t incom_total = 0;
 		public:
 			statuses::locals status(void) { return status_; };
-			void exchanhge_disable(void) {
-				robo::system::guard g__;
-				devcontroller.terminate();
+				
+			void exchanhge_lost(void) {
 			}
 			void discovery_begin(void);
 			void poll(void) {
+				do_check_command();
 				devcontroller.run();
+
 			};
-			
+
 		protected:
 			virtual void do_discovery_begin(void) {
 				incom_total = feedback_.trafic.incom.success.bytes.total;
+				robo::system::guard g__;
+				ref_.attach_to(devagent::slow_());
+
 			}
 			virtual void do_discovery_complete(void);
 			virtual bool do_discovery_check(void) {
 				return feedback_.trafic.incom.success.bytes.total - incom_total > 0;
 			};
 			virtual void do_discovery_refuse(void) {
-				exchanhge_disable();
+				devcontroller.terminate();
 			}
 
 
@@ -943,7 +929,7 @@ namespace robo {
 				configure_status_ = devnode::result::success;
 			}
 			virtual void configure_refuse(void) {
-				exchanhge_disable();
+				devcontroller.terminate();
 			}
 
 			virtual void do_stop_request(void) {
@@ -952,25 +938,63 @@ namespace robo {
 				return feedback_.dev.status == statuses::remotes::ready;
 			}
 			virtual void do_stop_refuse(void) {
-				exchanhge_disable();
+				devcontroller.terminate();
 			}
 			virtual void do_stop_success(void) {
+				robo::system::guard g__;
+				ref_.attach_to(devagent::slow_());
 			}
 			void confirm_command(void) {
 
 			}
 			virtual void do_check_command(void) {
+				if (status_ == statuses::locals::disabled) return;
+				if (feedback_.dev.status == statuses::remotes::panic ) {
+					if (status_ != statuses::locals::panic  && status_ != statuses::locals::reset_panic) {
+						devcontroller.switchto(&devpanic_);
+						status_ = statuses::locals::panic;
+						return;
+					}
+				}
 				if (action_.command != commands::none) {
 					switch (action_.command) {
 					case commands::stop:
+						devcontroller.switchto(&devstopped_);
+						break;
 					case commands::reset_panic:
+						if (status_ == statuses::locals::panic) {
+							devcontroller.switchto(&devreset_panic_);
+						}
+						break;
 					case commands::sw2dirrect:
+						if (status_ == statuses::locals::stopped){
+							devcontroller.switchto(&devdirrect_);
+						}
+						else {
+							robo_errlog("\n\t\t---------------------%s is't stopped (%S) and don't switch to mode 'dirrect' -------------------- \n", display_alias(), robo::devagent::statuses::locals_names[(int)status_]);
+						}
+						break;
 					case commands::sw2independed:
+						if (status_ == statuses::locals::stopped) {
+							devcontroller.switchto(&devindepended_);
+						}
+						else {
+							robo_errlog("\n\t\t---------------------%s is't stopped (%S) and don't switch to mode 'independed' -------------------- \n", display_alias(), robo::devagent::statuses::locals_names[(int)status_]);
+						}
+						break;
 					case commands::sw2service:
+						if (status_ == statuses::locals::stopped)
+							devcontroller.switchto(&devservice_);
+						else 
+							robo_errlog("\n\t\t---------------------%s is't stopped (%S) and don't switch to mode 'service' -------------------- \n", display_alias(), robo::devagent::statuses::locals_names[(int)status_]);
+
 						break;
 
 					case commands::halt:
 						devcontroller.switchto(&devconfigure_);
+						break;
+					case commands::discovery:
+						devcontroller.switchto(&devdiscovery_);
 						break;
 					default:
 						break;
@@ -1083,38 +1107,138 @@ namespace robo {
 				};
 
 				virtual void doExecute(void) {
-					dev.do_check_command();
 				}
 				devstopped_s(devagent& _devagent) : devnode(_devagent, statuses::locals::stopped) {}
 			} devstopped_;
 
-			class devlost : public devnode {
-			public:
-				devlost(devagent& _devagent) : devnode(_devagent, statuses::locals::lost) {}
-			};
 
 			class devpanic : public devnode {
+			protected:
+				virtual void onExecute(void) {					
+					robo_warninglog ("\n\t\t---------------------%s fail to panic! -------------------- \n", dev.display_alias());
+				};
 			public:
 				devpanic(devagent& _devagent) : devnode(_devagent, statuses::locals::panic) {}
-			};
+			} devpanic_;
+
+			class devreset_panic_s : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s reset panic request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped()) {
+						robo_infolog("\n\t\t---------------------%s switched to reset panic mode  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s reset panic refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
+				devreset_panic_s(devagent& _devagent) : devnode(_devagent, statuses::locals::reset_panic) {}
+			} devreset_panic_;
 
 			class devdirrect : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s dirrect request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped()) {
+						robo_infolog("\n\t\t---------------------%s switched to dirrect mode  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s dirrect refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
 			public:
 				devdirrect(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
+			} devdirrect_;
 
 
 
 			class devindepended : public devnode {
+				robo::time_us_t us;
+			public:
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s independed request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped()) {
+						robo_infolog("\n\t\t---------------------%s switched to independed mode  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s independed refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
+
 			public:
 				devindepended(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
+			} devindepended_;
 
 			class devservice : public devnode {
+				robo::time_us_t us;
 			public:
-				devservice(devagent& _devagent) : devnode(_devagent, statuses::locals::dirrect) {}
-			};
+				virtual void onEnter(void) {
+					devnode::onEnter();
+					dev.do_stop_request();
+					robo_infolog("\n\t\t---------------------%s service request -------------------- \n", dev.display_alias());
+					us = robo::system::time_us();
+				};
+				virtual result doEnter(void) {
+					if (dev.is_stopped()) {
+						robo_infolog("\n\t\t---------------------%s switched to service mode  -------------------- \n", dev.display_alias());
+						return  result::success;
+					}
+					else {
+						if (::robo::system::time_us() - us > dev.discovery_period_us) {
+							dev.do_stop_refuse();
+							robo_warninglog("\n\t\t---------------------%s service refuse -------------------- \n", dev.display_alias());
+							return result::success;
+						}
+						else {
+							return result::wait;
+						}
+					}
+				};
 
+			public:
+				devservice(devagent& _devagent) : devnode(_devagent, statuses::locals::service) {}
+			} devservice_;
 		protected:
 
 			virtual bool do_load(void);
@@ -1134,9 +1258,178 @@ namespace robo {
 					return false;
 				}
 			}
-			virtual void on_configute_complete(void) {
+
+			class command  {
+			public:
+				using feedback_performer = robo::delegat::ref<void, devagent::list&>;
+			private:
+				devagent::list* list_;
+				using performer = signal::owned::member<command>;
+				performer query_feedback_;
+				performer perform_feedback_;
+				performer apply_action_;
+				void perform_feedback__(void);
+				void query_feedback__(void);
+				void apply_action__(void);
+				timer t_;
+				feedback_performer* feedback_performer_ = nullptr;
+			protected:
+				virtual void query_feedback(devagent&) = 0;
+				virtual void perform_feedback(devagent::list& _list) {
+					if (feedback_performer_) {
+						(*feedback_performer_)(_list);
+					}
+				}
+				virtual void apply_action(devagent&) = 0;
+			public:
+				command() :
+					query_feedback_(*this,&command::query_feedback__)
+					, perform_feedback_(*this, &command::perform_feedback__)
+					, apply_action_(*this, &command::apply_action__)
+					, t_(&perform_feedback_,false, &query_feedback_)
+				{
+
+				}
+				void start(robo::time_us_t _time_us, devagent::list& _list, feedback_performer * _feedback_performer) {
+					list_ = &_list;
+					feedback_performer_ = _feedback_performer;
+					t_.start(_time_us);
+				}
+				void stop(void) {
+					t_.stop();
+				}
 			};
+/*
+			class unicommand : command {
+			private:
+				devagent::list* list_;
+				performer* front_;
+				performer* back_;
+			protected:
+				virtual void front(devagent& _dev) { if (front_)  (*front_)(_dev); };
+				virtual void back(devagent& _dev) { if (back_)  (*back_)(_dev);  };
+			public:
+				void execute(devagent::list& _list, performer* _back, performer* _front, priority _priority);
+			};*/
+		private:
+			void apply_action_(void);
+			void query_feedback_(void);
+		private:
+
+			friend class exchange;
+			class exchange : public command {
+				timer t_;
+			public:
+				virtual void query_feedback(devagent& _dev) {
+					_dev.query_feedback_();
+				}
+				virtual void apply_action(devagent& _dev) {
+					_dev.apply_action_();
+				}
+
+			};
+			static list & fast_(void);
+			static list& slow_(void);
+			static list& disabled_(void);
+			static list& disconnected_(void);
 		};
+
+
+		class ROBO_EXPORT servo : public robo::app::node {
+			virtual bool reconfig_command(void);
+			virtual bool discovery_command(void);
+			virtual bool service_command(void);
+			virtual bool stop_command(void);
+			virtual bool dirrect_command(void);
+			virtual bool independed_command(void);
+			virtual bool reset_panic_command(void);
+#if ROBO_APP_TERMINAL_ENABLED
+			robo::string termoserial_name_;
+			robo::net::iserial* termoserial_ = nullptr;
+			class root_termo_cmd : public ::robo::termo::node {
+			public:
+				root_termo_cmd(void);
+			} root_termo_cmd_;
+
+			class reconfig_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				reconfig_termo_cmd_s(servo& _servo);
+			} reconfig_termo_cmd_;
+
+			class discovery_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				discovery_termo_cmd_s(servo& _servo);
+			} discovery_termo_cmd_;
+
+			class service_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				service_termo_cmd_s(servo& _servo);
+			} service_termo_cmd_;
+
+			class stop_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				stop_termo_cmd_s(servo& _servo);
+			} stop_termo_cmd_;
+
+			class dirrect_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				dirrect_termo_cmd_s(servo& _servo);
+			} dirrect_termo_cmd_;
+
+			class independed_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				independed_termo_cmd_s(servo& _servo);
+			} independed_termo_cmd_;
+
+			class reset_panic_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				reset_panic_termo_cmd_s(servo& _servo);
+			}reset_panic_termo_cmd_;
+#endif
+			robo::time_us_t slow_exchange_period_us_;
+		public:
+			servo(robo::cstr _name, robo::app::module& _module);
+		protected:
+			virtual bool do_load(void);
+			virtual bool do_start(void);
+			void on_slow_exchange__(devagent::list&);
+			virtual void on_slow_exchange(devagent::list&);
+			delegat::owned_fabric<void, devagent::list & > ::member<servo> on_slow_exchange_;
+		private:
+			devagent::exchange fast_exchange_;
+			devagent::exchange slow_exchange_;
+
+			void fast_exchange_start(robo::time_us_t _time_us, devagent::exchange::feedback_performer* _feedback_performer);
+			void fast_exchange_stop(void) { fast_exchange_.stop(); };
+
+			void slow_exchange_start(void);
+			void slow_exchange_stop(void) { slow_exchange_.stop(); };
+		public:
+		
+		};
+
+#endif
 	}
 	//todo 
 }

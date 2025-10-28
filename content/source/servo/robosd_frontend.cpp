@@ -115,7 +115,8 @@ namespace robo {
 
 		void timer::execute_(void) {
 			if (backend_performer_)(*(backend_performer_))();
-			queue::post(frontend_performer_, signal::performer::priority::hi);
+			if(frontend_performer_)
+				queue::post(frontend_performer_, signal::performer::priority::hi);
 		}
 
 		void timer::start(time_us_t _period) {
@@ -127,7 +128,9 @@ namespace robo {
 			backend::queue::post(&stop_delegat_, signal::performer::priority::hi);
 		}
 
-
+		void timer::pend(void) {
+			backend::queue::post(&(execute_delegat_), signal::performer::priority::hi);
+		}
 
 		void pulse::start_(void) {
 			::robo::backend::timer::core::start(&(execute_delegat_), period_);
@@ -384,7 +387,7 @@ namespace robo {
 		}
 		#endif
 
-
+#if 0
 		void shared::action::execute_(void) {
 			(owner_->*member_)();
 			{
@@ -511,8 +514,8 @@ namespace robo {
 		bool shared::is_my_feedback_(void* _begin, void* _end) {
 			return _begin <= feedback_addr_begin_ && feedback_addr_end_ <= _end;
 		}
+#endif
 	}
-
 	quest::quest(
 		quest* _owner
 		, quest* _sema
@@ -751,16 +754,32 @@ namespace robo {
 	}
 
 	frontend::servo::servo(robo::cstr _name, robo::app::module& _module)
-		: robo::app::node(_name, &_module), reboot_termo_cmd_(*this){
+		: robo::app::node(_name, &_module)
+		, reconfig_termo_cmd_(*this)
+		, discovery_termo_cmd_(*this)
+		, service_termo_cmd_(*this)
+		, stop_termo_cmd_(*this)
+		, dirrect_termo_cmd_(*this)
+		, independed_termo_cmd_(*this)
+		, reset_panic_termo_cmd_(*this)
+		, on_slow_exchange_ (*this, &servo::on_slow_exchange__)
+	{
 	}
 
 	bool frontend::servo::do_load(void) {
 		ROBO_LBREAKN(robo::app::node::do_load())
-		
+		ROBO_LBREAKN(::robo::ini::load(current_path(), defaults_path(), RT("exchange_period_us"), slow_exchange_period_us_));
 		#if ROBO_APP_TERMINAL_ENABLED
 		termoserial_name_.tryload(current_path(), RT("termo_serial"));
 		#endif
 		return true;
+	}
+
+	void frontend::servo::on_slow_exchange__(devagent::list& _list) {
+		on_slow_exchange(_list);
+	}
+	void frontend::servo::on_slow_exchange(devagent::list& _list) {
+
 	}
 
 	bool frontend::servo::do_start(void) {
@@ -776,6 +795,7 @@ namespace robo {
 			robo::termo::itf::new_line();
 		}
 #endif
+		slow_exchange_start();
 		return true;
 	}
 #if ROBO_APP_TERMINAL_ENABLED
@@ -787,16 +807,10 @@ namespace robo {
 			, robo::termo::itf::root()
 		) {
 	}
-	bool frontend::servo::reboot_termo_cmd_s::begin(void) {
-		return servo_.reconfig_command(nullptr,nullptr);
+	bool frontend::servo::reconfig_termo_cmd_s::begin(void) {
+		return servo_.reconfig_command();
 	}
-	bool frontend::servo::reboot_termo_cmd_s::parse_long_arg(const char* _arg, const char* _val) {
-		return true;
-	}
-	bool frontend::servo::reboot_termo_cmd_s::parse_arg(char _arg, const char* _val) {
-		return true;
-	}
-	frontend::servo::reboot_termo_cmd_s::reboot_termo_cmd_s(servo& _servo) 
+	frontend::servo::reconfig_termo_cmd_s::reconfig_termo_cmd_s(servo& _servo)
 		: ::robo::termo::node(
 			"reconfig"
 			, " devagent reconfig  "//const char * note; 
@@ -805,7 +819,130 @@ namespace robo {
 		)
 		, servo_(_servo) {
 	}
+
+	bool frontend::servo::discovery_termo_cmd_s::begin(void) {
+		return servo_.discovery_command();
+	}
+	frontend::servo::discovery_termo_cmd_s::discovery_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"discovery"
+			, " devagent discovery  "//const char * note; 
+			, "discovery <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+
+	bool frontend::servo::service_termo_cmd_s::begin(void) {
+		return servo_.service_command();
+	}
+	frontend::servo::service_termo_cmd_s::service_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"service"
+			, " switch to service mode "//const char * note; 
+			, "service <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+
+	bool frontend::servo::stop_termo_cmd_s::begin(void) {
+		return servo_.stop_command();
+	}
+	frontend::servo::stop_termo_cmd_s::stop_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"stop"
+			, " switch to stopped mode "//const char * note; 
+			, "stop <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+	bool frontend::servo::dirrect_termo_cmd_s::begin(void) {
+		return servo_.dirrect_command();
+	}
+	frontend::servo::dirrect_termo_cmd_s::dirrect_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"dirrect"
+			, " switch to dirrect mode "//const char * note; 
+			, "dirrect <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+
+	bool frontend::servo::independed_termo_cmd_s::begin(void) {
+		return servo_.independed_command();
+	}
+	frontend::servo::independed_termo_cmd_s::independed_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"independed"
+			, " switch to independed mode "//const char * note; 
+			, "independed <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+
+	bool frontend::servo::reset_panic_termo_cmd_s::begin(void) {
+		return servo_.reset_panic_command();
+	}
+	frontend::servo::reset_panic_termo_cmd_s::reset_panic_termo_cmd_s(servo& _servo)
+		: ::robo::termo::node(
+			"reset"
+			, " reset panic "//const char * note; 
+			, "reset <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
 #endif
+	void frontend::devagent::command::query_feedback__(void) {
+		for (auto* it = list_->first(); it; it = it->next()) {
+			query_feedback(it->owner());
+		}
+	}
+	void frontend::devagent::command::perform_feedback__(void) {
+		perform_feedback(*list_);
+		backend::queue::post(&apply_action_, signal::performer::priority::hi);
+	}
+
+	void frontend::devagent::command::apply_action__(void) {
+		for (auto* it = list_->first(); it; it = it->next()) {
+			apply_action(it->owner());
+		}
+	}
+
+	void frontend::devagent::apply_action_(void) {
+		((robo::backend::devagent*)(backend_))->apply_action();
+	}
+	void frontend::devagent::query_feedback_(void) {
+		((robo::backend::devagent*)(backend_))->update_feedback();
+	}
+
+	frontend::devagent::list& frontend::devagent::fast_(void) {
+		static list  fast__;
+		return fast__;
+	}
+	frontend::devagent::list& frontend::devagent::slow_(void) {
+		static list  slow__;
+		return slow__;
+	}
+	frontend::devagent::list& frontend::devagent::disabled_(void) {
+		static list  disabled__;
+		return disabled__;
+	}
+	frontend::devagent::list& frontend::devagent::disconnected_(void) {
+		static list  disconnected__;
+		return disconnected__;
+	}
+	void frontend::servo::fast_exchange_start(robo::time_us_t _time_us, devagent::exchange::feedback_performer* _feedback_performer) {
+		fast_exchange_.start(_time_us, devagent::fast_(), _feedback_performer);
+	}
+	void frontend::servo::slow_exchange_start(void) {
+		slow_exchange_.start(slow_exchange_period_us_, devagent::slow_(), &on_slow_exchange_);
+	}
+
 	frontend::devagent::devagent(robo::cstr _name, robo::app::node& _owner, action_s& _action, action_s& _goal, feedback_s& _feedback)
 		: app::node(_name, &_owner)
 		, action_(_action)
@@ -814,7 +951,15 @@ namespace robo {
 		, devdiscovery_(*this)
 		, devstopped_(*this)
 		, devconfigure_(*this)
+		, devservice_(*this)
+		, devdirrect_(*this)
+		, devindepended_(*this)
+		, devreset_panic_(*this)
+		, devpanic_(*this)
+		, ref_(*this)
+		, index_ref_(*this)
 	{
+		ref_.attach_to( disabled_() );
 	}
 	bool frontend::devagent::do_load(void) {
 		ROBO_LBREAKN(robo::app::node::do_load());
@@ -822,9 +967,12 @@ namespace robo {
 		ROBO_LBREAKN(ini::load(current_path(), defaults_path(), RT("ENABLED"), tmp));
 
 		if (tmp) {
-			//feedback_.status.connection = statuses::connections::discovery;
-			discovery_begin();
-			devcontroller.run();
+			status_ = statuses::locals::disconnected;
+			ref_.attach_to(devagent::disconnected_());
+		}
+		else {
+			status_ = statuses::locals::disabled;
+			ref_.attach_to(devagent::disabled_());
 		}
 		return true;
 	}
@@ -833,20 +981,95 @@ namespace robo {
 	}
 	bool frontend::devagent::do_start(void) {
 		ROBO_LBREAKN(robo::app::node::do_start());
+		if (status_ != statuses::locals::disabled) {
+			discovery_begin();
+		}
 		return true;
 	}
 	void   frontend::devagent::discovery_begin(void) {
-		robo::system::guard g__;
 		devcontroller.switchto(&devdiscovery_);
+		devcontroller.run();
+		robo::system::guard g__;
+		ref_.attach_to(devagent::slow_());
 		//incom_total = trafic.incom.success.bytes.total;
 	}
 	void   frontend::devagent::do_discovery_complete(void) {
 		devcontroller.switchto(&devconfigure_);
+
 	};
 	void  frontend::devagent::do_configure_complete(void) {
 		//configure_quest_ = nullptr;
 		devcontroller.switchto(&devstopped_);
+		robo::system::guard g__;
+		ref_.attach_to(devagent::slow_());
 	}
 
+	bool frontend::servo::reconfig_command(void) {
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::halt;
+		}
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::halt;
+		}
+		return false;
+	}
+	bool frontend::servo::discovery_command(void) {
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::discovery;
+		}
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::discovery;
+		}
+		for (auto* it = devagent::disconnected_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::discovery;
+		}
+		return false;
+	}
+
+	bool frontend::servo::service_command(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2service;
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2service;
+		}
+		return false;
+	}
+	bool frontend::servo::stop_command(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::stop;
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::stop;
+		}
+		return false;
+	}
+	bool frontend::servo::dirrect_command(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2dirrect;
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2dirrect;
+		}
+		return false;
+	}
+	bool frontend::servo::independed_command(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2independed;
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::sw2independed;
+		}
+		return false;
+	}
+	bool frontend::servo::reset_panic_command(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::reset_panic;
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().action_.command = devagent::commands::reset_panic;
+		}
+		return false;
+	}
 }
 

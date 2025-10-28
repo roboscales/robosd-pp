@@ -157,8 +157,8 @@ namespace robo {
 
 		/**/
 
-
 		class devagent : public app::node {
+			friend class robo::frontend::devagent;
 		public:
 			typedef  ::robo::list::sorted<devagent, int> bus_index;
 			typedef  bus_index::ref bus_ref;
@@ -313,6 +313,7 @@ namespace robo {
 			stream::list streams_;
 			action_s& goal_;
 			feedback_s& feedback_;
+
 		protected:
 			
 			virtual void apply_action(void) {
@@ -326,7 +327,7 @@ namespace robo {
 				case statuses::locals::discovery: //поиск исполнительного устройства
 					gl.mode = modes::stop;
 					break;
-				case statuses::locals::lost: //обмен потерян
+				case statuses::locals::disconnected: //обмен потерян
 					gl.mode = modes::disable;
 					break;
 				case statuses::locals::configure: //
@@ -347,7 +348,7 @@ namespace robo {
 				}
 				front_goal = front_action;
 			}
-			//virtual void agent_uppdate_feedback(void) = 0;
+			virtual void update_feedback(void) = 0;
 
 		protected:
 
@@ -376,6 +377,10 @@ namespace robo {
 				frontend::devagent& frontagent_;
 			protected:
 				frontend::devagent& frontagent(void) { return frontagent_; };
+			public:
+				statuses::locals status(void) {
+					return frontagent_.status();
+				}
 		};
 		class ROBO_EXPORT bus : public app::node {
 		public:
@@ -423,7 +428,7 @@ namespace robo {
 			static void tick1sec(void);
 		};
 
-		template<class D> class protdevagent_b : public D, public ::robo::frontend::shared {
+		template<class D> class protdevagent_b : public D/*, public ::robo::frontend::shared*/ {
 		public:
 			typedef typename D::action_s action_s;
 			typedef typename D::feedback_s feedback_s;
@@ -447,21 +452,19 @@ namespace robo {
 				}
 			}
 
-			virtual void uppdate_feedback(void) {
-//				D::agent_uppdate_feedback();
-
+			virtual void update_feedback(void) {
 				D::frontagent().feedback<D>() = feedback_;
 				D::frontagent().goal<D>() = goal_;
 			}
 		public:
 			protdevagent_b(cstr _name, boardagent& _boardagent, const action_s& _action, action_s& _goal, feedback_s& _feedback, config_s& _config, frontagent_s & _frontagent)
 				: D(_name, _boardagent, goal_, feedback_, _frontagent)
-				, ::robo::frontend::shared(
+				/*, ::robo::frontend::shared(
 					(void*)(&_action)
 					, (void*)((uint8_t*)(&_action) + sizeof(action_s) / sizeof(uint8_t))
 					, (void*)(&_feedback)
 					, (void*)((uint8_t*)((&_feedback)) + sizeof(feedback_s) / sizeof(uint8_t))
-				) {}
+				) */ {}
 		};
 		template<class D > class protdevagent_t : public protdevagent_b<D>{
 		public:
@@ -479,7 +482,7 @@ namespace robo {
 			robo::string store_ini;
 			virtual bool do_load(void) {
 				store_ini = robo::system::ini::source();
-				ROBO_LBREAKN(robo::app::node::do_start());
+				ROBO_LBREAKN(robo::app::node::do_load());
 				return true;
 			}
 			virtual bool do_start(void) {
