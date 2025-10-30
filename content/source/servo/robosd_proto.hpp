@@ -4,6 +4,7 @@
 namespace robo {
 	namespace devagent {
 		struct statuses{
+
 			enum class locals {
 				disabled = 0, // анент исключен из обмена
 				disconnected = 1, // анент исключен из обмена

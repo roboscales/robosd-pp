@@ -139,8 +139,8 @@ namespace robo {
 		if (command() == commands::start) {
 			switch (state_) {
 			case states::stopped:
-				onEnter();
 				state_ = states::entered;
+				onEnter();
 			case states::entered:
 				if (doEnter() == result::success) {
 					state_ = states::execute;

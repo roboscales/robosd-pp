@@ -580,7 +580,7 @@ namespace burst {
 		return present_.panics;
 	}
 
-	void board::reset_panics_(void) {
+	void board::force_reset_panics_(void) {
 		present_.panics = 0;
 		for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
 			p->owner().present_.panic = 0;

@@ -345,6 +345,9 @@ namespace robo {
 					break;
 				case statuses::locals::service: //устройство работает под управлением стороннего ПО
 					break;
+				case statuses::locals::reset_panic:
+					gl.mode = modes::reset_panic;
+					break;
 				}
 				front_goal = front_action;
 			}

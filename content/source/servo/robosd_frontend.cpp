@@ -1071,5 +1071,16 @@ namespace robo {
 		}
 		return false;
 	}
+	void frontend::servo::poll(void) {
+		for (auto* it = devagent::fast_().first(); it; it = it->next()) {
+			it->owner().poll();
+		}
+		for (auto* it = devagent::slow_().first(); it; it = it->next()) {
+			it->owner().poll();
+		}
+		for (auto* it = devagent::disconnected_().first(); it; it = it->next()) {
+			it->owner().poll();
+		}
+	}
 }
 

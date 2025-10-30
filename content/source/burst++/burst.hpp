@@ -490,6 +490,7 @@ namespace burst {
 		static void reset_panics(void){ instance_.reset_panics(); };
 		static void reconfig_query(void){  instance_.reconfig_query_count_++;};
 		static bool if_configure(void){ return instance_.present_.status == front::board::statuses::configure;};
+		static void force_reset_panics(void) { instance_.force_reset_panics_();  }
 		#if ROBO_APP_SYSTEM_ENABLED
 		friend class robo::system::env;
 		#endif
@@ -510,7 +511,7 @@ namespace burst {
 	private:
 		void raise_panic_(uint32_t _flag);
 		void reset_panic_(uint32_t _flag);
-		void reset_panics_(void);
+		void force_reset_panics_(void);
 		#if BURST_PROTECTION_ENABLED == 1
 		void realtime_protection_(void);
 		void frontend_protection_(void);
