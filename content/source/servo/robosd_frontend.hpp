@@ -813,6 +813,18 @@ namespace robo {
 			statuses::locals status(void) {
 				return status_;
 			}
+			bool is_ready(void) {
+				switch ( status_ ) {
+				case statuses::locals::disabled:
+				case statuses::locals::disconnected:
+				case statuses::locals::discovery:
+				case statuses::locals::panic:
+				case statuses::locals::reset_panic:
+					return false;
+				default:
+					return true;
+				}
+			}
 			const char* statname(void) {
 				return robo::devagent::statuses::locals_names[(int)status_];
 			}
@@ -875,6 +887,43 @@ namespace robo {
 
 			};
 
+			template<typename A, int N> static bool is_allready(  A * (& ag)[N] ) {
+				for (int i = 0; i < N; ++i) {
+					if (!ag[i]->is_ready()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			template<typename A, int N> static bool is_allstatus(A* (&ag)[N], statuses::locals _status) {
+				for (int i = 0; i < N; ++i) {
+					if ( ag[i]->status() != _status ) {
+						return false;
+					}
+				}
+				return true;
+			}
+			template<typename A, int N> static void stop(A* (&ag)[N]) {
+				for (int i = 0; i < N; ++i) {
+					ag[i]->action_.command = commands::stop;
+				}
+			}
+			template<typename A, int N> static void reset_panic(A* (&ag)[N]) {
+				for (int i = 0; i < N; ++i) {
+					ag[i]->action_.command = commands::reset_panic;
+				}
+			}
+			template<typename A, int N> static void discovery(A* (&ag)[N]) {
+				for (int i = 0; i < N; ++i) {
+					ag[i]->action_.command = commands::discovery;
+				}
+			}
+			template<typename A, int N> static void start_config(A* (&ag)[N]) {
+				for (int i = 0; i < N; ++i) {
+					ag[i]->action_.command = commands::halt;
+				}
+			}
 		protected:
 			virtual void fail_to_panic(void) {
 				devcontroller.switchto(&devpanic_);				
@@ -1184,7 +1233,6 @@ namespace robo {
 			virtual bool do_start(void);
 
 		public:
-
 			devagent(robo::cstr _name, robo::app::node & _owner, action_s& _action,  action_s& _goal, feedback_s& _feedback);
 
 			virtual bool check_configure_complete(void) {
@@ -1274,6 +1322,7 @@ namespace robo {
 
 
 		class ROBO_EXPORT servo : public robo::app::node {
+		protected:
 			virtual bool reconfig_command(void);
 			virtual bool discovery_command(void);
 			virtual bool service_command(void);
@@ -1281,6 +1330,7 @@ namespace robo {
 			virtual bool dirrect_command(void);
 			virtual bool independed_command(void);
 			virtual bool reset_panic_command(void);
+		private:
 #if ROBO_APP_TERMINAL_ENABLED
 			robo::string termoserial_name_;
 			robo::net::iserial* termoserial_ = nullptr;
@@ -1344,11 +1394,26 @@ namespace robo {
 			public:
 				reset_panic_termo_cmd_s(servo& _servo);
 			}reset_panic_termo_cmd_;
+			
+			class status_termo_cmd_s : public ::robo::termo::node {
+				servo& servo_;
+			protected:
+				virtual bool begin(void);
+			public:
+				status_termo_cmd_s(servo& _servo);
+			}status_termo_cmd_;
+
 #endif
 			robo::time_us_t slow_exchange_period_us_;
 		public:
 			servo(robo::cstr _name, robo::app::module& _module);
+#if ROBO_APP_TERMINAL_ENABLED
+			robo::termo::node& termo_root(void) {
+				return root_termo_cmd_;
+			}
+#endif
 		protected:
+			virtual void termo_status_show(void);
 			virtual bool do_load(void);
 			virtual bool do_start(void);
 			void on_slow_exchange__(devagent::list&);

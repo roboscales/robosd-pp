@@ -91,6 +91,8 @@ namespace robo{
 				return instance_;
 			}
 		};
+
+
 		void itf::printf(const char * _format, ...){
 			va_list args;
 			va_start(args, _format);
@@ -99,6 +101,16 @@ namespace robo{
 			}
 			va_end(args);
 		};
+		void itf::printf(robo::cstr _format, ...) {
+			va_list args;
+			va_start(args, _format);
+			{
+				string s(_format, args);
+				string::format_stream(*core::instance_().serial_, s.ascii(), args);
+			}
+			va_end(args);
+		}
+
 
 		void itf::echo_off(void){
 			core::instance_().echo_ = false;

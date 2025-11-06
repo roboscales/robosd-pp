@@ -762,6 +762,7 @@ namespace robo {
 		, dirrect_termo_cmd_(*this)
 		, independed_termo_cmd_(*this)
 		, reset_panic_termo_cmd_(*this)
+		, status_termo_cmd_(*this)
 		, on_slow_exchange_ (*this, &servo::on_slow_exchange__)
 	{
 	}
@@ -896,6 +897,29 @@ namespace robo {
 		)
 		, servo_(_servo) {
 	}
+	void frontend::servo::termo_status_show(void) {
+		termo::itf::printf (RT("servo name: '%s'\n\r"), display_alias() );
+		termo::itf::printf(RT("\t dev disabled count: '%d'\n\r"), devagent::disabled_().count() );
+		termo::itf::printf(RT("\t dev disconnected count: '%d'\n\r"), devagent::disconnected_().count());
+		termo::itf::printf(RT("\t dev slow count: '%d'\n\r"), devagent::slow_().count());
+		termo::itf::printf(RT("\t dev fast count: '%d'\n\r"), devagent::fast_().count());
+	}
+
+	bool frontend::servo::status_termo_cmd_s::begin(void) {
+		servo_.termo_status_show();
+		return false;
+	}
+	frontend::servo::status_termo_cmd_s::status_termo_cmd_s(servo& _servo) :
+		::robo::termo::node(
+			"status"
+			, " show current status "//const char * note; 
+			, "independed <CR>" //const char * usage;  
+			, &_servo.root_termo_cmd_
+		)
+		, servo_(_servo) {
+	}
+	
+
 #endif
 	void frontend::devagent::command::query_feedback__(void) {
 		for (auto* it = list_->first(); it; it = it->next()) {
@@ -1082,5 +1106,6 @@ namespace robo {
 			it->owner().poll();
 		}
 	}
+
 }
 

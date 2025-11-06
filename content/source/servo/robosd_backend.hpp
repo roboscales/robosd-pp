@@ -317,8 +317,8 @@ namespace robo {
 		protected:
 			
 			virtual void apply_action(void) {
-				auto& front_action = frontagent().action<frontend::devagent>();
-				auto& front_goal = frontagent().goal<frontend::devagent>();
+				//auto& front_action = frontagent().action<frontend::devagent>();
+				//auto& front_goal = frontagent().goal<frontend::devagent>();
 				auto& gl = goal<frontend::devagent>();
 				switch (frontagent().status()) {
 				case statuses::locals::disabled: // анент исключен из обмена
@@ -349,7 +349,7 @@ namespace robo {
 					gl.mode = modes::reset_panic;
 					break;
 				}
-				front_goal = front_action;
+				//front_goal = front_action;
 			}
 			virtual void update_feedback(void) = 0;
 
@@ -444,15 +444,16 @@ namespace robo {
 			feedback_s feedback_;
 		protected:
 			virtual void apply_action(void) {
-
+				auto& front_action = D::frontagent().action<D>();
+				auto& front_goal = D::frontagent().goal<D>();
+				auto& gl = goal<D>();
 				if ( frontagent().status() == statuses::locals::dirrect ) {
-					auto& front_action = D::frontagent().action<D>();
-					auto& front_goal = D::frontagent().goal<D>();
-					front_goal = front_action;
+					gl = front_action;
 				}
 				else {
 					D::apply_action();
 				}
+				front_goal = front_action;
 			}
 
 			virtual void update_feedback(void) {
