@@ -22,6 +22,7 @@ namespace robo {
 							ROBO_JAMPN_F(UCanInit(on_read_, USBCAN_CHANNEL_CH0, USBCAN_ANY_MODULE, bitrate_, channel_, 0x7FF) == TRUE, error, "Failed to open channel %d with bitrate (%d)", channel_, bitrate_);
 						}
 						link_count_++;
+						_ref.attach_to(ports_);
 						return true;
 					error:
 						close_();
