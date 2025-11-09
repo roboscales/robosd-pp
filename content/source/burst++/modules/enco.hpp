@@ -795,8 +795,8 @@ class resolver_driver_s {
 			auto result = p.upper_reference ;
 
 			for (int n  = 0; n < 3; n++) { 
-				int32_t tmp_delta = (int32_t)(p.svt0[n] - p.upper_reference);
-				if (abs(tmp_delta) < abs(resolver_delta)) {
+				int32_t tmp_delta = abs((int32_t)(p.svt0[n] - p.upper_reference));
+				if (tmp_delta < resolver_delta) {
 					resolver_delta = tmp_delta;
 					result = p.svt0[n];
 				}
