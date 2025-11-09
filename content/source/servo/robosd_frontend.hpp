@@ -804,10 +804,14 @@ namespace robo {
 				return reinterpret_cast <typename A::action_s&> (action_);
 			}
 
+			template <typename A> typename A::config_s& config(void) {
+				return reinterpret_cast <typename A::config_s&> (config_);
+			}
 		private:
 			action_s& action_;
 			action_s& goal_;
 			feedback_s& feedback_;
+			config_s& config_;
 			statuses::locals status_ = statuses::locals::disabled;
 		public:
 			statuses::locals status(void) {
@@ -1233,7 +1237,7 @@ namespace robo {
 			virtual bool do_start(void);
 
 		public:
-			devagent(robo::cstr _name, robo::app::node & _owner, action_s& _action,  action_s& _goal, feedback_s& _feedback);
+			devagent(robo::cstr _name, robo::app::node & _owner, config_s& _config, action_s& _action,  action_s& _goal, feedback_s& _feedback);
 
 			virtual bool check_configure_complete(void) {
 				switch (feedback_.dev.status) {

@@ -563,19 +563,25 @@ namespace robo{
 				do{
 					switch (*_arg){
 					case '-':
-						switch (fetch_status)
 						{
-						case FETCH_FIRST:
-						case FETCH_BEGIN:
-							fetch_status = FETCH_DELIM;
-							*_arg = 0;
-							break;
-						case FETCH_DELIM:
-							argv[argc++] = _arg;
-							fetch_status = FETCH_ARG;
-							break;
-						case FETCH_ARG:
-							break;
+							char  tmp = *(_arg+1);
+							if (tmp != 0 && isdigit(tmp) && (fetch_status== FETCH_ARG || fetch_status == FETCH_BEGIN)) {
+								break;
+							} else
+								switch (fetch_status)
+								{
+								case FETCH_FIRST:
+								case FETCH_BEGIN:
+									fetch_status = FETCH_DELIM;
+									*_arg = 0;
+									break;
+								case FETCH_DELIM:
+									argv[argc++] = _arg;
+									fetch_status = FETCH_ARG;
+									break;
+								case FETCH_ARG:
+									break;
+								}
 						}
 						break;
 					case ' ':

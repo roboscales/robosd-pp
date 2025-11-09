@@ -69,6 +69,7 @@ namespace robo {
 			statuses::remotes status;
 		};
 		struct config_s {
+			int index;
 		};
 
 	}

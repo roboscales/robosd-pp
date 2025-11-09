@@ -967,7 +967,7 @@ namespace robo {
 		slow_exchange_.start(slow_exchange_period_us_, devagent::slow_(), &on_slow_exchange_);
 	}
 
-	frontend::devagent::devagent(robo::cstr _name, robo::app::node& _owner, action_s& _action, action_s& _goal, feedback_s& _feedback)
+	frontend::devagent::devagent(robo::cstr _name, robo::app::node& _owner, config_s& _config, action_s& _action, action_s& _goal, feedback_s& _feedback)
 		: app::node(_name, &_owner)
 		, action_(_action)
 		, goal_(_goal)
@@ -982,6 +982,7 @@ namespace robo {
 		, devpanic_(*this)
 		, ref_(*this)
 		, index_ref_(*this)
+		, config_(_config)
 	{
 		ref_.attach_to( disabled_() );
 	}
