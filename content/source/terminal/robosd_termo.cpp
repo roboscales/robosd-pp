@@ -101,6 +101,7 @@ namespace robo{
 			}
 			va_end(args);
 		};
+		#if ROBO_UNICODE_ENABLED
 		void itf::printf(robo::cstr _format, ...) {
 			va_list args;
 			va_start(args, _format);
@@ -110,6 +111,7 @@ namespace robo{
 			}
 			va_end(args);
 		}
+		#endif
 
 
 		void itf::echo_off(void){

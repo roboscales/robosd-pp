@@ -487,7 +487,7 @@ namespace burst {
 		static int slot_index(void) { return instance_.slot_index_; }
 		static void raise_panic(uint32_t _flag) { instance_.raise_panic_(_flag); };
 		static void reset_panic(uint32_t _flag){ instance_.reset_panic_(_flag); };
-		static void reset_panics(void){ instance_.reset_panics(); };
+//		static void reset_panics(void){ instance_.reset_panics(); };
 		static void reconfig_query(void){  instance_.reconfig_query_count_++;};
 		static bool if_configure(void){ return instance_.present_.status == front::board::statuses::configure;};
 		static void force_reset_panics(void) { instance_.force_reset_panics_();  }
