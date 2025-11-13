@@ -612,6 +612,7 @@ namespace robo {
 		
 		template<typename T> class quat_axis_t {
 		public:
+			using type = T;
 			quaternion_t <T> L;
 			vector3_t<T> r;
 			constexpr quat_axis_t() :L{ 1,0,0,0 }, r{0,0,0} {}
@@ -669,6 +670,15 @@ namespace robo {
 				r = span(_src.memo + 4, 3);
 				L.rotate();
 				return *this;
+			}
+			template <typename A> constexpr bool operator == (const A& _src) {
+				return  L.w == _src.L.w &&
+					L.x == _src.L.x &&
+					L.y == _src.L.y &&
+					L.z == _src.L.z &&
+					r.x == _src.r.x &&
+					r.y == _src.r.y &&
+					r.z == _src.r.z;
 			}
 			bool load(cstr _path) {
 				ROBO_LBREAKN(L.load(_path,RT("L")));
@@ -731,12 +741,13 @@ namespace robo {
 
 			return a;
 		}
-		template<typename T> quat_axis_t<T> operator - ( quat_axis_t<T>& a,  quat_axis_t<T>& b) {
+		
+		/*template<typename T> quat_axis_t<T> operator - (quat_axis_t<T>& a, quat_axis_t<T>& b) {
 			quat_axis_t<T> tmp;
 			tmp.L = a.L / b.L;
 			tmp.r = a.r - b.r / b.L;
 			return tmp;
-		}
+		}*/
 
 		template<typename T> vector3_t<T> operator * ( quat_axis_t<T>& a, const vector3_t<T>& b) {
 			return ((a.L * b)+ a.r);

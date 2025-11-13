@@ -77,6 +77,10 @@ namespace robo{
 					bool powerOn = false;
 					ideal2(agent& _agent, cstr _name);
 					void set_phase_voltage(float _a_V, float _b_V, float _c_V);
+					void set_begin_position(double _pos) {
+						actuator.position = _pos;
+						electro.position = _pos * p;
+					}
 				};
 			}
 		}
