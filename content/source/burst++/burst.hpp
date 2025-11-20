@@ -121,7 +121,11 @@ namespace burst {
 		public:
 			mode(int _id, dev& _dev);
 			template <typename T>  T& owner(void) {
+				#if ROBO_APP_RTTI_ENABLED 
 				return dynamic_cast < T &>(dev_);
+				#else 
+				return (T &)(dev_);
+				#endif
 			}
 		};
 		
