@@ -786,10 +786,11 @@ class resolver_driver_s {
 			
 			//uint32_t vt1 = (uint16_t)resolve_machine_tetta;
 
-			
-			p.svt0[0]	= p.upper_bits + p.low_bits ; 
-			p.svt0[1] = p.svt0[0] - (1L<<( 32-conf.sence_hi_segment_bits));
-			p.svt0[2] = p.svt0[0] + (1L<<( 32-conf.sence_hi_segment_bits));
+			uint32_t sector = (1L<<( 32-conf.sence_hi_segment_bits));
+				
+			p.svt0[0]	= p.upper_bits + p.low_bits -(sector>>1); 
+			p.svt0[1] = p.svt0[0] - sector;
+			p.svt0[2] = p.svt0[0] + sector;
 
 			int32_t resolver_delta = std::numeric_limits<int32_t>::max();
 			auto result = p.upper_reference ;
