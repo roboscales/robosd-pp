@@ -788,7 +788,7 @@ class resolver_driver_s {
 
 			uint32_t sector = (1L<<( 32-conf.sence_hi_segment_bits));
 				
-			p.svt0[0]	= p.upper_bits + p.low_bits -(sector>>1); 
+			p.svt0[0]	= p.upper_bits + p.low_bits; 
 			p.svt0[1] = p.svt0[0] - sector;
 			p.svt0[2] = p.svt0[0] + sector;
 
