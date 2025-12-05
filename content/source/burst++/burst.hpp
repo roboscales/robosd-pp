@@ -529,6 +529,10 @@ namespace burst {
 		short temper_get_lo_pp(void);
 		short temper_get_hi_pp(void);
 		#endif
+    
+        #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
+        bool get_sto_state(void);
+        #endif
 
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
 		short voltage_get_pp(void);
