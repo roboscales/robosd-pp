@@ -598,7 +598,7 @@ namespace burst {
 			reset_panic_(front::board::panics::bits::overvoltage);
 			raise_panic(front::board::panics::bits::lovoltage);
 		}
-		else 
+		else if(burst_board_voltage <= config_->panics.overvoltage_pp && burst_board_voltage >= config_->panics.lovoltage_pp)
 		{
 			reset_panic_(front::board::panics::bits::overvoltage);
 			reset_panic_(front::board::panics::bits::lovoltage);
