@@ -414,12 +414,26 @@ namespace burst{
 		#endif
 
 		#if BURST_PROTECTION_ENABLED == 1
+		unsigned int get_hall_state();
 		virtual void realtime_protection(void) {
 			dev::realtime_protection();
 		}
 		virtual void frontend_protection(void) {
 			dev::frontend_protection();
 			using namespace front::actuator::panics;
+			
+			#if BURST_PANICS_ACTUATOR_HALL_ENABLED == 1
+			unsigned int hall_state = get_hall_state();
+			if(hall_state == 0 || hall_state == 7)
+			{
+				raise_panic(bits::hall_failure);
+			}
+			else if (hall_state >= 1 || hall_state <=6)
+			{
+				reset_panics(bits::hall_failure);
+			}
+			#endif
+
 			#if BURST_PANICS_ACTUATOR_TEMPER_ENABLED == 1
 			DEV_CONFIG_S(c);
 			DEV_PRESENT_S(p);

@@ -592,9 +592,16 @@ namespace burst {
 		int burst_board_voltage = voltage_get_pp();
 		if (burst_board_voltage >= config_->panics.overvoltage_pp) {
 			raise_panic(front::board::panics::bits::overvoltage);
+			reset_panic_(front::board::panics::bits::lovoltage);
 		}
 		else if (burst_board_voltage <= config_->panics.lovoltage_pp) {
+			reset_panic_(front::board::panics::bits::overvoltage);
 			raise_panic(front::board::panics::bits::lovoltage);
+		}
+		else 
+		{
+			reset_panic_(front::board::panics::bits::overvoltage);
+			reset_panic_(front::board::panics::bits::lovoltage);
 		}
 		#endif
 
@@ -631,9 +638,9 @@ namespace burst {
 				reset_panic_(front::board::panics::bits::lotemp);
 			}
 		}
-        
-        
         #endif
+		
+		
         
         #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
         bool burst_board_sto_active = get_sto_state();
