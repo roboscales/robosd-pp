@@ -423,6 +423,7 @@ namespace burst{
 			using namespace front::actuator::panics;
 			
 			#if BURST_PANICS_ACTUATOR_HALL_ENABLED == 1
+			// todo: до первого казуса, ставим счетчик
 			unsigned int hall_state = get_hall_state();
 			if(hall_state == 0 || hall_state == 7)
 			{

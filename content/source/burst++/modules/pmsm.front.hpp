@@ -46,7 +46,7 @@ namespace burst {
 				struct masks {
 					enum {
 						phase_break = 1 << bits::phase_break
-						, misalignment = 1 << bits::misalignment
+						, misalignment = 1 << bits::misalignment // потеря привязки к ротору
 					};
 				};
 			}
