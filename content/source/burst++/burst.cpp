@@ -639,8 +639,21 @@ namespace burst {
 			}
 		}
         #endif
-		
-		
+        
+        #if BURST_PANICS_BOARD_FRIENDLY_BOARD_IN_TROUBLE_ENABLED == 1
+		bool burst_board_friend_state = friend_got_emcy();
+        if (burst_board_friend_state == true)
+        {
+            raise_panic(front::board::panics::bits::friendly_driver_in_trouble);
+        }
+        else
+        {
+            if(present_.panics)
+            {
+                raise_panic(front::board::panics::bits::friendly_driver_in_trouble);
+            }
+        }
+        #endif
         
         #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
         bool burst_board_sto_active = get_sto_state();

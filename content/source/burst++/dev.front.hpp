@@ -22,6 +22,7 @@ namespace burst {
 						, lotemp = 5
 						, config = 6
                         , sto_active = 7
+                        , friendly_driver_in_trouble = 8
 					};
 				};
 				struct masks {
@@ -34,6 +35,7 @@ namespace burst {
 						, lotemp = 1 << bits::lotemp
 						, config = 1 << bits::config
                         , sto_active = 1 << bits::sto_active
+                        , friendly_driver_in_trouble = 1 << bits::friendly_driver_in_trouble
 					};
 				};
 			}

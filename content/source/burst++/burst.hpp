@@ -533,6 +533,8 @@ namespace burst {
         #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
         bool get_sto_state(void);
         #endif
+    
+        bool friend_got_emcy(void);
 
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
 		short voltage_get_pp(void);
