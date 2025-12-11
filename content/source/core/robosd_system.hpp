@@ -247,7 +247,7 @@ namespace robo {
 			/*!
 			 *  поток обозначает, что он реализует backend
 			 */
-			static void fall(void);
+			static void fall(void);         
 
 			/*!
 			 *  поток обозначает, что он перестал реализовать backend
@@ -283,7 +283,10 @@ namespace robo {
 
 			#endif
 		public:
-
+            /*
+            Делаем перезагрузку системы
+            */
+            static void reset(void);
 			/*!
 			 *  Returns true if the env is frontend.
 			 *
