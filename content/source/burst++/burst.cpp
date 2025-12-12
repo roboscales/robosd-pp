@@ -114,12 +114,15 @@ namespace burst {
 	}
 
 	#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-	void dev::master_alive(void) {
+	void dev::master_alive_(void) {
 		if (config_.alive_period_us > 0) {
 			present_.master_alive_tm = time_us();
 			present_.master_exists = true;
 			reset_panic(front::dev::panics::bits::master_lost);
 		}
+	}
+    void dev::master_alive(void) {
+        board::devs_().first()->owner().master_alive_();
 	}
 	#endif
 
