@@ -673,7 +673,7 @@ namespace burst {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){
 					uint32_t mask = present_.panics;
-					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config | front::dev::panics::masks::master_lost );
+					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config );
 					present_.panics &= ~(mask);
 					if (present_.panics == 0) {
 						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {

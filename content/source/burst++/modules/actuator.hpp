@@ -333,7 +333,7 @@ namespace burst{
 				#endif
 		{
 			using namespace front::actuator::panics;
-			noreset_panic_mask |= (masks::overtemp | masks::lotemp) ;
+			noreset_panic_mask |= (masks::overtemp | masks::lotemp ) ;
 		}
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		virtual void regvar_action(robo::cstr _name) {
