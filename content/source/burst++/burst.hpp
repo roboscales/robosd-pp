@@ -193,8 +193,7 @@ namespace burst {
 	public:
 		void raise_panic(uint8_t _flag);
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-		void master_alive_(void);
-        static void master_alive(void);
+        void master_alive(void);
 		#endif
 		virtual void switch_to_mode(int _mode);
 		virtual void loopA(void);

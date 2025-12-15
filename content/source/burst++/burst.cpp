@@ -114,15 +114,12 @@ namespace burst {
 	}
 
 	#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-	void dev::master_alive_(void) {
+	void dev::master_alive(void) {
 		if (config_.alive_period_us > 0) {
 			present_.master_alive_tm = time_us();
 			present_.master_exists = true;
 			reset_panic(front::dev::panics::bits::master_lost);
 		}
-	}
-    void dev::master_alive(void) {
-        board::devs_().first()->owner().master_alive_();
 	}
 	#endif
 
@@ -133,6 +130,7 @@ namespace burst {
 			time_us_t av = present_.master_alive_tm;
 			if (time_us() - av > config_.alive_period_us) {
 				present_.master_exists = false;
+                present_.master_alive_tm = 0;
 				raise_panic(front::dev::panics::bits::master_lost);
 			}
 		}
@@ -675,7 +673,7 @@ namespace burst {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){
 					uint32_t mask = present_.panics;
-					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config );
+					mask &= ~( front::board::panics::masks::overtemp | front::board::panics::masks::lotemp | front::board::panics::masks::config | front::dev::panics::masks::master_lost );
 					present_.panics &= ~(mask);
 					if (present_.panics == 0) {
 						for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {
