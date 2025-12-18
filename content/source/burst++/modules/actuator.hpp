@@ -431,7 +431,7 @@ namespace burst{
 			}
 			else if (hall_state >= 1 || hall_state <=6)
 			{
-				reset_panics(bits::hall_failure);
+				reset_panic(bits::hall_failure);
 			}
 			#endif
 

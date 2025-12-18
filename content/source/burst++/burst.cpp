@@ -645,13 +645,13 @@ namespace burst {
 		bool burst_board_friend_state = friend_got_emcy();
         if (burst_board_friend_state == true)
         {
-            raise_panic(front::board::panics::bits::friendly_driver_in_trouble);
+            raise_panic_(front::board::panics::bits::friendly_driver_in_trouble);
         }
         else
         {
             if(present_.panics)
             {
-                raise_panic(front::board::panics::bits::friendly_driver_in_trouble);
+                reset_panic_(front::board::panics::bits::friendly_driver_in_trouble);
             }
         }
         #endif
