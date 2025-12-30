@@ -545,7 +545,7 @@ namespace burst{
 
 			DEV_CONFIG_S(cfg);
 			DEV_PRESENT_S(p);
-
+			
 			signal_t magnitude = current_mag;
 			signal_t delta = magnitude - p.current.magnitude.actual;
 			time_us_t now = time_us();

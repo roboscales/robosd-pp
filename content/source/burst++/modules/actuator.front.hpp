@@ -39,7 +39,8 @@ namespace burst {
 						possence = burst::front::dev::panics::bits::last + 1
 						, overtemp = burst::front::dev::panics::bits::last + 2
 						, lotemp = burst::front::dev::panics::bits::last + 3
-						, last = lotemp
+						, hall_failure = burst::front::dev::panics::bits::last + 4
+						, last = hall_failure
 					};
 				};
 				struct masks {
@@ -47,6 +48,7 @@ namespace burst {
 						possence = 1<<bits::possence
 						, overtemp = 1<<bits::overtemp
 						, lotemp = 1<<bits::lotemp
+						, hall_falure = 1 << bits::hall_failure
 					};
 				};
 			}

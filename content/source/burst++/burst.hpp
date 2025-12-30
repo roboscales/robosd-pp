@@ -193,7 +193,7 @@ namespace burst {
 	public:
 		void raise_panic(uint8_t _flag);
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-		void master_alive(void);
+        void master_alive(void);
 		#endif
 		virtual void switch_to_mode(int _mode);
 		virtual void loopA(void);
@@ -529,6 +529,12 @@ namespace burst {
 		short temper_get_lo_pp(void);
 		short temper_get_hi_pp(void);
 		#endif
+    
+        #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
+        bool get_sto_state(void);
+        #endif
+    
+        bool friend_got_emcy(void);
 
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
 		short voltage_get_pp(void);

@@ -39,13 +39,14 @@ namespace burst {
 				struct bits {
 					enum {
 						phase_break = burst::front::acw::panics::bits::last + 1
-						, misalignment = burst::front::acw::panics::bits::last + 2
+						, misalignment = burst::front::acw::panics::bits::last + 2, 
+                        last = misalignment
 					};
 				};
 				struct masks {
 					enum {
 						phase_break = 1 << bits::phase_break
-						, misalignment = 1 << bits::misalignment
+						, misalignment = 1 << bits::misalignment // потеря привязки к ротору
 					};
 				};
 			}

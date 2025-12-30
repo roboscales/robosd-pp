@@ -130,6 +130,7 @@ namespace burst {
 			time_us_t av = present_.master_alive_tm;
 			if (time_us() - av > config_.alive_period_us) {
 				present_.master_exists = false;
+                present_.master_alive_tm = 0;
 				raise_panic(front::dev::panics::bits::master_lost);
 			}
 		}
@@ -592,9 +593,16 @@ namespace burst {
 		int burst_board_voltage = voltage_get_pp();
 		if (burst_board_voltage >= config_->panics.overvoltage_pp) {
 			raise_panic(front::board::panics::bits::overvoltage);
+			reset_panic_(front::board::panics::bits::lovoltage);
 		}
 		else if (burst_board_voltage <= config_->panics.lovoltage_pp) {
+			reset_panic_(front::board::panics::bits::overvoltage);
 			raise_panic(front::board::panics::bits::lovoltage);
+		}
+		else if(burst_board_voltage <= config_->panics.overvoltage_pp && burst_board_voltage >= config_->panics.lovoltage_pp)
+		{
+			reset_panic_(front::board::panics::bits::overvoltage);
+			reset_panic_(front::board::panics::bits::lovoltage);
 		}
 		#endif
 
@@ -631,7 +639,36 @@ namespace burst {
 				reset_panic_(front::board::panics::bits::lotemp);
 			}
 		}
-		#endif
+        #endif
+        
+        #if BURST_PANICS_BOARD_FRIENDLY_BOARD_IN_TROUBLE_ENABLED == 1
+		bool burst_board_friend_state = friend_got_emcy();
+        if (burst_board_friend_state == true)
+        {
+            raise_panic_(front::board::panics::bits::friendly_driver_in_trouble);
+        }
+        else
+        {
+            if(present_.panics)
+            {
+                reset_panic_(front::board::panics::bits::friendly_driver_in_trouble);
+            }
+        }
+        #endif
+        
+        #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
+        bool burst_board_sto_active = get_sto_state();
+        if(burst_board_sto_active == true)
+        {
+            raise_panic(front::board::panics::bits::sto_active);
+        }
+        else if (burst_board_sto_active == false) {
+			if (present_.panics) {
+				reset_panic_(front::board::panics::bits::sto_active);
+			}
+		}
+        #endif
+		
 		if ( config_->panics.reset_timeout_us) {
 			if (time_us() - present_.last_panic_us > config_->panics.reset_timeout_us) {
 				if(present_.panics){

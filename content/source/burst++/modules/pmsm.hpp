@@ -56,7 +56,7 @@ namespace burst {
 			}\
 			,{\
 				PANICS_PMSM_CURRENT_MISSALIGMENT_CO(a)\
-			}\
+			},\
 		}
 
 		struct present_s {
@@ -243,7 +243,7 @@ namespace burst {
 			dev::switch_to_mode(_mode);
 			if (p.cross.ac.dev.mode > front::actuator::modes::voltage && p.cross.ac.dev.mode <= front::acw::modes::last) {
 				DEV_CONFIG_S(cfg);
-				//резетим контур продольного тока
+				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 				p.lateral.current.req = 0;
 				p.lateral.current.range = cfg.lateral.current.range;
 				p.lateral.voltage.range = cfg.lateral.voltage.range;
