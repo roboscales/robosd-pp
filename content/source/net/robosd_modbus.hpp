@@ -129,6 +129,7 @@ namespace robo{
 				
 					class outcom : public regs{
 						const uint16_t * src_;
+						robo::delegat::ref<void>* on_confirm_;
 					public:
 						outcom(
 							dispetcher_t & _dispetcher
@@ -139,6 +140,7 @@ namespace robo{
 							, typename regs::actives _active
 							, typename regs::continues _continues
 							, typename regs::freshes _check_prev
+							, robo::delegat::ref<void>* _on_confirm = nullptr
 						): regs(
 							_dispetcher
 							, _device
@@ -147,8 +149,18 @@ namespace robo{
 							, _active
 							, _continues
 							, _check_prev
-						), src_(_src){
+						)
+						, src_(_src)
+						, on_confirm_(_on_confirm)
+						{
 						}
+						void assign(void) {
+							if (regs::check_prev) {
+								regs::get(src_);
+								std::copy_n(regs::memo, regs::count, regs::prev);
+							}
+						}
+
 					protected:
 						virtual void on_request(void){
 							if(! regs::check_prev) {
@@ -178,6 +190,9 @@ namespace robo{
 						virtual void on_confirm(void){
 							if(regs::check_prev) {
 								std::copy_n( regs::memo,  regs::count, regs::prev);
+							}
+							if (on_confirm_) {
+								(*on_confirm_)();
 							}
 						}
 						virtual void on_refuse(const errors & _err){

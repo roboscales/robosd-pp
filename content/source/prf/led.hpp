@@ -1,6 +1,7 @@
 #ifndef robo_prf_led_hpp
 #define robo_prf_led_hpp
-#include "core/robosd_common.hpp"
+//#include "core/robosd_common.hpp"
+#include <stdint.h>
 namespace robo {	
 	namespace prf {	
 		template <typename D, typename V> class led_base_t : public D{			
