@@ -564,6 +564,9 @@ namespace robo {
 #define ROBO_APP_REALTIME_TYPE ROBO_APP_TYPE_SPECIFIC
 #endif
 
+#ifndef ROBO_APP_ULTRACOMPACT
+#define ROBO_APP_ULTRACOMPACT 0
+#endif
 
 
 

@@ -50,15 +50,50 @@ namespace robo{
 				static us_t us(void){
 					return D::tick2us( D::tick());
 				}
-				static void delay_us(ns_t _us){
+				static void delay_us(us_t _us){
 					volatile tick_t begin = D::tick();
 					volatile tick_t period = D::us2tick(_us);
 					while(D::tick() - begin < period ) D::idle();
-				}
-				
+				}				
 		};
-		
-		
+
+		template <class D, typename F > class timer_t: public D{
+			public: 
+				typedef typename  D::tick_t tick_t;
+				typedef typename  D::ns_t ns_t;
+				typedef typename  D::us_t us_t;
+			private:
+				tick_t tick_ = 0;
+				tick_t last_ = 0;
+				tick_t period_ = 0;
+				bool active_ = false;
+				F f_;
+			public: 
+				timer_t(F  _f): f_(_f){}
+				//timer_t(F * _pf): f_(*_pf){}
+				void start_ns(ns_t _ns){
+					active_ =  true;
+					period_ = D::ns2tick(_ns);
+					last_ = D::tick();
+				}
+				void start_us(us_t _us){
+					active_ =  true;
+					period_ = D::us2tick(_us);
+					last_ = D::tick();
+				}
+				void run(void){
+					if(active_){
+						tick_t now = D::tick();
+						if( now - last_ >= period_ ) {
+							f_();
+							last_ = now;
+						}
+					}
+				}
+				void stop(ns_t _ns){
+					active_ = false;
+				}
+		};
 	}
 }
 #endif
