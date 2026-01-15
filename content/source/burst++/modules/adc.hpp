@@ -1,6 +1,7 @@
 #ifndef burst_adc_hpp
 #define burst_adc_hpp
 #include "burst++/modules/actor.hpp"
+#include "core/robosd_system.hpp"
 #include <algorithm>
 
 namespace burst {
@@ -269,7 +270,7 @@ namespace burst {
 			typename number::discret2signal scaler;
 			typedef typename number::discret2signal::config_s config_s;
 			virtual void begin(void){
-				scaler.reconfig();
+				scaler.begin();
 			}
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_conf(void) {

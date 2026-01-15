@@ -129,11 +129,11 @@ namespace burst {
 			#endif
 		public:
 			#if ROBO_APP_ULTRACOMPACT == 0
-			machine_t(const config_s& _config, present_s& _present, Arg... arg)
-				: driver(arg...)
+			machine_t(const config_s& _config, present_s& _present)
+				: driver()
 				, control(_config, _present) {};
-			machine_t(const config_s& _config, present_s& _present, subsystem& _subsystem, Arg... arg)
-				: driver(arg...)
+			machine_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
+				: driver()
 				, control(_config, _present, _subsystem) {};
 			#else
 			template<typename...Arg> machine_t(const config_s& _config, present_s& _present, duty_s & _pwm, Arg... arg)
@@ -218,9 +218,9 @@ namespace burst {
 		public:
 			using instance_s = ps::driver_t<A>; 
 			#if ROBO_APP_ULTRACOMPACT == 0
-			ps_t(const typename B::config_s& _config, typename  B::present_s& _present, driver_s & _driver)
+			ps_t(const typename B::config_s& _config, typename  B::present_s& _present, instance_s & _driver)
 				: B(_config, _present,_driver) {};
-			ps_t(const typename B::config_s& _config, typename  B::present_s& _present, subsystem& _subsystem, driver_s & _driver)
+			ps_t(const typename B::config_s& _config, typename  B::present_s& _present, subsystem& _subsystem, instance_s & _driver)
 				: B(_config, _present,_subsystem, _driver) {};
 			#else
 		ps_t(const typename B::config_s& _config, typename  B::present_s& _present, typename B::duty_s & _duty , instance_s & _instance)

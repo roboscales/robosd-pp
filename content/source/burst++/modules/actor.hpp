@@ -88,10 +88,13 @@ namespace burst {
 			connectto(input, _input );
 		}
 		#endif
-		sink_t(const config_s& _config, present_s& _present,I & _input) : actor(_config, _present), input_(_input) {}
 		#if ROBO_APP_ULTRACOMPACT == 0
 		sink_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: actor(_config, _present, _subsystem) {}
+		sink_t(const config_s& _config, present_s& _present)
+			: actor(_config, _present) {}
+		#else
+		sink_t(const config_s& _config, present_s& _present,I & _input) : actor(_config, _present), input_(_input) {}
 		#endif
 	};
 	

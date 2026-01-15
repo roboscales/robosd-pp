@@ -1,6 +1,7 @@
 #ifndef burst_enco_hpp
 #define burst_enco_hpp
 #include "burst++/modules/actor.hpp"
+#include "burst++/burst.hpp"
 namespace burst {
 	#ifndef BURST_ENCO_ONLINE_RESTART
 	#define BURST_ENCO_ONLINE_RESTART 1

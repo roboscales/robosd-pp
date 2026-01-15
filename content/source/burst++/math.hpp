@@ -1,7 +1,11 @@
 #ifndef burst_math_hpp
 #define burst_math_hpp
-#include "burst++/burst.hpp" 
+#include "burst++/burst_common.hpp" 
+//#include "core/robosd_log.hpp"
+#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 #include "burst++/vartree.hpp"
+#endif
+#include <stdint.h>  
 #include <limits>  
 #include <math.h>
 namespace burst {
@@ -62,6 +66,7 @@ namespace burst {
 			return l_round(_x* long_max);
 		}
 
+
 		constexpr static  long_signal_t l_round(double _x) {
 			if (_x > 0) {
 				return (long_signal_t)(_x + 0.5);
@@ -76,6 +81,12 @@ namespace burst {
 		constexpr static uint16_t s_rad2ceil(signal_t _x) {
 			return ((uint16_t)_x);
 		}
+		constexpr static signal_t discret2rad(discret_t _x) {
+			return  _x;
+		}
+		constexpr static discret_t ul2discret(uint32_t _x) {
+			return  (discret_t)robo::digit::rsh((long_discret_t)_x, 16);
+		}
 		
 
 		#undef S
@@ -84,19 +95,27 @@ namespace burst {
 		static signal_t cos(signal_t _angle);
 		static  signal_t sqrt(ulong_signal_t _value);
 		static signal_t atan2(signal_t _y,signal_t _x);
+		
+		
+		
 	};
 
-	struct real15 {
+	struct real {
 		typedef int16_t discret_t;
 		typedef int32_t long_discret_t;
 		typedef float signal_t;
 		typedef float parameter_t;
 		typedef float long_signal_t;
+		typedef float ulong_signal_t;
 		constexpr static signal_t max = std::numeric_limits<float>::max();
 		constexpr static signal_t min = std::numeric_limits<float>::lowest();
 		constexpr static long_signal_t long_max = std::numeric_limits<float>::max();
 		constexpr static long_signal_t long_min = std::numeric_limits<float>::lowest();
 		constexpr static int discret_bits = 15;
+		constexpr static signal_t pi = robo::pi<signal_t>;
+		constexpr static discret_t discret_max = std::numeric_limits<int16_t>::max();
+		constexpr static discret_t discret_min = std::numeric_limits<int16_t>::lowest();
+
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		struct var{
 			constexpr static ::burst::var::types discret = ::burst::var::types::int16;
@@ -111,6 +130,11 @@ namespace burst {
 			constexpr static ::burst::var::types const_long_signal = ::burst::var::types::const_real;
 		};
 		#endif
+		static signal_t sin(signal_t _angle);
+		static signal_t cos(signal_t _angle);
+		static  signal_t sqrt(ulong_signal_t _value);
+		static signal_t atan2(signal_t _y,signal_t _x);
+
 	};
 
 	
@@ -136,11 +160,15 @@ namespace burst {
 		#endif
 		constexpr static signal_t max = digit::max;
 		constexpr static signal_t min = digit::min;
+		constexpr static discret_t discret_max = digit::max;
+		constexpr static discret_t discret_min = digit::min;
 		constexpr static long_signal_t long_max = digit::long_max;
 		constexpr static long_signal_t long_min = digit::long_min;
 		constexpr static signal_t ones = digit::ones;
 		constexpr static signal_t pi = digit::max;
 		
+
+
 		constexpr static  typename digit::signal_t s_round(double _x) {
 			return digit::s_round(_x);
 		}
@@ -183,6 +211,11 @@ namespace burst {
 		constexpr static typename digit::signal_t s_frac(double _x) {
 			return s_round(_x* digit::max);
 		}
+		constexpr static signal_t sqrt3_div_2 = s_frac( robo::csqrt<double>(3.0) / 2);// number::round(robo::csqrt<double>(3.0) / 2 * number::max);
+		constexpr static signal_t scale = s_frac( robo::csqrt<double>(2.0) -1 );
+		constexpr static signal_t sqrt2_div_2 = s_frac( robo::csqrt<double>(2.0) / 2 );
+		constexpr static signal_t one_div_3 = s_frac(1./ 3);
+		constexpr static signal_t one_div_sqrt3 = s_frac( 1. / robo::csqrt<double>(3.0) );
 
 		constexpr static typename digit::long_signal_t l_frac(double _x) {
 			return l_round(_x* digit::long_max);
@@ -193,55 +226,21 @@ namespace burst {
 		constexpr static uint16_t s_rad2ceil(signal_t _x) {
 			return digit::s_rad2ceil(_x);
 		}
+		
+		constexpr static signal_t ul2discret(uint32_t _x) {
+			return digit::ul2discret(_x);
+		}
+		constexpr static signal_t discret2rad(discret_t _x) {
+			return digit::discret2rad(_x);
+		}
 
-		/*/constexpr static signal_t one_div_2 = digit::round(0.5 * max);
-		constexpr static signal_t one_div_3 = digit::round( (1.0/3.0) * max);
-		constexpr static signal_t two_div_3 = digit::round((2.0 / 3.0) * max);
-		constexpr static signal_t one_div_sqrt3 = digit::round( max * robo::one_div_sqrt3<double> );
-		constexpr static signal_t one_div_sqrt2 = digit::round(max * robo::one_div_sqrt2<double>);
-		constexpr static signal_t sqrt3_div_2 = digit::round(max * robo::sqrt3_div_2<double>);
-		constexpr static signal_t sqrt2_div_2 = digit::round(max * robo::sqrt2_div_2<double>);
-		*/
 		template <typename T> static satstates s_round(const long_signal_t& _src, const range_s <T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
 				return satstates::both;
 			}
 			long_signal_t tmp = robo::digit::round(_src,_shift);
-			/*
-			if (_src == 0) {
-				tmp = (long_signal_t)0;
-			}
-			else {
-				if (_src > 0) {
-					if (_shift > 0) {
-						int r = 1 << (_shift - 1);
-						if (digit::long_max - _src < r) {
-							tmp = digit::long_max >> _shift;
-						}
-						else {
-							tmp = (_src + r) >> _shift;
-						}
-					}
-					else {
-						tmp = _src;
-					}
-				}
-				else {
-					if (_shift > 0) {
-						int r = 1 << (_shift - 1);
-						if (_src - digit::long_min < r) {
-							tmp = -((-digit::long_min) >> _shift);
-						}
-						else {
-							tmp = -((r - _src) >> _shift);
-						}
-					}
-					else {
-						tmp = _src;
-					}
-				}
-			}*/
+			
 			if (tmp > _range.hi) {
 				_output = _range.hi;
 				return satstates::up;
@@ -274,34 +273,72 @@ namespace burst {
 			}
 		}
 
-		struct scaler {
+		struct signal2discret_s {
+			const struct config_s {
+				struct{
+					range_s <signal_t> signal;
+					range_s <discret_t> discret;
+				} range;
+			} & config;
+			#define SIGNAL2DISCRET_CONFIG(a) SIGNAL2DISCRET_CONFIG_(a)
+			#define SIGNAL2DISCRET_CONFIG_(a)\
+			{\
+				{\
+					BURST_RANGE_CONFIG(a##_SIGNAL)\
+					,BURST_RANGE_CONFIG(a##_RAW)\
+				}\
+			}
+			signal2discret_s(const config_s & _config): config(_config){}
 			range_s <signal_t> _range;
-			signal_t signal_lo = 0;
-			discret_t discret_lo = 0;
-			signal_t signal_hi = 0;
-			discret_t discret_hi = 0;
 			long_signal_t gain = 0;
-			typedef fixed_point<digit> types;
-			void reconfig(signal_t _signal_lo, signal_t _signal_hi, discret_t _discret_lo, discret_t _discret_hi) {
-				signal_hi = _signal_hi;
-				signal_lo = _signal_lo;
-				discret_hi = _discret_hi;
-				discret_lo = _discret_lo;
-				gain = (long_signal_t)(discret_hi - discret_lo);
+			void begin(void) {
+				#if ROBO_APP_ULTRACOMPACT == 0
+				gain = (long_signal_t)(config.range.discret.hi - config.range.discret.lo); 
 				gain <<= (1+ digit::bits);
-				gain += (signal_hi - signal_lo) / 2; //округление
-				gain /= (signal_hi - signal_lo);
+				auto delta = config.range.signal.hi - config.range.signal.lo;
+				if(gain>0)
+					gain += (delta>>1); //округление
+				else
+					gain -= (delta>>1); //округление
+				gain /= delta;
+				#else
+				gain = (long_signal_t)(config.range.discret.hi - config.range.discret.lo)/(config.range.signal.hi - config.range.signal.lo); 
+				#endif
 			}
-			void run(signal_t _signal, discret_t & _discret) {
-				if (_signal > signal_hi) _signal = signal_hi;
-				if (_signal < signal_lo) _signal = signal_lo;
-				long_signal_t tmp =  gain * (_signal - signal_lo);
-				tmp += (1 << digit::bits);
-				tmp >>= (1 + digit::bits);
-				_discret = (discret_t) ( discret_lo +  tmp );
+			discret_t run(signal_t _signal) {
+				if (_signal > config.range.signal.hi) _signal = config.range.signal.hi;
+				if (_signal < config.range.signal.lo) _signal =  config.range.signal.lo;
+				#if ROBO_APP_ULTRACOMPACT == 0
+
+				long_signal_t tmp =  gain * (_signal - config.range.signal.lo );
+				if(tmp>0){
+					tmp += (1 << digit::bits);
+					tmp >>= (1 + digit::bits);
+				} else {
+					tmp -= (1 << digit::bits);
+					tmp = -( (-tmp)>>(1 + digit::bits));
+				}
+				tmp+= config.range.discret.lo;
+				if (tmp < config.range.discret.lo) {
+					return config.range.discret.lo;
+				}
+				else if (tmp > config.range.discret.ho) {
+					return config.range.discret.ho;
+				}
+				else {
+					return (discret_t) tmp;
+				}
+				#else
+				return (discret_t)(gain * (_signal - config.range.signal.lo )) + config.range.discret.lo;
+				#endif
 			}
-		};
+		};		
 		
+		
+		
+		/*
+
+		*/
 		struct discret2signal {
 			
 			const struct config_s {
@@ -323,7 +360,7 @@ namespace burst {
 			long_discret_t gain = 0;
 				
 			//typedef fixed_point<digit> types;
-			void reconfig(void) {
+			void begin(void) {
 				gain = (long_discret_t)(config.range.signal.hi - config.range.signal.lo);
 				gain <<= (1+ digit::bits);
 				gain += ((config.range.raw.hi - config.range.raw.lo) / 2); //округление
@@ -475,6 +512,41 @@ namespace burst {
 		};
 		
 	
+	
+		
+		
+		
+		struct lsf {
+
+			constexpr static long_signal_t dot(long_signal_t _x1, long_signal_t _y1, long_signal_t _x2, long_signal_t _y2) {
+				return robo::digit::rsh(_x1 * _y1 + _x2 * _y2,15);
+			}
+
+			constexpr static long_signal_t sum_x_ya(long_signal_t x, long_signal_t y, long_signal_t a) {
+				long_signal_t tmp = ((long_signal_t)y) * a;
+				tmp = robo::digit::rsh(tmp , 15);
+				tmp += x;
+				return tmp;
+			}
+			
+			constexpr static long_signal_t sat(const long_signal_t& _x) {
+				return robo::saturate(_x, min, max);
+			}
+			constexpr static long_signal_t sat(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
+				return robo::saturate(_x, _lo, _hi);
+			}
+			
+			constexpr static long_signal_t  mult(long_signal_t x1, long_signal_t x2) {
+				return  robo::digit::rsh(x1 * x2 ,15);
+			}
+			constexpr static long_signal_t  div2(signal_t _x){
+				return _x>>1;
+			}
+			constexpr static discret_t  todiscret(signal_t _x){
+				return _x;
+			}
+		};
+	
 	};
 
 
@@ -485,9 +557,10 @@ namespace burst {
 		typedef typename  q::long_discret_t long_discret_t;
 		typedef typename  q::signal_t signal_t;
 		typedef typename  q::long_signal_t long_signal_t;
+		typedef typename  q::ulong_signal_t ulong_signal_t;
 		typedef typename  q::parameter_t parameter_t;
 
-		constexpr static signal_t pi = robo::pi<signal_t>;
+		constexpr static signal_t pi = q::pi;
 //		constexpr static signal_t one_div_sqrt3 = robo::one_div_sqrt3<typename signal_t>;
 //		constexpr static signal_t sqrt3_div_2 = robo::sqrt3_div_2<signal_t>;
 		constexpr static signal_t ones = (signal_t)1;
@@ -495,7 +568,15 @@ namespace burst {
 		constexpr static signal_t min = q::min;
 		constexpr static signal_t long_max = q::long_max;
 		constexpr static signal_t long_min = q::long_min;
-
+		constexpr static discret_t discret_max = q::discret_max;
+		constexpr static discret_t discret_min = q::discret_min;
+		
+		constexpr static signal_t sqrt3_div_2 = robo::csqrt<signal_t>(3.0) / 2;
+		constexpr static signal_t scale = robo::csqrt<signal_t>(2.0) -1 ;
+		constexpr static signal_t sqrt2_div_2 = robo::csqrt<signal_t>(2.0) / 2 ;
+		constexpr static signal_t one_div_3 = 1.f/ 3;
+		constexpr static signal_t one_div_sqrt3 = 1.f / robo::csqrt<signal_t>(3.0) ;
+		
 		template <typename T> static satstates round_s(const long_signal_t& _src, const range_s<T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
@@ -590,38 +671,141 @@ namespace burst {
 		}
 		
 	
-		struct discret2signal {
-				
-				const struct config_s {
-					struct{
-						range_s <signal_t> signal;
-						range_s <discret_t> raw;
-					} range;
-				} & config;
-				
-				#define DISCRET2SIGNAL_CONFIG(a) DISCRET2SIGNAL_CONFIG_(a)
-				#define DISCRET2SIGNAL_CONFIG_(a)\
+		struct discret2signal {				
+			const struct config_s {
+				struct{
+					range_s <signal_t> signal;
+					range_s <discret_t> raw;
+				} range;
+			} & config;
+			
+			#define DISCRET2SIGNAL_CONFIG(a) DISCRET2SIGNAL_CONFIG_(a)
+			#define DISCRET2SIGNAL_CONFIG_(a)\
+			{\
 				{\
-					{\
-						BURST_RANGE_CONFIG(a##_SIGNAL)\
-						,BURST_RANGE_CONFIG(a##_RAW)\
-					}\
-				}
+					BURST_RANGE_CONFIG(a##_SIGNAL)\
+					,BURST_RANGE_CONFIG(a##_RAW)\
+				}\
+			}
+			
+			signal_t gain = 0;
 				
-				signal_t gain = 0;
-					
-				//typedef fixed_point<digit> types;
-				void reconfig(void) {
-					gain = (config.range.signal.hi - config.range.signal.lo) / (config.range.raw.hi - config.range.raw.lo);
+			//typedef fixed_point<digit> types;
+			void begin(void) {
+				gain = (config.range.signal.hi - config.range.signal.lo) / (config.range.raw.hi - config.range.raw.lo);
+			}
+			discret2signal(const config_s & _config): config(_config){}
+			signal_t run( const discret_t & _raw ) {
+				if (_raw > config.range.raw.hi) return config.range.signal.hi;
+				if (_raw < config.range.raw.lo) return config.range.signal.lo;
+				return config.range.signal.lo + gain * (_raw - config.range.raw.lo);
+			}
+		};
+	
+		constexpr static signal_t ul2discret(uint32_t _x) {
+			return (discret_t)robo::digit::rsh((long_discret_t)_x, 16);
+		}
+		constexpr static signal_t discret2rad(discret_t _x) {
+			constexpr const  signal_t gain = pi/discret_max;
+			return gain*_x;
+		}
+	
+	
+		constexpr static signal_t sqrt(signal_t _angle) {
+			return q::sqrt(_angle);
+		}
+		constexpr static signal_t sin(signal_t _angle) {
+			return q::sin(_angle);
+		}
+		static signal_t atan2(signal_t _y,signal_t _x) {
+			return q::atan2(_y,_x);
+		}
+		constexpr static signal_t cos(signal_t _angle) {
+			return q::cos(_angle);
+		}
+		constexpr static  long_discret_t l_round(long_signal_t _x) {
+			if (_x > 0) {
+				return (long_discret_t)(_x + (long_signal_t)0.5);
+			}
+			else {
+				return (long_discret_t)(_x - (long_signal_t)0.5);
+			}
+		}
+		constexpr static  discret_t s_round(signal_t _x) {
+			if (_x > 0) {
+				return (discret_t)(_x + (signal_t)0.5);
+			}
+			else {
+				return (discret_t)(_x - (signal_t)0.5);
+			}
+		}
+		struct signal2discret_s {
+			const struct config_s {
+				struct{
+					range_s <signal_t> signal;
+					range_s <discret_t> discret;
+				} range;
+			} & config;
+			#define SIGNAL2DISCRET_CONFIG(a) SIGNAL2DISCRET_CONFIG_(a)
+			#define SIGNAL2DISCRET_CONFIG_(a)\
+			{\
+				{\
+					BURST_RANGE_CONFIG(a##_SIGNAL)\
+					,BURST_RANGE_CONFIG(a##_RAW)\
+				}\
+			}
+			signal2discret_s(const config_s & _config): config(_config){}
+			range_s <signal_t> _range;
+			long_signal_t gain = 0;
+			void begin(void) {
+				gain = (long_signal_t)(config.range.discret.hi - config.range.discret.lo)/(config.range.signal.hi - config.range.signal.lo); 
+			}
+			discret_t run(signal_t _signal) {
+				if (_signal > config.range.signal.hi) _signal = config.range.signal.hi;
+				if (_signal < config.range.signal.lo) _signal =  config.range.signal.lo;
+				long_signal_t tmp =  gain * (_signal - config.range.signal.lo );
+				tmp+= config.range.discret.lo;
+				long_discret_t dtmp = l_round(tmp);
+				if (dtmp < config.range.discret.lo) {
+					return config.range.discret.lo;
 				}
-				discret2signal(const config_s & _config): config(_config){}
-				signal_t run( const discret_t & _raw ) {
-					if (_raw > config.range.raw.hi) return config.range.signal.hi;
-					if (_raw < config.range.raw.lo) return config.range.signal.lo;
-					return config.range.signal.lo + gain * (_raw - config.range.raw.lo);
+				else if (dtmp > config.range.discret.ho) {
+					return config.range.discret.ho;
 				}
-			};
-	};
+				else {
+					return (discret_t) tmp;
+				}
+			}
+		};	
+		struct lsf {
+			constexpr static long_signal_t dot(long_signal_t _x1, long_signal_t _y1, long_signal_t _x2, long_signal_t _y2) {
+				return _x1 * _y1 + _x2 * _y2;
+			}
+
+			constexpr static long_signal_t sum_x_ya(long_signal_t x, long_signal_t y, long_signal_t a) {
+				return y * a + x;
+			}
+			
+			constexpr static long_signal_t sat(const long_signal_t& _x) {
+				return robo::saturate(_x, (long_signal_t)-1., (long_signal_t)1.);
+			}
+			constexpr static long_signal_t sat(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
+				return robo::saturate(_x, _lo, _hi);
+			}
+			
+			constexpr static long_signal_t  mult(long_signal_t x1, long_signal_t x2) {
+				return  x1 * x2;
+			}
+			constexpr static long_signal_t  div2(signal_t _x){
+				return _x/2;
+			}
+			constexpr static discret_t  todiscret(signal_t _x){
+				return  s_round(discret_max*_x);
+			}
+		};
+
+
+	};	
 
 	#if 0
 	template<typename q> class to_digit_scale
