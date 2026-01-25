@@ -23,6 +23,16 @@ namespace burst {
 		R lo;
 		R ultralo;
 	};
+
+	#define BURST_HIST_CONFIG(a) BURST_HIST_CONFIG_(a)
+
+	#define BURST_HIST_CONFIG_(a)\
+	{\
+		a##_OVERHI\
+		, a##_HI\
+		, a##_LO\
+		, a##_ULTRALO\
+	}
 }
 
 #ifndef BURST_PROTECTION_ENABLED

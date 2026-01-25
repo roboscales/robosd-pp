@@ -547,6 +547,43 @@ namespace burst {
 			}
 		};
 	
+	
+		struct pi{
+			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, signal_t _controlMin, signal_t _controlMax){
+				_controlLong = robo::digit::rsh(_controlLong, _controlShift) + _force;
+				_controlLong = robo::saturate(_controlLong, _controlMin,_controlMax );
+				return  (signal_t)_controlLong;	
+			}
+			
+			static signal_t model_s( long_signal_t _model, uint8_t _modelShift){
+				_model = robo::digit::rsh( _model, _modelShift );
+				return robo::saturate(_model, min, max );
+			}
+			struct config_s{
+				parameter_t diffGain;
+				parameter_t diffQuardGain;
+				uint8_t diffQuardPreShift;
+			};
+			struct present_s{
+				long_signal_t diff;
+				long_signal_t quadDiff;
+			};
+			static void quadro( long_signal_t _signal_diff, present_s & _present, const config_s & _config){
+				auto d =_signal_diff;
+				_present.diff = -d * _config.diffGain;
+				//	control_val += present.diff;
+				if(_config.diffQuardGain && d != (long_signal_t)0){
+					long_signal_t d2 = d*d;							
+					d2 = robo::digit::rsh(d2, _config.diffQuardPreShift);
+					d2*= _config.diffQuardGain;
+					if(d>0){
+						_present.quadDiff =  -d2;
+					}  else {
+						_present.quadDiff =  d2;
+					}
+				}
+			}			
+		};
 	};
 
 
@@ -803,8 +840,40 @@ namespace burst {
 				return  s_round(discret_max*_x);
 			}
 		};
-
-
+		struct pi{
+			struct config_s{
+				parameter_t diffGain;
+				parameter_t diffQuardGain;
+				uint8_t diffQuardPreShift;
+			};
+			struct present_s{
+				long_signal_t diff;
+				long_signal_t quadDiff;
+			};
+			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, signal_t _controlMin, signal_t _controlMax){
+				ROBO_UNUSED(_controlShift);
+				_controlLong += _force;
+				_controlLong = robo::saturate(_controlLong, _controlMin,_controlMax );
+				return (signal_t)_controlLong;	
+			}
+			static signal_t model_s( long_signal_t _model, uint8_t _modelShift){	
+				ROBO_UNUSED(_modelShift);				
+				return _model;
+			}
+			static void quadro( long_signal_t _signal_diff, present_s & _present, const config_s & _config){
+				auto d =_signal_diff;
+				_present.diff = -d * _config.diffGain;
+				if(_config.diffQuardGain && d != (long_signal_t)0){
+					long_signal_t d2 = d*d;							
+					d2*= _config.diffQuardGain;
+					if(d>0){
+						_present.quadDiff =  -d2;
+					}  else {
+						_present.quadDiff =  d2;
+					}
+				}
+			}
+		};
 	};	
 
 	#if 0

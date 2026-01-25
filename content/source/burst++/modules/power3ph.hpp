@@ -586,16 +586,22 @@ namespace burst {
 		struct cursencor :public actor {
 		protected:
 			rotator_t & rotator;
+			#if ROBO_APP_ULTRACOMPACT != 0
+			inverter & inv;
+			#endif
 		public:
 			struct config_s {
 				actor::config_s tag;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				int adc_index[3];
 				struct {
 					long_signal_t matrix[9];
 					bool enable;
 				} deform;
+				#endif
 			};
 
+			#if ROBO_APP_ULTRACOMPACT == 0
 			#define POWER3PH_CURSENSOR_CONFIG(a) POWER3PH_CURSENSOR_CONFIG_(a)
 			#define POWER3PH_CURSENSOR_CONFIG_(a)\
 			{\
@@ -606,6 +612,13 @@ namespace burst {
 					,a##_DEFORM_ENABLE\
 				}\
 			}
+			#else
+			#define POWER3PH_CURSENSOR_CONFIG(a) POWER3PH_CURSENSOR_CONFIG_(a)
+			#define POWER3PH_CURSENSOR_CONFIG_(a)\
+			{\
+				ACTOR_CONFIG(a)\
+			}
+			#endif
 
 			struct present_s {
 				actor::present_s tag;
@@ -683,12 +696,14 @@ namespace burst {
 			const typename number::long_signal_t* deform = nullptr;
 			virtual void begin(void) {
 				ACTOR_CONFIG_S(cfg);
+				#if ROBO_APP_ULTRACOMPACT == 0
 				if (cfg.deform.enable) {
 					deform = cfg.deform.matrix;
 				}
 				else {
 					deform = nullptr;
 				}
+				#endif
 			}
 			#if ROBO_APP_ULTRACOMPACT == 0
 			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, inverter & _inverter)
@@ -702,8 +717,8 @@ namespace burst {
 				connectto(raw.C , _adc + cfg.adc_index[2]);
 			}
 			#else
-			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, inverter & _inverter,signal_t * _adc)
-				: actor(_config.tag, _present.tag), rotator(_rotator) , raw( *(_adc + _config.adc_index[0]), *(_adc + _config.adc_index[1]), *(_adc + _config.adc_index[2])){};
+			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, inverter & _inverter,signal_t & _adc0, signal_t & _adc1, signal_t & _adc2)
+				: actor(_config.tag, _present.tag),inv(_inverter), rotator(_rotator) , raw( _adc0, _adc1, _adc2){};
 			#endif
 			#if BURST_PROTECTION_ENABLED == 1
 			#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==0
@@ -718,6 +733,7 @@ namespace burst {
 				long_signal_t a;
 				long_signal_t b;
 				long_signal_t c;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				if (deform) {
 					signal_t A = *raw.A;
 					signal_t B = *raw.B;
@@ -730,12 +746,39 @@ namespace burst {
 					b -= ofs;
 					c -= ofs;
 				}
-				else {
+				else 
+				#endif
+				{
+					#if ROBO_APP_ULTRACOMPACT == 0
 					a = *raw.A;
 					b = *raw.B;
 					c = *raw.C;
+					#else
+					ACTOR_ALIEN_PRESENT_S(inverter,inv, pinv);
+					switch(pinv.swm){
+					case 2:
+					case 3: 
+						a = raw.A;
+						b = - raw.A - raw.C;
+						c = raw.C; 
+						break;
+					case 4: 
+					case 5: 
+						a = raw.A;
+						b = raw.B;
+						c = - raw.A - raw.B;
+						break;        
+					case 1:
+					case 6:
+					default:
+						a = - raw.B - raw.C;
+						b = raw.B;
+						c = raw.C; 
+						break;
+					}
+					#endif
 				}
-				long_signal_t beta =  robo::digit::rsh ((b * 2 + a) * number::one_div_sqrt3 , 15 );
+				long_signal_t beta =  number::lsf::mult ((b * 2 + a) , number::one_div_sqrt3  );
 				ACTOR_ALIEN_PRESENT_S(rotator_t,rotator, rot);
 				//typename inverter::present_s& ip = inverter_.actor::template present<typename inverter::present_s>();
 				signal_t sn = rot.rot.sn;
