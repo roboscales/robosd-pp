@@ -549,9 +549,9 @@ namespace burst {
 	
 	
 		struct pi{
-			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, signal_t _controlMin, signal_t _controlMax){
+			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, const burst::range_s<signal_t> & _controlRange){
 				_controlLong = robo::digit::rsh(_controlLong, _controlShift) + _force;
-				_controlLong = robo::saturate(_controlLong, _controlMin,_controlMax );
+				_controlLong = robo::saturate(_controlLong, _controlRange.lo,_controlRange.hi);
 				return  (signal_t)_controlLong;	
 			}
 			
@@ -850,10 +850,10 @@ namespace burst {
 				long_signal_t diff;
 				long_signal_t quadDiff;
 			};
-			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, signal_t _controlMin, signal_t _controlMax){
+			static signal_t control_s(long_signal_t _controlLong, uint8_t _controlShift, signal_t _force, const burst::range_s<signal_t> & _controlRange){
 				ROBO_UNUSED(_controlShift);
 				_controlLong += _force;
-				_controlLong = robo::saturate(_controlLong, _controlMin,_controlMax );
+				_controlLong = robo::saturate(_controlLong, _controlRange.lo,_controlRange.hi );
 				return (signal_t)_controlLong;	
 			}
 			static signal_t model_s( long_signal_t _model, uint8_t _modelShift){	
