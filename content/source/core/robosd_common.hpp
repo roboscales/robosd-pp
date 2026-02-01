@@ -445,7 +445,28 @@ namespace robo {
     return r;
 		
 	}
-
+	template<typename T, int N > struct atan2_table_t{
+		static inline const T size = N;
+		T table [N];
+		constexpr atan2_table_t(void){
+			//N=3
+			//min = 0
+			//max = pi/4
+			//d = pi/4/2=pi/8
+			//table[0]=0
+			//table[1]=pi/8
+			//table[2]=pi/8+pi/8=pi/4
+			T max = pi<double> /4;
+			T d = max/ static_cast<double>(N-1);
+			for (size_t i = 0; i < N; ++i) {						
+				double y = d * static_cast<double>(i) ;
+				// Вычисляем значение синуса и масштабируем амплитудой
+				// Округляем до ближайшего целого
+				table[i] = (T)catan2(y,1.0);
+			}
+		}
+	};
+	
 	template<typename T> constexpr T csin(T x) {
 		T result = 0;
 		int sign = 1;

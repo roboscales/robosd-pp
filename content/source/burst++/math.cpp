@@ -318,6 +318,51 @@ namespace burst {
 		real::discret_t mcsinPIxLUT_value = (real::discret_t)(_angle*real::discret_max/real::pi )+(real::discret_max>>1);
 		return real_mcsinPIxLUT(mcsinPIxLUT_value);
 	}
+	#ifndef REAL_TAN_LENGTH_TABLE
+	#define REAL_TAN_LENGTH_TABLE 1024
+	#endif
+	robo::atan2_table_t<real::signal_t,REAL_TAN_LENGTH_TABLE> real_atan_;
+	#if 0
+	const real::signal_t real_tableAtan64[TAN_LENGTH_TABLE] = 
+	{ 
+		S(0.0050), S(0.0100), S(0.0150), S(0.0199), S(0.0249), S(0.0298), S(0.0347), S(0.0396), 
+		S(0.0445), S(0.0494), S(0.0542), S(0.0591), S(0.0638), S(0.0686), S(0.0733), S(0.0780), 
+		S(0.0827), S(0.0873), S(0.0919), S(0.0965), S(0.1010), S(0.1054), S(0.1099), S(0.1142), 
+		S(0.1186), S(0.1229), S(0.1271), S(0.1313), S(0.1355), S(0.1396), S(0.1436), S(0.1476), 
+		S(0.1516), S(0.1555), S(0.1593), S(0.1632), S(0.1669), S(0.1706), S(0.1743), S(0.1779), 
+		S(0.1814), S(0.1849), S(0.1884), S(0.1917), S(0.1951), S(0.1984), S(0.2017), S(0.2049), 
+		S(0.2080), S(0.2112), S(0.2142), S(0.2172), S(0.2202), S(0.2231), S(0.2260), S(0.2289), 
+		S(0.2317), S(0.2344), S(0.2371), S(0.2398), S(0.2424), S(0.2450), S(0.2475), S(0.2500)
+	};
+	#endif
 	
+	real::signal_t real_atan__( real::signal_t _x){
+		int n = (int)(_x*(REAL_TAN_LENGTH_TABLE-1)+0.5 );
+		if (n>=REAL_TAN_LENGTH_TABLE) n =REAL_TAN_LENGTH_TABLE-1;
+		return real_atan_.table[n];
+	}
+	real::signal_t real::atan2(real::signal_t _y,real::signal_t _x){
+		constexpr  signal_t  pi_div_2 =pi/2.f;
+		signal_t  abs_x = abs(_x);
+		signal_t  abs_y = abs(_y);
+		real::signal_t  ret;
+		if ( abs_y<=abs_x){
+			ret = real_atan__( abs_y/abs_x );
+		}  else {
+			ret = pi_div_2 - real_atan__( abs_x/abs_y );
+		}
+		if (_x<0){
+			if (_y<0) {
+				ret = -pi + ret;
+			} else {
+				ret = pi - ret;
+			}
+		} else {
+			if (_y<0) {
+				ret =  -ret;
+			}
+		}
+		return ret;
+	}
 }
 

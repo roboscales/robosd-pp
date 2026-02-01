@@ -134,7 +134,9 @@ namespace burst {
 		static signal_t cos(signal_t _angle);
 		static  signal_t sqrt(ulong_signal_t _value);
 		static signal_t atan2(signal_t _y,signal_t _x);
-
+		constexpr static uint32_t l_rad2ceil(signal_t _signal){
+			return  (uint32_t)(_signal * ((1L<32)/pi));
+		}
 	};
 
 	
@@ -840,6 +842,9 @@ namespace burst {
 				return  s_round(discret_max*_x);
 			}
 		};
+		constexpr static uint32_t l_rad2ceil(signal_t _signal){
+			return q::l_rad2ceil(_signal);
+		}
 		struct pi{
 			struct config_s{
 				parameter_t diffGain;
@@ -874,6 +879,19 @@ namespace burst {
 				}
 			}
 		};
+		constexpr static signal_t s_inc(signal_t val, signal_t x, signal_t _min, signal_t _max) {
+			long_signal_t val32 = val;
+			val32 += x;
+			if (val32 > _max) {
+				val32 = _max;
+			}
+			else {
+				if (val32 < _min) {
+					val32 = _min;
+				}
+			}
+			return (signal_t)val32;
+		}
 	};	
 
 	#if 0
