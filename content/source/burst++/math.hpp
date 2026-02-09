@@ -135,7 +135,7 @@ namespace burst {
 		static  signal_t sqrt(ulong_signal_t _value);
 		static signal_t atan2(signal_t _y,signal_t _x);
 		constexpr static uint32_t l_rad2ceil(signal_t _signal){
-			return  (uint32_t)(_signal * ((1L<32)/pi));
+			return  (uint32_t)((int32_t)(_signal * ((signal_t)4294967295./2/pi)));
 		}
 	};
 
@@ -229,7 +229,7 @@ namespace burst {
 			return digit::s_rad2ceil(_x);
 		}
 		
-		constexpr static signal_t ul2discret(uint32_t _x) {
+		constexpr static discret_t ul2discret(uint32_t _x) {
 			return digit::ul2discret(_x);
 		}
 		constexpr static signal_t discret2rad(discret_t _x) {
@@ -615,7 +615,11 @@ namespace burst {
 		constexpr static signal_t sqrt2_div_2 = robo::csqrt<signal_t>(2.0) / 2 ;
 		constexpr static signal_t one_div_3 = 1.f/ 3;
 		constexpr static signal_t one_div_sqrt3 = 1.f / robo::csqrt<signal_t>(3.0) ;
-		
+		constexpr static int discret_bits = q::discret_bits;
+
+		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+		typedef typename  q::var var;
+		#endif
 		template <typename T> static satstates round_s(const long_signal_t& _src, const range_s<T>& _range, unsigned int _shift, T& _output) {
 			if (_range.hi == _range.low) {
 				_output = _range.hi;
@@ -741,7 +745,7 @@ namespace burst {
 			}
 		};
 	
-		constexpr static signal_t ul2discret(uint32_t _x) {
+		constexpr static discret_t ul2discret(uint32_t _x) {
 			return (discret_t)robo::digit::rsh((long_discret_t)_x, 16);
 		}
 		constexpr static signal_t discret2rad(discret_t _x) {

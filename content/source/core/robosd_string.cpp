@@ -141,6 +141,7 @@ namespace robo {
 
 	void string::ascii(char * _buf, size_t _len) const {
 		#if ROBO_UNICODE_ENABLED == 1
+
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
 		std::string utf8_string = convert.to_bytes(c_str());
 		const char* p = utf8_string.c_str();
@@ -241,6 +242,7 @@ namespace robo {
 	}
 	bool string::tryload(cstr _section, cstr _key) {
 		#if ROBO_APP_INI_ENABLED == 1
+		#if ROBO_APP_ENV_ENABLED == 1
 		if (system::env::is_backend()) {
 			if (system::ini::load_str(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
 				*((stds *)value_) = string_buffer_backend;
@@ -253,6 +255,12 @@ namespace robo {
 				*((stds*)value_) = string_buffer_frontend;
 				return true;
 			}
+		}
+		#else
+		#endif
+		if (system::ini::load_str(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
+			*((stds*)value_) = string_buffer_frontend;
+			return true;
 		}
 		#endif
 		return false;

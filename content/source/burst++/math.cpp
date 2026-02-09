@@ -214,7 +214,7 @@ namespace burst {
 	
 	//====================================
 	#undef S
-	#define S(x) (x)
+	#define S(x) ((real::signal_t)(x))
 
 
 	const real::signal_t constexpr  real_mcgenSineTable256[sin_length_table + 1] =

@@ -232,6 +232,11 @@ namespace burst {
 			reg(t, _hyst.ultralo, RT("ultralo"));
 			pop();
 		}
+		#if ROBO_APP_ULTRACOMPACT
+		void reindex(void);
+		bool if_configure(void);
+		void reconfig_query(void);
+		#endif	
 	}
 }
 #endif
