@@ -446,7 +446,7 @@ namespace robo {
 		
 	}
 	template<typename T, int N > struct atan2_table_t{
-		static inline const T size = N;
+		enum { size = N };
 		T table [N];
 		constexpr atan2_table_t(void){
 			//N=3
@@ -456,8 +456,8 @@ namespace robo {
 			//table[0]=0
 			//table[1]=pi/8
 			//table[2]=pi/8+pi/8=pi/4
-			T max = pi<double> /4;
-			T d = max/ static_cast<double>(N-1);
+			double max = pi<double> /4.;
+			double d = max/ static_cast<double>(N-1);
 			for (size_t i = 0; i < N; ++i) {						
 				double y = d * static_cast<double>(i) ;
 				// Вычисляем значение синуса и масштабируем амплитудой
@@ -504,6 +504,39 @@ namespace robo {
 		}
 		return R;
 	}
+
+	constexpr double taylor_sin(double x) {
+		// Приводим к диапазону [-?, ?]
+
+		double term = x;
+		double sum = term;
+		double x2 = x * x;
+
+		for (int i = 1; i < 10; ++i) {
+			term *= -x2 / ((2 * i) * (2 * i + 1));
+			sum += term;
+		}
+
+		return sum;
+	}
+	template<typename T, int N, T A, T Z > struct generator_t {
+		const T table_zero = Z;
+		const T amplitude = A;
+		const T size = N;
+		T table[N] = {};
+		constexpr generator_t(double O) {
+			constexpr double two_pi = 2.0 * pi<double>;
+			for (size_t i = 0; i < N; ++i) {
+				// Вычисляем угол от 0 до 2?
+				double angle = O + two_pi * static_cast<double>(i) / static_cast<double>(N);
+
+				// Вычисляем значение синуса и масштабируем амплитудой
+				// Округляем до ближайшего целого
+				double sin_value = Z + A * taylor_sin(angle);
+				table[i] = static_cast<T>(sin_value + 0.5);
+			}
+		}
+	};
 }
 
 

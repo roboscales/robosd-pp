@@ -269,7 +269,7 @@ namespace burst {
 			#endif
 			struct config_s {
 				actor::config_s tag;
-				range_s<signal_t> native;
+				range_s<discret_t> native;
 				#if ROBO_APP_ULTRACOMPACT == 0
 				signal_t pwm_force;
 				deform_s deform;
@@ -352,6 +352,7 @@ namespace burst {
 				if (actual_mode >= mode::tuning) {
 					ACTOR_CONFIG_S(c);
 					if (actual_mode >= mode::config) {
+					#if ROBO_APP_ULTRACOMPACT == 0
 						reg(number::var::signal, c.pwm_force, RT("force"));
 						push(RT("deform"));
 						reg(types::uint8, c.deform.enabled, RT("en"));
@@ -360,6 +361,7 @@ namespace burst {
 						reg(number::var::long_signal, c.deform.lo_gain_16, RT("lo_g"));
 						reg(number::var::long_signal, c.deform.lo_bevel_16, RT("lo_b"));
 						pop();
+						#endif
 						push(RT("native"));
 						reg(number::var::signal, c.native.lo, RT("lo"));
 						reg(number::var::signal, c.native.hi, RT("hi"));
@@ -539,9 +541,9 @@ namespace burst {
 				#endif
 				discret_t delta = cfg.native.hi - cfg.native.lo;
 				long_discret_t gain = delta;
-				gain = robo::digit::lsh(gain, 16);
-				gain += ((long_signal_t)number::discret_max - number::discret_min) / 2; //округление
-				gain /= ((long_signal_t)number::discret_max - number::discret_min);
+				gain = robo::digit::lsh(gain, number::discret_bits+1);
+				gain += ((long_discret_t)number::discret_max - number::discret_min) / 2; //округление
+				gain /= ((long_discret_t)number::discret_max - number::discret_min);
 				scale_gain = gain;
 				discret_delta_lo = 0;
 				discret_delta_hi = delta;
@@ -671,25 +673,27 @@ namespace burst {
 				using namespace burst::var;
 				ACTOR_CONFIG_S(c);
 				if (actual_mode >= mode::config) {
-					push(RT("adc_ix"));
-					reg(types::uint8, c.adc_index[0], RT("0"));
-					reg(types::uint8, c.adc_index[1], RT("1"));
-					reg(types::uint8, c.adc_index[2], RT("2"));
-					pop();
-					push(RT("deform"));
-					reg(types::uint8, c.deform.enable, RT("en"));
-					push(RT("matrix"));
-					reg(number::var::long_signal, c.deform.matrix[0], RT("0"));
-					reg(number::var::long_signal, c.deform.matrix[1], RT("1"));
-					reg(number::var::long_signal, c.deform.matrix[2], RT("2"));
-					reg(number::var::long_signal, c.deform.matrix[3], RT("3"));
-					reg(number::var::long_signal, c.deform.matrix[4], RT("4"));
-					reg(number::var::long_signal, c.deform.matrix[5], RT("5"));
-					reg(number::var::long_signal, c.deform.matrix[6], RT("6"));
-					reg(number::var::long_signal, c.deform.matrix[7], RT("7"));
-					reg(number::var::long_signal, c.deform.matrix[8], RT("8"));
-					pop();
-					pop();
+					#if ROBO_APP_ULTRACOMPACT == 0
+					push(RT("adc_ix")); {
+						reg(types::uint8, c.adc_index[0], RT("0"));
+						reg(types::uint8, c.adc_index[1], RT("1"));
+						reg(types::uint8, c.adc_index[2], RT("2"));
+						pop(); {
+							push(RT("deform"));
+							reg(types::uint8, c.deform.enable, RT("en"));
+							push(RT("matrix"));
+							reg(number::var::long_signal, c.deform.matrix[0], RT("0"));
+							reg(number::var::long_signal, c.deform.matrix[1], RT("1"));
+							reg(number::var::long_signal, c.deform.matrix[2], RT("2"));
+							reg(number::var::long_signal, c.deform.matrix[3], RT("3"));
+							reg(number::var::long_signal, c.deform.matrix[4], RT("4"));
+							reg(number::var::long_signal, c.deform.matrix[5], RT("5"));
+							reg(number::var::long_signal, c.deform.matrix[6], RT("6"));
+							reg(number::var::long_signal, c.deform.matrix[7], RT("7"));
+							reg(number::var::long_signal, c.deform.matrix[8], RT("8"));
+						}pop();
+					} pop();
+					#endif
 				}
 			}
 			#endif

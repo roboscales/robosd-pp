@@ -151,7 +151,7 @@ FMSTR_SCISR FMSTR_SCI_RDCLRSR(void) {
 		SciSR = FMSTR_SCISR_RDRF;
 	}
 
-	if (robo::prf::freemaster::space() > 0) {
+	if (robo::prf::freemaster::space() ) {
 		SciSR |= FMSTR_SCISR_TDRE;
 	}
 	return SciSR;

@@ -52,7 +52,7 @@ namespace robo {
 		}
 
 
-		template< typename  T, typename  S> class ROBO_EXPORT numbers_t: public S {
+		template< typename  T, typename  S> class  ROBO_EXPORT numbers_t: public S {
 		public:
 		  typedef T type;
 
