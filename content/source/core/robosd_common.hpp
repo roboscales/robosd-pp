@@ -389,6 +389,11 @@ namespace robo {
 				}
 				return D(tmp);
 			}
+
+		}
+		template<typename T>
+			T select(const T & mask, const T & source0, const T & source1) {
+			return (source0 & ~mask) | (source1 & mask);
 		}
 	}
 	template<typename T, typename R>
@@ -537,6 +542,45 @@ namespace robo {
 			}
 		}
 	};
+	//===================================================
+	template<size_t N, typename M, typename S> class debouncer_t {
+	private:
+		robo::time_us_t begins_us_[N] = {};
+		M stable_states_ = 0;  // Битовое поле стабильных состояний
+	//    uint16_t threshold;
+			
+	public:
+		debouncer_t( void){
+		}
+			
+		// Обновление с массивом текущих значений
+		template<typename T> void update( robo::time_us_t ( &threshold_us)[N], T & current_values ) {
+			robo::time_us_t now = S::time_us();
+			for (size_t i = 0; i < N; ++i) {
+				bool current = current_values[i];
+
+				if (current != ((stable_states_ >> i) & 1)) {
+						// Состояние отличается от стабильного
+					if (begins_us_[i] >= threshold_us[i]) {
+							// Изменяем стабильное состояние
+							if (current) {
+									stable_states_ |= (1 << i);
+							} else {
+									stable_states_ &= ~(1 << i);
+							}
+					}
+				} else {
+					// Состояние совпадает со стабильным - сбрасываем счетчик
+					begins_us_[i] = now;
+				}
+			}
+		}
+			
+		M stable() const {
+				return stable_states_;
+		}
+	};
+
 }
 
 
