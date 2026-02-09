@@ -1,7 +1,11 @@
 #ifndef burst_enco_hpp
 #define burst_enco_hpp
 #include "burst++/modules/actor.hpp"
+#if ROBO_APP_ULTRACOMPACT == 0
 #include "burst++/burst.hpp"
+#else
+#include "burst++/burst_common.hpp"
+#endif
 namespace burst {
 	#ifndef BURST_ENCO_ONLINE_RESTART
 	#define BURST_ENCO_ONLINE_RESTART 1
@@ -10,6 +14,7 @@ namespace burst {
 	public:
 		using signal_t = typename number::signal_t;
 		using long_signal_t = typename number::long_signal_t;
+//		using ceiled_t = typename number::ulong_signal_t;
 		struct config_s {
 			actor::config_s tag;
 		};
@@ -46,12 +51,15 @@ namespace burst {
 		virtual void do_regvar_conf(void) {}
 		#endif	
 
-
+		#if ROBO_APP_ULTRACOMPACT == 0
 		enco_t(const config_s& _config, present_s& _present)
 			: actor(_config.tag, _present.tag) {};
 		enco_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: actor(_config.tag, _present.tag, _subsystem) {};
-
+		#else
+		enco_t(const config_s& _config, present_s& _present)
+			: actor(_config.tag, _present.tag) {};
+		#endif
 		virtual void begin(void) {
 			ACTOR_PRESENT_S(p);
 			p = {};			
@@ -155,11 +163,15 @@ namespace burst {
 			}
 		}
 		#endif	
+		#if ROBO_APP_ULTRACOMPACT == 0
 		enco_abs32_t(const config_s& _config, present_s& _present)
 			: B(_config.ref, _present.ref) {};
 		enco_abs32_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: B(_config.ref, _present.ref, _subsystem) {};
-
+		#else
+		enco_abs32_t(const config_s& _config, present_s& _present)
+			: B(_config.ref, _present.ref) {};
+		#endif
 		virtual void begin(void) {
 			B::begin();
 			ACTOR_CONFIG_S(cfg);
@@ -223,7 +235,7 @@ namespace burst {
 							p.ref.delta_acc = adtmp;
 						}
 					}
-					
+					#if ROBO_APP_ULTRACOMPACT == 0
 					#if BURST_ENCO_ONLINE_RESTART
 					if(!board::if_configure()){
 						if (conf.offset.native != offset.native || conf.offset.position != offset.position) {
@@ -231,6 +243,7 @@ namespace burst {
 							return;
 						}
 					}
+					#endif
 					#endif
 
 				}
@@ -275,7 +288,7 @@ namespace burst {
 			}
 		}
 	};
-class resolver_driver_s {
+	class resolver_driver_s {
 		public:
 		enum class statuses { wait = 0,fault, ready};
 		struct  present_s {
@@ -596,10 +609,15 @@ class resolver_driver_s {
 			}
 		}
 		#endif	
+		#if ROBO_APP_ULTRACOMPACT == 0
 		resolver_x2_t(const config_s& _config, present_s& _present)
 			: B(_config.ref, _present.ref), hidriver_s(_present. hidrv), lowdriver_s(_present.lowdrv) {};
 		resolver_x2_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: B(_config.ref, _present.ref, _subsystem), hidriver_s(_present. hidrv), lowdriver_s(_present.lowdrv) {}; 
+		#else
+		resolver_x2_t(const config_s& _config, present_s& _present)
+			: B(_config.ref, _present.ref), hidriver_s(_present. hidrv), lowdriver_s(_present.lowdrv) {};
+		#endif
 		bool first_tact = true;
 		virtual void begin(void) {
 			B::begin();
@@ -628,6 +646,7 @@ class resolver_driver_s {
 			ACTOR_CONFIG_S(conf);
 			ACTOR_PRESENT_S(p);
 			if (p.ref.ready) {
+				#if ROBO_APP_ULTRACOMPACT == 0
 				#if BURST_ENCO_ONLINE_RESTART
 				//todo govnocod
 				if(!board::if_configure()){
@@ -642,7 +661,7 @@ class resolver_driver_s {
 					return;
 				}
 				#endif
-
+				#endif
 				p.ref.counter.total++;
 				hidriver_s::run();
 				if(conf.allwaice_splice){
@@ -809,6 +828,72 @@ class resolver_driver_s {
 			
 	};
 
-	
+	template<class number, class driver> class resolver_sincosB_t : public resolver_driver_s{
+		using B =  resolver_driver_s;
+		using statuses = B::statuses;
+		using signal_t =  typename number::signal_t;
+		signal_t & x_;
+		signal_t & y_;
+	public:
+		
+		struct  present_s {
+			typename B::present_s ref;
+			bool enable;
+			int8_t sign;
+			signal_t teta;
+		};
+		#if ROBO_APP_BURST_VARTREE_ENABLED
+		void present_reg(void) {
+			RESOLVER_PRESENT_S(p);
+			#if ROBO_APP_BURST_VARTREE_ENABLED
+			using namespace burst::var;
+			push(RT("sico"));
+			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
+			reg(types::const_uint32, p.ref.status, RT("status"));
+			reg(types::const_uint8,  p.ref.restart, RT("restart"));
+			reg(types::const_uint16, p.rphase, RT("rphase"));
+			reg(types::const_uint32, p.rsin, RT("rsin"));
+			reg(number::var::signal, p.teta, RT("teta"));
+
+		//	reg(number::var::signal, p.sn, RT("sn"));
+
+			reg(number::var::signal, p.raw.sn, RT("raw.sn"));
+			reg(number::var::signal, p.raw.cs, RT("raw.cs"));
+			reg(number::var::signal, p.raw.rphase, RT("raw.rphase"));
+
+
+			pop();
+			#endif
+		}
+		#endif
+		
+		resolver_sincosB_t(present_s& _present, signal_t & _x, signal_t & _y)
+			: B(_present.ref),x_(_x), y_(_y) {
+		}
+
+		void enable(void){			
+			RESOLVER_PRESENT_S(p);
+			p.enable = true;
+		}	
+		void run(void){
+			RESOLVER_PRESENT_S(p);
+			if(p.enable){
+				p.sign = driver::sign();
+				if( p.sign == 0 ){
+					p.ref.status = statuses::wait;
+				} else {
+					if(p.sign){
+						p.teta = number::atan2(y_, x_);
+					} else {
+						p.teta = number::atan2(-y_, -x_);
+					}
+					p.ref.ceiled = number::l_rad2ceil (p.teta);
+					p.ref.status = statuses::ready;
+				}
+			} else {				
+				p.ref.status = statuses::wait;
+			}
+		}
+	};
 }
 #endif
