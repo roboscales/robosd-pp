@@ -23,6 +23,8 @@ namespace robo{
 				double position = 0.f;
 				float tension = 0.f;
 				float tension_diff = 0.f;
+				double offset_rad = 0.;
+				bool inverce = 0.;
 			};
 
 			class ROBO_EXPORT link:public agent::block {

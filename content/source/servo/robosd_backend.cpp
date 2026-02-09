@@ -487,7 +487,7 @@ namespace robo {
 					devagent* broken_obj = message_.own_agent();
 					if (broken_obj) {
 						if (broken_obj->status() != devagent::statuses::locals::discovery) {
-							ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
+							//ROBO_ALARM_F("bus %s refuse current message (time: %u) by object %s 0x%x", display_alias(), request_begin_us_, broken_obj->display_alias(), broken_obj->dev_id().value);
 						}
 					}
 					else {
@@ -806,7 +806,7 @@ namespace robo {
 				state_ = state::panic;
 				events.on_panic.raise();
 				if ( own_agent().frontagent().status() !=  statuses::locals::discovery ) {
-					robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
+					//robo_errlog("data map transporrt error -  agent: %s", own_agent().display_alias());
 				}
 			}
 		};
