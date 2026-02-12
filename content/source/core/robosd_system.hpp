@@ -332,20 +332,29 @@ namespace robo {
 			static random_t rand_maxd();
 			static void wakeup(void);
 			static void sleep(void); //вернуть контекст
-#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE && ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_STD
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
-#if ROBO_UNICODE_ENABLED == 1
+			#if ROBO_UNICODE_ENABLED == 1
 			static size_t sprintf(char * _dst, size_t _max_sz, const char *  _format, va_list _args);
-#endif
-#endif
-#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+			#endif
+			#endif
+			#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 			static void print(cstr  _s);
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			static void print(robo::log::verb _verb, cstr _format, va_list  _args);
-#endif
-#endif
+			#endif
+			#endif
 		};
-#endif
+		#endif
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
+		
+		#if ROBO_UNICODE_ENABLED == 1 
+		static size_t sprintf(char* _dst, size_t _max_sz, const char* _format, va_list _args);
+		#endif
+		#endif
+
 	public:
 		#if ROBO_APP_TIMELOG_ENABLED == 1
 		struct timelogev {

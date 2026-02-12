@@ -14,7 +14,7 @@ namespace robo{
 				reader_ = new std::thread([ this, _data, _size] {
 					DWORD dwRead;
 					
-					if (::ReadFile(this->hCommPort_, _data, _size, &dwRead,NULL)) {
+					if (::ReadFile(this->hCommPort_, _data,(DWORD) _size, &dwRead,NULL)) {
 						
 						if (dwRead == 0) {
 							refuse();
@@ -43,7 +43,7 @@ namespace robo{
 				}
 				writer_ = new std::thread([&] {
 					DWORD dwWrite;
-					if (::WriteFile(hCommPort_, _data, _size, &dwWrite, NULL)) {
+					if (::WriteFile(hCommPort_, _data,(DWORD) _size, &dwWrite, NULL)) {
 						if (dwWrite == _size) {
 							confirm();
 						}
@@ -60,6 +60,20 @@ namespace robo{
 			else {
 				refuse();
 			}
+		}
+		void win_com_lu::transmit(const uint8_t* _data, size_t _size) {
+			if (hCommPort_ != INVALID_HANDLE_VALUE && !tx_) {
+				tx_ = true;
+				DWORD dwWrite;
+				if (::WriteFile(hCommPort_, _data, (DWORD) _size, &dwWrite, NULL)) {
+					if (dwWrite == _size) {
+						confirm();
+						return;
+					}
+				}
+				tx_ = false;
+			}
+			refuse();
 		}
 		bool   win_com_lu::win_com_lu::begin(robo::cstr _comm) {
 			name_ = _comm;

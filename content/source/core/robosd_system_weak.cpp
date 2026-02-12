@@ -88,7 +88,7 @@ namespace robo {
 
 	ROBO_WEAK void system::env::sleep(void) {}
 
-	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+	#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE && ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_STD
 	ROBO_WEAK size_t system::env::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
 		ROBO_UNUSED(_dst);
 		ROBO_UNUSED(_max_sz);
@@ -143,13 +143,20 @@ namespace robo {
 	}
 	ROBO_WEAK void system::ini::finish(void) {
 	}
+	ROBO_WEAK bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
+		ROBO_UNUSED(_dst);
+		ROBO_UNUSED(_max_sz);
+		ROBO_UNUSED(_section);
+		ROBO_UNUSED(_key);
+		return false;
+	}
 	ROBO_WEAK void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t& _size)
 	{
 		ROBO_UNUSED(_dst);
 		ROBO_UNUSED(_max_sz);
 		ROBO_UNUSED(_section);
 		ROBO_UNUSED(_key);
-		ROBO_UNUSED(_size);
+		_size = 0;
 	}
 	ROBO_WEAK cstr system::ini::source(void) {
 		return nullptr;

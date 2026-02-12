@@ -153,14 +153,6 @@ namespace robo {
 	#endif
 	#endif
 
-	#if ROBO_APP_INI_ENABLED ==1
-	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
-		size_t _size;
-		load_data(_dst, _max_sz, _section, _key, _size);
-		return _size > 0;
-	}
-	#endif
-
 
 	#if ROBO_APP_ALLOC_ENABLED == 1
 	class allocator {
@@ -567,9 +559,7 @@ namespace robo {
 		va_list args;
 		va_start(args, _format);
 		size_t ret = 0;
-		#if ROBO_APP_ENV_ENABLED == 1
-		ret = env::sprintf(_dst, _max_sz, _format, args);
-		#endif
+		ret = sprintf(_dst, _max_sz, _format, args);
 		va_end(args);
 		return ret;
 	}
@@ -627,8 +617,8 @@ namespace robo {
 }
 #endif
 
-#if ROBO_APP_CONSOL_ENABLED == 1
 namespace robo {
+#if ROBO_APP_CONSOL_ENABLED == 1
 	system::consol::on_break_f g_consol_on_break_dummy = [](system::consol::event /*_ev*/) {};
 	system::consol::on_break_f g_consol_on_break = g_consol_on_break_dummy;
 	void system::consol::stop(event _ev) {
@@ -643,7 +633,52 @@ namespace robo {
 		g_consol_on_break = g_consol_on_break_dummy;
 		driver_finish();
 	}
+	#endif
+#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+	size_t system::sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args) {
+#if ROBO_APP_ENV_ENABLED ==1 && ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_STD
+		return env::sprintf(_dst, _max_sz, _format, _args);
+#else
+#if ROBO_UNICODE_ENABLED == 1
+		//todo косячная функция  - если вся информация не помещается в буфер, то она не выведеться вовсе
+		int sz = vswprintf(_dst, _max_sz, _format, _args);
+#else
+		int sz = vsnprintf(_dst, _max_sz, _format, _args);
+#endif
+		if (sz > 0) {
+			if (sz < (int)_max_sz - 1) {
+				_dst[sz] = 0;
+			}
+			else {
+				_dst[_max_sz - 1] = 0;
+			}
+			return (size_t)sz;
+		}
+		else return 0;
+#endif
+	}
+
+#if ROBO_UNICODE_ENABLED == 1 
+	size_t system::sprintf(char* _dst, size_t _max_sz, const char* _format, va_list _args) {
+#if ROBO_APP_ENV_ENABLED ==1 && ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_STD
+		return env::sprintf(_dst, _max_sz, _format, _args);
+#else
+		int sz = vsnprintf(_dst, _max_sz, _format, _args);
+		if (sz > 0) {
+			if (sz < (int)_max_sz - 1) {
+				_dst[sz] = 0;
+			}
+			else {
+				_dst[_max_sz - 1] = 0;
+			}
+		}
+		return (size_t)sz;
+#endif
+	}
+#endif
 }
 #endif
+
+
 #endif
 

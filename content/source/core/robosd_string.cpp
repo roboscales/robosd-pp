@@ -75,32 +75,30 @@ namespace robo {
 	bool string::sprintf_backend_(stream_s & _s, cstr _format, va_list _args){
 		#if ROBO_APP_ENV_ENABLED == 1
 		_s.memo = string_buffer_backend;
-		_s.size = system::env::sprintf(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _format, _args);
+		_s.size = system::sprintf(string_buffer_backend, ROBO_STRING_BUFFER_SIZE, _format, _args);
 		return _s.size>0;
-		#else
-		return 0;
-		#endif
-	}
-	bool string::sprintf_frontend_(stream_s & _s, cstr _format, va_list _args){
-		#if ROBO_APP_SYSTEM_ENABLED == 1
-		system::critical c__;
-		#if ROBO_APP_ENV_ENABLED == 1
-		_s.memo = string_buffer_frontend;
-		_s.size = system::env::sprintf(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _format, _args);
-		return _s.size>0;
-		#else
-		return 0;
-		#endif
 		#else
 		return 0;
 		#endif
 	}
 
+	
+	bool string::sprintf_frontend_(stream_s & _s, cstr _format, va_list _args){
+		#if ROBO_APP_SYSTEM_ENABLED == 1
+		system::critical c__;
+		_s.memo = string_buffer_frontend;
+		_s.size = system::sprintf(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _format, _args);
+		return _s.size > 0;
+		#else
+		return false;
+		#endif
+	}
+
 	#if ROBO_UNICODE_ENABLED == 1
 	bool string::sprintf_backend_(stream_s& _s, const char *  _format, va_list _args) {
-		#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_SYSTEM_ENABLED == 1
 		_s.memo = string_buffer_backend;
-		_s.size = system::env::sprintf((char *)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)/sizeof(char), _format, _args);
+		_s.size = system::sprintf((char *)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)/sizeof(char), _format, _args);
 		if (_s.size >= 0) {
 			*(((char*)string_buffer_backend) + _s.size) = 0;
 		}
@@ -111,9 +109,9 @@ namespace robo {
 	}
 	bool string::sprintf_frontend_(stream_s& _s, const char* _format, va_list _args) {
 		system::critical c__;
-		#if ROBO_APP_ENV_ENABLED == 1
+		#if ROBO_APP_SYSTEM_ENABLED == 1
 		_s.memo = string_buffer_frontend;
-		_s.size = system::env::sprintf((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t) / sizeof(char), _format, _args);
+		_s.size = system::sprintf((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t) / sizeof(char), _format, _args);
 		if (_s.size >= 0) {
 			*(((char*)string_buffer_frontend) + _s.size) = 0;
 		}
@@ -124,6 +122,7 @@ namespace robo {
 	}
 	#endif
 	const char * string::ascii(void)  {
+		#if ROBO_APP_ENV_ENABLED == 1
 		#if ROBO_UNICODE_ENABLED == 1
 		if (system::env::is_backend()) {
 			ascii((char*)string_buffer_backend, ROBO_STRING_BUFFER_SIZE * 2);
@@ -134,9 +133,17 @@ namespace robo {
 			ascii((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * 2);
 			return (const char*)string_buffer_frontend;
 		}
-#else
+		#else
 		return c_str();
-#endif
+		#endif
+		#else
+		#if ROBO_UNICODE_ENABLED == 1
+		ascii((char*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * 2);
+		return (const char*)string_buffer_frontend;
+		#else
+		return c_str();
+		#endif		
+		#endif	
 	}
 
 	void string::ascii(char * _buf, size_t _len) const {
@@ -186,7 +193,7 @@ namespace robo {
 
 	bool string::format(cstr _format, va_list _args) {
 		stream_s stream;
-		#if ROBO_APP_SYSTEM_ENABLED
+		#if ROBO_APP_ENV_ENABLED
 		if (system::env::is_backend()) {			
 			if(sprintf_backend_(stream, _format, _args)){
 				*((stds*)value_) = stream.memo;
@@ -258,7 +265,7 @@ namespace robo {
 		}
 		#else
 		#endif
-		if (system::ini::load_str(string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
+		if (system::ini::load_str((char_t * )string_buffer_frontend, ROBO_STRING_BUFFER_SIZE, _section, _key)) {
 			*((stds*)value_) = string_buffer_frontend;
 			return true;
 		}
@@ -279,6 +286,8 @@ namespace robo {
 		}
 		return true;
 		#else
+		ROBO_LBREAKN(_converter((uint8_t*)string_buffer_frontend, ROBO_STRING_BUFFER_SIZE * sizeof(char_t)));
+		*((stds*)value_) = string_buffer_frontend;
 		return false;
 		#endif
 	}

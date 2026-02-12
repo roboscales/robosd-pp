@@ -27,7 +27,7 @@ namespace burst {
 		constexpr static signal_t ones = max;
 		constexpr static long_signal_t long_max = 2147483647;
 		constexpr static long_signal_t long_min = -long_max;
-
+		constexpr static int discret_bits = 15;
 		#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 		struct var{
 			constexpr static ::burst::var::types discret = ::burst::var::types::int16;
