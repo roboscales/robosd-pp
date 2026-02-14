@@ -137,6 +137,7 @@ namespace burst {
 		constexpr static uint32_t l_rad2ceil(signal_t _signal){
 			return  (uint32_t)((int32_t)(_signal * ((signal_t)4294967295./2/pi)));
 		}
+
 	};
 
 	
@@ -258,7 +259,10 @@ namespace burst {
 		}
 	
 		
-		
+		constexpr static long_signal_t l_angle_round(long_signal_t _signal) {
+			return  _signal;
+		}
+
 		template <typename T> static T t_round (const long_signal_t& _src, unsigned int _shift) {
 			if (_src == 0) {
 				return (T)0;
@@ -830,7 +834,7 @@ namespace burst {
 			}
 			
 			constexpr static long_signal_t sat(const long_signal_t& _x) {
-				return robo::saturate(_x, (long_signal_t)-1., (long_signal_t)1.);
+				return _x;// robo::saturate(_x, (long_signal_t)-1., (long_signal_t)1.);
 			}
 			constexpr static long_signal_t sat(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
 				return robo::saturate(_x, _lo, _hi);
@@ -843,7 +847,7 @@ namespace burst {
 				return _x/2;
 			}
 			constexpr static discret_t  todiscret(signal_t _x){
-				return  s_round(discret_max*_x);
+				return  s_round(_x);
 			}
 		};
 		constexpr static uint32_t l_rad2ceil(signal_t _signal){
@@ -895,6 +899,11 @@ namespace burst {
 				}
 			}
 			return (signal_t)val32;
+		}
+		constexpr static long_signal_t l_angle_round(long_signal_t _signal) {
+			while (_signal > pi) _signal -= (2 * pi);
+			while (_signal < -pi) _signal += (2 * pi);
+			return  _signal;
 		}
 	};	
 

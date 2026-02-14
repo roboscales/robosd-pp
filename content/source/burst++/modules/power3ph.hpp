@@ -321,9 +321,9 @@ namespace burst {
 				if (actual_mode >= mode::full) {
 					//abc_s duty;
 					push(RT("duty"));
-					reg(number::var::const_signal, p.duty.A, RT("A"));
-					reg(number::var::const_signal, p.duty.B, RT("B"));
-					reg(number::var::const_signal, p.duty.C, RT("C"));
+					reg(number::var::const_discret, p.duty.A, RT("A"));
+					reg(number::var::const_discret, p.duty.B, RT("B"));
+					reg(number::var::const_discret, p.duty.C, RT("C"));
 					pop();
 					//abc_s pwm;
 					push(RT("pwm"));

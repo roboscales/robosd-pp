@@ -211,7 +211,8 @@ namespace robo {
 							U[0] = voltage.dq.d / Ls;
 							U[1] = voltage.dq.q / Ls;
 							U[2] = -actuator.contr_torque / p / J;
-							Xmax = IA * U *(-1.);
+							Xmax = IA * U;
+							Xmax = Xmax * (-1.);
 							float wT = (float)(owner.sample_time * w);
 							EA2(0, 0) = cos(wT);
 							EA2(0, 1) = sin(wT);

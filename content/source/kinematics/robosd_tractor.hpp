@@ -1294,7 +1294,7 @@ namespace robo {
 				return true;
 			}
 			T  & operator () (int _index1,int _index2) {
-				return memo[_index2*3+_index1];
+				return memo[_index1*3+_index2];
 			}
 		};
 		template<class T> using matrix3x3_t = numbers_t <T, matrix3x3_s<T> >;

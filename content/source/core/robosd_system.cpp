@@ -676,8 +676,8 @@ namespace robo {
 #endif
 	}
 #endif
-}
 #endif
+}
 
 
 #endif

@@ -383,16 +383,20 @@ namespace robo {
 		#define robo_logger(e) 
 		#endif
 
-		#if ROBO_APP_ENV_ENABLED == 1
+		//#if ROBO_APP_ENV_ENABLED == 1
 		template<typename T>
 		static T rand(random_t _reso, const T& _min, const T& _max) {
 			return  robo::rand_t<T,env>(_reso,_min,_max);
 		}
 		template<typename T>
 		static T rand(const T& _min, const T& _max) {
+			#if ROBO_APP_ENV_ENABLED == 1
 			return  robo::rand_t<T, env>(env::rand_maxd(), _min, _max);
+			#else
+			return _min + (T)  (_max- _min) / RAND_MAX * std::rand();
+			#endif
 		}
-		#endif
+		//#endif
 
 		static time_us_t clock_period_us(void);
 		static time_us_t time_us(void);
