@@ -77,19 +77,6 @@ namespace robo {
 					A(2, 2) = -Kv / J;
 
 					EA1 = robo::expm(A * owner.sample_time, 1e-10);
-					#if 0
-					{1, 0, 0, 0, 1, 0, 0, 0, 1};					
-					auto AT = A * owner.sample_time;
-					auto ATN = AT;
-					EA1 += AT;
-					double nf = 1;
-					for (int i = 2; i <= 6;++i) {
-						ATN = ATN * AT;
-						nf = nf * i;
-						EA1 += ATN / nf;
-					}
-
-					#endif
 					EA2 = {0, 0, 0, 0, 0, 0, 0, 0, 1};
 
 #endif
