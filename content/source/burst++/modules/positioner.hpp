@@ -1,6 +1,7 @@
 #ifndef burst_positioner_hpp
 #define burst_positioner_hpp
 #include "burst++/modules/actor.hpp"
+#include "burst++/burst_common.hpp"
 namespace burst{
 	template < class number > class positioner_t {
 		public:

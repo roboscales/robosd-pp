@@ -15,7 +15,7 @@ namespace robo {
 	}
 
 	bool controller::process::run(void) {
-		if (command_ == command::start) {
+		if (command() == commands::start) {
 			switch (state_) {
 			case state::stopped:
 			onPrepare();
@@ -94,10 +94,10 @@ namespace robo {
 	void controller::process::terminate(void) {
 		doTerminate();
 		state_ = state::stopped;
-		command_ = command::stop;
+		stop();
 	}
 
-	void controller::switchto(controller::process* _task) {
+	void controller::switchto(controller::base* _task) {
 		if (selected_ == 0 && runned_ == _task) {
 			if (runned_)
 				runned_->start_();
@@ -133,5 +133,61 @@ namespace robo {
 		runned_ = 0;
 		doTerminate();
 	}
+
+//===================================
+	bool controller::node::run(void) {
+		if (command() == commands::start) {
+			switch (state_) {
+			case states::stopped:
+				state_ = states::entered;
+				onEnter();
+			case states::entered:
+				if (doEnter() == result::success) {
+					state_ = states::execute;
+					onExecute();
+				}
+				else
+					break;
+			case  states::execute:
+				doExecute();
+				break;
+			case states::leaved:
+				if (doLeave() == result::success) {
+					state_ = states::stopped;
+					onFinish();
+				}
+				else
+					break;
+			}
+		}
+		else {
+			switch (state_) {
+			case states::stopped:
+				onIdle();
+				break;
+			case states::entered:
+			case states::execute:
+				state_ = states::leaved;
+				onLeave();
+			case states::leaved:
+				if (doLeave() == result::success) {
+					state_ = states::stopped;
+					onFinish();
+					return true;
+				}
+				else
+					break;
+			}
+		}
+		return false;
+	}
+
+	void controller::node::terminate(void) {
+		state_ = states::stopped;
+		stop();
+		onTerminate();
+	}
+
+
 
 }

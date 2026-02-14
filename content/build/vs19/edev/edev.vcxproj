@@ -29,7 +29,7 @@
     <ClCompile Include="..\dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\app\digital-tween\projects\vs19\config\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\..\app\swan-digita-tween\projects\vs2019\config\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\edev\edev.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\edev\joint_link.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\im\models\dcmachine.hpp" />

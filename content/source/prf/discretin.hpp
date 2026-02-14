@@ -35,7 +35,7 @@ namespace robo {
 						on_up_ = _on_up;
 					}
 					void raise(void){
-						robo::time_us_t us = robo::system::time_us();
+						robo::time_us_t us = D::time_us();
 						if( us - last_us_ >= period_us_ ){
 							if(on_push_){
 								 (*on_push_)();
@@ -48,9 +48,9 @@ namespace robo {
 							if(state_ ==  state::reset){
 								state_ =  state::set;
 								raise();
-								pushdown_us_ = ::robo::system::time_us();
+								pushdown_us_ = D::time_us();
 							}else{
-								pressed_us_=::robo::system::time_us()-pushdown_us_;
+								pressed_us_=D::time_us()-pushdown_us_;
 							}
 						} else {
 							if(state_ ==  state::set){

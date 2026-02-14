@@ -19,13 +19,14 @@ namespace robo{
 			virtual void on_receive(const uint8_t* _data, size_t _size) = 0;
 			virtual void refuse(void) = 0;
 			void start_transmit(const uint8_t* _data, size_t _size);
+			void transmit(const uint8_t* _data, size_t _size);
 			virtual void confirm(void) = 0;
 
 			//void raise();
 			//robo::net::queue<win_com_lu, COM_DRIVER_BUF_BITS, BYTE, true> outcomQueue;
 
 		private:
-			std::string name_;
+			robo::string name_;
 			HANDLE hCommPort_ = INVALID_HANDLE_VALUE;
 			std::thread* reader_ = nullptr;
 			std::thread* writer_ = nullptr;

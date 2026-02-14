@@ -1,4 +1,5 @@
 #include "burst++/math.hpp"
+#include "core/robosd_log.hpp"
 namespace burst {
 	enum { sin_index_shift = 6, sin_length_table = 256 };
 
@@ -73,7 +74,7 @@ namespace burst {
 	S(-1.0)
 	};
 	
-constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
+	constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
 		uint16_t mcsinPIxLUT_ix = 0;
 		int15::signal_t mcsinPIxLUT_value = _value;
 		if (mcsinPIxLUT_value >= 0) {
@@ -191,9 +192,9 @@ constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
 				int15::usignal_t  abs_x = abs(_x);
 				int15::usignal_t  abs_y = abs(_y);
 				if ( abs_y<=abs_x){
-					ret = _atan( (int15::usignal_t) ((65536L*abs_y)/abs_x));
+					ret = _atan( (int15::usignal_t) ((65535L*abs_y)/abs_x));
 				}  else {
-					ret = pi_div_2 - _atan((int15::usignal_t) ((65536L*abs_x)/abs_y) );
+					ret = pi_div_2 - _atan((int15::usignal_t) ((65535L*abs_x)/abs_y) );
 				}
 				if (_x<0){
 					if (_y<0) {
@@ -211,5 +212,157 @@ constexpr int15::signal_t  mcsinPIxLUT(int15::signal_t _value) {
     }
 	}
 	
+	//====================================
+	#undef S
+	#define S(x) ((real::signal_t)(x))
+
+
+	const real::signal_t constexpr  real_mcgenSineTable256[sin_length_table + 1] =
+	{ S(0.000000),S(-0.006134),S(-0.012268),S(-0.018402),
+	S(-0.024536),S(-0.030670),S(-0.036804),S(-0.042938),
+	S(-0.049042),S(-0.055176),S(-0.061310),S(-0.067444),
+	S(-0.073547),S(-0.079681),S(-0.085785),S(-0.091888),
+	S(-0.097992),S(-0.104095),S(-0.110199),S(-0.116302),
+	S(-0.122406),S(-0.128479),S(-0.134552),S(-0.140656),
+	S(-0.146729),S(-0.152771),S(-0.158844),S(-0.164886),
+	S(-0.170959),S(-0.177002),S(-0.183014),S(-0.189056),
+	S(-0.195068),S(-0.201080),S(-0.207092),S(-0.213104),
+	S(-0.219086),S(-0.225067),S(-0.231049),S(-0.237000),
+	S(-0.242950),S(-0.248901),S(-0.254852),S(-0.260773),
+	S(-0.266693),S(-0.272614),S(-0.278503),S(-0.284393),
+	S(-0.290283),S(-0.296143),S(-0.302002),S(-0.307831),
+	S(-0.313660),S(-0.319489),S(-0.325287),S(-0.331085),
+	S(-0.336884),S(-0.342651),S(-0.348389),S(-0.354156),
+	S(-0.359894),S(-0.365601),S(-0.371307),S(-0.376984),
+	S(-0.382660),S(-0.388336),S(-0.393982),S(-0.399597),
+	S(-0.405212),S(-0.410828),S(-0.416412),S(-0.421997),
+	S(-0.427551),S(-0.433075),S(-0.438599),S(-0.444092),
+	S(-0.449585),S(-0.455078),S(-0.460510),S(-0.465973),
+	S(-0.471375),S(-0.476776),S(-0.482178),S(-0.487549),
+	S(-0.492889),S(-0.498199),S(-0.503510),S(-0.508820),
+	S(-0.514099),S(-0.519348),S(-0.524567),S(-0.529785),
+	S(-0.534973),S(-0.540161),S(-0.545319),S(-0.550446),
+	S(-0.555542),S(-0.560638),S(-0.565704),S(-0.570770),
+	S(-0.575806),S(-0.580811),S(-0.585785),S(-0.590759),
+	S(-0.595673),S(-0.600616),S(-0.605499),S(-0.610382),
+	S(-0.615204),S(-0.620056),S(-0.624847),S(-0.629608),
+	S(-0.634369),S(-0.639099),S(-0.643829),S(-0.648499),
+	S(-0.653168),S(-0.657806),S(-0.662415),S(-0.666992),
+	S(-0.671539),S(-0.676086),S(-0.680573),S(-0.685059),
+	S(-0.689514),S(-0.693970),S(-0.698364),S(-0.702728),
+	S(-0.707092),S(-0.711426),S(-0.715729),S(-0.720001),
+	S(-0.724243),S(-0.728455),S(-0.732635),S(-0.736816),
+	S(-0.740936),S(-0.745056),S(-0.749115),S(-0.753174),
+	S(-0.757202),S(-0.761200),S(-0.765167),S(-0.769073),
+	S(-0.773010),S(-0.776886),S(-0.780731),S(-0.784546),
+	S(-0.788330),S(-0.792084),S(-0.795807),S(-0.799530),
+	S(-0.803192),S(-0.806824),S(-0.810455),S(-0.814026),
+	S(-0.817566),S(-0.821075),S(-0.824585),S(-0.828033),
+	S(-0.831451),S(-0.834839),S(-0.838196),S(-0.841553),
+	S(-0.844849),S(-0.848114),S(-0.851349),S(-0.854553),
+	S(-0.857727),S(-0.860840),S(-0.863953),S(-0.867035),
+	S(-0.870087),S(-0.873077),S(-0.876068),S(-0.878998),
+	S(-0.881897),S(-0.884796),S(-0.887634),S(-0.890442),
+	S(-0.893219),S(-0.895966),S(-0.898651),S(-0.901337),
+	S(-0.903961),S(-0.906586),S(-0.909149),S(-0.911682),
+	S(-0.914185),S(-0.916656),S(-0.919098),S(-0.921509),
+	S(-0.923859),S(-0.926208),S(-0.928497),S(-0.930756),
+	S(-0.932983),S(-0.935181),S(-0.937317),S(-0.939453),
+	S(-0.941528),S(-0.943573),S(-0.945587),S(-0.947571),
+	S(-0.949524),S(-0.951416),S(-0.953278),S(-0.955139),
+	S(-0.956940),S(-0.958679),S(-0.960419),S(-0.962097),
+	S(-0.963776),S(-0.965393),S(-0.966949),S(-0.968506),
+	S(-0.970001),S(-0.971497),S(-0.972931),S(-0.974335),
+	S(-0.975677),S(-0.977020),S(-0.978302),S(-0.979553),
+	S(-0.980774),S(-0.981934),S(-0.983093),S(-0.984192),
+	S(-0.985260),S(-0.986298),S(-0.987274),S(-0.988251),
+	S(-0.989166),S(-0.990051),S(-0.990875),S(-0.991699),
+	S(-0.992462),S(-0.993195),S(-0.993896),S(-0.994537),
+	S(-0.995178),S(-0.995758),S(-0.996307),S(-0.996796),
+	S(-0.997284),S(-0.997711),S(-0.998108),S(-0.998474),
+	S(-0.998779),S(-0.999054),S(-0.999298),S(-0.999512),
+	S(-0.999695),S(-0.999817),S(-0.999908),S(-0.999969),
+	S(-1.0)
+	};
+	
+	constexpr real::signal_t  real_mcsinPIxLUT(real::discret_t _value) {
+		uint16_t mcsinPIxLUT_ix = 0;
+		//real::discret_t mcsinPIxLUT_value = (real::discret_t)(_value*real::discret_max/real::pi );
+		if (_value >= 0) {
+			if(_value > (real::discret_max>>1) ){
+				mcsinPIxLUT_ix =(2 * sin_length_table - (_value >> sin_index_shift) - 1);
+			}
+			else {
+				mcsinPIxLUT_ix =(_value >> sin_index_shift);
+			}
+			ROBO_ASSERT(mcsinPIxLUT_ix<=256);
+			return -real_mcgenSineTable256[mcsinPIxLUT_ix];
+		}
+		else {
+			if(_value <= -(real::discret_max>>1)){
+				mcsinPIxLUT_ix = (2 * sin_length_table - ((-_value) >> sin_index_shift));
+			} else {
+				mcsinPIxLUT_ix = (-_value) >> sin_index_shift;
+			}
+			ROBO_ASSERT(mcsinPIxLUT_ix<=256);
+			return real_mcgenSineTable256[mcsinPIxLUT_ix];
+
+		}
+	}
+
+	real::signal_t real::sin(real::signal_t _angle) {
+		real::discret_t mcsinPIxLUT_value = (real::discret_t)(_angle*real::discret_max/real::pi );
+		return real_mcsinPIxLUT(mcsinPIxLUT_value);
+	}
+	real::signal_t real::cos(real::signal_t _angle) {
+		real::discret_t mcsinPIxLUT_value = (real::discret_t)(_angle*real::discret_max/real::pi )+(real::discret_max>>1);
+		return real_mcsinPIxLUT(mcsinPIxLUT_value);
+	}
+	#ifndef REAL_TAN_LENGTH_TABLE
+	#define REAL_TAN_LENGTH_TABLE 1024
+	#endif
+	robo::atan2_table_t<real::signal_t,REAL_TAN_LENGTH_TABLE> real_atan_;
+	#if 0
+	const real::signal_t real_tableAtan64[TAN_LENGTH_TABLE] = 
+	{ 
+		S(0.0050), S(0.0100), S(0.0150), S(0.0199), S(0.0249), S(0.0298), S(0.0347), S(0.0396), 
+		S(0.0445), S(0.0494), S(0.0542), S(0.0591), S(0.0638), S(0.0686), S(0.0733), S(0.0780), 
+		S(0.0827), S(0.0873), S(0.0919), S(0.0965), S(0.1010), S(0.1054), S(0.1099), S(0.1142), 
+		S(0.1186), S(0.1229), S(0.1271), S(0.1313), S(0.1355), S(0.1396), S(0.1436), S(0.1476), 
+		S(0.1516), S(0.1555), S(0.1593), S(0.1632), S(0.1669), S(0.1706), S(0.1743), S(0.1779), 
+		S(0.1814), S(0.1849), S(0.1884), S(0.1917), S(0.1951), S(0.1984), S(0.2017), S(0.2049), 
+		S(0.2080), S(0.2112), S(0.2142), S(0.2172), S(0.2202), S(0.2231), S(0.2260), S(0.2289), 
+		S(0.2317), S(0.2344), S(0.2371), S(0.2398), S(0.2424), S(0.2450), S(0.2475), S(0.2500)
+	};
+	#endif
+	
+	real::signal_t real_atan__( real::signal_t _x){
+		int n = (int)(_x*(REAL_TAN_LENGTH_TABLE-1)+0.5 );
+		if (n>=REAL_TAN_LENGTH_TABLE) n =REAL_TAN_LENGTH_TABLE-1;
+		return real_atan_.table[n];
+	}
+	real::signal_t real::atan2(real::signal_t _y,real::signal_t _x){
+		constexpr  signal_t  pi_div_2 =pi/2.f;
+		signal_t  abs_x = abs(_x);
+		signal_t  abs_y = abs(_y);
+		real::signal_t  ret;
+		if ( abs_y<=abs_x){
+			ret = real_atan__( abs_y/abs_x );
+		}  else {
+			ret = pi_div_2 - real_atan__( abs_x/abs_y );
+		}
+		if (_x<0){
+			if (_y<0) {
+				ret = -pi + ret;
+			} else {
+				ret = pi - ret;
+			}
+		} else {
+			if (_y<0) {
+				ret =  -ret;
+			}
+		}
+		return ret;
+	}
 }
 

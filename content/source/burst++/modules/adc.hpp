@@ -1,14 +1,16 @@
 #ifndef burst_adc_hpp
 #define burst_adc_hpp
 #include "burst++/modules/actor.hpp"
+#include "core/robosd_system.hpp"
 #include <algorithm>
 
 namespace burst {
 	template< class number, class driver>  class adc_t : public actor {
 		using R = typename driver::raw_t;
 		enum {N = driver::channel_count};
+		using discret_t = typename number::discret_t;
 		using signal_t = typename number::signal_t;
-		using long_signal_t = typename number::long_signal_t;
+		using long_discret_t = typename number::long_discret_t;
 
 	public:
 		enum { count = N};
@@ -113,7 +115,7 @@ namespace burst {
 				R * n = p.raw;
 				R * o = offset;
 				for (int i = 0; i < N; ++i, ++n, ++o, ++v) {
-					*v = (signal_t)((long_signal_t)(*n - *o));
+					*v = (signal_t)((long_discret_t)(*n - *o));
 				}
 			}
 			else {
@@ -124,24 +126,27 @@ namespace burst {
 				}
 				init_count--;
 				if (init_count == 0) {
-					typename number::signal_t * v = p.values;
+					signal_t * v = p.values;
 					R * n = p.raw;
 					R * o = offset;
 					R* a = acc;
 					int shift = cfg.init_count_bits;
 					for (int i = 0; i < N; ++i, ++v, ++n, ++o, ++a) {
 						*o = (R)((*a + (1 << (shift - 1))) >> shift) + 1;
-						*v = (signal_t)((long_signal_t)(*n - *o)  );
+						*v = (signal_t)((long_discret_t)(*n - *o)  );
 					}
 					p.ready = true;
 				}
 			}
 		}
-
+		
+		
 		adc_t(const config_s& _config, present_s& _present)
 			: actor(_config.tag, _present.tag) {};
+		#if ROBO_APP_ULTRACOMPACT == 0
 		adc_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: actor(_config.tag, _present.tag, _subsystem) {};
+		#endif
 
 	};	
 	
@@ -269,7 +274,7 @@ namespace burst {
 			typename number::discret2signal scaler;
 			typedef typename number::discret2signal::config_s config_s;
 			virtual void begin(void){
-				scaler.reconfig();
+				scaler.begin();
 			}
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_conf(void) {
@@ -302,7 +307,11 @@ namespace burst {
 			R * n = tmp_raw;
 			converter ** c = converters;
 			{
+				#if ROBO_APP_ULTRACOMPACT == 0
 				::robo::system::guard g__;
+				#else
+				typename driver::guard g__;
+				#endif
 				std::copy_n(p.raw,N,tmp_raw);
 			}
 			for (int i = 0; i < N; ++i, ++n, ++v, ++c) {
@@ -340,10 +349,12 @@ namespace burst {
 			: actor(_config.tag, _present.tag) {
 				std::copy_n(_converters,N,converters);
 			};
+			#if ROBO_APP_ULTRACOMPACT == 0
 		analog_input_t(const config_s& _config, present_s& _present, subsystem& _subsystem, converter * ( &_converters)  [N])
 			: actor(_config.tag, _present.tag, _subsystem){
 				std::copy_n(_converters,N,converters);
 			};
+			#endif
 
 	};	
 }

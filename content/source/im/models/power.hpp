@@ -5,7 +5,7 @@ namespace robo{
 	namespace edev{
 		namespace power {
 			struct ROBO_EXPORT ph3 {
-				struct sdq {
+				struct ROBO_EXPORT sdq {
 					float d;
 					float q;
 					sdq();

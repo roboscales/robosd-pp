@@ -1,5 +1,10 @@
 #include "burst++/vartree.hpp"
+#if (ROBO_APP_ULTRACOMPACT == 0)
 #include "burst++/burst.hpp"
+#else
+#include "burst++/burst_common.hpp"
+#endif
+
 #include "core/robosd_ring_buf.hpp"
 #include "core/robosd_common.hpp"
 
@@ -90,12 +95,16 @@ namespace burst {
 			delete[] path_stack_buffer;
 			#endif
 		}
+		
+		#if (ROBO_APP_ULTRACOMPACT == 0)
 		burst::board::slot::simple start(
 			burst::board::slot::kind::start
 			, [] {
 				reindex();
 			}
 		);
+		#endif
+
 		void free(void) {
 			ref_s** r = index;
 			for (int i = 0; i < count; ++i,++r) {
@@ -194,7 +203,13 @@ namespace burst {
 				const record_s* r = get(ix);
 				if ( r ) {
 					if (r->desc.len <= max_len) {
-						if(r->desc.reconfig_need == 0 || board::if_configure() ){
+						if(r->desc.reconfig_need == 0 
+							#if (ROBO_APP_ULTRACOMPACT == 0)
+							|| board::if_configure() 
+							#else	
+								|| if_configure()
+							#endif
+							){
 							{
 								::robo::system::guard g__;
 								std::copy_n(_buf_in + 2, r->desc.len, (uint8_t*)r->addr);
@@ -203,7 +218,11 @@ namespace burst {
 							pouth->error=error::none;
 							pouth->ix=ix;
 							if(r->desc.reconfig_need){
+								#if (ROBO_APP_ULTRACOMPACT == 0)
 								board::reconfig_query();
+								#else
+								reconfig_query();
+								#endif	
 							}
 						}else {
 							pouth->query=query;

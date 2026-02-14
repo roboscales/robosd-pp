@@ -389,6 +389,11 @@ namespace robo {
 				}
 				return D(tmp);
 			}
+
+		}
+		template<typename T>
+			T select(const T & mask, const T & source0, const T & source1) {
+			return (source0 & ~mask) | (source1 & mask);
 		}
 	}
 	template<typename T, typename R>
@@ -445,7 +450,28 @@ namespace robo {
     return r;
 		
 	}
-
+	template<typename T, int N > struct atan2_table_t{
+		enum { size = N };
+		T table [N];
+		constexpr atan2_table_t(void){
+			//N=3
+			//min = 0
+			//max = pi/4
+			//d = pi/4/2=pi/8
+			//table[0]=0
+			//table[1]=pi/8
+			//table[2]=pi/8+pi/8=pi/4
+			double max = pi<double> /4.;
+			double d = max/ static_cast<double>(N-1);
+			for (size_t i = 0; i < N; ++i) {						
+				double y = d * static_cast<double>(i) ;
+				// Вычисляем значение синуса и масштабируем амплитудой
+				// Округляем до ближайшего целого
+				table[i] = (T)catan2(y,1.0);
+			}
+		}
+	};
+	
 	template<typename T> constexpr T csin(T x) {
 		T result = 0;
 		int sign = 1;
@@ -483,6 +509,78 @@ namespace robo {
 		}
 		return R;
 	}
+
+	constexpr double taylor_sin(double x) {
+		// Приводим к диапазону [-?, ?]
+
+		double term = x;
+		double sum = term;
+		double x2 = x * x;
+
+		for (int i = 1; i < 10; ++i) {
+			term *= -x2 / ((2 * i) * (2 * i + 1));
+			sum += term;
+		}
+
+		return sum;
+	}
+	template<typename T, int N, T A, T Z > struct generator_t {
+		const T table_zero = Z;
+		const T amplitude = A;
+		const T size = N;
+		T table[N] = {};
+		constexpr generator_t(double O) {
+			constexpr double two_pi = 2.0 * pi<double>;
+			for (size_t i = 0; i < N; ++i) {
+				// Вычисляем угол от 0 до 2?
+				double angle = O + two_pi * static_cast<double>(i) / static_cast<double>(N);
+
+				// Вычисляем значение синуса и масштабируем амплитудой
+				// Округляем до ближайшего целого
+				double sin_value = Z + A * taylor_sin(angle);
+				table[i] = static_cast<T>(sin_value + 0.5);
+			}
+		}
+	};
+	//===================================================
+	template<size_t N, typename M, typename S> class debouncer_t {
+	private:
+		robo::time_us_t begins_us_[N] = {};
+		M stable_states_ = 0;  // Битовое поле стабильных состояний
+	//    uint16_t threshold;
+			
+	public:
+		debouncer_t( void){
+		}
+			
+		// Обновление с массивом текущих значений
+		template<typename T> void update( robo::time_us_t ( &threshold_us)[N], T & current_values ) {
+			robo::time_us_t now = S::time_us();
+			for (size_t i = 0; i < N; ++i) {
+				bool current = current_values[i];
+
+				if (current != ((stable_states_ >> i) & 1)) {
+						// Состояние отличается от стабильного
+					if (begins_us_[i] >= threshold_us[i]) {
+							// Изменяем стабильное состояние
+							if (current) {
+									stable_states_ |= (1 << i);
+							} else {
+									stable_states_ &= ~(1 << i);
+							}
+					}
+				} else {
+					// Состояние совпадает со стабильным - сбрасываем счетчик
+					begins_us_[i] = now;
+				}
+			}
+		}
+			
+		M stable() const {
+				return stable_states_;
+		}
+	};
+
 }
 
 
@@ -564,6 +662,9 @@ namespace robo {
 #define ROBO_APP_REALTIME_TYPE ROBO_APP_TYPE_SPECIFIC
 #endif
 
+#ifndef ROBO_APP_ULTRACOMPACT
+#define ROBO_APP_ULTRACOMPACT 0
+#endif
 
 
 

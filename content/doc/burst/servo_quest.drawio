@@ -1,0 +1,55 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.5 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36" version="28.2.5">
+  <diagram name="Страница — 1" id="SqR4COThL1LI4iIih8hE">
+    <mxGraphModel dx="1410" dy="833" grid="1" gridSize="1" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-1" value="servo configure quest" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="225" y="96" width="120" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-2" target="3nFta-9t3zUe6dtV0vUI-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-2" value="actuator 1 configure quest" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="135" y="167" width="120" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-3" target="3nFta-9t3zUe6dtV0vUI-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-3" value="actuator&amp;nbsp; 2configure quest" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="225" y="223" width="120" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-4" target="3nFta-9t3zUe6dtV0vUI-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-4" value="actuator configure quest" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="311" y="170" width="120" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-8" target="3nFta-9t3zUe6dtV0vUI-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-8" value="var_post_quest&lt;div&gt;&quot;board.cmd&quot;=commands::none&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="167" y="306" width="178" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-10" target="3nFta-9t3zUe6dtV0vUI-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-10" value="post_startup_vars_quest&lt;div&gt;Записываем переменные из ini файла в устройство&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="128" y="415" width="178" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-12" target="3nFta-9t3zUe6dtV0vUI-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-12" value="var_post_quest&lt;div&gt;&quot;board.cmd&quot;=commands::configure&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="78" y="513" width="200" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3nFta-9t3zUe6dtV0vUI-14" target="3nFta-9t3zUe6dtV0vUI-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3nFta-9t3zUe6dtV0vUI-14" value="discovery_quest" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="56" y="602" width="200" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

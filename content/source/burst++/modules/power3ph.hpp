@@ -9,43 +9,25 @@
 namespace burst {
 	template<typename number> struct powe3ph {
 		using signal_t = typename number::signal_t;
-		using usignal_t = typename number::usignal_t;
+		using discret_t = typename number::discret_t;
+		//using usignal_t = typename number::usignal_t;
 		using long_signal_t = typename number::long_signal_t;
 		using ulong_signal_t = typename number::ulong_signal_t;
-		constexpr static signal_t sqrt3_div_2 = number::s_frac( robo::csqrt<double>(3.0) / 2);// number::round(robo::csqrt<double>(3.0) / 2 * number::max);
-		constexpr static signal_t scale = number::s_frac( robo::csqrt<double>(2.0) -1 );
-		constexpr static signal_t sqrt2_div_2 = number::s_frac( robo::csqrt<double>(2.0) / 2 );
-		constexpr static signal_t one_div_3 = number::s_frac(1./ 3);
-		constexpr static signal_t one_div_sqrt3 = number::s_frac( 1. / robo::csqrt<double>(3.0) );
-		static inline signal_t& standby = burst::standby<signal_t>();
-		static inline long_signal_t  mult_(long_signal_t x1, long_signal_t x2) {
-			return  robo::digit::rsh(x1 * x2 ,15);
-		}
-		//static inline long_signal_t fast::rsh
-		static inline long_signal_t dot_(long_signal_t _x1, long_signal_t _y1, long_signal_t _x2, long_signal_t _y2) {
-			return robo::digit::rsh(_x1 * _y1 + _x2 * _y2,15);
-		}
-
-		static inline long_signal_t sum_x_ya_(long_signal_t x, long_signal_t y, long_signal_t a) {
-			long_signal_t tmp = ((long_signal_t)y) * a;
-			tmp = robo::digit::rsh(tmp , 15);
-			tmp += x;
-			return tmp;
-		}
-		static inline long_signal_t l_sat_s(const long_signal_t& _x) {
-			return robo::saturate(_x, number::min, number::max);
-		}
-		static inline long_signal_t l_sat_s(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
-			return robo::saturate(_x, _lo, _hi);
-		}
-
+		using long_discret_t = typename number::long_discret_t;
+		#if ROBO_APP_ULTRACOMPACT == 0
+		static inline signal_t& standby = burst::standby<signal_t>();		
+		#endif
 
 		struct abc_s {
 			signal_t A;
 			signal_t B;
 			signal_t C;
 		};
-
+		struct discret_abc_s {
+			discret_t A;
+			discret_t B;
+			discret_t C;
+		};
 		struct ab_s {
 			long_signal_t alfa;
 			long_signal_t beta;
@@ -63,7 +45,11 @@ namespace burst {
 
 		class rotator_t : public actor {
 		protected:
+		#if ROBO_APP_ULTRACOMPACT == 0
 			signal_t* synchro_anglee = nullptr;
+		#else
+			signal_t & synchro_anglee;
+		#endif
 		public:
 			typedef actor::config_s config_s;
 			#define POWER3PH_ROTATOR_CONFIG(a) ACTOR_CONFIG(a)
@@ -85,6 +71,7 @@ namespace burst {
 				ACTOR_PRESENT_S(p);
 				p.synchro = false;
 			}
+		#if ROBO_APP_ULTRACOMPACT == 0
 			rotator_t(const config_s& _config, present_s& _present)
 				: actor(_config, _present.tag) {
 			};
@@ -94,6 +81,11 @@ namespace burst {
 			void connect(signal_t* _synchro) {
 				connectto(synchro_anglee, _synchro);
 			}
+			#else
+			rotator_t(const config_s& _config, present_s& _present, signal_t & _synchro_anglee )
+				: actor(_config, _present.tag),synchro_anglee(_synchro_anglee) {
+			}
+			#endif
 
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
@@ -119,12 +111,16 @@ namespace burst {
 
 		class enco32_adapter_t : public rotator_t {
 		protected:
+		#if ROBO_APP_ULTRACOMPACT == 0
 			uint32_t * angle;
+		#else
+			uint32_t & angle;
+		#endif
 		public:
 			struct config_s {
 				typename rotator_t::config_s tag;
 				bool inverce;
-				signal_t offset;
+				discret_t offset;
 				uint8_t pole_count;
 			};
 			#define POWER3PH_ENCO32_ADAPTER_CONFIG(a) POWER3PH_ENCO32_ADAPTER_CONFIG_(a)
@@ -136,6 +132,7 @@ namespace burst {
 				,a##_POLE_COUNT\
 			}
 			typedef typename rotator_t::present_s present_s;
+			#if ROBO_APP_ULTRACOMPACT == 0
 			enco32_adapter_t(const config_s& _config, present_s& _present)
 				: rotator_t(_config.tag, _present) {
 				connect(nullptr);
@@ -148,21 +145,36 @@ namespace burst {
 				connectto(angle, _angle);
 				rotator_t::connect(_synchro);
 			}
+			#else
+			enco32_adapter_t(const config_s& _config, present_s& _present, signal_t & _synchro_anglee , uint32_t & _mech_anglee )
+				: rotator_t(_config.tag, _present,_synchro_anglee) , angle(_mech_anglee){
+			};
+			#endif
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
 				ACTOR_CONFIG_S(c);
-				signal_t tmp = (signal_t)robo::digit::rsh((long_signal_t)*angle, 16);
+				#if ROBO_APP_ULTRACOMPACT == 0
+				discret_t tmp = number::ul2discret(angle);
+				#else
+				discret_t tmp = number::ul2discret(angle);
+				#endif
+				
 				if (c.inverce) tmp = -tmp;
 
 				tmp *= c.pole_count;
 				tmp -= c.offset;
-				p.angle.mechanic = tmp;
+				p.angle.mechanic = number::discret2rad(tmp);
 
 				if (p.synchro) {
+					#if ROBO_APP_ULTRACOMPACT == 0
 					p.angle.electro = *rotator_t::synchro_anglee;
+					#else
+					p.angle.electro = rotator_t::synchro_anglee;
+					#endif
 				} else {
 					p.angle.electro = p.angle.mechanic;
 				}
+				//todo можно сократить на одно умножение
 				p.rot.sn = number::sin(p.angle.electro);
 				p.rot.cs = number::cos(p.angle.electro);
 			}
@@ -187,7 +199,9 @@ namespace burst {
 			}
 			#endif	
 		};
-	class hall_adapter_t : public rotator_t {
+		
+
+		class hall_adapter_t : public rotator_t {
 		protected:
 			const signal_t & angle_;
 		public:
@@ -195,7 +209,8 @@ namespace burst {
 			typedef typename rotator_t::present_s present_s;
 
 			#define POWER3PH_HALL_ADAPTR_CONFIG(a) POWER3PH_ROTATOR_CONFIG(a)
-		hall_adapter_t(const config_s& _config, present_s& _present, const signal_t & _angle)
+			#if ROBO_APP_ULTRACOMPACT == 0
+			hall_adapter_t(const config_s& _config, present_s& _present, const signal_t & _angle)
 				: rotator_t(_config, _present), angle_(_angle) {
 					rotator_t::connect(nullptr);
 			};
@@ -203,12 +218,19 @@ namespace burst {
 				: rotator_t(_config, _present, _subsystem) , angle_(_angle) {
 				rotator_t::connect(nullptr);
 			};
+			#else
+			hall_adapter_t(const config_s& _config, present_s& _present, signal_t & _synchro_anglee, const signal_t & _angle )
+				: rotator_t(_config, _present), angle_(_angle) {
+			};
+			#endif
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
 				p.angle.mechanic = angle_;
 
 				if (p.synchro) {
+					#if ROBO_APP_ULTRACOMPACT == 0
 					p.angle.electro = *rotator_t::synchro_anglee;
+					#endif
 				} else {
 					p.angle.electro = p.angle.mechanic;
 				}
@@ -228,9 +250,15 @@ namespace burst {
 		class inverter : public actor {
 		protected:
 			rotator_t & rotator;
+			#if ROBO_APP_ULTRACOMPACT == 0
 			signal_t* cross;
 			signal_t* lateral;			
+			#else
+			signal_t & cross;
+			signal_t & lateral;			
+			#endif
 		public:
+		#if ROBO_APP_ULTRACOMPACT == 0
 			struct deform_s {
 				bool enabled;
 				signal_t level;
@@ -238,16 +266,19 @@ namespace burst {
 				long_signal_t lo_gain_16;
 				long_signal_t lo_bevel_16;
 			};
-
+			#endif
 			struct config_s {
 				actor::config_s tag;
-				range_s<signal_t> native;
+				range_s<discret_t> native;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				signal_t pwm_force;
 				deform_s deform;
+				#endif
 			};
 
 
 			#define POWER3PH_INVERTER_CONFIG(a) POWER3PH_INVERTER_CONFIG_(a)
+			#if ROBO_APP_ULTRACOMPACT == 0
 			#define POWER3PH_INVERTER_CONFIG_(a)\
 			{\
 				ACTOR_CONFIG(a)\
@@ -261,21 +292,27 @@ namespace burst {
 					,a##_DEFORM_LO_BEVEL_16\
 				}\
 			}
-
+			#else
+			#define POWER3PH_INVERTER_CONFIG_(a)\
+			{\
+				ACTOR_CONFIG(a)\
+				, BURST_RANGE_CONFIG(a##_NATIVE_RANGE)\
+			}
+			#endif
 			struct present_s {
 				actor::present_s tag;
-				abc_s duty;
+				discret_abc_s duty;
 				abc_s pwm;
 				ab_s ab;
 				dq_s dq;
 				uint8_t swm;
 			};
 
-			long_signal_t scale_gain;
-			signal_t discret_lo;
-			signal_t discret_hi;
-			signal_t discret_delta_lo;
-			signal_t discret_delta_hi;
+			long_discret_t scale_gain;
+			discret_t discret_lo;
+			discret_t discret_hi;
+			discret_t discret_delta_lo;
+			discret_t discret_delta_hi;
 			long_signal_t pwm_force;
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
@@ -315,6 +352,7 @@ namespace burst {
 				if (actual_mode >= mode::tuning) {
 					ACTOR_CONFIG_S(c);
 					if (actual_mode >= mode::config) {
+					#if ROBO_APP_ULTRACOMPACT == 0
 						reg(number::var::signal, c.pwm_force, RT("force"));
 						push(RT("deform"));
 						reg(types::uint8, c.deform.enabled, RT("en"));
@@ -323,6 +361,7 @@ namespace burst {
 						reg(number::var::long_signal, c.deform.lo_gain_16, RT("lo_g"));
 						reg(number::var::long_signal, c.deform.lo_bevel_16, RT("lo_b"));
 						pop();
+						#endif
 						push(RT("native"));
 						reg(number::var::signal, c.native.lo, RT("lo"));
 						reg(number::var::signal, c.native.hi, RT("hi"));
@@ -331,22 +370,9 @@ namespace burst {
 				}
 			}
 			#endif
-			signal_t scale_(signal_t _signal) {
-				long_signal_t tmp = scale_gain * ((long_signal_t)_signal - number::min);
-				tmp += (1 << 15);
-				tmp = robo::digit::rsh(tmp, 16);
+			
 
-				if (tmp < discret_delta_lo) {
-					return discret_lo;
-				}
-				else if (tmp > discret_delta_hi) {
-					return discret_hi;
-				}
-				else {
-					return discret_lo + tmp;
-				}
-			}
-
+			#if ROBO_APP_ULTRACOMPACT == 0
 			long_signal_t deform_pwm_(signal_t _src) {
 				ACTOR_CONFIG_S(c);
 				if (_src > c.deform.level) {
@@ -359,16 +385,22 @@ namespace burst {
 					return  (robo::digit::rsh(c.deform.hi_gain_16 * _src, 16));
 				}
 			}
+			#endif
 			virtual void run(void) {
 				ACTOR_CONFIG_S(c);
 				ACTOR_PRESENT_S(p);
+				#if ROBO_APP_ULTRACOMPACT == 0
 				p.dq.lateral = *lateral;
 				p.dq.cross = *cross;
-				long_signal_t lateral = mult_(p.dq.lateral, sqrt2_div_2);
-				long_signal_t cross = mult_(p.dq.cross, sqrt2_div_2);
+				#else
+				p.dq.lateral = lateral;
+				p.dq.cross = cross;
+				#endif
+				long_signal_t lateral = number::lsf::mult(p.dq.lateral, number::sqrt2_div_2);
+				long_signal_t cross = number::lsf::mult(p.dq.cross, number::sqrt2_div_2);
 				ACTOR_ALIEN_PRESENT_S(rotator_t, rotator, rot);
-				p.ab.alfa = dot_(rot.rot.cs, lateral, -rot.rot.sn, cross);
-				p.ab.beta = dot_(rot.rot.sn, lateral, rot.rot.cs, cross);
+				p.ab.alfa = number::lsf::dot(rot.rot.cs, lateral, -rot.rot.sn, cross);
+				p.ab.beta = number::lsf::dot(rot.rot.sn, lateral, rot.rot.cs, cross);
 
 				long_signal_t pwmA;
 				long_signal_t pwmB;
@@ -377,10 +409,10 @@ namespace burst {
 				p.swm = 1;
 
 				long_signal_t x, y, z;
-				long_signal_t v2 = p.ab.beta >> 1;
+				long_signal_t v2 = number::lsf::div2(p.ab.beta);
 				x = p.ab.beta;
-				y = sum_x_ya_(v2, p.ab.alfa, sqrt3_div_2);
-				z = sum_x_ya_(v2, p.ab.alfa, -sqrt3_div_2);
+				y = number::lsf::sum_x_ya(v2, p.ab.alfa, number::sqrt3_div_2);
+				z = number::lsf::sum_x_ya(v2, p.ab.alfa, -number::sqrt3_div_2);
 				if (y < 0) {
 					if (z < 0) {
 						pwmA = y - z;
@@ -426,32 +458,35 @@ namespace burst {
 					}
 				}
 				//* sqrt(2) 
-				pwmA += mult_(pwmA, scale);
-				pwmB += mult_(pwmB, scale);
-				pwmC += mult_(pwmC, scale);
-
+				pwmA += number::lsf::mult(pwmA, number::scale);
+				pwmB += number::lsf::mult(pwmB, number::scale);
+				pwmC += number::lsf::mult(pwmC, number::scale);
+				#if ROBO_APP_ULTRACOMPACT == 0
 				if (c.deform.enabled) {
-					pwmA = l_sat_s(pwmA);
-					pwmB = l_sat_s(pwmB);
-					pwmC = l_sat_s(pwmC);
+					pwmA = number::lsf::sat(pwmA);
+					pwmB = number::lsf::sat(pwmB);
+					pwmC = number::lsf::sat(pwmC);
 					p.pwm.A = (signal_t)pwmA;
 					p.pwm.B = (signal_t)pwmB;
 					p.pwm.C = (signal_t)pwmC;
 					pwmA = deform_pwm_(pwmA);
 					pwmB = deform_pwm_(pwmB);
 					pwmC = deform_pwm_(pwmC);
-					pwmA = l_sat_s(pwmA);
-					pwmB = l_sat_s(pwmB);
-					pwmC = l_sat_s(pwmC);
+					pwmA = number::lsf::sat(pwmA);
+					pwmB = number::lsf::sat(pwmB);
+					pwmC = number::lsf::sat(pwmC);
 				}
-				else {
+				else 
+				#endif
+					{
 					//long_signal_t pwm_force = cfg.pwm_force;
+				#if ROBO_APP_ULTRACOMPACT == 0
 					if (pwm_force > 0) {
 						long_signal_t lo = number::min + pwm_force;
 						long_signal_t hi = number::max - pwm_force;
-						pwmA = l_sat_s(pwmA,lo,hi);
-						pwmB = l_sat_s(pwmB,lo, hi);
-						pwmC = l_sat_s(pwmC,lo, hi);
+						pwmA = number::lsf::sat(pwmA,lo,hi);
+						pwmB = number::lsf::sat(pwmB,lo, hi);
+						pwmC = number::lsf::sat(pwmC,lo, hi);
 
 						p.pwm.A = (signal_t)pwmA;
 						p.pwm.B = (signal_t)pwmB;
@@ -478,11 +513,13 @@ namespace burst {
 						}
 
 					}
-					else {
+					else 
+					#endif
+					{
 
-						pwmA = l_sat_s(pwmA);
-						pwmB = l_sat_s(pwmB);
-						pwmC = l_sat_s(pwmC);
+						pwmA = number::lsf::sat(pwmA);
+						pwmB = number::lsf::sat(pwmB);
+						pwmC = number::lsf::sat(pwmC);
 
 						p.pwm.A = (signal_t)pwmA;
 						p.pwm.B = (signal_t)pwmB;
@@ -490,26 +527,44 @@ namespace burst {
 					}
 				}
 
-				p.duty.A = scale_(pwmA);
-				p.duty.B = scale_(pwmB);
-				p.duty.C = scale_(pwmC);
+				p.duty.A = scale_(number::lsf::todiscret(pwmA));
+				p.duty.B = scale_(number::lsf::todiscret(pwmB));
+				p.duty.C = scale_(number::lsf::todiscret(pwmC));
 			}
 
 			virtual void begin(void) {
 				ACTOR_CONFIG_S(cfg);
 				discret_hi = cfg.native.hi;
 				discret_lo = cfg.native.lo;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				pwm_force = cfg.pwm_force;
-				long_signal_t delta = cfg.native.hi - cfg.native.lo;
-				long_signal_t gain = (long_signal_t)(cfg.native.hi - cfg.native.lo);
-				gain = robo::digit::lsh(gain, 16);
-				gain += ((long_signal_t)number::max - number::min) / 2; //округление
-				gain /= ((long_signal_t)number::max - number::min);
+				#endif
+				discret_t delta = cfg.native.hi - cfg.native.lo;
+				long_discret_t gain = delta;
+				gain = robo::digit::lsh(gain, number::discret_bits+1);
+				gain += ((long_discret_t)number::discret_max - number::discret_min) / 2; //округление
+				gain /= ((long_discret_t)number::discret_max - number::discret_min);
 				scale_gain = gain;
-				discret_delta_lo = 0;//-_config->native.lo;
+				discret_delta_lo = 0;
 				discret_delta_hi = delta;
 			}
+			discret_t scale_(long_discret_t _signal) {
+				long_discret_t tmp = scale_gain * (_signal - number::discret_min);
+				tmp += (1 << 15);
+				tmp = robo::digit::rsh(tmp, 16);
+
+				if (tmp < discret_delta_lo) {
+					return discret_lo;
+				}
+				else if (tmp > discret_delta_hi) {
+					return discret_hi;
+				}
+				else {
+					return discret_lo + (discret_t)tmp;
+				}
+			}
 			virtual void finish(void) {}
+			#if ROBO_APP_ULTRACOMPACT == 0
 
 			inverter(const config_s& _config, present_s& _present, rotator_t& _rotator)
 				: actor(_config.tag, _present.tag), rotator(_rotator){
@@ -523,21 +578,32 @@ namespace burst {
 				connectto(cross, _cross);
 				connectto(lateral, _lateral);
 			}
+			#else
+			inverter(const config_s& _config, present_s& _present, rotator_t& _rotator,	signal_t & _cross,	signal_t & _lateral)
+				: actor(_config.tag, _present.tag), rotator(_rotator), cross(_cross),	lateral(_lateral){
+			};
+			#endif
 		};
 
 		struct cursencor :public actor {
 		protected:
 			rotator_t & rotator;
+			#if ROBO_APP_ULTRACOMPACT != 0
+			inverter & inv;
+			#endif
 		public:
 			struct config_s {
 				actor::config_s tag;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				int adc_index[3];
 				struct {
 					long_signal_t matrix[9];
 					bool enable;
 				} deform;
+				#endif
 			};
 
+			#if ROBO_APP_ULTRACOMPACT == 0
 			#define POWER3PH_CURSENSOR_CONFIG(a) POWER3PH_CURSENSOR_CONFIG_(a)
 			#define POWER3PH_CURSENSOR_CONFIG_(a)\
 			{\
@@ -548,6 +614,13 @@ namespace burst {
 					,a##_DEFORM_ENABLE\
 				}\
 			}
+			#else
+			#define POWER3PH_CURSENSOR_CONFIG(a) POWER3PH_CURSENSOR_CONFIG_(a)
+			#define POWER3PH_CURSENSOR_CONFIG_(a)\
+			{\
+				ACTOR_CONFIG(a)\
+			}
+			#endif
 
 			struct present_s {
 				actor::present_s tag;
@@ -560,11 +633,20 @@ namespace burst {
 				#endif
 				#endif
 			};
+			#if ROBO_APP_ULTRACOMPACT == 0
 			struct {
 				signal_t* A = &standby;
 				signal_t* B = &standby;
 				signal_t* C = &standby;
 			} raw;
+			#else
+			struct raw_s{
+				signal_t & A;
+				signal_t & B;
+				signal_t & C;
+				raw_s(signal_t & _A, signal_t & _B, signal_t & _C):A(_A), B(_B),C(_C){}
+			} raw;
+			#endif
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
 				using namespace burst::var;
@@ -591,38 +673,43 @@ namespace burst {
 				using namespace burst::var;
 				ACTOR_CONFIG_S(c);
 				if (actual_mode >= mode::config) {
-					push(RT("adc_ix"));
-					reg(types::uint8, c.adc_index[0], RT("0"));
-					reg(types::uint8, c.adc_index[1], RT("1"));
-					reg(types::uint8, c.adc_index[2], RT("2"));
-					pop();
-					push(RT("deform"));
-					reg(types::uint8, c.deform.enable, RT("en"));
-					push(RT("matrix"));
-					reg(number::var::long_signal, c.deform.matrix[0], RT("0"));
-					reg(number::var::long_signal, c.deform.matrix[1], RT("1"));
-					reg(number::var::long_signal, c.deform.matrix[2], RT("2"));
-					reg(number::var::long_signal, c.deform.matrix[3], RT("3"));
-					reg(number::var::long_signal, c.deform.matrix[4], RT("4"));
-					reg(number::var::long_signal, c.deform.matrix[5], RT("5"));
-					reg(number::var::long_signal, c.deform.matrix[6], RT("6"));
-					reg(number::var::long_signal, c.deform.matrix[7], RT("7"));
-					reg(number::var::long_signal, c.deform.matrix[8], RT("8"));
-					pop();
-					pop();
+					#if ROBO_APP_ULTRACOMPACT == 0
+					push(RT("adc_ix")); {
+						reg(types::uint8, c.adc_index[0], RT("0"));
+						reg(types::uint8, c.adc_index[1], RT("1"));
+						reg(types::uint8, c.adc_index[2], RT("2"));
+						pop(); {
+							push(RT("deform"));
+							reg(types::uint8, c.deform.enable, RT("en"));
+							push(RT("matrix"));
+							reg(number::var::long_signal, c.deform.matrix[0], RT("0"));
+							reg(number::var::long_signal, c.deform.matrix[1], RT("1"));
+							reg(number::var::long_signal, c.deform.matrix[2], RT("2"));
+							reg(number::var::long_signal, c.deform.matrix[3], RT("3"));
+							reg(number::var::long_signal, c.deform.matrix[4], RT("4"));
+							reg(number::var::long_signal, c.deform.matrix[5], RT("5"));
+							reg(number::var::long_signal, c.deform.matrix[6], RT("6"));
+							reg(number::var::long_signal, c.deform.matrix[7], RT("7"));
+							reg(number::var::long_signal, c.deform.matrix[8], RT("8"));
+						}pop();
+					} pop();
+					#endif
 				}
 			}
 			#endif
 			const typename number::long_signal_t* deform = nullptr;
 			virtual void begin(void) {
 				ACTOR_CONFIG_S(cfg);
+				#if ROBO_APP_ULTRACOMPACT == 0
 				if (cfg.deform.enable) {
 					deform = cfg.deform.matrix;
 				}
 				else {
 					deform = nullptr;
 				}
+				#endif
 			}
+			#if ROBO_APP_ULTRACOMPACT == 0
 			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, inverter & _inverter)
 				: actor(_config.tag, _present.tag), rotator(_rotator) {};
 			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, subsystem& _subsystem)
@@ -633,6 +720,10 @@ namespace burst {
 				connectto( raw.B , _adc + cfg.adc_index[1] );
 				connectto(raw.C , _adc + cfg.adc_index[2]);
 			}
+			#else
+			cursencor(const config_s& _config, present_s& _present, rotator_t& _rotator, inverter & _inverter,signal_t & _adc0, signal_t & _adc1, signal_t & _adc2)
+				: actor(_config.tag, _present.tag),inv(_inverter), rotator(_rotator) , raw( _adc0, _adc1, _adc2){};
+			#endif
 			#if BURST_PROTECTION_ENABLED == 1
 			#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==0
 			void update_magnituse(void){
@@ -646,6 +737,7 @@ namespace burst {
 				long_signal_t a;
 				long_signal_t b;
 				long_signal_t c;
+				#if ROBO_APP_ULTRACOMPACT == 0
 				if (deform) {
 					signal_t A = *raw.A;
 					signal_t B = *raw.B;
@@ -653,24 +745,51 @@ namespace burst {
 					a = robo::digit::rsh ( deform[0] * A + deform[1] * B + deform[2] * C, 15);
 					b = robo::digit::rsh ( deform[3] * A + deform[4] * B + deform[5] * C, 15);
 					c = robo::digit::rsh ( deform[6] * A + deform[7] * B + deform[8] * C, 15);
-					long_signal_t ofs = robo::digit::rsh( (a + b + c) * one_div_3, 15 );
+					long_signal_t ofs = robo::digit::rsh( (a + b + c) * number::one_div_3, 15 );
 					a -= ofs;
 					b -= ofs;
 					c -= ofs;
 				}
-				else {
+				else 
+				#endif
+				{
+					#if ROBO_APP_ULTRACOMPACT == 0
 					a = *raw.A;
 					b = *raw.B;
 					c = *raw.C;
+					#else
+					ACTOR_ALIEN_PRESENT_S(inverter,inv, pinv);
+					switch(pinv.swm){
+					case 2:
+					case 3: 
+						a = raw.A;
+						b = - raw.A - raw.C;
+						c = raw.C; 
+						break;
+					case 4: 
+					case 5: 
+						a = raw.A;
+						b = raw.B;
+						c = - raw.A - raw.B;
+						break;        
+					case 1:
+					case 6:
+					default:
+						a = - raw.B - raw.C;
+						b = raw.B;
+						c = raw.C; 
+						break;
+					}
+					#endif
 				}
-				long_signal_t beta =  robo::digit::rsh ((b * 2 + a) * one_div_sqrt3 , 15 );
+				long_signal_t beta =  number::lsf::mult ((b * 2 + a) , number::one_div_sqrt3  );
 				ACTOR_ALIEN_PRESENT_S(rotator_t,rotator, rot);
 				//typename inverter::present_s& ip = inverter_.actor::template present<typename inverter::present_s>();
 				signal_t sn = rot.rot.sn;
 				signal_t cs = rot.rot.cs;
 				ACTOR_PRESENT_S(p);
-				signal_t dql = dot_(cs, a, sn, beta);
-				signal_t dqc = dot_(-sn, a, cs, beta);
+				signal_t dql = number::lsf::dot(cs, a, sn, beta);
+				signal_t dqc = number::lsf::dot(-sn, a, cs, beta);
 				p.dq.lateral = dql;
 				p.dq.cross = dqc;
 				p.ab.alfa = a;

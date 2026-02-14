@@ -23,6 +23,16 @@ namespace burst {
 		R lo;
 		R ultralo;
 	};
+
+	#define BURST_HIST_CONFIG(a) BURST_HIST_CONFIG_(a)
+
+	#define BURST_HIST_CONFIG_(a)\
+	{\
+		a##_OVERHI\
+		, a##_HI\
+		, a##_LO\
+		, a##_ULTRALO\
+	}
 }
 
 #ifndef BURST_PROTECTION_ENABLED
@@ -34,7 +44,7 @@ namespace burst {
 #endif
 
 #ifndef BURST_PANICS_MASTER_LOST_ENABLED
-#define BURST_PANICS_MASTER_LOST_ENABLED 0
+#define BURST_PANICS_MASTER_LOST_ENABLED 1
 #endif
 
 #ifndef BURST_PANICS_BOARD_TEMPER_ENABLED

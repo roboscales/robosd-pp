@@ -2,13 +2,13 @@
 #define __freemaster_hpp
 #include "core/robosd_common.hpp"
 
-#ifndef ROBO_APP_FREEMASTER_SERIAL_ENABLED
-#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 0
-#endif
+//#ifndef ROBO_APP_FREEMASTER_SERIAL_ENABLED
+//#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 0
+//#endif
 
-#ifndef ROBO_APP_PROTO_SWITCH_ENABLED
-#define ROBO_APP_PROTO_SWITCH_ENABLED 0
-#endif
+//#ifndef ROBO_APP_PROTO_SWITCH_ENABLED
+//#define ROBO_APP_PROTO_SWITCH_ENABLED 0
+//#endif
 
 #if ROBO_APP_FREEMASTER_SERIAL_ENABLED ==1
 #include "net/robosd_serial.hpp"
@@ -46,6 +46,27 @@ namespace robo {
 		};
 		#endif
 
+	};
+}
+#endif
+
+#if ROBO_APP_FREEMASTER_DIRRECT_ENABLED == 1
+namespace robo{
+	namespace  prf{
+		struct freemaster{
+			static void put(uint8_t _data );
+			static uint8_t get(void);
+			static void re(void);
+			static void rd(void);
+			static void te(void);
+			static void td(void);
+			static bool available(void);
+			static bool space(void);
+		};
+	};
+	struct freemaster{
+		static void poll(void);
+		static void recorder(void);
 	};
 }
 #endif

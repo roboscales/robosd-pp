@@ -121,7 +121,11 @@ namespace burst {
 		public:
 			mode(int _id, dev& _dev);
 			template <typename T>  T& owner(void) {
+				#if ROBO_APP_RTTI_ENABLED 
 				return dynamic_cast < T &>(dev_);
+				#else 
+				return (T &)(dev_);
+				#endif
 			}
 		};
 		
@@ -189,7 +193,7 @@ namespace burst {
 	public:
 		void raise_panic(uint8_t _flag);
 		#if BURST_PANICS_MASTER_LOST_ENABLED == 1
-		void master_alive(void);
+        void master_alive(void);
 		#endif
 		virtual void switch_to_mode(int _mode);
 		virtual void loopA(void);
@@ -487,9 +491,10 @@ namespace burst {
 		static int slot_index(void) { return instance_.slot_index_; }
 		static void raise_panic(uint32_t _flag) { instance_.raise_panic_(_flag); };
 		static void reset_panic(uint32_t _flag){ instance_.reset_panic_(_flag); };
-		static void reset_panics(void){ instance_.reset_panics(); };
+//		static void reset_panics(void){ instance_.reset_panics(); };
 		static void reconfig_query(void){  instance_.reconfig_query_count_++;};
 		static bool if_configure(void){ return instance_.present_.status == front::board::statuses::configure;};
+		static void force_reset_panics(void) { instance_.force_reset_panics_();  }
 		#if ROBO_APP_SYSTEM_ENABLED
 		friend class robo::system::env;
 		#endif
@@ -510,7 +515,7 @@ namespace burst {
 	private:
 		void raise_panic_(uint32_t _flag);
 		void reset_panic_(uint32_t _flag);
-		void reset_panics_(void);
+		void force_reset_panics_(void);
 		#if BURST_PROTECTION_ENABLED == 1
 		void realtime_protection_(void);
 		void frontend_protection_(void);
@@ -524,6 +529,12 @@ namespace burst {
 		short temper_get_lo_pp(void);
 		short temper_get_hi_pp(void);
 		#endif
+    
+        #if BURST_PANICS_BOARD_STO_ACTIVE_ENABLED == 1
+        bool get_sto_state(void);
+        #endif
+    
+        bool friend_got_emcy(void);
 
 		#if BURST_PANICS_BOARD_VOLTAGE_ENABLED == 1 
 		short voltage_get_pp(void);

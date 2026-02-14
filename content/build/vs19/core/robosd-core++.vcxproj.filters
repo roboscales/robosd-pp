@@ -75,5 +75,6 @@
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_app.hpp">
       <Filter>robosd++/core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\robosd-ref\prf\timelogger.hpp" />
   </ItemGroup>
 </Project>

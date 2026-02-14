@@ -13,7 +13,12 @@ namespace robo{
 		float scale_ = 1.f;
 		float min_ = 0.f;
 		float max_ = 0.f;
-		float sut_(float value) const;
+		template< typename T> T sut_(T value) const {
+			if (value > T(max_)) value = T(max_);
+			else if (value < T(min_)) value = T(min_);
+			return value;
+		}
+
 		float eps_ = 0.f;
 	public:
 		float offset(void) { return offset_;};
@@ -30,7 +35,16 @@ namespace robo{
 		int8_t to_i8(float _value) const;
 		int16_t to_i16(float _value)  const;
 		int32_t to_i24(float _value) const;
-		int32_t to_i32(float _value) const;
+		template<typename T> int32_t to_i32(T value) const {
+			T tmp = sut_(value);
+			tmp = ((tmp - offset_) * scale_);
+			if (tmp > T(0.)) tmp += T(0.5);
+			if (tmp < T(0.)) tmp -= T(0.5);
+			if (tmp < T(-2147483647.0)) tmp = T(-2147483647.0);
+			else if (tmp > T(2147483647.0)) tmp = T(2147483647.0);
+			return (int32_t)tmp;
+		}
+
 
 
 		uint8_t to_u8(float _value) const;

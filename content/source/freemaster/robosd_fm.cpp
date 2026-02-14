@@ -1,9 +1,8 @@
 #include "freemaster/robosd_fm.hpp"
 
-#if ROBO_APP_FREEMASTER_SERIAL_ENABLED == 1
-
 #include "freemaster/PE_freemaster.h"
 
+#if ROBO_APP_FREEMASTER_SERIAL_ENABLED == 1
 namespace robo {
 	freemaster freemaster::instance_;
 
@@ -69,7 +68,6 @@ namespace robo {
 	};
 	#endif
 }
-
 /*
 Все файлы подключаются так, чтобы упростить  работу с проектом
 */
@@ -81,6 +79,7 @@ namespace robo {
 #include "freemaster/PE_freemaster_serial.c"
 #include "freemaster/PE_freemaster_sfio.c"
 #include "freemaster/PE_freemaster_tsa.c"
+
 
 void FMSTR_SCI_PUTCHAR(FMSTR_U8 _data) {
 	robo::freemaster::serial()->put(_data);
@@ -111,4 +110,56 @@ FMSTR_SCISR FMSTR_SCI_RDCLRSR(void) {
 
 void freemaster_init() {}
 
+#endif
+
+#if ROBO_APP_FREEMASTER_DIRRECT_ENABLED == 1
+/*
+Все файлы подключаются так, чтобы упростить  работу с проектом
+*/
+#include "freemaster/PE_freemaster_default.c"
+#include "freemaster/PE_freemaster_fastrec.c"
+#include "freemaster/PE_freemaster_protocol.c"
+#include "freemaster/PE_freemaster_rec.c"
+#include "freemaster/PE_freemaster_scope.c"
+#include "freemaster/PE_freemaster_serial.c"
+#include "freemaster/PE_freemaster_sfio.c"
+#include "freemaster/PE_freemaster_tsa.c"
+void FMSTR_SCI_PUTCHAR(FMSTR_U8 _data) {
+	robo::prf::freemaster::put(_data);
+}
+FMSTR_U16 FMSTR_SCI_GETCHAR(void) {
+	return robo::prf::freemaster::get();
+}
+
+
+void FMSTR_SCI_RE(void) {
+	robo::prf::freemaster::re();
+}
+void FMSTR_SCI_RD(void) {
+	robo::prf::freemaster::rd();
+}
+void FMSTR_SCI_TE(void) {
+	robo::prf::freemaster::te();	
+}
+void FMSTR_SCI_TD(void) {
+	robo::prf::freemaster::td();	
+}
+FMSTR_SCISR FMSTR_SCI_RDCLRSR(void) {
+	FMSTR_SCISR SciSR = 0;
+
+	if (robo::prf::freemaster::available()) {
+		SciSR = FMSTR_SCISR_RDRF;
+	}
+
+	if (robo::prf::freemaster::space() ) {
+		SciSR |= FMSTR_SCISR_TDRE;
+	}
+	return SciSR;
+}
+void robo::freemaster::recorder(void) {
+	FMSTR_Recorder();
+}
+void robo::freemaster::poll(void) {
+	FMSTR_Poll();
+}
 #endif

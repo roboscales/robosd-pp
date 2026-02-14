@@ -282,19 +282,18 @@ namespace burst {
 		}
 		devagent::proto::result devagent::proto::confirm_desc(const robo_tran_t& _tran, varindex::descriptor* _desc) {
 			if (_tran.status == ROBO_TRAN_COMPLETE) {
-				burst::var::header_s* h = (burst::var::header_s*)_tran.data;
-				ROBO_JAMPN_F((h->error == 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(h->error));
 				if (step_ == step::desc_put) {
-					ROBO_JAMPN_F((_tran.data[0] == burst::var::request::index), fail, "invalid desc operation  (%s, %d) ", _desc->name(), _tran.data[0]);
 					step_ = step::desc_get;
 					return result::repeat;
 				}
 				else if (step_ == step::desc_get) {
 					ROBO_JAMPN_F((4 == _tran.size_actual), fail, "invalid desc  size (%s, %d,%d) ", _desc->name(), 4, _tran.size_actual);
+					burst::var::header_s* h = (burst::var::header_s*)_tran.data;
+					ROBO_JAMPN_F((h->error == 0), fail, "invalid desc answer (%s, %d)", _desc->name(), (int)(h->error));
+					ROBO_JAMPN_F((h->query == burst::var::request::index), fail, "invalid desc operation  (%s, %d) ", _desc->name(), _tran.data[0]);
 					burst::var::descriptor d;
 					d.bytes[0] = _tran.data[2];
 					d.bytes[1] = _tran.data[3];
-					burst::var::header_s* h = (burst::var::header_s*)_tran.data;
 					_desc->setup_recprd(type_name(d),h->ix, d.len);
 					reset();
 					return result::success;

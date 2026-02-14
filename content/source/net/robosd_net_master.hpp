@@ -193,12 +193,12 @@ namespace robo{
 
 			virtual bool do_start(void) {
 				ROBO_LBREAKN(app::node::do_start());
-				ROBO_LBREAKN(phys::do_open());
+				ROBO_LBREAKN(phys::do_start());
 				return true;
 			}
 			virtual void do_stop(void) {
 				app::node::do_stop();
-				phys::do_close();
+				phys::do_stop();
 			}
 
 			#endif

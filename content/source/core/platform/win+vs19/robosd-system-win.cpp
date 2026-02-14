@@ -96,7 +96,7 @@ namespace robo {
 #define ROBO_LOG_WIN_BUF_SIZE 4096
 #endif
 namespace robo {
-
+	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_WIN
 	void system::env::print(cstr _s) {
 		#if ROBO_UNICODE_ENABLED == 1
 		std::wcout << _s;
@@ -105,12 +105,14 @@ namespace robo {
 		std::cout << _s;
 		#endif
 	}
+	#endif
 }
 #endif
 
 #if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_WIN
 
 #include <windows.h>
+#include <atomic>
 namespace robo {
 	#if ROBO_APP_REALTIME_TYPE == ROBO_APP_TYPE_WIN
 	LARGE_INTEGER tickCurrent_;
@@ -125,17 +127,20 @@ namespace robo {
 	DWORD step_show_tick_ = 0;
 	time_us_t last_time_us_ = 0;
 	bool init_ = false;
+	
+	std::atomic<bool> locked=false;
+	std::atomic<bool> realtime = false;
 
 	#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 	CRITICAL_SECTION critical_;
-	CRITICAL_SECTION guard_;
+	//CRITICAL_SECTION guard_;
 	#endif 
 
 	bool system::env::begin(void) {
 		init_ = true;
 		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 		InitializeCriticalSection(&critical_);
-		InitializeCriticalSection(&guard_);
+		//InitializeCriticalSection(&guard_);
 		#endif 
 		switch_to_realtime_();
 		return true;
@@ -144,7 +149,7 @@ namespace robo {
 		switch_to_normal_();
 		#if ROBO_APP_CRITICAL_TYPE == ROBO_APP_TYPE_WIN
 		DeleteCriticalSection(&critical_);
-		DeleteCriticalSection(&guard_);
+		//DeleteCriticalSection(&guard_);
 		#endif
 		init_ = false;
 	}
@@ -200,10 +205,13 @@ namespace robo {
 		return backend_thread_id_ == std::this_thread::get_id();
 	}
 	void system::env::fall(void) {
+		while (locked);
+		realtime = true;
 		backend_thread_id_ = std::this_thread::get_id();
 	}
 
 	void system::env::comeback(void) {
+		realtime = false;
 		backend_thread_id_ = dummy_thread_id_;
 	}
 
@@ -255,31 +263,39 @@ void system::env::critical_leave(void) {
 }
 
 system::guard::op system::env::enter(void) {
+	/*
 	if (init_) {
-		EnterCriticalSection(&guard_);
+		//EnterCriticalSection(&guard_);
 		return system::guard::op::enter;
 	}
 	else {
 		return system::guard::op::skip;
 	}
+	*/
+	while (realtime);
+	locked = true;
+	return system::guard::op::enter;
 }
 
 void system::env::leave(void) {
-	LeaveCriticalSection(&guard_);
+	locked = false;
+	//LeaveCriticalSection(&guard_);
 }
 
 system::guard::op  system::env::lock(void) {
+	/*
 	if (init_) {
-		EnterCriticalSection(&guard_);
+		//EnterCriticalSection(&guard_);
 		return system::guard::op::enter;
 	}
 	else {
 		return system::guard::op::skip;
-	}
+	}*/
+	return system::guard::op::skip;
 }
 
 void system::env::unlock(void) {
-	LeaveCriticalSection(&guard_);
+	//LeaveCriticalSection(&guard_);
 }
 }
 #endif
@@ -353,6 +369,12 @@ namespace robo {
 	void system::ini::finish(void) {
 		g_robo_ini_fn = nullptr;
 	}
+	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
+		size_t _size;
+		load_data(_dst, _max_sz, _section, _key, _size);
+		return _size > 0;
+	}
+
 	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t & _size) {
 		_size = 0;
 		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")
@@ -549,5 +571,24 @@ namespace robo {
 
 #endif
 
+#if ROBO_APP_TIMELOG_TYPE == ROBO_APP_TYPE_WIN
+#include <windows.h>
+namespace robo{
+	namespace winlogger {
+		LARGE_INTEGER tickCurrent_;
+		double ns_per_tick_;
+		LARGE_INTEGER ticksPerSecond_;
+	}
 
+system::timelog_driver::timelog_driver(void) {
+	QueryPerformanceFrequency(&winlogger::ticksPerSecond_);
+	winlogger::ns_per_tick_ = 1000000000.0 / winlogger::ticksPerSecond_.QuadPart;
+}
+uint32_t system::timelog_driver::time_ns(void) {
+	QueryPerformanceCounter(&winlogger::tickCurrent_);
+	double ns = winlogger::ns_per_tick_ * winlogger::tickCurrent_.LowPart;
+	return (uint32_t) ns;
+}
+}
+#endif
 

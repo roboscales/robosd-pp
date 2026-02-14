@@ -21,8 +21,57 @@ namespace robo {
 	};
 
 	class controller {
+	protected:
+		class base {
+		public:
+			enum class result {
+				wait = false,
+				success = true
+			};
+		protected:
+			friend class controller;
+			enum class commands {
+				stop = 0,
+				start = 1
+			};
+		private:
+			commands command_;
+			void start_(void) { command_ = commands::start; };
+		protected:
+			commands command() { return command_;  };
+			virtual ~base(void) {}
+			virtual bool run(void) = 0;
+		public:
+			virtual void terminate(void) = 0;
+			void stop(void) { command_ = commands::stop; };
+		};
 	public:
-		class process {
+		class node: public base {
+
+			enum class states {
+				stopped = 0,
+				entered = 1,
+				execute = 2,
+				leaved = 3,
+			};
+			states state_ = states::stopped;
+		protected:
+			virtual bool run(void);
+			virtual void onEnter(void) = 0;
+			virtual result doEnter(void) = 0;
+			virtual void onExecute(void) = 0;
+			virtual void doExecute(void) = 0;
+			virtual void onLeave(void) = 0;
+			virtual result doLeave(void) = 0;
+			virtual void onFinish(void) = 0;
+			virtual void onTerminate(void) = 0;
+			virtual void onIdle(void) = 0;
+		public:
+			virtual void terminate(void) ;
+			virtual ~node(void) {}
+		};
+
+		class process : public base {
 		protected:
 			enum class result {
 				wait = false,
@@ -33,13 +82,7 @@ namespace robo {
 				go = true
 			};
 		private:
-			friend class controller;
 
-			enum class command {
-				stop = 0,
-				start = 1
-			};
-			command command_ = command::stop;
 			enum class state {
 				stopped = 0,
 				prepare = 1,
@@ -49,9 +92,8 @@ namespace robo {
 				relax = 6
 			};
 			state state_ = state::stopped;
-			void start_(void) { command_ = command::start; };
 		protected:
-			bool run(void);
+			virtual bool run(void);
 			virtual void onPrepare(void) {}
 			virtual void onStartup(void) {}
 			virtual void onExecute(void) {}
@@ -67,9 +109,8 @@ namespace robo {
 			virtual void doIdle(void) {};
 			virtual void doTerminate(void) {};
 		protected:
-			process(void) {};
-			void stop(void) { command_ = command::stop; };
-			void restart(void) { if (command_ == command::stop && state_ == state::relax) state_ = state::stopped; };
+			process(void):base() {};
+			void restart(void) { if (command() == commands::stop && state_ == state::relax) state_ = state::stopped; };
 			void terminate(void);
 			virtual ~process(void) {};
 		};
@@ -82,15 +123,16 @@ namespace robo {
 			}
 		};
 	private:
-		process* selected_ = 0;
-		process* runned_ = 0;
+		base* selected_ = 0;
+		base* runned_ = 0;
 	protected:
 		virtual void doTerminate() {};
 	public:
-		void switchto(process* _task);
+		void switchto(base* _task);
 		void stop(void);
 		void run(void);
-		void terminate(void);
+		virtual void terminate(void);
 	};
+		
 }
 #endif

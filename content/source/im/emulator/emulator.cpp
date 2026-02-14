@@ -129,6 +129,7 @@ int main(int _argc, const char * _argv[])
 			[&]() {
 				auto t0 = Time::now();
 				while (!terminated) {
+					robo_logger(11);
 					auto t1 = Time::now();
 					fsec fs = t1 - t0;
 					auto sec = fs.count();
@@ -166,17 +167,18 @@ int main(int _argc, const char * _argv[])
 			auto t2 = Time::now();
 			fsec dfc = t2 - t1;
 			auto dsec = dfc.count();
-			sec_stat_acc += dsec;
-			cnt++;
-			if (cnt == 10000000) {
-				auto dt = 10000000. * sec_stat_acc / cnt;
-				if (dt > 0.01) {
-					robo_infolog("run period us: %f", dt);
+			if (dsec > 0.000005) {
+				sec_stat_acc += dsec;
+				cnt++;
+				if (cnt == 1000) {
+					auto dt = 1000000 * sec_stat_acc / cnt;
+					if (dt > 0.1) {
+						robo_infolog("run period us: %f", dt);
+					}
+					cnt = 0;
+					sec_stat_acc = 0;
 				}
-				cnt = 0;
-				sec_stat_acc = 0;
 			}
-
 		}
 		
 

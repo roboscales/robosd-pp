@@ -206,7 +206,7 @@ namespace robo {
 							EA2(1, 1) = cos(wT);
 							X = Xmax - EA1 * EA2 * (Xmax - X);
 
-							float els = X[2];
+							float els = (float)X[2];
 							electro.position += (owner.sample_time * (els + electro.speed) / 2.);
 							electro.phase = (float)fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>;
 							electro.speed = els;
@@ -221,13 +221,13 @@ namespace robo {
 							X[1] = iqm - EA1(1, 1) * (iqm - X[1]);
 							X[2] = electro.speed = actuator.speed = 0.f;
 						}
-						current.set_dq(X[0], X[1], electro.phase);
+						current.set_dq((float)X[0], (float)X[1], electro.phase);
 						actuator.driveng_torque = p * current.dq.q * Fm;
 					}
 					else {
 						if (actuator.state != joint::iactuator::istate::blocked) {
 							X[2] -= (float)(owner.sample_time * (actuator.contr_torque / p + X[2] * Kv) / J);
-							float els = X[2];
+							float els = (float)X[2];
 							electro.position += (float)(owner.sample_time * (els + electro.speed) / 2.);
 							electro.phase = (float)(fmod(electro.position + robo::pi<float>, 2 * robo::pi<float>) - robo::pi<float>);
 							electro.speed = els;

@@ -1,12 +1,17 @@
 #include "burst++/modules/actor.hpp"
+#include "burst++/vartree.hpp"
 namespace burst{
 	
 	actor::actor(const config_s& _config, present_s& _present)
-		: ref_(*this)
-		, config_(_config)
+		: 
+	#if ROBO_APP_ULTRACOMPACT == 0
+	ref_(*this) ,
+	#endif
+		config_(_config)
 		, present_(_present) {
 	}
 	
+	#if ROBO_APP_ULTRACOMPACT == 0
 	actor::actor(const config_s& _config, present_s& _present, subsystem& _subsystem) 
 		: ref_(*this)
 		, config_(_config)
@@ -21,6 +26,7 @@ namespace burst{
 	void actor::remove(void) {
 		ref_.dettach();
 	}
+	#endif
 
 	#if ROBO_APP_BURST_VARTREE_ENABLED
 	void actor::regvar_present(robo::cstr _name) {
@@ -37,6 +43,7 @@ namespace burst{
 	}
 	#endif
 
+	#if ROBO_APP_ULTRACOMPACT == 0
 	subsystem::subsystem(void): ref_(*this) {
 	}
 
@@ -84,5 +91,6 @@ namespace burst{
 			a->owner().run();
 		}
 	}
+	#endif
 
 }

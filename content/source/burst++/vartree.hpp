@@ -232,6 +232,141 @@ namespace burst {
 			reg(t, _hyst.ultralo, RT("ultralo"));
 			pop();
 		}
+		#if ROBO_APP_ULTRACOMPACT
+		void reindex(void);
+		bool if_configure(void);
+		void reconfig_query(void);
+		#endif	
+		
+		class showpro {
+			robo::char_t* path_ = nullptr;
+			robo::char_t* path_ptr_ = nullptr;
+			int* path_stack_buffer_ = nullptr;
+			int path_sz_ = 0;
+			int* path_stack_top_ = 0;
+			int path_stack_level_ = 0;
+			void end_(void) {
+				if (path_) {
+					delete[] path_;
+					path_ = nullptr;
+				}
+				if (path_stack_buffer_) {
+					delete[] path_stack_buffer_;
+					path_stack_buffer_ = nullptr;
+				}
+			}
+		protected:
+			burst::var::ref_s** pref = nullptr;
+			burst::var::ref_s* ref = nullptr;
+			void perform(void) {
+				using namespace burst::var;
+				int sz;
+				ref = *pref;
+				switch (ref->tag) {
+				case burst::var::tags::push:
+					if (path_sz_) {
+						if (path_stack_level_ < stack_size) {
+							sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+							*(path_stack_top_) = sz;
+							path_ptr_[sz] = 0;
+							path_ptr_ += sz;
+							path_sz_ -= sz;
+							path_stack_top_++;
+							path_stack_level_++;
+						}
+						else {
+							end_();
+							return;
+						}
+					}
+					break;
+				case tags::pop:
+					path_stack_top_--;
+					path_stack_level_--;
+					sz = *(path_stack_top_);
+					path_ptr_ -= sz;
+					*(path_ptr_) = 0;
+					path_sz_ += sz;
+					break;
+				default:
+					sz = (int)robo::system::sprintf(path_ptr_, path_sz_, RT(".%s"), ((record_s*)(ref))->name);
+					*(path_stack_top_) = sz;
+					path_ptr_[sz] = 0;
+					printf((burst::var::record_s*)ref, path_ + 1);
+
+				}
+			}
+
+			virtual void printf(burst::var::record_s* _rec, robo::cstr _path) = 0;
+
+			bool do_begin(void) {
+				using namespace burst::var;
+				pref = burst::var::first();
+				if (pref) {
+					path_ = new robo::char_t[path_size + 1];
+					path_stack_buffer_ = new int[stack_size];
+
+					path_ptr_ = path_;
+					path_sz_ = path_size;
+					path_stack_top_ = path_stack_buffer_;
+					path_stack_level_ = 0;
+
+					perform();
+					if (pref != burst::var::last()) {
+						return true;
+					}
+					else {
+						end_();
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			}
+			bool do_perform(void) {
+				pref++;
+				perform();
+				if (pref != burst::var::last()) {
+					return true;
+				}
+				else {
+					end_();
+					return false;
+				}
+			}
+			virtual bool busy(void) { return false;  };
+			bool do_loop(void) {
+				if (busy()) {
+					return true;
+				}
+				return do_perform();
+			}
+		};
+		class show :public  showpro {
+			void (*do_print_)(const char* _buf) = nullptr;
+		protected:
+			virtual void printf(burst::var::record_s* _rec, robo::cstr _path) {
+				robo::string nm;
+				nm.format(RT("%s\t%d\t%x\n\r")
+					, _path
+					, (int)_rec->desc.len
+					, uint32_t(((FMSTR_ADDRESS_OFFSET_TYPE)_rec->addr) - FMSTR_ADDRESS_OFFSET));
+				nm.ascii([this](const char* _buf) { this->do_print_(_buf); });
+			}
+		public:
+			void run(void (*_do_print)(const char* _buf)) {
+				do_print_ = _do_print;
+				if (do_begin())
+					while (do_perform());
+				do_print_ = nullptr;
+			}
+
+			show(void)
+			{
+
+			}
+		};
 	}
 }
 #endif

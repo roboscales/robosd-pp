@@ -91,6 +91,8 @@ namespace robo{
 				return instance_;
 			}
 		};
+
+
 		void itf::printf(const char * _format, ...){
 			va_list args;
 			va_start(args, _format);
@@ -99,6 +101,18 @@ namespace robo{
 			}
 			va_end(args);
 		};
+		#if ROBO_UNICODE_ENABLED
+		void itf::printf(robo::cstr _format, ...) {
+			va_list args;
+			va_start(args, _format);
+			{
+				string s(_format, args);
+				string::format_stream(*core::instance_().serial_, s.ascii(), args);
+			}
+			va_end(args);
+		}
+		#endif
+
 
 		void itf::echo_off(void){
 			core::instance_().echo_ = false;
@@ -551,19 +565,25 @@ namespace robo{
 				do{
 					switch (*_arg){
 					case '-':
-						switch (fetch_status)
 						{
-						case FETCH_FIRST:
-						case FETCH_BEGIN:
-							fetch_status = FETCH_DELIM;
-							*_arg = 0;
-							break;
-						case FETCH_DELIM:
-							argv[argc++] = _arg;
-							fetch_status = FETCH_ARG;
-							break;
-						case FETCH_ARG:
-							break;
+							char  tmp = *(_arg+1);
+							if (tmp != 0 && isdigit(tmp) && (fetch_status== FETCH_ARG || fetch_status == FETCH_BEGIN)) {
+								break;
+							} else
+								switch (fetch_status)
+								{
+								case FETCH_FIRST:
+								case FETCH_BEGIN:
+									fetch_status = FETCH_DELIM;
+									*_arg = 0;
+									break;
+								case FETCH_DELIM:
+									argv[argc++] = _arg;
+									fetch_status = FETCH_ARG;
+									break;
+								case FETCH_ARG:
+									break;
+								}
 						}
 						break;
 					case ' ':

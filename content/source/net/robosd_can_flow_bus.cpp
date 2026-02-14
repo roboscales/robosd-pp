@@ -101,6 +101,108 @@ namespace robo {
 					message_.tran.size_max = _sz;					
 				}
 
+				void xphys::on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {
+					do_can_receive(_ican, _id, _data, _len);
+				}
+				void xphys::do_can_receive(ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {
+					//robo_infolog("\t M >> S %x [%x] %x %x %x %x", _id, _len, _data[0], _data[1], _data[2], _data[3]);
+					if (outcomm_ && (outcomm_->id.value == _id)) {
+						outcomm_ = nullptr;
+						confirm();
+					}
+					else {
+						if (incomm_ != nullptr) {
+							incomm_->id.value = _id;
+							if (!(incomm_->id.user)) {
+								incomm_->len = _len;
+								std::copy_n(_data, _len, incomm_->values);
+								incomm_ = nullptr;
+								confirm();
+							}
+						}
+					}
+				}
+				bool xphys::do_send(ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len) {
+					//robo_infolog("M << S %x [%x] %x %x %x %x", _id,_len, _data[0], _data[1], _data[2], _data[3]);
+					ROBO_LRET(_ican.send(_id, _data, _len));
+				}
+				void xphys::send(const bus::packet* _outcomm) {
+					if (can_->ready()) {
+						if (do_send(*can_, _outcomm->id.value, _outcomm->values, _outcomm->len)) {
+							outcomm_ = _outcomm;
+							//confirm();
+						}
+						else {
+							refuse();
+						}
+					}
+					else {
+						refuse();
+					}
+				}
+				void xphys::receive(bus::packet* _incomm) {
+					incomm_ = _incomm;
+				}
+				void xphys::send_cancel(void) {
+					outcomm_ = nullptr;
+					can_->reset();
+				}
+				void xphys::receive_cancel(void) {
+					incomm_ = nullptr;
+					can_->reset();
+				}
+				bool xphys::panic(void) {
+					return false;
+				}
+				time_us_t xphys::wd_us(const bus::packet* _packet) {
+					//todo!!
+					robo::time_us_t tm = _packet->len * 100 + 200;
+					if (tm < 2000) tm = 2000;
+					return tm;
+				}
+				/*
+				решил избаить интерфейс ican от функций, которые должны нести на себе объекты- оболочки или модули  отвечающие за 
+				загрузку параметров одного или нескольких реализаций  ican 
+				*/
+				#if ROBO_APP_MODULE_ENABLED ==1
+				bool xphys::do_load(cstr _current, cstr _common) {
+					ROBO_LBREAKN(can_name.load(_current, _common, RT("name")));
+					//ROBO_LBREAKN(can_->load());
+					return true;
+				}
+
+				void xphys::do_clean(void) {
+					can_name.clear();
+				}
+
+				bool  xphys::do_start(void) {
+
+					can_ = ican::query(can_name);
+					ROBO_LBREAKN(can_ != nullptr);
+					can_->set_on_receive(&on_can_receive_);
+					return true;
+				}
+				void xphys::do_stop(void) {
+					if (can_) {
+						can_->set_on_receive((ican::on_receive_f*)nullptr);
+					}
+				}
+				#endif
+
+				void xphys::poll(void) {
+					can_->poll();
+				}
+				bool xphys::ready(void) {
+					return can_->ready();
+				}
+				xphys::xphys(void)
+				: on_can_receive_(*this, &xphys::on_can_receive__)
+					//, on_can_instanceevent_(*this, &phys::on_can_instanceevent__)
+					{
+						//can_instance.set_on_event(&on_can_instanceevent_);
+				}
+
+#if 0
 				bool xphys::send(uint32_t _id, const uint8_t* _data, uint8_t _len) {
 					ROBO_LRET(can_instance->send(_id, _data, _len))
 				}
@@ -148,7 +250,7 @@ namespace robo {
 					}
 					else return false;
 				}
-
+#endif
 			}
 		}
 	}

@@ -109,14 +109,15 @@ namespace robo{
 							Xmax = IA * U * (-1.);
 							X = Xmax - EA * (Xmax - X);
 							actuator.position += ((double)X[1] + actuator.speed) * owner.sample_time / 2;
-							actuator.speed = X[1];
+							actuator.speed = (float)X[1];
 						}
 						else {
 							Xmax2 = -IA2 * voltage / Ls;
 							X[0] = Xmax2 - EA2 * (Xmax2 - X[0]);
-							actuator.speed = X[1] = 0.f;
+							X[1] = 0.;
+							actuator.speed = (float)X[1];
 						}
-						current = X[0];
+						current = (float)X[0];
 					}
 					else {
 						voltage = 0.f;
@@ -129,7 +130,8 @@ namespace robo{
 						}
 						else {
 							X[0] = current = 0.f;
-							actuator.speed = X[1] = 0.f;
+							X[1] = 0.;
+							actuator.speed = (float)X[1];
 						}
 					}
 					actuator.driveng_torque = current * Km;

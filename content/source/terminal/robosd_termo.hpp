@@ -5,6 +5,7 @@
 #define ROBO_APP_TERMINAL_ENABLED 0
 #endif 
 #if ROBO_APP_TERMINAL_ENABLED == 1
+#include "core/robosd_string.hpp"
 #include "core/robosd_lambda.hpp"
 #include "core/robosd_list.hpp"
 #include "net/robosd_serial.hpp"
@@ -144,6 +145,9 @@ namespace robo{
 			static void poll(void); //Если очередная команда выполнена- заглянет во входной поток и обработает очередной символ. Вызывать из прерывания, например.
 			static void exec(const char * _cmd); //Эмуляция пользовательского ввода
 			static void new_line(void); //Перевод строки в терминале
+			#if ROBO_UNICODE_ENABLED
+			static void printf(robo::cstr, ...);
+			#endif
 			static void printf(const char * _format, ...);
 			static void printfa(const char * _format, va_list _args);
 			static void prints(const char * _s);

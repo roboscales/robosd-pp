@@ -130,6 +130,13 @@ namespace robo {
 			//const node* owner_ptr(void) { return owner_; }
 			bool load(void);
 			void clean(void);
+			void reboot(void) {
+				robo::system::guard g__;
+				stop();
+				clean();
+				ROBO_VBREAKN(load());
+				ROBO_VBREAKN(start());
+			}
 			cstr name(void) { return name_; }
 			//void push_path(string& _path);
 			cstr tree_path(void);

@@ -25,12 +25,6 @@ namespace robo{
 		return dynamic_cast<converter*>(app::node::find(_name));
 	}
 
-	float converter::sut_(float value) const{
-		if (value > max_) value = max_;
-		else if (value<min_) value = min_;
-		return value;
-	}
-
 	int8_t converter::to_i8(float value) const{
 		float tmp = sut_(value);
 		tmp = ((tmp - offset_)* scale_);
@@ -58,16 +52,6 @@ namespace robo{
 		if (tmp<0.f) tmp -= 0.5f;
 		if (tmp<-8388607.0f) tmp = -8388607.0f;
 		else if (tmp>8388607.0f) tmp = 8388607.0f;
-		return (int32_t)tmp;
-	}
-
-	int32_t converter::to_i32(float value) const{
-		float tmp = sut_(value);
-		tmp = ((tmp - offset_)* scale_);
-		if (tmp>0.f) tmp += 0.5f;
-		if (tmp<0.f) tmp -= 0.5f;
-		if (tmp<-2147483647.0f) tmp = -2147483647.0f;
-		else if (tmp>2147483647.0f) tmp = 2147483647.0f;
 		return (int32_t)tmp;
 	}
 

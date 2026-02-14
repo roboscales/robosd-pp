@@ -5,6 +5,7 @@
 #include "net/robosd_can_flow_bus.hpp"
 #include "net/platform/can/sysworxx/robosd_sysworxx_can.hpp"
 namespace MODULE_NAME{
+#if 0
 	class phys {
 		robo::net::can_flow_bus::packet* incomm_= nullptr;
 		const robo::net::can_flow_bus::packet* outcomm_ = nullptr;
@@ -171,6 +172,31 @@ namespace MODULE_NAME{
 			return instance_;
 		}
 	};
+#endif
+	
+	class phys : public ::robo::app::node{
+	public:
+		phys(robo::cstr _name, node * _owner) : node(_name, _owner) {}
+		using B = ::robo::net::can::sysworxx::port;
+		B instance;
+		virtual bool do_load(void) {
+			ROBO_LBREAKN(instance.open(current_path()));
+			ROBO_LBREAKN(instance.reg(current_path()));
+			return true;
+		}
+		virtual bool do_start(void) {
+			return true;
+		}
+		virtual void poll(void) {
+			instance.poll();
+		}
+		virtual void do_clean(void) {
+			instance.close();
+			instance.unreg();
+		}
+	};
+	static const inline robo::char_t nm[] = MODULE_NAME_STR;
+	using module = robo::net::cans_module_t< phys, nm>;
 }
 
 #include "core/robosd_system_module_reg.hpp"

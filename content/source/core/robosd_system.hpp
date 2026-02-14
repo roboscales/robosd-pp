@@ -5,6 +5,10 @@
 #include "core/robosd_list.hpp"
 #include "core/robosd_delegat.hpp"
 
+
+
+
+
 #ifndef ROBO_APP_ENV_TYPE 
 #define ROBO_APP_ENV_TYPE  ROBO_APP_TYPE_NONE
 #endif
@@ -53,6 +57,10 @@
 #define ROBO_APP_CRITICAL_TYPE ROBO_APP_TYPE_NONE
 #endif
 
+#ifndef ROBO_APP_TIMELOG_TYPE
+#define ROBO_APP_TIMELOG_TYPE ROBO_APP_TYPE_NONE
+#endif
+
 #define ROBO_APP_CONSOL_ENABLED  (ROBO_APP_CONSOL_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_ENV_ENABLED  (ROBO_APP_ENV_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_INI_ENABLED  (ROBO_APP_INI_TYPE != ROBO_APP_TYPE_NONE)
@@ -60,11 +68,17 @@
 #define ROBO_APP_SHARED_ENABLED (ROBO_APP_SHARED_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_ALLOC_ENABLED (ROBO_APP_ALLOC_TYPE != ROBO_APP_TYPE_NONE)
 #define ROBO_APP_OS_ENABLED (ROBO_APP_OS_TYPE != ROBO_APP_TYPE_NONE)
+#define ROBO_APP_TIMELOG_ENABLED (ROBO_APP_TIMELOG_TYPE != ROBO_APP_TYPE_NONE)
 
 #ifndef ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED
 #define ROBO_APP_SYSTEM_GUARD_DEBUG_ENABLED 0
 #endif
 
+
+
+#if ROBO_APP_TIMELOG_ENABLED == 1
+#include "prf/timelogger.hpp"
+#endif
 #if ROBO_APP_SYSTEM_ENABLED  == 1
 namespace robo {
 	/*!
@@ -233,7 +247,7 @@ namespace robo {
 			/*!
 			 *  поток обозначает, что он реализует backend
 			 */
-			static void fall(void);
+			static void fall(void);         
 
 			/*!
 			 *  поток обозначает, что он перестал реализовать backend
@@ -269,7 +283,10 @@ namespace robo {
 
 			#endif
 		public:
-
+            /*
+            Делаем перезагрузку системы
+            */
+            static void reset(void);
 			/*!
 			 *  Returns true if the env is frontend.
 			 *
@@ -315,21 +332,57 @@ namespace robo {
 			static random_t rand_maxd();
 			static void wakeup(void);
 			static void sleep(void); //вернуть контекст
-#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+
+			#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE && ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_STD
 			static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
-#if ROBO_UNICODE_ENABLED == 1
+			#if ROBO_UNICODE_ENABLED == 1
 			static size_t sprintf(char * _dst, size_t _max_sz, const char *  _format, va_list _args);
-#endif
-#endif
-#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
+			#endif
+			#endif
+			#if ROBO_APP_PRINT_TYPE != ROBO_APP_TYPE_NONE
 			static void print(cstr  _s);
-#if ROBO_APP_DEBUG_LOG_ENABLED == 1
+			#if ROBO_APP_DEBUG_LOG_ENABLED == 1
 			static void print(robo::log::verb _verb, cstr _format, va_list  _args);
-#endif
-#endif
+			#endif
+			#endif
 		};
-#endif
+		#endif
+		#if ROBO_APP_FORMATING_TYPE != ROBO_APP_TYPE_NONE
+		static size_t sprintf(char_t* _dst, size_t _max_sz, cstr _format, va_list _args);
+		
+		#if ROBO_UNICODE_ENABLED == 1 
+		static size_t sprintf(char* _dst, size_t _max_sz, const char* _format, va_list _args);
+		#endif
+		#endif
+
 	public:
+		#if ROBO_APP_TIMELOG_ENABLED == 1
+		struct timelogev {
+			enum { begin = 1, start=2, startup =3, halt = 4  };
+		};
+		struct ROBO_EXPORT timelog_driver {
+			typedef system::guard guard;
+			timelog_driver(void);
+			static uint32_t time_ns(void);
+		};
+		#ifndef ROBO_APP_TIMELOG_SIZE 
+		#define ROBO_APP_TIMELOG_SIZE 100000
+		#endif
+		using timelog_s = prf::timelogger::machine_t<timelog_driver, ROBO_APP_TIMELOG_SIZE>;
+		#define robo_logger_raise(e) robo::system::timelog_s::raise(e);
+		#define robo_logger_fail(e) robo::system::timelog_s::fail(e);
+		#define robo_logger(e) robo::system::timelogger l__(e)
+		struct ROBO_EXPORT timelogger {
+			uint32_t e_;
+			timelogger(uint32_t _e) :e_(_e) { timelog_s::raise(e_); }
+			~timelogger(void) { timelog_s::fail(e_); }
+		};
+		#else
+		#define robo_ev_raise(e) timelog_s::raise(e);
+		#define robo_ev_fail(e) timelog_s::fail(e);
+		#define robo_logger(e) 
+		#endif
+
 		#if ROBO_APP_ENV_ENABLED == 1
 		template<typename T>
 		static T rand(random_t _reso, const T& _min, const T& _max) {
@@ -431,6 +484,8 @@ namespace robo {
 			static void finish(void);
 		};
 #endif
+
+
 	};
 }
 #endif

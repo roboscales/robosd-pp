@@ -96,7 +96,9 @@ namespace robo{
 								int command = *_frame; _frame++;
 								_length	 -= 2;
 								switch(command){
-									case commands::read_regs: perform(  read_regs(_frame,_length),command ); break;
+									case commands::read_regs: 
+									case commands::read_outputs: 
+										perform(  read_regs(_frame,_length),command ); break;
 									case commands::write_reg: perform(  write_reg(_frame,_length),command );break;
 									case commands::write_regs: perform(  write_regs(_frame,_length),command );break;
 									default: perform(errors::proto::code,command);break;
