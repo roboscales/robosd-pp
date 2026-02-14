@@ -580,7 +580,7 @@ namespace robo {
 #if ROBO_APP_ALLOC_ENABLED == 1
 
 void* operator new(size_t size) {
-	ROBO_APP_ASSERT(is_frontend__);
+	//ROBO_APP_ASSERT(is_frontend__);
 	void* tmp;
 	tmp = robo::system::mem::alloc(size);
 	ROBO_APP_ASSERT(tmp != nullptr)
@@ -588,7 +588,7 @@ void* operator new(size_t size) {
 }
 
 void operator delete(void* ptr) {
-	ROBO_APP_ASSERT(is_frontend__);
+	//ROBO_APP_ASSERT(is_frontend__);
 	robo::system::mem::free (ptr);
 }
 

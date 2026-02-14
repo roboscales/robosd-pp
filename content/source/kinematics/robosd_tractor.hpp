@@ -1282,8 +1282,8 @@ namespace robo {
 				ROBO_LBREAKN(ini::load_arr(_path, key, memo, size));
 				return true;
 			}
-			T  & operator () (int _index1,int _index2) {
-				return memo[_index2*3+_index1];
+			T  & operator () (int _raw,int _cal) {
+				return memo[_raw *3+ _cal];
 			}
 		};
 		template<class T> using matrix3x3_t = numbers_t <T, matrix3x3_s<T> >;

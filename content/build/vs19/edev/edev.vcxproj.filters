@@ -46,6 +46,9 @@
     <ClInclude Include="..\..\..\robosd-ref\im\models\pmsm.hpp">
       <Filter>im\model</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\app\digital-tween\projects\vs19\config\robosd_app_tuning.hpp">
+      <Filter>im</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="im">
