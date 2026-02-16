@@ -843,27 +843,23 @@ namespace burst {
 			signal_t teta;
 		};
 		#if ROBO_APP_BURST_VARTREE_ENABLED
-		void present_reg(void) {
+		void regvar_present(robo::cstr _name) {
 			RESOLVER_PRESENT_S(p);
-			#if ROBO_APP_BURST_VARTREE_ENABLED
 			using namespace burst::var;
-			push(RT("sico"));
-			reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
-			reg(types::const_uint32, p.ref.status, RT("status"));
-			reg(types::const_uint8,  p.ref.restart, RT("restart"));
-			reg(types::const_uint16, p.rphase, RT("rphase"));
-			reg(types::const_uint32, p.rsin, RT("rsin"));
-			reg(number::var::signal, p.teta, RT("teta"));
+			push(_name); {
+				reg(types::const_uint32, p.ref.ceiled, RT("ceiled"));
+				reg(types::const_uint32, p.ref.status, RT("status"));
+				reg(types::const_uint8, p.ref.restart, RT("restart"));
+				//reg(types::const_uint16, p.rphase, RT("rphase"));
+				//reg(types::const_uint32, p.rsin, RT("rsin"));
+				reg(number::var::signal, p.teta, RT("teta"));
 
-		//	reg(number::var::signal, p.sn, RT("sn"));
+				//	reg(number::var::signal, p.sn, RT("sn"));
 
-			reg(number::var::signal, p.raw.sn, RT("raw.sn"));
-			reg(number::var::signal, p.raw.cs, RT("raw.cs"));
-			reg(number::var::signal, p.raw.rphase, RT("raw.rphase"));
-
-
-			pop();
-			#endif
+				//reg(number::var::signal, p.raw.sn, RT("raw.sn"));
+				//reg(number::var::signal, p.raw.cs, RT("raw.cs"));
+				//reg(number::var::signal, p.raw.rphase, RT("raw.rphase"));
+			}pop();
 		}
 		#endif
 		

@@ -502,7 +502,7 @@ namespace burst {
 
 		if (action_.mode != present_.mode) {
 			guard__;
-			if (present_.panic != 0 && board::if_configure() ) {
+			if (present_.panic != 0 || board::if_configure() ) {
 				action_.mode = front::dev::modes::idle;
 				switch_to_idle_();
 			}

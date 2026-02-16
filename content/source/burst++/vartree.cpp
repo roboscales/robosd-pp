@@ -1,5 +1,10 @@
 #include "burst++/vartree.hpp"
+#if (ROBO_APP_ULTRACOMPACT == 0)
+#include "burst++/burst.hpp"
+#else
 #include "burst++/burst_common.hpp"
+#endif
+
 #include "core/robosd_ring_buf.hpp"
 #include "core/robosd_common.hpp"
 

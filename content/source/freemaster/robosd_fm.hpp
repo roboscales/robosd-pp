@@ -2,13 +2,13 @@
 #define __freemaster_hpp
 #include "core/robosd_common.hpp"
 
-#ifndef ROBO_APP_FREEMASTER_SERIAL_ENABLED
-#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 0
-#endif
+//#ifndef ROBO_APP_FREEMASTER_SERIAL_ENABLED
+//#define ROBO_APP_FREEMASTER_SERIAL_ENABLED 0
+//#endif
 
-#ifndef ROBO_APP_PROTO_SWITCH_ENABLED
-#define ROBO_APP_PROTO_SWITCH_ENABLED 0
-#endif
+//#ifndef ROBO_APP_PROTO_SWITCH_ENABLED
+//#define ROBO_APP_PROTO_SWITCH_ENABLED 0
+//#endif
 
 #if ROBO_APP_FREEMASTER_SERIAL_ENABLED ==1
 #include "net/robosd_serial.hpp"

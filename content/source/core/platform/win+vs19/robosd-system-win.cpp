@@ -96,7 +96,7 @@ namespace robo {
 #define ROBO_LOG_WIN_BUF_SIZE 4096
 #endif
 namespace robo {
-
+	#if ROBO_APP_ENV_TYPE == ROBO_APP_TYPE_WIN
 	void system::env::print(cstr _s) {
 		#if ROBO_UNICODE_ENABLED == 1
 		std::wcout << _s;
@@ -105,6 +105,7 @@ namespace robo {
 		std::cout << _s;
 		#endif
 	}
+	#endif
 }
 #endif
 
@@ -368,6 +369,12 @@ namespace robo {
 	void system::ini::finish(void) {
 		g_robo_ini_fn = nullptr;
 	}
+	bool system::ini::load_str(char_t* _dst, size_t _max_sz, cstr _section, cstr _key) {
+		size_t _size;
+		load_data(_dst, _max_sz, _section, _key, _size);
+		return _size > 0;
+	}
+
 	void system::ini::load_data(char_t* _dst, size_t _max_sz, cstr _section, cstr _key, size_t & _size) {
 		_size = 0;
 		ROBO_VBREAKN_F(g_robo_ini_fn != nullptr, "ini is't initialized")

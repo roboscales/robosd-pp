@@ -77,19 +77,6 @@ namespace robo {
 					A(2, 2) = -Kv / J;
 
 					EA1 = robo::expm(A * owner.sample_time, 1e-10);
-					#if 0
-					{1, 0, 0, 0, 1, 0, 0, 0, 1};					
-					auto AT = A * owner.sample_time;
-					auto ATN = AT;
-					EA1 += AT;
-					double nf = 1;
-					for (int i = 2; i <= 6;++i) {
-						ATN = ATN * AT;
-						nf = nf * i;
-						EA1 += ATN / nf;
-					}
-
-					#endif
 					EA2 = {0, 0, 0, 0, 0, 0, 0, 0, 1};
 
 #endif
@@ -211,7 +198,8 @@ namespace robo {
 							U[0] = voltage.dq.d / Ls;
 							U[1] = voltage.dq.q / Ls;
 							U[2] = -actuator.contr_torque / p / J;
-							Xmax = IA * U *(-1.);
+							Xmax = IA * U;
+							Xmax = Xmax * (-1.);
 							float wT = (float)(owner.sample_time * w);
 							EA2(0, 0) = cos(wT);
 							EA2(0, 1) = sin(wT);
