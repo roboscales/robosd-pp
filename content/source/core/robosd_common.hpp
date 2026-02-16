@@ -575,7 +575,18 @@ namespace robo {
 				}
 			}
 		}
-			
+		template<typename T> void begin(  T & current_values ) {
+			for (size_t i = 0; i < N; ++i) {
+			bool current = current_values[i];
+				robo::time_us_t now = S::time_us();			
+				if (current) {
+						stable_states_ |= (1 << i);
+				} else {
+						stable_states_ &= ~(1 << i);
+				}
+				begins_us_[i] = now;
+			}
+		}		
 		M stable() const {
 				return stable_states_;
 		}
