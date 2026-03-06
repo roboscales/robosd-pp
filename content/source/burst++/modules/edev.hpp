@@ -163,6 +163,8 @@ namespace burst {
 			}
 			#if ROBO_APP_BURST_VARTREE_ENABLED == 1
 			virtual void do_regvar(void) {
+				using namespace burst::var;
+				reg(types::const_ext, position, RT("position"));
 			}
 			#endif
 			virtual void do_reconfig(void) {
