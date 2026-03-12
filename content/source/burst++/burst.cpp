@@ -801,7 +801,7 @@ void burst_frontend_loop() {
 	burst::board::frontend_loop();
 }
 
-#if ROBO_APP_SYSTEM_ENABLED
+#if ROBO_APP_ENV_ENABLED
 void robo::system::env::abort(void) {
 	
 	burst::board::instance_.handle_panic_();

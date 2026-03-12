@@ -17,7 +17,7 @@
 #endif
 #endif
 
-#if ROBO_LOG_APP_PRINT_TYPE == ROBO_APP_TYPE_WIN
+#if ROBO_APP_LOG_PRINT_TYPE == ROBO_APP_TYPE_WIN
 namespace robo {
 	typedef enum {
 		Black = 0,

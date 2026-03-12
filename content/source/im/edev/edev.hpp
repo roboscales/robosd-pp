@@ -71,6 +71,8 @@ namespace robo {
 			};
 				
 			static thread::list& threads(void);
+			robo::cstr cname(void) { return name; }
+			robo::cstr ctype(void) { return type; }
 		private:
 		  
 		  bool attach_to_thread_(int _id) {

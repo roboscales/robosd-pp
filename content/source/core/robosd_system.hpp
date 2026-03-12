@@ -386,7 +386,11 @@ namespace robo {
 		//#if ROBO_APP_ENV_ENABLED == 1
 		template<typename T>
 		static T rand(random_t _reso, const T& _min, const T& _max) {
+			#if ROBO_APP_ENV_ENABLED == 1
 			return  robo::rand_t<T,env>(_reso,_min,_max);
+			#else
+			return std::rand();
+			#endif
 		}
 		template<typename T>
 		static T rand(const T& _min, const T& _max) {

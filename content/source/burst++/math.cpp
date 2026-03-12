@@ -299,7 +299,7 @@ namespace burst {
 			return -real_mcgenSineTable256[mcsinPIxLUT_ix];
 		}
 		else {
-			if(_value <= -(real::discret_max>>1)){
+			if(_value <= -(real::discret_max>>1)-1){
 				mcsinPIxLUT_ix = (2 * sin_length_table - ((-_value) >> sin_index_shift));
 			} else {
 				mcsinPIxLUT_ix = (-_value) >> sin_index_shift;
@@ -363,6 +363,12 @@ namespace burst {
 			}
 		}
 		return ret;
+	}
+	void sin_test(void) {
+		for (int i = -32768; i <= 32768; ++i) {
+			real_mcsinPIxLUT(i);
+			mcsinPIxLUT(i);
+		}
 	}
 }
 

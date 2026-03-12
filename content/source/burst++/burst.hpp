@@ -495,8 +495,8 @@ namespace burst {
 		static void reconfig_query(void){  instance_.reconfig_query_count_++;};
 		static bool if_configure(void){ return instance_.present_.status == front::board::statuses::configure;};
 		static void force_reset_panics(void) { instance_.force_reset_panics_();  }
-		#if ROBO_APP_SYSTEM_ENABLED
-		friend class robo::system::env;
+		#if ROBO_APP_ENV_ENABLED
+		friend class robo::system::env;		
 		#endif
 		//static void reset(void) { instance_.reset_(); }
 			private:

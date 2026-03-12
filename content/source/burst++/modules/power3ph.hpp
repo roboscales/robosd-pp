@@ -59,7 +59,7 @@ namespace burst {
 				rot_s rot;
 				struct {
 					signal_t electro;
-					signal_t mechanic;
+					signal_t actual;
 				} angle;
 				bool synchro;
 			};
@@ -101,7 +101,7 @@ namespace burst {
 					push(RT("angle"));
 					{
 						reg(number::var::const_signal, p.angle.electro, RT("electro"));
-						reg(number::var::const_signal, p.angle.mechanic, RT("mechanic"));
+						reg(number::var::const_signal, p.angle.actual, RT("actual"));
 					} pop();
 				}
 			}
@@ -154,7 +154,7 @@ namespace burst {
 				ACTOR_PRESENT_S(p);
 				ACTOR_CONFIG_S(c);
 				#if ROBO_APP_ULTRACOMPACT == 0
-				discret_t tmp = number::ul2discret(angle);
+				discret_t tmp = number::ul2discret(*angle);
 				#else
 				discret_t tmp = number::ul2discret(angle);
 				#endif
@@ -163,7 +163,7 @@ namespace burst {
 
 				tmp *= c.pole_count;
 				tmp -= c.offset;
-				p.angle.mechanic = number::discret2rad(tmp);
+				p.angle.actual = number::discret2rad(tmp);
 
 				if (p.synchro) {
 					#if ROBO_APP_ULTRACOMPACT == 0
@@ -172,7 +172,7 @@ namespace burst {
 					p.angle.electro = rotator_t::synchro_anglee;
 					#endif
 				} else {
-					p.angle.electro = p.angle.mechanic;
+					p.angle.electro = p.angle.actual;
 				}
 				//todo можно сократить на одно умножение
 				p.rot.sn = number::sin(p.angle.electro);
@@ -190,7 +190,7 @@ namespace burst {
 				rotator_t::do_regvar_conf();
 				if (actual_mode >= mode::tuning) {
 					ACTOR_CONFIG_S(p);
-					reg( number::var::signal, p.offset, RT("offset"));
+					reg( number::var::discret, p.offset, RT("offset"));
 					if (actual_mode >= mode::config) {
 						reg(types::uint8, p.inverce, RT("inv"));
 						reg(types::uint8, p.pole_count, RT("pole"));
@@ -363,8 +363,8 @@ namespace burst {
 						pop();
 						#endif
 						push(RT("native"));
-						reg(number::var::signal, c.native.lo, RT("lo"));
-						reg(number::var::signal, c.native.hi, RT("hi"));
+						reg(number::var::discret, c.native.lo, RT("lo"));
+						reg(number::var::discret, c.native.hi, RT("hi"));
 						pop();
 					}
 				}
@@ -542,8 +542,9 @@ namespace burst {
 				discret_t delta = cfg.native.hi - cfg.native.lo;
 				long_discret_t gain = delta;
 				gain = robo::digit::lsh(gain, number::discret_bits+1);
-				gain += ((long_discret_t)number::discret_max - number::discret_min) / 2; //округление
-				gain /= ((long_discret_t)number::discret_max - number::discret_min);
+				auto tmp = ((long_discret_t)number::discret_max - number::discret_min);
+				gain += tmp/2; //округление
+				gain /= tmp;
 				scale_gain = gain;
 				discret_delta_lo = 0;
 				discret_delta_hi = delta;
@@ -801,7 +802,9 @@ namespace burst {
 				#if BURST_PANICS_ACWC_OVERCURRENT_ENABLED ==1
 
 				#if BURST_PANICS_ACWC_OVERCURRENT_REALTIME_ENABLED ==1
-				p.magnitude = number::s_sqrt( ( ulong_signal_t) ( (long_signal_t)dql * dql + (long_signal_t)dqc * dqc));
+				auto tmp =  (long_signal_t)dql * dql;
+				auto tmp2 =	(long_signal_t)dqc * dqc;
+				p.magnitude = number::s_sqrt( ( ulong_signal_t) (tmp+tmp2 ));
 				#endif
 				#endif
 				#endif

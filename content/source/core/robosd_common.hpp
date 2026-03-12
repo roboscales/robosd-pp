@@ -524,24 +524,26 @@ namespace robo {
 
 		return sum;
 	}
-	template<typename T, int N, T A, T Z > struct generator_t {
-		const T table_zero = Z;
-		const T amplitude = A;
-		const T size = N;
-		T table[N] = {};
-		constexpr generator_t(double O) {
+	template<typename C > struct generator_t {
+		using T =typename C::type;
+		constexpr static inline const T table_zero = C::zero;
+		constexpr static inline const T amplitude = C::mag;
+		enum{ size = C::count };
+		T table[size] = {};
+		constexpr generator_t() {
 			constexpr double two_pi = 2.0 * pi<double>;
-			for (size_t i = 0; i < N; ++i) {
+			for (size_t i = 0; i < size; ++i) {
 				// Вычисляем угол от 0 до 2?
-				double angle = O + two_pi * static_cast<double>(i) / static_cast<double>(N);
+				double angle = double(C::offset) + two_pi * static_cast<double>(i) / static_cast<double>(size);
 
 				// Вычисляем значение синуса и масштабируем амплитудой
 				// Округляем до ближайшего целого
-				double sin_value = Z + A * taylor_sin(angle);
+				double sin_value = (double)table_zero + (double)amplitude * taylor_sin(angle);
 				table[i] = static_cast<T>(sin_value + 0.5);
 			}
 		}
 	};
+
 	//===================================================
 	template<size_t N, typename M, typename S> class debouncer_t {
 	private:

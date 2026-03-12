@@ -1,6 +1,6 @@
 #include "net/robosd_can.hpp"
 #include "core/robosd_log.hpp"
-#include "core/robosd_autonum.hpp"
+
 namespace robo {
 	namespace net {
 		static ican::map & cans_(void) {

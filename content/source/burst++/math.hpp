@@ -99,7 +99,7 @@ namespace burst {
 		
 		
 	};
-
+	void sin_test(void);
 	struct real {
 		typedef int16_t discret_t;
 		typedef int32_t long_discret_t;

@@ -145,8 +145,8 @@ namespace burst{
 		board::slot::simple frontend_pool(
 			board::slot::kind::frontend
 			,	[]{
-				#if SERVICE_FREEMASTER_CONNECT_TYPE != SERVICE_FREEMASTER_CONNECT_TYPE_NONE
-				#if SERVICE_FREEMASTER_MANUAL_POOL_ENABLED == 0
+				#if SERVICE_FREEMASTER_CONNECT_TYPE != SERVICE_FREEMASTER_CONNECT_TYPE_NONE  
+				#if SERVICE_FREEMASTER_MANUAL_POLL_ENABLED == 0
 				robo::freemaster::poll();
 				#endif
 				#endif
@@ -164,10 +164,12 @@ namespace burst{
 		);
 
 		#if SERVICE_FREEMASTER_CONNECT_TYPE != SERVICE_FREEMASTER_CONNECT_TYPE_NONE
+		#if SERVICE_FREEMASTER_MANUAL_RECORDER_ENABLED == 0
 		board::slot::simple backend (
 			board::slot::kind::backend
 			,	&robo::freemaster::recorder	
 		);	
+		#endif
 		#endif
 
 		#if SERVICE_TERMO_CONNECT_TYPE != SERVICE_TERMO_CONNECT_TYPE_NONE		

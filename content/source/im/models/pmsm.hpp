@@ -81,6 +81,7 @@ namespace robo{
 						actuator.position = _pos;
 						electro.position = _pos * p;
 					}
+					uint8_t poles(void){ return (uint8_t)p; } //todo 
 				};
 			}
 		}
