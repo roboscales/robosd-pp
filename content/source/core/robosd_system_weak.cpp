@@ -219,7 +219,7 @@ namespace robo {
 	#endif
 }
 
-#if ROBO_APP_TIMELOG_TYPE == ROBO_APP_TYPE_WIN
+#if ROBO_APP_TIMELOG_ENABLED == 1
 #include <windows.h>
 namespace robo {
 

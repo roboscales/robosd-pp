@@ -368,7 +368,7 @@ namespace robo {
 		#ifndef ROBO_APP_TIMELOG_SIZE 
 		#define ROBO_APP_TIMELOG_SIZE 100000
 		#endif
-		using timelog_s = prf::timelogger::machine_t<timelog_driver, ROBO_APP_TIMELOG_SIZE>;
+		using timelog_s = prf::timelogger_t<timelog_driver, ROBO_APP_TIMELOG_SIZE>;
 		#define robo_logger_raise(e) robo::system::timelog_s::raise(e);
 		#define robo_logger_fail(e) robo::system::timelog_s::fail(e);
 		#define robo_logger(e) robo::system::timelogger l__(e)
@@ -378,8 +378,8 @@ namespace robo {
 			~timelogger(void) { timelog_s::fail(e_); }
 		};
 		#else
-		#define robo_ev_raise(e) timelog_s::raise(e);
-		#define robo_ev_fail(e) timelog_s::fail(e);
+		#define robo_logger_raise(e) timelog_s::raise(e);
+		#define robo_logger_fail(e) timelog_s::fail(e);
 		#define robo_logger(e) 
 		#endif
 

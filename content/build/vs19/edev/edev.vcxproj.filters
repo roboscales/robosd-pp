@@ -8,7 +8,7 @@
     <ClCompile Include="..\..\..\robosd-ref\im\edev\joint_link.cpp">
       <Filter>im\edev</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\robosd-ref\im\models\power.cpp">
+    <ClCompile Include="..\..\..\robosd-ref\im\models\~power.cpp">
       <Filter>im\model</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\im\models\gearbox.cpp">
@@ -21,6 +21,9 @@
       <Filter>im\model</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\robosd-ref\im\models\pmsm.cpp">
+      <Filter>im\model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\robosd-ref\im\models\pmsmr2.cpp">
       <Filter>im\model</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,6 +50,9 @@
       <Filter>im\model</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\app\swan-digita-tween\projects\vs2019\config\robosd_app_tuning.hpp" />
+    <ClInclude Include="..\..\..\robosd-ref\im\models\pmsmr2.hpp">
+      <Filter>im\model</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="im">
