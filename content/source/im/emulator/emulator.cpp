@@ -167,7 +167,7 @@ int main(int _argc, const char * _argv[])
 			auto t2 = Time::now();
 			fsec dfc = t2 - t1;
 			auto dsec = dfc.count();
-			if (dsec > 0.00002) {
+			if (dsec > 0.000050) {
 				sec_stat_acc += dsec;
 				cnt++;
 				if (cnt == 10000) {

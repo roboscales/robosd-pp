@@ -1,0 +1,1202 @@
+\UseRawInputEncoding
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[english,russian]{babel}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\geometry{top=2cm,bottom=2cm,left=2.5cm,right=2cm}
+
+% Настройка листингов для поддержки кириллицы
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single,
+    tabsize=2,
+    extendedchars=true,
+    literate= % правила замены русских букв
+        {а}{{\"a}}1
+        {б}{{\"b}}1
+        {в}{{\"v}}1
+        {г}{{\"g}}1
+        {д}{{\"d}}1
+        {е}{{\"e}}1
+        {ё}{{\"e}}1
+        {ж}{{\"z}}1
+        {з}{{\"z}}1
+        {и}{{\"i}}1
+        {й}{{\"i}}1
+        {к}{{\"k}}1
+        {л}{{\"l}}1
+        {м}{{\"m}}1
+        {н}{{\"n}}1
+        {о}{{\"o}}1
+        {п}{{\"p}}1
+        {р}{{\"r}}1
+        {с}{{\"s}}1
+        {т}{{\"t}}1
+        {у}{{\"u}}1
+        {ф}{{\"f}}1
+        {х}{{\"h}}1
+        {ц}{{\"c}}1
+        {ч}{{\"c}}1
+        {ш}{{\"s}}1
+        {щ}{{\"s}}1
+        {ъ}{{\"\'}}1
+        {ы}{{\"y}}1
+        {ь}{{\"\'}}1
+        {э}{{\"e}}1
+        {ю}{{\"u}}1
+        {я}{{\"a}}1
+        {А}{{\"A}}1
+        {Б}{{\"B}}1
+        {В}{{\"V}}1
+        {Г}{{\"G}}1
+        {Д}{{\"D}}1
+        {Е}{{\"E}}1
+        {Ё}{{\"E}}1
+        {Ж}{{\"Z}}1
+        {З}{{\"Z}}1
+        {И}{{\"I}}1
+        {Й}{{\"I}}1
+        {К}{{\"K}}1
+        {Л}{{\"L}}1
+        {М}{{\"M}}1
+        {Н}{{\"N}}1
+        {О}{{\"O}}1
+        {П}{{\"P}}1
+        {Р}{{\"R}}1
+        {С}{{\"S}}1
+        {Т}{{\"T}}1
+        {У}{{\"U}}1
+        {Ф}{{\"F}}1
+        {Х}{{\"H}}1
+        {Ц}{{\"C}}1
+        {Ч}{{\"C}}1
+        {Ш}{{\"S}}1
+        {Щ}{{\"S}}1
+        {Ъ}{{\"\'}}1
+        {Ы}{{\"Y}}1
+        {Ь}{{\"\'}}1
+        {Э}{{\"E}}1
+        {Ю}{{\"U}}1
+        {Я}{{\"A}}1
+        {_}{{\_}}1           
+        {<}{{\textless}}1    
+        {>}{{\textgreater}}1}
+
+\title{Фреймворк \texttt{robosd} \\ (роботы -- космическая мечта)}
+\author{Юсупов Андрей Николаевич}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+
+
+\section{Библиотека \texttt{burst} — управление реальным временем и устройствами}
+
+Библиотека \texttt{burst} представляет собой высокоуровневый каркас для построения систем управления в реальном времени. Она базируется на ядре \texttt{robosd} и добавляет концепции: плата (\texttt{board}) как корневой диспетчер, устройства (\texttt{dev}) с набором режимов работы (\texttt{mode}), слоты выполнения (\texttt{slot}) для организации циклических вызовов, очередь асинхронных запросов (\texttt{request}) для взаимодействия между frontend и backend, а также систему регистрации переменных (\texttt{vartree}) для конфигурации и мониторинга в реальном времени. Математическая подсистема предоставляет эффективные вычисления с фиксированной точкой и преобразования координат.
+
+\subsection{Состав библиотеки}
+
+\begin{itemize}
+    \item \texttt{burst\_common.hpp} — общие макросы и структуры (диапазоны, гистерезис, флаги включения).
+    \item \texttt{dev.front.hpp} — определения для внешнего интерфейса (статусы, паники, команды).
+    \item \texttt{vartree.hpp} / \texttt{vartree.cpp} — система древовидных переменных.
+    \item \texttt{math.hpp} / \texttt{math.cpp} — математические классы с фиксированной точкой, тригонометрия, преобразования.
+    \item \texttt{burst.hpp} — главный заголовок с классами \texttt{request}, \texttt{dev}, \texttt{board}, \texttt{timer\_t} и макросами.
+    \item \texttt{burst.cpp} — реализация ключевых методов, очереди запросов, обработка паник, циклы.
+    \item \texttt{burst.h} — C-обёртки для вызова из чистого C.
+\end{itemize}
+
+\subsection{Общие определения (\texttt{burst\_common.hpp})}
+
+Файл содержит настраиваемые макросы и простые шаблонные структуры.
+
+\begin{itemize}
+    \item \texttt{range\_s<A>} — структура с полями \texttt{lo} и \texttt{hi}.
+    \item \texttt{hyst\_t<R>} — структура для гистерезиса: \texttt{overhi}, \texttt{hi}, \texttt{lo}, \texttt{ultralo}.
+    \item Макросы \texttt{BURST\_RANGE\_CONFIG(a)} и \texttt{BURST\_HIST\_CONFIG(a)} для удобного заполнения конфигурационных структур.
+    \item Множество макросов для включения отдельных функций защиты (температура, напряжение, ток, потеря мастера). По умолчанию многие выключены.
+    \item \texttt{BURST\_PROTECTION\_ENABLED} — общий флаг защиты.
+    \item \texttt{BURST\_PANICS\_MASTER\_LOST\_ENABLED} — контроль потери связи с мастером.
+    \item \texttt{ROBO\_APP\_BURST\_REALTIME\_SLOT\_ENABLE} — включает отдельный слот реального времени.
+    \item \texttt{ROBO\_APP\_BURST\_VARTREE\_ENABLED} — включает систему переменных.
+\end{itemize}
+
+Макросы используют префиксы \texttt{ROBO\_APP\_} (глобальные) и \texttt{BURST\_} (локальные). Многие из них должны быть определены пользователем до компиляции.
+
+\subsection{Интерфейс frontend (\texttt{dev.front.hpp})}
+
+Содержит перечисления и структуры, определяющие взаимодействие между \texttt{burst} и внешним миром (например, по протоколу).
+
+\begin{itemize}
+    \item \texttt{burst::front::board::commands} — \texttt{none}, \texttt{configure}.
+    \item \texttt{burst::front::board::statuses} — \texttt{unknown}, \texttt{startuped}, \texttt{configure}, \texttt{restart}, \texttt{normal}.
+    \item \texttt{burst::front::board::panics::bits} и \texttt{masks} — биты паник платы (перенапряжение, недонапряжение, перегрузка по току, температура и т.д.).
+    \item \texttt{burst::front::tp\_verb} — уровни трассировки (realtime, backend, frontend, loop).
+    \item \texttt{burst::front::dev::panics::bits} — паники устройства: \texttt{master\_lost}, \texttt{board}.
+    \item \texttt{burst::front::dev::modes} — пока только \texttt{idle}.
+    \item \texttt{burst::front::dev::action\_s} — структура, содержащая поле \texttt{mode} и флаг \texttt{action\_actual}. При условной компиляции может включать поля из \texttt{robo::common::devagent}.
+    \item \texttt{burst::front::dev::feedback\_s} — аналогично, содержит \texttt{mode} и \texttt{fault}.
+\end{itemize}
+
+Этот файл связывает внутренние механизмы \texttt{burst} с протоколами верхнего уровня (например, servo). Использование \texttt{\#ifdef ROBO\_APP\_BURST\_SERVO\_SIDE} и т.п. указывает на две возможные роли: сторона сервопривода или сторона управляющего устройства.
+
+\subsection{Система древовидных переменных (\texttt{vartree.hpp}, \texttt{vartree.cpp})}
+
+Предназначена для регистрации и доступа к переменным (конфигурационным, статусным) в иерархическом пространстве имён. Ключевые элементы:
+
+\begin{itemize}
+    \item \texttt{tags} — \texttt{push}, \texttt{var}, \texttt{pop} для построения дерева.
+    \item \texttt{ref\_s} — двухбитовый тег (общий предок всех записей).
+    \item \texttt{mode} — перечисление уровней доступа: \texttt{none}, \texttt{tuning}, \texttt{action}, \texttt{config}, \texttt{full}.
+    \item \texttt{descriptor} — упакованный дескриптор типа переменной (16 бит). Содержит длину, знак, константность, признак вещественного числа, флаг необходимости реконфигурации. Битовые поля используют \texttt{\#pragma pack(1)}.
+    \item \texttt{descriptor\_enco} — constexpr функция для формирования дескриптора.
+    \item \texttt{types} — перечисление предопределённых типов (uint8, int8, uint16, int16, uint32, int32, uint64, int64, real, ext, и их константные варианты). Значения вычисляются через \texttt{descriptor\_enco}.
+    \item Шаблонные функции \texttt{const\_unsigned\_type}, \texttt{const\_signed\_type}, \texttt{unsigned\_type}, \texttt{signed\_type} — определяют тип по размеру.
+    \item \texttt{type\_name} — возвращает строковое имя типа.
+    \item \texttt{request} — константы для протокола: \texttt{index}, \texttt{get}, \texttt{put}.
+    \item \texttt{error} — коды ошибок.
+    \item \texttt{header\_s} — заголовок запроса (2 байта: 2 бита query, 4 бита error, 10 бит ix).
+    \item \texttt{record\_s} — запись переменной: дескриптор, имя, ключ (хеш), адрес.
+    \item \texttt{reg(ref\_s*)} — добавляет ссылку в глобальный массив \texttt{index}.
+    \item \texttt{push(name)} и \texttt{pop()} — создают узлы для построения пути.
+    \item \texttt{reg<T>(type, addr, name, reconfig\_need)} — создаёт запись переменной, вычисляет дескриптор, вызывает \texttt{reg}.
+    \item \texttt{varreg} — перегрузки для регистрации диапазона или гистерезиса (создаёт несколько переменных в одной группе).
+    \item \texttt{reindex} — пересчитывает ключи (хеши) на основе текущего пути. Используется после регистрации всех переменных.
+    \item \texttt{if\_configure}, \texttt{reconfig\_query} — для ультракомпактного режима.
+    \item \texttt{showpro} и \texttt{show} — вспомогательные классы для печати дерева переменных (например, для FreeMASTER).
+\end{itemize}
+
+В \texttt{vartree.cpp} реализованы:
+
+\begin{itemize}
+    \item Глобальный массив \texttt{index} (размер \texttt{pool\_size}), счётчик \texttt{count}.
+    \item \texttt{reg} — простая вставка.
+    \item \texttt{push}/\texttt{pop} — создают объекты \texttt{node\_s} (тег push) или просто \texttt{ref\_s} (pop) и регистрируют.
+    \item \texttt{reindex} — обходит все записи, строит путь (имитируя стек), вычисляет хеш для каждой переменной. Использует временные буферы.
+    \item \texttt{find} — линейный поиск по ключу.
+    \item \texttt{get} — доступ по индексу.
+    \item \texttt{proto} — обработчик запросов по протоколу (index, get, put). Реализует чтение/запись переменных с проверкой прав.
+    \item \texttt{sprintf} — форматирует значение переменной в строку.
+    \item \texttt{first}/\texttt{last} — для итерации.
+\end{itemize}
+
+\textbf{Недоработки:}
+\begin{itemize}
+    \item Линейный поиск — при большом количестве переменных может быть медленным.
+    \item Нет защиты от повторной регистрации одинаковых имён.
+    \item Использование глобального массива фиксированного размера (\texttt{pool\_size}) может привести к переполнению.
+    \item В \texttt{proto} при обработке \texttt{put} для переменных с \texttt{reconfig\_need} проверяется режим конфигурации через глобальную функцию \texttt{if\_configure()}, что создаёт сильную связность с \texttt{board}.
+    \item Массив \texttt{index} хранит сырые указатели, нет автоматического управления памятью — требуется явный вызов \texttt{free}.
+\end{itemize}
+
+\subsection{Математическая библиотека (\texttt{math.hpp}, \texttt{math.cpp})}
+
+Предоставляет два основных числовых пространства: \texttt{int15} (фиксированная точка 15 бит) и \texttt{real} (float). Вокруг них построены шаблонные классы \texttt{fixed\_point<digit>} и \texttt{float\_point<q>} с множеством полезных функций.
+
+\subsubsection{Класс \texttt{int15}}
+
+\begin{itemize}
+    \item Типы: \texttt{discret\_t} = int16\_t, \texttt{signal\_t} = int16\_t, \texttt{long\_signal\_t} = int32\_t, \texttt{usignal\_t} = uint16\_t и т.д.
+    \item Константы: \texttt{max = 32767}, \texttt{min = -max}, \texttt{ones = max}.
+    \item Статические функции: \texttt{s\_round}, \texttt{s\_frac}, \texttt{l\_round}, \texttt{l\_frac} для преобразования double в фиксированную точку.
+    \item \texttt{sin}, \texttt{cos}, \texttt{sqrt}, \texttt{atan2} — реализации с использованием таблиц.
+    \item В \texttt{math.cpp} приведена таблица синуса \texttt{mcgenSineTable256} (256 значений) и функции \texttt{mcsinPIxLUT}, \texttt{sin}, \texttt{cos}.
+    \item \texttt{sqrt} реализован через аппроксимацию с таблицами \texttt{dsqrtGainArray}, \texttt{dsqrtOffsetArray}, \texttt{dsqrtShift}.
+    \item \texttt{atan2} использует таблицу \texttt{tableAtan64} и вспомогательную функцию \texttt{\_atan}.
+\end{itemize}
+
+\subsubsection{Класс \texttt{real}}
+
+\begin{itemize}
+    \item Типы: \texttt{signal\_t = float}, \texttt{long\_signal\_t = float} и т.д.
+    \item Константы: \texttt{pi}, \texttt{discret\_max = 32767}.
+    \item Аналогичные функции \texttt{sin}, \texttt{cos}, \texttt{atan2}, но с плавающей точкой.
+    \item Таблица синуса \texttt{real\_mcgenSineTable256} (аналогична int15, но значения float).
+    \item \texttt{atan2} использует \texttt{robo::atan2\_table\_t} (таблица, генерируемая на этапе компиляции).
+\end{itemize}
+
+\subsubsection{Шаблон \texttt{fixed\_point<digit>} и \texttt{float\_point<q>}}
+
+Эти классы объединяют функции и константы, добавляя:
+
+\begin{itemize}
+    \item \texttt{sqrt3\_div\_2}, \texttt{sqrt2\_div\_2}, \texttt{one\_div\_sqrt3} — предвычисленные константы.
+    \item \texttt{s\_mult}, \texttt{s\_add}, \texttt{s\_dot} — операции с аккумуляцией в расширенном типе.
+    \item \texttt{long\_signal\_u} — union для разложения 32-битного числа на два 16-битных (используется в умножении).
+    \item \texttt{qa} — структура для квадратичной аппроксимации.
+    \item \texttt{lsf} — структура с линейными операциями.
+    \item \texttt{pi} — структура для ПИ-регулятора (дифференциальная и квадратичная составляющие).
+    \item \texttt{signal2discret\_s} и \texttt{discret2signal} — конвертеры между физическим сигналом и целым кодом.
+    \item \texttt{ab\_t}, \texttt{abc\_t}, \texttt{dq\_t} — для преобразований координат (Кларк, Парк).
+\end{itemize}
+
+В \texttt{math.cpp} также есть тестовая функция \texttt{sin\_test}.
+
+\textbf{Недоработки:}
+\begin{itemize}
+    \item Множество закомментированных блоков и устаревших определений (например, большая часть в конце \texttt{math.hpp} закомментирована).
+    \item Функция \texttt{atan2} в \texttt{int15} использует 64-битные вычисления, что может быть медленно на 32-битных процессорах.
+    \item Таблицы для \texttt{sqrt} и \texttt{atan2} не сопровождаются комментариями о происхождении и точности.
+    \item Некоторые макросы (например, \texttt{S(x)}) используются без явного контекста, что затрудняет чтение.
+    \item В \texttt{float\_point::lsf} функция \texttt{sat} просто возвращает аргумент (нет ограничений) — вероятно, недоделано.
+    \item Отсутствует документация по использованию шаблонных преобразователей.
+\end{itemize}
+
+\subsection{Основные классы \texttt{burst} (\texttt{burst.hpp}, \texttt{burst.cpp})}
+
+\subsubsection{Класс \texttt{request}}
+
+Предназначен для асинхронного выполнения действий в другом контексте (frontend/backend). Содержит указатели на делегаты \texttt{query} и \texttt{confirm}. При вызове \texttt{post()} объект помещается в одну из двух глобальных очередей (\texttt{frontend\_queue} или \texttt{backend\_queue}) в зависимости от текущего контекста. Статические методы \texttt{front\_perfom} и \texttt{backend\_perfom} извлекают запросы из соответствующей очереди и выполняют их, переключая статус между \texttt{query} и \texttt{confirm}. Это классический механизм для безопасного переключения контекста.
+
+\subsubsection{Класс \texttt{dev} — устройство}
+
+Базовый класс для всех устройств. Содержит:
+
+\begin{itemize}
+    \item Ссылки на конфигурацию (\texttt{config\_s}), состояние (\texttt{present\_s}), действие (\texttt{action\_s}) и обратную связь (\texttt{feedback\_s}). Эти структуры должны быть определены пользователем.
+    \item Карту режимов (\texttt{modes\_}) — список уникальных режимов (наследников \texttt{mode}).
+    \item Текущий режим (\texttt{actual\_mode\_}) и методы для переключения (\texttt{switch\_to\_mode}).
+    \item Методы \texttt{raise\_panic}, \texttt{reset\_panic}, \texttt{reset\_panics} для управления битами паники.
+    \item Циклические функции \texttt{loopA}, \texttt{loopB}, \texttt{loopC}, \texttt{frontend\_loop}, которые делегируют вызов текущему режиму.
+    \item Поддержка дерева переменных: \texttt{regvar\_present}, \texttt{regvar\_action}, \texttt{regvar\_conf} (определены в \texttt{burst.cpp}).
+\end{itemize}
+
+Класс \texttt{mode} — вложенный в \texttt{dev}, должен быть переопределён пользователем. Содержит чисто виртуальные методы \texttt{applay\_action}, \texttt{start}, \texttt{stop}, \texttt{loopA/B/C}, \texttt{frontend\_loop}. Регистрируется в устройстве по уникальному идентификатору.
+
+\subsubsection{Класс \texttt{board} — плата}
+
+Синглтон, управляющий всем. Содержит:
+
+\begin{itemize}
+    \item Список устройств (\texttt{dev::map}).
+    \item Слоты выполнения (\texttt{slots}) — набор объектов \texttt{slot}, каждый из которых содержит список делегатов (наследников \texttt{slot::delegat}), вызываемых в определённый момент цикла.
+    \item Предопределённые слоты: \texttt{begin}, \texttt{start}, \texttt{startup}, \texttt{realtime}, \texttt{backend}, \texttt{frontend}, \texttt{halt}, \texttt{ready}, \texttt{reconfig} и массив \texttt{periodic} (число задаётся макросом \texttt{ROBO\_APP\_BURST\_SLOT\_COUNT}).
+    \item Состояние платы (\texttt{present\_s}) — паники, время последней паники, команда, статус, уровень трассировки.
+    \item Конфигурация платы (\texttt{config\_s}) — версия, флаг ожидания конфигурации при старте, параметры защиты.
+    \item Методы жизненного цикла: \texttt{begin}, \texttt{realtime\_loop}, \texttt{backend\_loop}, \texttt{frontend\_loop}, \texttt{handle\_panic}, \texttt{raise\_panic}, \texttt{reset\_panic}.
+    \item Статические методы для доступа извне: \texttt{begin}, \texttt{backend\_loop}, \texttt{frontend\_loop} и т.д.
+\end{itemize}
+
+Класс \texttt{slot::delegat} — базовый для всех функций, которые можно привязать к слоту. Имеет методы \texttt{attach} и \texttt{dettach} для добавления в конкретный слот. Предопределены удобные наследники: \texttt{simple} (обычная функция), \texttt{lambda} (объект \texttt{robo::lambda}), \texttt{member} (метод класса).
+
+Класс \texttt{timer\_t< K, D>} — шаблон для создания периодических таймеров. Параметр \texttt{K} — тип ключа (например, \texttt{slot::kind}), \texttt{D} — тип делегата (например, \texttt{slot::simple}). Таймер хранит период, флаг однократности, состояние и в операторе \texttt{()} проверяет, не пора ли вызвать делегат.
+
+В \texttt{burst.cpp} реализованы:
+
+\begin{itemize}
+    \item Глобальные очереди \texttt{backend\_queue} и \texttt{frontend\_queue} (тип \texttt{robo::safe\_ring\_t}).
+    \item Методы \texttt{request::post}, \texttt{front\_perfom}, \texttt{backend\_perfom}.
+    \item Конструкторы \texttt{dev} и \texttt{mode}.
+    \item \texttt{dev::raise\_panic}, \texttt{reset\_panic}, \texttt{perform\_panic}, \texttt{switch\_to\_mode}, \texttt{loopA/B/C}, \texttt{frontend\_loop}.
+    \item \texttt{board::begin\_} — инициализация, запуск слотов \texttt{begin} и \texttt{start}, инициализация сети и переменных, запуск системного таймера.
+    \item \texttt{board::realtime\_loop\_}, \texttt{backend\_loop\_}, \texttt{frontend\_loop\_} — реализация циклов с вызовом соответствующих слотов.
+    \item Обработка паник (\texttt{raise\_panic\_}, \texttt{reset\_panic\_}, \texttt{handle\_panic\_}).
+    \item Защита (\texttt{realtime\_protection\_}, \texttt{frontend\_protection\_}) — проверка напряжения, тока, температуры, состояния дружественных плат.
+    \item Регистрация переменных платы (\texttt{regvar\_conf}).
+\end{itemize}
+
+\subsection{C-обёртки (\texttt{burst.h})}
+
+Предоставляет функции \texttt{burst\_begin}, \texttt{burst\_begin\_ps}, \texttt{burst\_realtime\_loop}, \texttt{burst\_backend\_loop}, \texttt{burst\_frontend\_loop}, \texttt{burst\_core\_crash\_} для вызова из чистого C. Макрос \texttt{burst\_core\_crash} упрощает вызов.
+
+\subsection{Ключевые идеи и достоинства}
+
+\begin{itemize}
+    \item \textbf{Разделение контекстов} через очереди запросов позволяет безопасно взаимодействовать frontend и backend.
+    \item \textbf{Слоты выполнения} дают гибкость в организации периодических задач: можно назначать функции на разные фазы цикла (начало, запуск, реальное время, backend, frontend и т.д.) с возможностью задания нескольких периодических слотов.
+    \item \textbf{Устройства с режимами} упрощают реализацию конечных автоматов для управления оборудованием.
+    \item \textbf{Дерево переменных} предоставляет единый способ конфигурации и мониторинга, легко интегрируется с протоколами (FreeMASTER, CANopen).
+    \item \textbf{Математика с фиксированной точкой} обеспечивает детерминизм и высокую производительность на встраиваемых системах без FPU.
+    \item \textbf{Широкие возможности настройки} через макросы позволяют адаптировать библиотеку под конкретные требования (включение/отключение защиты, выбор количества слотов и т.д.).
+\end{itemize}
+
+\subsection{Недоработки и несуразности}
+
+\begin{enumerate}
+    \item \textbf{Сложность и избыточность}. Многие классы тесно переплетены, что затрудняет понимание и модификацию. Например, \texttt{board} знает о \texttt{vartree}, а \texttt{vartree} вызывает \texttt{board::if\_configure()}.
+    \item \textbf{Отсутствие документации по использованию}. Нет примеров создания собственных устройств и режимов.
+    \item \textbf{Неполнота реализации защиты}. В \texttt{board::frontend\_protection\_} используются функции \texttt{temper\_get\_lo\_pp}, \texttt{voltage\_get\_pp} и т.п., которые не определены в библиотеке — предполагается, что пользователь предоставит их реализацию. Это не очевидно.
+    \item \textbf{Проблемы с потоками}. Очереди запросов (\texttt{safe\_ring\_t}) используют \texttt{system::guard}, что корректно, но в остальном коде синхронизация отсутствует — предполагается, что вызовы циклов происходят из одного потока.
+    \item \textbf{Макросы с неочевидными именами}. Например, \texttt{DEV\_PRESENT\_S(p)} раскрывается в объявление ссылки на структуру \texttt{present\_s}. Это затрудняет отладку.
+    \item \textbf{Потенциальные ошибки в алгоритмах}. В \texttt{dev::switch\_to\_mode} используется \texttt{mode\_id == front::dev::modes::idle} как особый случай, но в \texttt{mode} нет виртуального деструктора — возможно, проблема с удалением.
+    \item \textbf{Незавершённые части}. В \texttt{math.hpp} много закомментированного кода, некоторые функции не реализованы (например, \texttt{transform::forward}).
+    \item \textbf{Жёсткая связь с \texttt{robosd\_system}}. Библиотека полагается на системные функции (таймер, очереди, guard), что усложняет перенос на другие платформы.
+    \item \textbf{Управление памятью}. В \texttt{vartree} используются \texttt{new} без соответствующих \texttt{delete} (кроме \texttt{free}), но \texttt{free} не вызывается автоматически. Пользователь должен явно вызывать \texttt{burst::var::free()} при завершении.
+    \item \textbf{Ошибки в коде}. Например, в \texttt{board::begin\_} после \texttt{system::start} вызывается \texttt{raise\_panic\_(front::board::panics::bits::config)} — это поднимает панику конфигурации, хотя плата только запускается. Возможно, это intentional, но выглядит странно.
+\end{enumerate}
+
+\subsection{Заключение}
+
+Библиотека \texttt{burst} является мощным инструментом для построения встраиваемых систем управления, но требует от разработчика глубокого понимания её внутреннего устройства. Многие механизмы реализованы качественно, однако код содержит следы эволюции и нуждается в рефакторинге и документировании. При использовании следует быть готовым к доработке недостающих частей и тщательному тестированию.
+
+\subsection{Центральный модуль \texttt{burst.hpp}}
+
+Файл \texttt{burst.hpp} является главным заголовочным файлом библиотеки \texttt{burst}. Он объединяет все основные компоненты: механизм асинхронных запросов (\texttt{request}), базовый класс устройства (\texttt{dev}) с поддержкой режимов работы, класс платы (\texttt{board}) как корневой диспетчер, систему слотов выполнения (\texttt{slot}) и вспомогательный шаблон таймера (\texttt{timer\_t}). Здесь также определены макросы для отладки и доступа к глобальным объектам.
+
+\subsubsection{Общие определения}
+
+В начале файла подключаются необходимые заголовки и задаются псевдонимы для временных типов:
+
+\begin{lstlisting}[caption={Time type aliases}]
+typedef robo::time_us_t time_us_t;
+typedef robo::time_ms_t time_ms_t;
+static inline time_us_t time_us(void) {
+    #if ROBO_APP_SYSTEM_ENABLED
+    return ::robo::system::time_us();
+    #else
+    return 0;
+    #endif
+}
+static inline time_ms_t time_ms(void) { ... }
+\end{lstlisting}
+
+Эти функции-обёртки позволяют получать текущее системное время, абстрагируясь от наличия системного слоя.
+
+\subsubsection{Класс \texttt{request} — асинхронный запрос}
+
+Класс \texttt{request} реализует механизм двухфазного асинхронного вызова между контекстами frontend и backend. Он хранит указатели на делегаты \texttt{query} (основное действие) и \texttt{confirm} (подтверждение), а также внутренний статус (\texttt{none}, \texttt{query}, \texttt{confirm}).
+
+Основные методы:
+\begin{itemize}
+    \item \texttt{void post()} — помещает запрос в соответствующую очередь (frontend или backend) в зависимости от текущего контекста. Статус устанавливается в \texttt{query}.
+    \item \texttt{static void front\_perfom()} — извлекает запросы из очереди frontend и выполняет их. Если запрос имеет статус \texttt{query}, вызывается \texttt{query}; если есть \texttt{confirm}, запрос перемещается в очередь backend со статусом \texttt{confirm}. Если статус \texttt{confirm}, вызывается \texttt{confirm} и запрос завершается.
+    \item \texttt{static void backend\_perfom()} — аналогично, но для очереди backend.
+\end{itemize}
+
+В файле реализации (\texttt{burst.cpp}) определены глобальные очереди:
+\begin{lstlisting}
+robo::safe_ring_t<guard_t, BURST_BACKEND_QUEUE_SIZE_BITS, request*> backend_queue;
+robo::safe_ring_t<guard_t, BURST_FRONT_QUEUE_SIZE_BITS, request*> frontend_queue;
+\end{lstlisting}
+Они используют потокобезопасный кольцевой буфер с параметрами размера, задаваемыми макросами.
+
+\textbf{Идея:} Позволить безопасно передавать выполнение кода из одного контекста в другой. Например, запрос, созданный в backend, может быть обработан во frontend, и наоборот. Это основа для взаимодействия реального времени с менее критичными задачами.
+
+\textbf{Как использовать:} Наследовать от \texttt{burst::request} и определить (или установить) указатели \texttt{query} и \texttt{confirm} на нужные делегаты. Затем вызвать \texttt{post()}. В циклах frontend и backend необходимо периодически вызывать \texttt{front\_perfom()} и \texttt{backend\_perfom()} соответственно (обычно это делается в соответствующих слотах платы).
+
+\subsubsection{Класс \texttt{dev} — устройство с режимами}
+
+Класс \texttt{dev} является базовым для всех устройств. Он инкапсулирует общую логику: идентификатор, ссылки на конфигурацию, состояние, действие и обратную связь, а также управление режимами работы.
+
+Основные вложенные типы и поля:
+\begin{itemize}
+    \item \texttt{typedef robo::list::unique<dev, int> map} — список устройств с уникальным ключом (используется платой).
+    \item \texttt{present\_s} — структура состояния: \texttt{mode} (текущий режим), \texttt{panic} (битовая маска паник), а при включённой опции — поля для контроля потери связи с мастером.
+    \item \texttt{config\_s} — конфигурация: \texttt{tag} (идентификатор) и, опционально, \texttt{alive\_period\_us}.
+    \item \texttt{action\_s} и \texttt{feedback\_s} — структуры, определённые в \texttt{dev.front.hpp}, для обмена командами и статусом с внешним миром.
+    \item \texttt{noreset\_panic\_mask} — маска паник, которые не сбрасываются автоматически (по умолчанию \texttt{master\_lost} и \texttt{board}).
+    \item \texttt{actual\_mode\_} — указатель на текущий активный режим.
+    \item \texttt{modes\_} — список всех режимов устройства (интрузивный список с ключом по идентификатору режима).
+    \item \texttt{action\_enabled\_} — флаг разрешения применения действий.
+\end{itemize}
+
+Конструктор \texttt{dev} принимает идентификатор, ссылки на конфигурацию, состояние, действие и обратную связь, и автоматически регистрирует устройство в глобальном списке платы (\texttt{board::devs\_()}).
+
+Класс \texttt{mode} — вложенный абстрактный класс, представляющий режим работы. Содержит чисто виртуальные методы:
+\begin{itemize}
+    \item \texttt{applay\_action()} — применить внешнее действие (например, установить задание).
+    \item \texttt{start()}, \texttt{stop()} — запуск и останов режима.
+    \item \texttt{loopA()}, \texttt{loopB()}, \texttt{loopC()} — три уровня циклических вызовов (для разных приоритетов).
+    \item \texttt{frontend\_loop()} — вызов из frontend-контекста.
+\end{itemize}
+Конструктор \texttt{mode(int \_id, dev\& \_dev)} регистрирует режим в устройстве.
+
+Важные методы \texttt{dev}:
+\begin{itemize}
+    \item \texttt{void raise\_panic(uint8\_t \_flag)} — устанавливает бит паники, вызывает \texttt{perform\_panic()} и обновляет время последней паники в плате.
+    \item \texttt{void reset\_panic(uint8\_t \_flag)}, \texttt{reset\_panics(uint32\_t \_mask)} — сброс паник.
+    \item \texttt{void master\_alive()} (опционально) — сброс паники \texttt{master\_lost} и обновление метки времени.
+    \item \texttt{void switch\_to\_mode(int \_mode\_id)} — переключение на указанный режим. Если режим не найден или есть паника, переводит в \texttt{idle}. Вызывается только из backend.
+    \item \texttt{void loopA()}, \texttt{loopB()}, \texttt{loopC()}, \texttt{frontend\_loop()} — вызываются из соответствующих слотов платы и делегируют работу текущему режиму, а также обрабатывают смену режима и действия.
+    \item \texttt{void perform\_panic()} — при панике переводит устройство в \texttt{idle} (если ещё не в нём).
+    \item \texttt{void action\_update()} — устанавливает флаг \texttt{action\_.action\_actual} для уведомления о новом действии.
+\end{itemize}
+
+Также предоставлены шаблонные методы для доступа к структурам с правильным типом (\texttt{action<T>()}, \texttt{present<T>()}, \texttt{config<T>()}, \texttt{feedback<T>()}) и макросы для удобного объявления ссылок (\texttt{DEV\_PRESENT\_S(p)} и т.п.).
+
+\textbf{Идея:} Устройство живёт в нескольких режимах, каждый из которых реализует специфическое поведение. Переключение режимов происходит либо по команде извне (через поле \texttt{action\_.mode}), либо автоматически при панике. Циклические вызовы (\texttt{loopA/B/C}) позволяют организовать многоуровневую обработку (например, быстрый контур, медленный контур, диагностика).
+
+\textbf{Как использовать:}
+\begin{enumerate}
+    \item Определить структуры \texttt{config\_s}, \texttt{present\_s}, \texttt{action\_s}, \texttt{feedback\_s}, специфичные для конкретного устройства.
+    \item Создать классы-наследники \texttt{dev::mode} для каждого режима, реализовав виртуальные методы.
+    \item В конструкторе устройства создать экземпляры режимов (они автоматически зарегистрируются).
+    \item В циклах платы вызывать соответствующие методы устройства.
+\end{enumerate}
+
+\subsubsection{Класс \texttt{board} — плата (корневой диспетчер)}
+
+\texttt{board} реализован как синглтон (статический экземпляр \texttt{instance\_}). Он управляет списком устройств, слотами выполнения, обрабатывает паники и защиту, а также предоставляет методы жизненного цикла.
+
+Структура \texttt{config\_s} платы содержит:
+\begin{itemize}
+    \item \texttt{vercion} — версия конфигурации.
+    \item \texttt{wait\_config\_on\_startup} — ждать ли конфигурации после старта.
+    \item \texttt{panics} — подструктура с параметрами защиты (таймаут сброса паник, пороги температуры, напряжения, тока и т.д.).
+\end{itemize}
+
+Состояние платы хранится в \texttt{present\_s}:
+\begin{itemize}
+    \item \texttt{panics} — битовая маска активных паник.
+    \item \texttt{last\_panic\_us} — время последней паники.
+    \item \texttt{command} — текущая команда (например, \texttt{configure}).
+    \item \texttt{status} — статус платы (\texttt{startuped}, \texttt{configure}, \texttt{restart}, \texttt{normal}).
+    \item \texttt{tp\_verb} — уровень трассировки (для отладки).
+\end{itemize}
+
+Система слотов (\texttt{slot}) — ключевая для организации периодических вызовов. \texttt{slot} содержит список делегатов (наследников \texttt{slot::delegat}), которые вызываются при выполнении слота. Предопределённые слоты:
+
+\begin{itemize}
+    \item \texttt{begin} — вызывается один раз при инициализации.
+    \item \texttt{start} — вызывается после успешного старта.
+    \item \texttt{startup} — вызывается в процессе запуска.
+    \item \texttt{realtime} — для задач жёсткого реального времени (если включено).
+    \item \texttt{backend} — основной цикл backend.
+    \item \texttt{frontend} — основной цикл frontend.
+    \item \texttt{halt} — при панике.
+    \item \texttt{ready} — после перехода в нормальный режим.
+    \item \texttt{reconfig} — при переконфигурации.
+    \item Массив \texttt{periodic} заданного размера (\texttt{slot\_count}) — для многофазных циклических задач.
+\end{itemize}
+
+Класс \texttt{slot::delegat} — базовый для всех функций, которые можно привязать к слоту. Он предоставляет методы \texttt{attach} и \texttt{dettach} для подключения к конкретному слоту (по индексу или \texttt{kind}). Для удобства определены готовые типы делегатов:
+\begin{itemize}
+    \item \texttt{simple} — для обычных функций.
+    \item \texttt{lambda} — для объектов \texttt{robo::lambda}.
+    \item \texttt{member<C>} — для методов класса.
+\end{itemize}
+
+Методы \texttt{board} для управления жизненным циклом:
+\begin{itemize}
+    \item \texttt{static void begin(time\_us\_t \_period\_us)} — инициализация платы. Вызывает \texttt{system::begin()}, выполняет слот \texttt{begin}, инициализирует сеть и дерево переменных, запускает системный таймер, поднимает панику \texttt{config} и выполняет слот \texttt{start}.
+    \item \texttt{static void realtime\_loop()} — если включён отдельный слот реального времени, вызывает его.
+    \item \texttt{static void backend\_loop()} — основной цикл backend. Вызывает \texttt{realtime\_loop} (если не выделен отдельно), \texttt{system::backend\_loop()}, затем поочерёдно выполняет слоты \texttt{periodic[slot\_index]}, \texttt{backend} и инкрементирует индекс. Также опрашивает сетевые потоки.
+    \item \texttt{static void frontend\_loop()} — цикл frontend. Реализует конечный автомат состояний платы (\texttt{startuped}, \texttt{restart}, \texttt{configure}, \texttt{normal}), вызывает соответствующие слоты, обрабатывает реконфигурацию, вызывает \texttt{system::frontend\_loop()}, слот \texttt{frontend}, сетевые опросы и защиту.
+    \item \texttt{static void raise\_panic(uint32\_t \_flag)}, \texttt{reset\_panic} — управление паниками платы, распространение паник на устройства.
+    \item \texttt{static void reconfig\_query()} — увеличивает счётчик запросов на реконфигурацию.
+    \item \texttt{static bool if\_configure()} — проверяет, находится ли плата в режиме конфигурации.
+\end{itemize}
+
+Класс \texttt{timer\_t< K, D>} — шаблон для создания периодических таймеров. Параметр \texttt{K} — тип ключа (например, \texttt{slot::kind}), \texttt{D} — тип делегата (должен быть наследником \texttt{slot::delegat}). Таймер хранит период, флаг однократности и состояние. В операторе \texttt{()} проверяет, не пора ли вызвать делегат. Пример использования приведён в комментариях.
+
+\subsubsection{Макросы отладки}
+
+\begin{lstlisting}
+#if BURST_DEBUG_TP_ENABLED == 1
+#define debug_tp_on(n)  burst::tp.on(n)
+#define debug_tp_off(n)  burst::tp.off(n)
+#else
+#define debug_tp_on(n)
+#define debug_tp_off(n)
+#endif
+\end{lstlisting}
+
+Позволяют включать трассировку выполнения (используется внутри циклов).
+
+\subsubsection{Ключевые идеи, заложенные в дизайн}
+
+\begin{enumerate}
+    \item \textbf{Разделение контекстов} через механизм запросов (\texttt{request}) и очереди — безопасное взаимодействие между frontend и backend.
+    \item \textbf{Устройство как конечный автомат} с набором режимов — упрощает реализацию сложного поведения.
+    \item \textbf{Слоты выполнения} — гибкая система подписки на различные фазы циклов, позволяющая добавлять функциональность без изменения ядра.
+    \item \textbf{Иерархия паник} — паники платы распространяются на все устройства, а устройства могут иметь собственные паники. Автоматический сброс по таймауту.
+    \item \textbf{Поддержка конфигурации и дерева переменных} — возможность настраивать параметры и наблюдать за состоянием в реальном времени.
+    \item \textbf{Минимизация зависимостей} через макросы условной компиляции — можно отключить ненужные функции (защиту, дерево переменных, трассировку).
+\end{enumerate}
+
+\subsubsection{Недоработки и предложения по доработке}
+
+\begin{enumerate}
+    \item \textbf{Сложность и связанность}: класс \texttt{board} слишком много знает об остальных компонентах (устройства, слоты, дерево переменных, сеть). Желательно выделить отдельные подсистемы.
+    \item \textbf{Отсутствие документации по использованию}: нет примеров создания конкретного устройства и режимов. Пользователь вынужден изучать код.
+    \item \textbf{Неконсистентность имён}: \texttt{applay\_action} (опечатка), \texttt{perfom} (вместо \texttt{perform}), \texttt{dettach} (вместо \texttt{detach}). Это затрудняет чтение.
+    \item \textbf{Потенциальные проблемы с потоками}: хотя очереди защищены, прямой доступ к полям устройств из разных контекстов без синхронизации может привести к гонкам. В коде используются \texttt{guard\_\_} в некоторых местах, но не везде.
+    \item \textbf{Избыточность слотов}: три уровня \texttt{loopA/B/C} могут быть не нужны; можно обойтись одним с приоритетами.
+    \item \textbf{Жёсткая привязка к \texttt{robo::system}}: функции времени и guard используют системный слой, что усложняет перенос на другие платформы.
+    \item \textbf{Нет проверки на переполнение очередей запросов}: \texttt{try\_put} только ассертится при неудаче, но в реальной системе это может привести к потере запросов. Лучше реализовать механизм повторных попыток или увеличить размер.
+    \item \textbf{Неполная реализация защиты}: функции типа \texttt{voltage\_get\_pp()} не определены в библиотеке — предполагается, что их предоставит пользователь. Это не очевидно.
+    \item \textbf{Управление памятью}: в слотах используются \texttt{new} для создания ссылок, но нет автоматического удаления. Метод \texttt{slot::free()} удаляет их, но вызывается ли он где-то? В \texttt{board::slots::free()} есть вызовы, но он нигде не вызывается (кроме, возможно, в деструкторе, но деструктор \texttt{board} пуст). Это утечка.
+\end{enumerate}
+
+\subsubsection{Пример гипотетического использования}
+
+\begin{lstlisting}[caption={Creating a simple device with one mode}]
+#include "burst++/burst.hpp"
+
+struct MyConfig : public burst::dev::config_s {
+    float param;
+};
+
+struct MyPresent : public burst::dev::present_s {
+    float value;
+};
+
+struct MyAction : public burst::front::dev::action_s {
+    float target;
+};
+
+struct MyFeedback : public burst::front::dev::feedback_s {
+    float actual;
+};
+
+class MyMode : public burst::dev::mode {
+public:
+    MyMode(int id, burst::dev& dev) : burst::dev::mode(id, dev) {}
+protected:
+    void start() override { /* initialization */ }
+    void stop() override { /* termination */ }
+    void loopA() override {
+        auto& present = owner().present<MyPresent>();
+        auto& action = owner().action<MyAction>();
+        // ... computations ...
+    }
+    void loopB() override {}
+    void loopC() override {}
+    void frontend_loop() override {}
+    void applay_action() override {
+        auto& action = owner().action<MyAction>();
+        // apply action.target
+    }
+};
+
+class MyDevice : public burst::dev {
+public:
+    MyDevice(int id, const MyConfig& cfg, MyPresent& pr, MyAction& act, MyFeedback& fb)
+        : burst::dev(id, cfg, pr, act, fb) {
+        new MyMode(1, *this); // mode 1
+    }
+};
+
+// Global objects
+MyConfig cfg = { .tag = 0x1234, .param = 1.0 };
+MyPresent pr;
+MyAction act;
+MyFeedback fb;
+MyDevice dev(1, cfg, pr, act, fb);
+
+void setup() {
+    burst::board::setup(board_config);
+    burst::board::begin(1000); // period 1000 us
+}
+
+void loop() {
+    burst::board::frontend_loop();
+}
+\end{lstlisting}
+
+\subsubsection{Примеры использования слотов}
+
+Рассмотрим несколько практических примеров подключения функций к различным слотам выполнения.
+
+\textbf{Пример 1: Подключение простой функции к слоту \texttt{backend}.}
+
+\begin{lstlisting}[caption={Attaching a simple function to the backend slot}]
+#include "burst++/burst.hpp"
+
+void my_backend_task() {
+    // This will be called in every backend cycle
+    burst::debug_tp_on(1); // example trace
+}
+
+// In some initialization function:
+burst::board::slot::simple backend_task(
+    burst::board::slot::kind::backend,  // attach to backend slot
+    my_backend_task                      // function to call
+);
+// The task is now attached and will be executed automatically.
+\end{lstlisting}
+
+\textbf{Пример 2: Использование лямбда-выражения для слота \texttt{frontend}.}
+
+\begin{lstlisting}[caption={Attaching a lambda to the frontend slot}]
+#include "burst++/burst.hpp"
+
+// Create a lambda object
+static robo::lambda<void()> my_lambda = []() {
+    // Frontend work
+    burst::board::raise_panic(0); // example
+};
+
+// Attach it to the frontend slot
+burst::board::slot::lambda frontend_task(
+    burst::board::slot::kind::frontend,
+    my_lambda
+);
+\end{lstlisting}
+
+\textbf{Пример 3: Подключение метода класса к слоту \texttt{periodic[0]}.}
+
+\begin{lstlisting}[caption={Attaching a class method to a periodic slot}]
+class MyController {
+public:
+    void periodic_update() {
+        // Called in periodic slot 0
+        // ...
+    }
+};
+
+MyController ctrl;
+
+// Attach member function to periodic slot 0
+burst::board::slot::member<MyController> periodic_task(
+    0,                          // periodic slot index (0)
+    ctrl,
+    &MyController::periodic_update
+);
+\end{lstlisting}
+
+\textbf{Пример 4: Подключение одной функции к нескольким слотам одновременно.}
+
+Метод \texttt{attach} поддерживает передачу массива индексов или списка инициализации.
+
+\begin{lstlisting}[caption={Attaching a function to multiple slots}]
+void multi_slot_task() {
+    // Will be called in slots 0, 2, and 5
+}
+
+// Using an array
+int slots[] = {0, 2, 5};
+burst::board::slot::simple multi_task(
+    slots, 3,          // array and count
+    multi_slot_task
+);
+
+// Using initializer list (C++11)
+burst::board::slot::simple multi_task2(
+    {0, 2, 5},
+    multi_slot_task
+);
+\end{lstlisting}
+
+\textbf{Пример 5: Создание собственного класса делегата.}
+
+Если нужно более сложное поведение (например, хранить состояние), можно унаследоваться от \texttt{slot::delegat}.
+
+\begin{lstlisting}[caption={Custom delegate class}]
+class MyDelegate : public burst::board::slot::delegat {
+    int counter_;
+public:
+    MyDelegate() : counter_(0) {}
+    void operator()() override {
+        ++counter_;
+        if (counter_ % 100 == 0) {
+            // do something every 100 calls
+        }
+    }
+};
+
+MyDelegate my_delegate;
+// Attach manually
+my_delegate.attach(burst::board::slot::kind::backend);
+// Or use the built-in attach mechanism if needed
+\end{lstlisting}
+
+\textbf{Пример 6: Использование таймера \texttt{timer\_t}.}
+
+Таймер позволяет вызывать функцию с заданным периодом, используя слоты.
+
+\begin{lstlisting}[caption={Using timer\_t for periodic execution}]
+#include "burst++/burst.hpp"
+
+void timer_function() {
+    // This will be called every 5000 us (5 ms)
+}
+
+// Create a timer attached to frontend slot, period 5000 us, not one-shot
+burst::timer_t<burst::board::slot::kind, burst::board::slot::simple> my_timer(
+    burst::board::slot::kind::frontend,  // slot to run in
+    5000,                                 // period in microseconds
+    false,                                // not one-shot
+    timer_function                         // function to call
+);
+
+// The timer starts automatically upon construction (if period given).
+// To start later:
+// my_timer.start(5000);
+
+// To stop:
+// my_timer.stop();
+\end{lstlisting}
+
+\textbf{Примечания:}
+\begin{itemize}
+    \item Все делегаты должны быть созданы до вызова \texttt{burst::board::begin()}, если они должны работать с самого старта. Однако можно создавать и позже, и они будут автоматически добавлены в соответствующие слоты.
+    \item Для удаления делегата из слота используйте метод \texttt{dettach()} (например, \texttt{my\_delegate.dettach(burst::board::slot::kind::backend)}).
+    \item Метод \texttt{finish()} предназначен для специальной обработки при завершении (например, перемещение делегата из startup в startup\_holder).
+\end{itemize}
+\subsection{Дерево переменных (\texttt{vartree.hpp}, \texttt{vartree.cpp})}
+
+Модуль \texttt{vartree} предоставляет механизм для регистрации иерархических переменных, доступных по имени через древовидную структуру. Он используется для организации конфигурационных параметров, наблюдаемых переменных состояния и других данных, которые должны быть доступны для чтения и записи из внешних источников (например, по протоколу FreeMASTER, CANopen или через собственный протокол). Ключевая особенность — возможность строить путь к переменной с помощью стека операций \texttt{push} и \texttt{pop}, а затем автоматически вычислять хеш полного пути для быстрого поиска.
+
+\subsubsection{Основные структуры и перечисления}
+
+\begin{itemize}
+    \item \texttt{tags} — перечисление тегов для элементов дерева: \texttt{push} (начало группы), \texttt{var} (переменная), \texttt{pop} (конец группы).
+    \item \texttt{ref\_s} — базовый двухбайтовый заголовок для всех элементов дерева. Содержит 2-битный тег и 6 резервных бит.
+    \item \texttt{mode} — перечисление уровней доступа: \texttt{none}, \texttt{tuning}, \texttt{action}, \texttt{config}, \texttt{full}. Используется для фильтрации при регистрации.
+    \item \texttt{node\_s} — структура для элемента \texttt{push}, хранит имя группы.
+    \item \texttt{descriptor} — 16-битный дескриптор типа переменной. Упакован с битовыми полями:
+        \begin{itemize}
+            \item \texttt{tag} — всегда 1 для переменной (дублирует \texttt{ref\_s.tag}).
+            \item \texttt{len} — длина данных в байтах (до 1023).
+            \item \texttt{bsign} — знаковый тип.
+            \item \texttt{bconst} — константная переменная (только для чтения).
+            \item \texttt{real} — признак вещественного числа (float/double).
+            \item \texttt{reconfig\_need} — флаг, указывающий, что изменение переменной требует реконфигурации системы.
+        \end{itemize}
+        Объединение позволяет обращаться к дескриптору как к 16-битному целому или двум байтам.
+    \item \texttt{descriptor\_enco} — constexpr функция для формирования дескриптора по параметрам.
+    \item \texttt{types} — перечисление предопределённых типов (uint8, int8, uint16, int16, uint32, int32, uint64, int64, real, ext, time\_us, и их константные версии). Значения вычисляются через \texttt{descriptor\_enco}.
+    \item \texttt{request} — константы для протокола: \texttt{index} (поиск по ключу), \texttt{get} (чтение), \texttt{put} (запись).
+    \item \texttt{error} — коды ошибок: \texttt{none}, \texttt{invalid\_key}, \texttt{invalid\_index}, \texttt{invalid\_offset}, \texttt{invalid\_length}, \texttt{invalid\_mode}.
+    \item \texttt{header\_s} — заголовок запроса/ответа (2 байта): 2 бита \texttt{query}, 4 бита \texttt{error}, 10 бит \texttt{ix} (индекс).
+    \item \texttt{record\_s} — запись переменной: дескриптор, имя, ключ (хеш), указатель на данные.
+\end{itemize}
+
+\subsubsection{Глобальные переменные и функции}
+
+В \texttt{vartree.cpp} определены:
+
+\begin{itemize}
+    \item \texttt{path} — буфер для построения пути (размер \texttt{path\_size}).
+    \item \texttt{var\_count} — счётчик зарегистрированных переменных (только для статистики).
+    \item \texttt{index} — динамический массив указателей на \texttt{ref\_s} (размер \texttt{pool\_size}).
+    \item \texttt{count} — текущее количество элементов в массиве.
+\end{itemize}
+
+Функции:
+\begin{itemize}
+    \item \texttt{void reg(ref\_s*)} — добавляет элемент в глобальный массив. Проверяет, не превышен ли \texttt{pool\_size}.
+    \item \texttt{void push(robo::cstr name)} — создаёт узел \texttt{node\_s} с тегом \texttt{push} и регистрирует его.
+    \item \texttt{void pop()} — создаёт элемент с тегом \texttt{pop} и регистрирует его.
+    \item \texttt{template<typename T> void reg(types type, const T\& addr, robo::cstr name, bool reconfig\_need)} — создаёт запись переменной, заполняет дескриптор (проверяет совместимость с \texttt{reconfig\_need}), сохраняет адрес и имя, регистрирует элемент. Увеличивает \texttt{var\_count}.
+    \item \texttt{void free()} — удаляет все зарегистрированные элементы (вызывает \texttt{delete} для каждого).
+    \item \texttt{int find(int key)} — линейный поиск индекса переменной по ключу (хешу). Возвращает индекс или -1.
+    \item \texttt{const record\_s* get(int index)} — возвращает указатель на запись переменной по индексу, если элемент является переменной.
+    \item \texttt{int proto(const uint8\_t* in, uint8\_t* out)} — обработчик протокольных запросов. Поддерживает команды \texttt{index}, \texttt{get}, \texttt{put}. Возвращает длину ответа.
+    \item \texttt{size\_t sprintf(record\_s\& rec, char\_t* buf, size\_t max\_sz)} — форматирует значение переменной в строку (для отладки).
+    \item \texttt{ref\_s** first()}, \texttt{ref\_s** last()} — итераторы для обхода всех элементов.
+    \item \texttt{void reindex()} — перестраивает ключи (хеши) для всех переменных, проходя по дереву и вычисляя полный путь. Вызывается после регистрации всех переменных (обычно в слоте \texttt{start} платы).
+\end{itemize}
+
+\subsubsection{Построение дерева и регистрация переменных}
+
+Дерево строится с помощью операций \texttt{push} и \texttt{pop}, аналогичных переходу по каталогам. Например:
+
+\begin{lstlisting}[caption={Building a variable tree}]
+burst::var::push(RT("motor"));
+burst::var::reg(burst::var::types::int16, speed, RT("speed"));
+burst::var::push(RT("pid"));
+burst::var::reg(burst::var::types::float, kp, RT("Kp"));
+burst::var::reg(burst::var::types::float, ki, RT("Ki"));
+burst::var::pop(); // exit pid group
+burst::var::pop(); // exit motor group
+\end{lstlisting}
+
+После завершения регистрации необходимо вызвать \texttt{reindex()}, которая обходит все элементы в порядке их регистрации, эмулируя стек, и вычисляет для каждой переменной хеш полного пути (например, \texttt{"motor.speed"}, \texttt{"motor.pid.Kp"}). Хеш используется в протоколе для быстрого поиска.
+
+\subsubsection{Протокол доступа}
+
+Функция \texttt{proto()} реализует простой протокол поверх байтового потока. Формат запроса/ответа:
+
+\begin{itemize}
+    \item \texttt{index} — запрос: 1 байт (query=index) + 4 байта ключ. Ответ: заголовок (query, error, ix) + 2 байта дескриптора.
+    \item \texttt{get} — запрос: заголовок с query=get и ix=индекс переменной. Ответ: заголовок + данные переменной (до \texttt{max\_len} байт).
+    \item \texttt{put} — запрос: заголовок с query=put + данные. Ответ: заголовок.
+\end{itemize}
+
+Протокол защищён мьютексом (\texttt{robo::system::guard}) при доступе к данным. Для переменных с флагом \texttt{reconfig\_need} запись разрешена только в режиме конфигурации (проверяется через \texttt{board::if\_configure()}).
+
+\subsubsection{Вспомогательные классы для отображения}
+
+\begin{itemize}
+    \item \texttt{showpro} — абстрактный базовый класс для обхода дерева и вывода. Содержит виртуальный метод \texttt{printf(record\_s*, path)}. Реализует логику прохода по стеку и построения пути.
+    \item \texttt{show} — конкретная реализация \texttt{showpro}, которая выводит информацию о переменной в формате: путь, длина, адрес (смещение). Использует лямбду для вывода ASCII-строки. Предназначен для интеграции с FreeMASTER (использует макросы \texttt{FMSTR\_ADDRESS\_OFFSET}).
+\end{itemize}
+
+\subsubsection{Интеграция с \texttt{burst::board}}
+
+В не-ультракомпактном режиме (\texttt{ROBO\_APP\_ULTRACOMPACT == 0}) создаётся глобальный объект \texttt{start} — делегат слота \texttt{start} платы, который при старте вызывает \texttt{reindex()}. Это обеспечивает автоматическую переиндексацию после регистрации всех переменных.
+
+\subsubsection{Ключевые идеи и достоинства}
+
+\begin{itemize}
+    \item Иерархическая организация переменных упрощает навигацию и группировку.
+    \item Компактный дескриптор (16 бит) описывает тип, размер, знак, константность и требования к реконфигурации.
+    \item Протокол позволяет читать и писать переменные по индексу (после поиска по ключу), что эффективно для встраиваемых систем.
+    \item Возможность защитить переменные от записи вне режима конфигурации (\texttt{reconfig\_need}).
+    \item Автоматический пересчёт хешей после регистрации исключает необходимость ручного задания ключей.
+\end{itemize}
+
+\subsubsection{Недоработки и несуразности}
+
+\begin{enumerate}
+    \item \textbf{Линейный поиск}: функция \texttt{find()} выполняет последовательный перебор всех элементов. При большом количестве переменных это может быть медленно. Хеш-таблица была бы эффективнее.
+    \item \textbf{Фиксированный размер пула}: \texttt{pool\_size} определяется макросом \texttt{BURST\_VAR\_POOL\_SIZE} (по умолчанию 20). При превышении происходит аварийный останов (\texttt{ROBO\_APP\_ASSERT}). Для реальных проектов может потребоваться больший размер.
+    \item \textbf{Утечка памяти при повторной регистрации}: если вызвать \texttt{push} или \texttt{reg} несколько раз без вызова \texttt{free()}, элементы будут накапливаться в массиве, но старые не удаляются. Нет механизма переиспользования.
+    \item \textbf{Связь с \texttt{board}}: в коде \texttt{proto} и \texttt{reindex} используются вызовы \texttt{board::if\_configure()} и \texttt{board::reconfig\_query()}, что создаёт жёсткую зависимость от класса \texttt{board}. В ультракомпактном режиме используются собственные функции \texttt{if\_configure} и \texttt{reconfig\_query}, которые не определены (кроме как в \texttt{vartree.hpp} через условную компиляцию) — это может привести к ошибкам линковки.
+    \item \textbf{Неполный протокол}: закомментированные ветки \texttt{page\_get} и \texttt{page\_put} указывают на то, что изначально планировалась поддержка фрагментированного доступа к большим данным, но она не реализована.
+    \item \textbf{Использование \texttt{new} без \texttt{delete} в \texttt{reindex()}}: внутри \texttt{reindex} выделяются временные буферы \texttt{path} и \texttt{path\_stack\_buffer} через \texttt{new[]}, но они корректно удаляются в конце. Утечек нет.
+    \item \textbf{Русскоязычный комментарий}: в функции \texttt{proto} есть комментарий на русском: "todo мы не знаем, что за переменная - сервер получит сообщение неверной длины, но такое возможно при неверном desc". Это может вызвать проблемы при компиляции LaTeX, если вставить в листинг. Рекомендуется удалить или перевести.
+    \item \textbf{Отсутствие проверки на \texttt{nullptr} в \texttt{get()}}: функция \texttt{get} возвращает \texttt{nullptr} для не-переменных, но в \texttt{proto} это не всегда корректно обрабатывается (например, при \texttt{put} проверяется только наличие записи, но не тип).
+    \item \textbf{Неинициализированные поля}: в конструкторе \texttt{record\_s} не обнуляется \texttt{key} (устанавливается в 0) — это нормально, но потом перезаписывается в \texttt{reindex}. Однако если \texttt{reindex} не вызван, ключ останется нулевым, что может привести к коллизиям.
+\end{enumerate}
+
+\subsubsection{Примеры использования}
+
+\textbf{Регистрация переменных и запуск переиндексации:}
+
+\begin{lstlisting}[caption={Registering variables and reindexing}]
+#include "burst++/vartree.hpp"
+
+float temperature = 25.0;
+int32_t counter = 0;
+
+void register_my_vars() {
+    burst::var::push(RT("sensors"));
+    burst::var::reg(burst::var::types::real, temperature, RT("temp"));
+    burst::var::reg(burst::var::types::int32, counter, RT("counter"));
+    burst::var::pop();
+    // After all registrations, reindex will be called automatically
+    // by the board's start slot, or manually:
+    burst::var::reindex();
+}
+\end{lstlisting}
+
+\textbf{Чтение переменной по имени (через протокол):}
+
+\begin{lstlisting}[caption={Protocol usage example}]
+uint8_t request[5];
+uint8_t response[10];
+int32_t key = robo::hash("sensors.temp");
+request[0] = burst::var::request::index;
+memcpy(request+1, &key, 4);
+int len = burst::var::proto(request, response);
+// response now contains header and descriptor
+if (response[0] & 0x0F == burst::var::error::none) {
+    int ix = ((uint16_t)response[0] & 0x03FF); // extract index
+    request[0] = burst::var::request::get;
+    // set ix in header (assuming header is 2 bytes)
+    ((burst::var::header_s*)request)->query = burst::var::request::get;
+    ((burst::var::header_s*)request)->ix = ix;
+    len = burst::var::proto(request, response);
+    float value;
+    memcpy(&value, response+2, sizeof(float));
+}
+\end{lstlisting}
+
+\textbf{Использование класса \texttt{show} для вывода дерева:}
+
+\begin{lstlisting}[caption={Dumping the variable tree}]
+burst::var::show dumper;
+dumper.run([](const char* line) {
+    printf("%s\n", line);
+});
+// Output example:
+// sensors.temp	4	0x20001234
+// sensors.counter	4	0x20001238
+\end{lstlisting}
+
+\subsection{Интерфейс frontend (\texttt{dev.front.hpp})}
+
+Файл \texttt{dev.front.hpp} содержит определения, используемые для взаимодействия между внутренними механизмами библиотеки \texttt{burst} и внешним миром (например, протоколами верхнего уровня, такими как \texttt{servo}). Здесь задаются константы и структуры, описывающие команды, состояния, паники и каналы обратной связи, которые передаются между frontend-частью системы и устройствами.
+
+\subsubsection{Пространства имён и назначение}
+
+Всё содержимое расположено в пространстве имён \texttt{burst::front}. Внутри него выделены:
+
+\begin{itemize}
+    \item \texttt{board} — определения, относящиеся к плате (команды, статусы, паники).
+    \item \texttt{dev} — определения, относящиеся к устройствам (паники, структуры действий и обратной связи).
+    \item \texttt{tp\_verb} — уровни трассировки (используются макросами \texttt{debug\_tp\_on/off}).
+\end{itemize}
+
+Эти структуры не содержат логики, а только декларируют типы и константы, которые используются в основных классах \texttt{board} и \texttt{dev}.
+
+\subsubsection{Плата (\texttt{burst::front::board})}
+
+\begin{itemize}
+    \item \texttt{enum class commands} — возможные команды, передаваемые плате:
+        \begin{itemize}
+            \item \texttt{none} = 0
+            \item \texttt{configure} = 1
+        \end{itemize}
+    \item \texttt{enum class statuses} — состояния платы:
+        \begin{itemize}
+            \item \texttt{unknown} = 0
+            \item \texttt{startuped} — после инициализации
+            \item \texttt{configure} — режим конфигурации
+            \item \texttt{restart} — перезапуск
+            \item \texttt{normal} — нормальная работа
+        \end{itemize}
+    \item \texttt{namespace panics} — паники платы:
+        \begin{itemize}
+            \item \texttt{bits} — отдельные биты:
+                \begin{lstlisting}[caption={Board panic bits}]
+overvoltage = 0
+lovoltage = 1
+overcurrent = 2
+locurrent = 3
+overtemp = 4
+lotemp = 5
+config = 6
+sto_active = 7
+friendly_driver_in_trouble = 8
+                \end{lstlisting}
+            \item \texttt{masks} — соответствующие битовые маски (1 << бит). Обратите внимание на опечатку: \texttt{lovoltage} использует бит \texttt{overcurrent} (1 << 2) вместо (1 << 1) — это, вероятно, ошибка.
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Трассировка (\texttt{burst::front::tp\_verb})}
+
+Перечисление уровней для отладочной трассировки:
+\begin{lstlisting}[caption={Trace verbosity levels}]
+realtime = 1
+backend = 2
+frontend = 3
+loop = 4
+\end{lstlisting}
+Используется в макросах \texttt{debug\_tp\_on/off} для включения/выключения отладочных сигналов в соответствующих циклах.
+
+\subsubsection{Устройство (\texttt{burst::front::dev})}
+
+\begin{itemize}
+    \item \texttt{namespace panics} — паники устройства:
+        \begin{itemize}
+            \item \texttt{bits}: \texttt{master\_lost} = 0, \texttt{board} = 1, \texttt{last} = board.
+            \item \texttt{masks}: соответствующие маски.
+        \end{itemize}
+    \item \texttt{struct modes} — содержит только \texttt{idle = 0}. Это заготовка для определения режимов работы устройства; конкретные режимы задаются в наследниках \texttt{dev::mode}.
+    \item \texttt{struct action\_s} — структура, описывающая действие (команду), направляемую устройству. Содержит:
+        \begin{itemize}
+            \item Поле \texttt{command}, тип которого зависит от макросов условной компиляции:
+                \begin{itemize}
+                    \item Если определён \texttt{ROBO\_APP\_BURST\_SERVO\_SIDE} — используется \texttt{robo::common::devagent::action\_s}.
+                    \item Если определён \texttt{ROBO\_APP\_BURST\_SIDE} — используется \texttt{robo::common::devagent::commands::remote}.
+                \end{itemize}
+            \item \texttt{uint32\_t mode} — запрашиваемый режим работы.
+            \item \texttt{bool action\_actual} — флаг, сигнализирующий, что действие новое и должно быть применено.
+        \end{itemize}
+    \item \texttt{struct feedback\_s} — структура обратной связи от устройства:
+        \begin{itemize}
+            \item Поле \texttt{status} аналогично зависит от макроса.
+            \item \texttt{uint32\_t mode} — текущий режим устройства.
+            \item \texttt{bool fault} — признак неисправности.
+        \end{itemize}
+\end{itemize}
+
+Эти структуры используются в классе \texttt{dev} как ссылки на внешние объекты, предоставляемые пользователем. Таким образом, \texttt{dev} не владеет данными, а только наблюдает и изменяет их.
+
+\subsubsection{Использование в библиотеке}
+
+\begin{itemize}
+    \item Поля \texttt{action\_s::mode} и \texttt{action\_s::action\_actual} читаются в методе \texttt{dev::loopA} для определения необходимости переключения режима или применения действия.
+    \item Поле \texttt{feedback\_s::mode} может обновляться устройством для информирования о текущем режиме.
+    \item Паники платы (\texttt{board::panics}) используются в методах защиты (\texttt{board::realtime\_protection\_}, \texttt{frontend\_protection\_}) и распространяются на все устройства.
+    \item Паники устройства (\texttt{dev::panics}) устанавливаются и сбрасываются методами \texttt{dev::raise\_panic}, \texttt{reset\_panic}.
+\end{itemize}
+
+\subsubsection{Недоработки и замечания}
+
+\begin{enumerate}
+    \item \textbf{Опечатка в маске lovoltage}: в \texttt{board::panics::masks} поле \texttt{lovoltage} определено как \texttt{1 << bits::overcurrent} (2), тогда как должно быть \texttt{1 << bits::lovoltage} (1). Это может привести к неправильной обработке паники пониженного напряжения.
+    \item \textbf{Зависимость от \texttt{servo/robosd\_proto.hpp}}: структуры \texttt{action\_s} и \texttt{feedback\_s} используют типы из протокола \texttt{servo}, что создаёт жёсткую связь. Если проект не использует servo, эти макросы должны быть определены соответствующим образом, иначе возникнут ошибки компиляции.
+    \item \textbf{Неполнота}: перечисление \texttt{modes} содержит только \texttt{idle}, остальные режимы должны определяться пользователем. Это гибко, но требует дополнительной документации.
+    \item \textbf{Дублирование битов паник}: паники устройства включают \texttt{board} (общая паника от платы) и \texttt{master\_lost}. Нет возможности расширить список без изменения кода (так как \texttt{last} определён как board).
+    \item \textbf{Отсутствие комментариев}: файл не содержит пояснений, что затрудняет понимание назначения каждого поля. Например, неясно, как именно используется \texttt{action\_actual} и как часто его нужно сбрасывать.
+\end{enumerate}
+
+\subsection{Математическая библиотека (\texttt{math.hpp}, \texttt{math.cpp})}
+
+Модуль \texttt{burst::math} предоставляет два основных числовых пространства — \texttt{int15} (фиксированная точка 15 бит) и \texttt{real} (float), а также набор шаблонных классов и функций для эффективных вычислений, часто используемых в задачах управления двигателями и обработки сигналов. Библиотека включает табличные реализации тригонометрических функций, быстрый квадратный корень, операции с накоплением в расширенной точности и преобразования координат (Кларк, Парк). Многие функции предназначены для использования в циклах реального времени без вызовов стандартной математической библиотеки.
+
+\subsubsection{Структура \texttt{int15} — 15-битная фиксированная точка}
+
+Тип \texttt{int15} моделирует числа с фиксированной точкой в диапазоне $[-1, 1)$ с шагом $1/32768$. Он широко применяется в цифровых регуляторах, где важна детерминированность и скорость.
+
+\begin{itemize}
+    \item \textbf{Типы:}
+        \begin{itemize}
+            \item \texttt{discret\_t} = \texttt{int16\_t} — дискретное представление (собственно число в формате Q15).
+            \item \texttt{long\_discret\_t} = \texttt{int32\_t} — для промежуточных произведений.
+            \item \texttt{signal\_t} = \texttt{int16\_t} — основной тип сигнала.
+            \item \texttt{extended\_signal\_t} = \texttt{int64\_t} — для очень длинных аккумуляций.
+            \item \texttt{usignal\_t} = \texttt{uint16\_t}, \texttt{ulong\_signal\_t} = \texttt{uint32\_t} — беззнаковые версии.
+            \item \texttt{parameter\_t} = \texttt{int16\_t} — тип для коэффициентов.
+        \end{itemize}
+    \item \textbf{Константы:}
+        \begin{itemize}
+            \item \texttt{bits = 15}, \texttt{long\_bits = 31}.
+            \item \texttt{max = 32767}, \texttt{min = -max}.
+            \item \texttt{ones = max} (единица в формате Q15).
+            \item \texttt{long\_max = 2147483647}, \texttt{long\_min = -long\_max}.
+        \end{itemize}
+    \item \textbf{Функции преобразования:}
+        \begin{itemize}
+            \item \texttt{s\_round(double)}, \texttt{s\_frac(double)} — округление и преобразование double в Q15.
+            \item \texttt{l\_round(double)}, \texttt{l\_frac(double)} — для 32-битных.
+            \item \texttt{l\_rad2ceil(signal\_t)}, \texttt{s\_rad2ceil(signal\_t)} — преобразование радиан в целочисленное представление для фазовых аккумуляторов.
+            \item \texttt{ul2discret(uint32\_t)} — преобразование 32-битного беззнакового в Q15 со сдвигом.
+        \end{itemize}
+    \item \textbf{Статические математические функции:}
+        \begin{itemize}
+            \item \texttt{sin(signal\_t)}, \texttt{cos(signal\_t)} — используют таблицу с интерполяцией.
+            \item \texttt{sqrt(ulong\_signal\_t)} — быстрый приближённый корень.
+            \item \texttt{atan2(signal\_t, signal\_t)} — через таблицу арктангенса.
+        \end{itemize}
+\end{itemize}
+
+\subsubsection{Структура \texttt{real} — плавающая точка (float)}
+
+Аналогична \texttt{int15}, но оперирует с \texttt{float}. Поля:
+\begin{itemize}
+    \item \texttt{discret\_t = int16\_t}, \texttt{long\_discret\_t = int32\_t} — для совместимости с фиксированной точкой.
+    \item \texttt{signal\_t = float}, \texttt{parameter\_t = float}, \texttt{long\_signal\_t = float}.
+    \item Константы: \texttt{max}, \texttt{min} из \texttt{std::numeric\_limits<float>}, \texttt{pi = robo::pi<float>}, \texttt{discret\_max = 32767}.
+    \item Методы \texttt{sin}, \texttt{cos}, \texttt{sqrt}, \texttt{atan2} — обёртки над табличными реализациями из \texttt{math.cpp}.
+    \item \texttt{l\_rad2ceil} — преобразование угла в 32-битный фазовый аккумулятор.
+\end{itemize}
+
+\subsubsection{Шаблон \texttt{fixed\_point<digit>} — обобщение над \texttt{int15}}
+
+Класс наследует все свойства \texttt{digit} и добавляет множество полезных типов и функций для работы с фиксированной точкой.
+
+\begin{itemize}
+    \item \textbf{Типы:} те же, что у \texttt{digit} (discret\_t, long\_discret\_t, signal\_t и т.д.).
+    \item \textbf{Константы:} \texttt{max}, \texttt{min}, \texttt{ones}, \texttt{pi = max}.
+    \item \textbf{Математические константы (предвычисленные в Q15):}
+        \begin{itemize}
+            \item \texttt{sqrt3\_div\_2 = s\_frac($\sqrt{3}/2$)}
+            \item \texttt{scale = s\_frac($\sqrt{2}-1$)}
+            \item \texttt{sqrt2\_div\_2 = s\_frac($\sqrt{2}/2$)}
+            \item \texttt{one\_div\_3, one\_div\_sqrt3}
+        \end{itemize}
+    \item \textbf{Функции округления и насыщения:}
+        \begin{itemize}
+            \item \texttt{s\_round(const long\_signal\_t\&, const range\_s<T>\&, unsigned int, T\&)} — округление с проверкой диапазона.
+            \item \texttt{s\_sat(long\_signal\_t)} — насыщение в Q15.
+            \item \texttt{s\_inc} — инкремент с ограничением.
+        \end{itemize}
+    \item \textbf{Структуры для преобразования аналог-код:}
+        \begin{itemize}
+            \item \texttt{signal2discret\_s} — преобразует физический сигнал в дискретный код (с масштабированием и округлением). Поддерживает два режима: компактный (простое деление) и точный (с предварительным сдвигом для повышения точности).
+            \item \texttt{discret2signal} — обратное преобразование.
+        \end{itemize}
+    \item \textbf{Операции с накоплением:}
+        \begin{itemize}
+            \item \texttt{long\_signal\_u} — union, разбивающий 32-битное число на два 16-битных для извлечения старшей части после умножения.
+            \item \texttt{s\_extract(long\_signal\_t)} — извлекает старшие 15 бит из 32-битного произведения (с учётом округления).
+            \item \texttt{s\_mult(x1, x2)} — умножение двух Q15 с возвратом Q15.
+            \item \texttt{s\_dot(x1,y1,x2,y2)} — скалярное произведение.
+            \item \texttt{s\_fma(a,b,c)} — fused multiply-add.
+        \end{itemize}
+    \item \textbf{Структура \texttt{qa}} — квадратичная аппроксимация: $y = (gain \cdot x - offset) + qgain \cdot x^2$ с округлениями.
+    \item \textbf{Структура \texttt{lsf}} — линейные операции (dot, mult, sat) для длинных сигналов.
+    \item \textbf{Структура \texttt{pi}} — вспомогательные функции для ПИ-регулятора (дифференциальная и квадратичная составляющие).
+\end{itemize}
+
+\subsubsection{Шаблон \texttt{float\_point<q>} — обобщение над \texttt{real}}
+
+Аналогичен \texttt{fixed\_point}, но для чисел с плавающей точкой. Содержит:
+\begin{itemize}
+    \item Те же константы (sqrt3\_div\_2 и т.д.) вычисленные через \texttt{robo::csqrt}.
+    \item Функции округления \texttt{round\_s}, \texttt{round\_s} (статическая) для long\_signal\_t (который здесь тоже float).
+    \item Структуры \texttt{discret2signal}, \texttt{signal2discret\_s} с линейным преобразованием.
+    \item \texttt{lsf} — линейные операции без дополнительных сдвигов.
+    \item \texttt{pi} — аналогично, но без сдвигов.
+    \item \texttt{l\_angle\_round} — приводит угол к диапазону $[-\pi, \pi]$.
+\end{itemize}
+
+\subsubsection{Преобразования координат (закомментированный блок)}
+
+Внутри \texttt{math.hpp} присутствует большой блок, заключённый в \texttt{\#if 0 ... \#endif}, содержащий классы \texttt{cs\_t}, \texttt{ab\_t}, \texttt{abc\_t}, \texttt{dq\_t} и шаблонные реализации регуляторов (\texttt{to\_digit\_scale}, \texttt{ramp}, \texttt{fast\_filter}, \texttt{filter}). Этот код, по-видимому, является устаревшим или экспериментальным и не используется в текущей версии. Он включает преобразования Кларка/Парка с фиксированной точкой, а также обобщённые обработчики для каскадных регуляторов. Наличие этого кода свидетельствует о богатой истории развития библиотеки, но требует аккуратного обращения при включении.
+
+\subsubsection{Вспомогательные функции}
+
+\begin{itemize}
+    \item \texttt{range\_set} — устанавливает диапазон \texttt{\_dst} симметрично относительно нуля на основе абсолютного значения \texttt{\_src} и пределов \texttt{\_lim}.
+    \item \texttt{range\_apply} — ограничивает значение \texttt{\_src} заданным диапазоном.
+    \item \texttt{atan2\_t<driver>} — шаблонная constexpr-функция для вычисления арктангенса с использованием параметров драйвера (таблицы коэффициентов, битовые поля). Это низкоуровневый инструмент для создания быстрых табличных atan2.
+    \item \texttt{atan2\_drv\_t<number>}, \texttt{atan2\_drv\_13\_t<number>} — примеры драйверов для \texttt{atan2\_t}.
+\end{itemize}
+
+\subsubsection{Реализации в \texttt{math.cpp}}
+
+\begin{itemize}
+    \item Таблица синуса для \texttt{int15} — \texttt{mcgenSineTable256} (257 значений). Значения получены через макрос \texttt{S}, который вызывает \texttt{int15::s\_frac}. Таблица покрывает четверть периода, остальное достраивается симметрией.
+    \item Функция \texttt{mcsinPIxLUT} — интерполяция по таблице для угла в Q15, где полный круг соответствует $2\pi = 32768$ (т.е. $2^{15}$). Использует сдвиг на 6 бит для индексации.
+    \item \texttt{int15::sin} и \texttt{int15::cos} — просто вызывают \texttt{mcsinPIxLUT} с соответствующим аргументом.
+    \item Таблицы для квадратного корня: \texttt{dsqrtGainArray}, \texttt{dsqrtOffsetArray}, \texttt{dsqrtShift}. Алгоритм аппроксимирует корень кусочно-линейной функцией для чисел до $2^{24}$.
+    \item \texttt{int15::sqrt} — реализация с использованием этих таблиц.
+    \item Таблица арктангенса \texttt{tableAtan64} (64 значения) и функция \texttt{\_atan} для \texttt{int15::atan2}. Арктангенс вычисляется путём масштабирования аргумента и интерполяции.
+    \item \texttt{int15::atan2} — полная реализация четырёхквадрантного арктангенса с использованием симметрии.
+    \item Аналогичные таблицы и функции для \texttt{real} (с плавающей точкой): \texttt{real\_mcgenSineTable256}, \texttt{real\_mcsinPIxLUT}, \texttt{real::sin}, \texttt{real::cos}, \texttt{real\_atan\_} (таблица atan2, генерируемая через \texttt{robo::atan2\_table\_t}), \texttt{real\_atan\_\_}, \texttt{real::atan2}.
+    \item Функция \texttt{sin\_test} — тест, вызывающий обе реализации синуса для всего диапазона (используется для отладки).
+\end{itemize}
+
+\subsubsection{Ключевые идеи и достоинства}
+
+\begin{itemize}
+    \item \textbf{Единообразие}: интерфейсы \texttt{int15} и \texttt{real} унифицированы через шаблоны \texttt{fixed\_point} и \texttt{float\_point}, что позволяет писать алгоритмы, не зависящие от типа чисел.
+    \item \textbf{Быстродействие}: табличные тригонометрические функции и аппроксимация корня работают за константное время без вызова библиотечных функций.
+    \item \textbf{Точность}: использование расширенных типов (\texttt{long\_signal\_t}, \texttt{extended\_signal\_t}) для промежуточных вычислений минимизирует потерю точности.
+    \item \textbf{Гибкость}: структуры \texttt{signal2discret\_s} и \texttt{discret2signal} легко адаптируются под разные диапазоны и могут быть переконфигурированы.
+    \item \textbf{Повторное использование}: константы вроде \texttt{sqrt3\_div\_2} предвычислены и доступны везде.
+\end{itemize}
+
+\subsubsection{Недоработки и несуразности}
+
+\begin{enumerate}
+    \item \textbf{Закомментированный код}: большой блок в \texttt{math.hpp} (около 500 строк) отключён директивой \texttt{\#if 0}. Это может сбивать с толку и затрудняет понимание, какие части библиотеки действительно актуальны.
+    \item \textbf{Сложность \texttt{atan2\_t}}: функция использует множество битовых полей и констант, которые не документированы. Вероятно, она предназначена для генерации таблиц на этапе компиляции, но её код труднопонимаем.
+    \item \textbf{Магические числа}: в таблицах для корня и арктангенса используются жёстко заданные массивы без комментариев о происхождении и погрешности.
+    \item \textbf{Проверка границ}: в \texttt{mcsinPIxLUT} есть \texttt{ROBO\_ASSERT(ix<=256)}, но нет проверки на отрицательные индексы (хотя логика исключает их). В релизной сборке ассерты могут быть отключены, и потенциальный выход за границы приведёт к непредсказуемому поведению.
+    \item \textbf{Отсутствие обработки переполнения}: в \texttt{s\_mult} и подобных функциях не проверяется переполнение при умножении; предполагается, что результат всегда помещается в 32 бита. Для некоторых входных данных это не так.
+    \item \textbf{Зависимость от \texttt{robo::digit::round} и \texttt{robo::digit::rsh}}: эти функции определены в \texttt{robosd\_common.hpp}, но их поведение для отрицательных чисел может отличаться от ожидаемого в разных режимах компиляции (\texttt{ROBO\_APP\_MATH\_SHIFT\_ENABLE}).
+    \item \textbf{Несоответствие имён}: в \texttt{struct pi} метод \texttt{quadro} назван странно (вероятно, от "quadratic"). В \texttt{float\_point::pi} метод \texttt{quadro} использует \texttt{diffQuardGain} (опечатка: "Quard" вместо "Quad").
+    \item \textbf{Дублирование таблиц}: таблицы синуса для \texttt{int15} и \texttt{real} почти идентичны, но хранятся отдельно. Можно было бы использовать шаблон.
+    \item \textbf{Отсутствие документации по точности}: не указано, с какой погрешностью работают аппроксимации (например, максимальная ошибка \texttt{sin} или \texttt{sqrt}).
+\end{enumerate}
+
+\subsubsection{Примеры использования}
+
+\begin{lstlisting}[caption={Using fixed-point math}]
+#include "burst++/math.hpp"
+
+// Create Q15 constants
+using FP = burst::fixed_point<burst::int15>;
+FP::signal_t angle = FP::s\_frac(0.25); // 90 in Q15 (since max corresponds to 180)
+FP::signal_t s = FP::sin(angle);       // ~0.707 in Q15
+
+// Multiply two Q15 numbers
+FP::signal_t a = FP::s_frac(0.6);
+FP::signal_t b = FP::s_frac(0.8);
+FP::signal_t prod = FP::s_mult(a, b); // 0.48 in Q15
+
+// Convert physical value to ADC code
+struct MyConfig {
+    burst::range_s<float> signal = { -10.0f, 10.0f };
+    burst::range_s<int16_t> discret = { 0, 4095 };
+} config;
+FP::signal2discret_s converter(config);
+converter.begin();
+int16_t code = converter.run(2.5f); // physical 2.5V -> ADC code
+\end{lstlisting}
+
+\end{document}
