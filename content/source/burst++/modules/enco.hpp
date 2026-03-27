@@ -853,6 +853,7 @@ namespace burst {
 				//reg(types::const_uint16, p.rphase, RT("rphase"));
 				//reg(types::const_uint32, p.rsin, RT("rsin"));
 				reg(number::var::signal, p.teta, RT("teta"));
+				reg(types::const_int8, p.sign, RT("sg"));
 
 				//	reg(number::var::signal, p.sn, RT("sn"));
 
@@ -878,7 +879,7 @@ namespace burst {
 				if( p.sign == 0 ){
 					p.ref.status = statuses::wait;
 				} else {
-					if(p.sign){
+					if(p.sign>0){
 						p.teta = number::atan2(y_, x_);
 					} else {
 						p.teta = number::atan2(-y_, -x_);

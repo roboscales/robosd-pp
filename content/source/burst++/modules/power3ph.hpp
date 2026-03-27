@@ -220,19 +220,21 @@ namespace burst {
 			};
 			#else
 			hall_adapter_t(const config_s& _config, present_s& _present, signal_t & _synchro_anglee, const signal_t & _angle )
-				: rotator_t(_config, _present), angle_(_angle) {
+				: rotator_t(_config, _present, _synchro_anglee), angle_(_angle) {
 			};
 			#endif
 			virtual void run(void) {
 				ACTOR_PRESENT_S(p);
-				p.angle.mechanic = angle_;
+				p.angle.actual = angle_;
 
 				if (p.synchro) {
 					#if ROBO_APP_ULTRACOMPACT == 0
 					p.angle.electro = *rotator_t::synchro_anglee;
+					#else
+					p.angle.electro = rotator_t::synchro_anglee;
 					#endif
 				} else {
-					p.angle.electro = p.angle.mechanic;
+					p.angle.electro = p.angle.actual;
 				}
 				p.rot.sn = number::sin(p.angle.electro);
 				p.rot.cs = number::cos(p.angle.electro);
@@ -463,18 +465,18 @@ namespace burst {
 				pwmC += number::lsf::mult(pwmC, number::scale);
 				#if ROBO_APP_ULTRACOMPACT == 0
 				if (c.deform.enabled) {
-					pwmA = number::lsf::sat(pwmA);
-					pwmB = number::lsf::sat(pwmB);
-					pwmC = number::lsf::sat(pwmC);
+					pwmA = number::lsf::sat_s(pwmA);
+					pwmB = number::lsf::sat_s(pwmB);
+					pwmC = number::lsf::sat_s(pwmC);
 					p.pwm.A = (signal_t)pwmA;
 					p.pwm.B = (signal_t)pwmB;
 					p.pwm.C = (signal_t)pwmC;
 					pwmA = deform_pwm_(pwmA);
 					pwmB = deform_pwm_(pwmB);
 					pwmC = deform_pwm_(pwmC);
-					pwmA = number::lsf::sat(pwmA);
-					pwmB = number::lsf::sat(pwmB);
-					pwmC = number::lsf::sat(pwmC);
+					pwmA = number::lsf::sat_s(pwmA);
+					pwmB = number::lsf::sat_s(pwmB);
+					pwmC = number::lsf::sat_s(pwmC);
 				}
 				else 
 				#endif
@@ -517,9 +519,9 @@ namespace burst {
 					#endif
 					{
 
-						pwmA = number::lsf::sat(pwmA);
-						pwmB = number::lsf::sat(pwmB);
-						pwmC = number::lsf::sat(pwmC);
+						pwmA = number::lsf::sat_s(pwmA);
+						pwmB = number::lsf::sat_s(pwmB);
+						pwmC = number::lsf::sat_s(pwmC);
 
 						p.pwm.A = (signal_t)pwmA;
 						p.pwm.B = (signal_t)pwmB;

@@ -535,8 +535,8 @@ namespace burst {
 				return tmp;
 			}
 			
-			constexpr static long_signal_t sat(const long_signal_t& _x) {
-				return robo::saturate(_x, min, max);
+			constexpr static long_signal_t sat_s(const long_signal_t& _x) {
+				return robo::saturate(_x, discret_min, discret_max);
 			}
 			constexpr static long_signal_t sat(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
 				return robo::saturate(_x, _lo, _hi);
@@ -833,8 +833,8 @@ namespace burst {
 				return y * a + x;
 			}
 			
-			constexpr static long_signal_t sat(const long_signal_t& _x) {
-				return _x;// robo::saturate(_x, (long_signal_t)-1., (long_signal_t)1.);
+			constexpr static signal_t sat_s(const long_signal_t& _x) {
+				return  robo::saturate(_x, (long_signal_t)discret_min, (long_signal_t)discret_max);
 			}
 			constexpr static long_signal_t sat(const long_signal_t& _x, signal_t _lo, signal_t _hi) {
 				return robo::saturate(_x, _lo, _hi);

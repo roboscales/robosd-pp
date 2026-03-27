@@ -84,7 +84,7 @@ namespace burst {
 		#endif
 
 		R offset[N] = {};
-		R acc[N] = {};
+		uint32_t acc[N] = {};
 		int init_count = 0;
 
 		#define ADC_CONFIG(a) ADC_CONFIG_(a)
@@ -98,7 +98,7 @@ namespace burst {
 			actor::begin();
 			ACTOR_CONFIG_S(cfg);
 			ACTOR_PRESENT_S(p);
-			R * a = acc;
+			uint32_t * a = acc;
 			for (int i = 0; i < N; ++i, ++a) {
 				*a = 0;
 			}
@@ -119,7 +119,7 @@ namespace burst {
 				}
 			}
 			else {
-				R * a = acc;
+				uint32_t * a = acc;
 				R * n = p.raw;
 				for (int i = 0; i < N; ++i, ++a, ++n) {
 					*a += *n;
@@ -129,7 +129,7 @@ namespace burst {
 					signal_t * v = p.values;
 					R * n = p.raw;
 					R * o = offset;
-					R* a = acc;
+					uint32_t * a = acc;
 					int shift = cfg.init_count_bits;
 					for (int i = 0; i < N; ++i, ++v, ++n, ++o, ++a) {
 						*o = (R)((*a + (1 << (shift - 1))) >> shift) + 1;

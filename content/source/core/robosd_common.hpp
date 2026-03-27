@@ -467,7 +467,7 @@ namespace robo {
 				double y = d * static_cast<double>(i) ;
 				// Вычисляем значение синуса и масштабируем амплитудой
 				// Округляем до ближайшего целого
-				table[i] = (T)catan2(y,1.0);
+				table[i] = (T)catan2(y,max);
 			}
 		}
 	};
