@@ -6,6 +6,7 @@
 #include <limits>
 #include <algorithm>
 #include <type_traits>
+#include <cmath>
 
 #ifndef ROBO_TYPE_RANDOM
 #define ROBO_TYPE_RANDOM int
