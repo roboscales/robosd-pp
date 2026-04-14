@@ -310,7 +310,7 @@ namespace burst {
 				#if ROBO_APP_ULTRACOMPACT == 0
 				::robo::system::guard g__;
 				#else
-				typename driver::guard g__;
+				//typename driver::guard g__;
 				#endif
 				std::copy_n(p.raw,N,tmp_raw);
 			}

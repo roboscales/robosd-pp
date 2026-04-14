@@ -29,14 +29,23 @@ namespace burst {
 		}
 		virtual void do_regvar_conf(void) {}
 		#endif	
+		#if ROBO_APP_ULTRACOMPACT == 0
 		filter_t(const config_s& _config, present_s& _present)
 			: B(_config.tag, _present.tag) {};
 		filter_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: B(_config.tag, _present.tag, _subsystem) {};
+		#else
+		filter_t(const config_s& _config, present_s& _present, const typename number::signal_t & _in)
+			: B(_config.tag, _present.tag, _in) {};
+		#endif
 		virtual void begin(void) { 
 			B::begin();
 			present_s& p =  B::template present<present_s>();
+			#if ROBO_APP_ULTRACOMPACT == 0
 			p.value = *B::input;
+			#else
+			p.value = B::input;
+			#endif
 		};
 		
 	};
@@ -89,11 +98,15 @@ namespace burst {
 			}
 		}
 		#endif	
-
+		#if ROBO_APP_ULTRACOMPACT == 0
 		nikitin_t(const config_s& _config, present_s& _present)
 			: B(_config.flt, _present.flt) {};
 		nikitin_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 			: B(_config.flt, _present.flt, _subsystem) {};
+		#else
+		nikitin_t(const config_s& _config, present_s& _present, const typename number::signal_t& _in)
+			: B(_config.flt, _present.flt, _in) {};
+		#endif
 		virtual void begin(void) { 
 			B::begin();
 			ACTOR_CONFIG_S(c);
@@ -107,9 +120,18 @@ namespace burst {
 		virtual void run (void) {
 			ACTOR_PRESENT_S(p);
 			auto long_value = p.long_value;
-			long_value = long_value * gain + robo::digit::lsh( (typename number::long_signal_t ) * B::input , presc_shift );
+			#if ROBO_APP_ULTRACOMPACT == 0
+			auto tmp = *B::input;
+			#else
+			auto tmp = B::input;
+			#endif	
+			long_value = long_value * gain + robo::digit::lsh( (typename number::long_signal_t )  , presc_shift );
 			if (reset_acc_value) {
+				#if ROBO_APP_ULTRACOMPACT == 0
 				*B::input = 0;
+				#else
+				B::input = 0;
+				#endif
 			}
 			long_value = robo::digit::rsh(long_value, shift);
 			p.long_value = long_value;
