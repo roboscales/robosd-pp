@@ -218,6 +218,9 @@ namespace burst {
 		constexpr static signal_t scale = s_frac( robo::csqrt<double>(2.0) -1 );
 		constexpr static signal_t sqrt2_div_2 = s_frac( robo::csqrt<double>(2.0) / 2 );
 		constexpr static signal_t one_div_3 = s_frac(1./ 3);
+		constexpr static signal_t two_div_3 = s_frac(2. / 3);
+		constexpr static signal_t pi_div_3 = s_frac(1. / 3);
+		constexpr static signal_t two_pi_div_3 = s_frac(2. / 3);
 		constexpr static signal_t one_div_sqrt3 = s_frac( 1. / robo::csqrt<double>(3.0) );
 
 		constexpr static typename digit::long_signal_t l_frac(double _x) {
@@ -617,7 +620,12 @@ namespace burst {
 		constexpr static signal_t sqrt3_div_2 = robo::csqrt<signal_t>(3.0) / 2;
 		constexpr static signal_t scale = robo::csqrt<signal_t>(2.0) -1 ;
 		constexpr static signal_t sqrt2_div_2 = robo::csqrt<signal_t>(2.0) / 2 ;
-		constexpr static signal_t one_div_3 = 1.f/ 3;
+		constexpr static signal_t one_div_3 = signal_t(1.)/ 3;
+
+		constexpr static signal_t two_div_3 = signal_t(2.) / 3;
+		constexpr static signal_t pi_div_3 = pi / 3;
+		constexpr static signal_t two_pi_div_3 = signal_t(2.)*pi / 3;
+
 		constexpr static signal_t one_div_sqrt3 = 1.f / robo::csqrt<signal_t>(3.0) ;
 		constexpr static int discret_bits = q::discret_bits;
 

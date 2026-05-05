@@ -50,8 +50,8 @@ namespace burst {
 			static constexpr mangle_t PERIOD = Scale::PERIOD;
 			static constexpr mangle_t HALF_PERIOD = PERIOD / 2;
 
-			static constexpr mangle_t P_GROSS = Params::P_GROSS;
-			static constexpr mangle_t P_FINE  = Params::P_FINE;
+			static constexpr int P_GROSS = Params::P_GROSS;
+			static constexpr int P_FINE  = Params::P_FINE;
 			static constexpr mangle_t MAX_ACTUATOR_ANGLE = Params::MAX_ACTUATOR_ANGLE;
 			static constexpr mangle_t REDUCTION = Params::REDUCTION;
 			static constexpr mangle_t D_THRESH = Params::D_THRESH;
@@ -61,39 +61,42 @@ namespace burst {
 			static constexpr mangle_t SECTOR_SIZE_ABS = SECTOR_DEG / REDUCTION;
 
 			static mangle_t to_mangle(angle_t x) { return static_cast<mangle_t>(x); }
+			static angle_t to_angle(mangle_t x) { return static_cast<angle_t>(x); }
 
-			static mangle_t normalise(mangle_t angle) {
+			static mangle_t mod(mangle_t angle) {
 				angle = std::fmod(angle, PERIOD);
+				if (angle > HALF_PERIOD) angle -= PERIOD;
+				if (angle < -HALF_PERIOD) angle += PERIOD;
+				return angle;
+			}
+			
+			static mangle_t normalize(mangle_t angle) {
 				if (angle < 0) angle += PERIOD;
 				return angle;
 			}
 
-			static mangle_t short_diff(mangle_t a, mangle_t b) {
-				mangle_t d = a - b;
-				d = std::fmod(d, PERIOD);
-				if (d > HALF_PERIOD) d -= PERIOD;
-				if (d < -HALF_PERIOD) d += PERIOD;
-				return d;
+			static mangle_t short_diff(mangle_t a, mangle_t b) {				
+				return mod(a-b);
 			}
 
 			static mangle_t abs(mangle_t x) { return (x < 0) ? -x : x; }
 
-			static mangle_t to_actuator(mangle_t angle_abs) { return angle_abs * REDUCTION; }
-			static mangle_t to_abs_sensor(mangle_t angle_actuator) { return angle_actuator / REDUCTION; }
+			static mangle_t to_actuator(mangle_t _abs, int _poles) { return mod(_abs * _poles * REDUCTION); }
+			static mangle_t to_abs_sensor(mangle_t _angle, int _poles) { return _angle / _poles / REDUCTION; }
 
 			static mangle_t to_central_sector(mangle_t a) {
 				return static_cast<mangle_t>(std::floor(a / SECTOR_SIZE_ABS));
 			}
 
-			static mangle_t to_electrical(mangle_t mech_angle, mangle_t P) {
-				return normalise(mech_angle * P);
-			}
+			//static mangle_t to_electrical(mangle_t mech_angle, mangle_t P) {
+			//	return normalise(mech_angle * P);
+			//}
 		};
 
 		// ============================================================================
 		// Драйвер для целочисленной арифметики
 		// ============================================================================
-
+#if 0
 		template<typename Scale, typename Params>
 		class int_driver_t {
 		public:
@@ -168,7 +171,7 @@ namespace burst {
 				return static_cast<mangle_t>(tmp);
 			}
 		};
-
+#endif
 		// ============================================================================
 		// Класс склейки показаний резольвера и абсолютного датчика
 		// ============================================================================
@@ -244,17 +247,22 @@ namespace burst {
 			 */
 			void run(void) {
 				if (present_.enabled) {
-					mangle_t a = Driver::to_mangle(abs_raw_);
+					mangle_t a = Driver::to_mangle(abs_raw_); 
 					mangle_t g_elec = Driver::to_mangle(gross_raw_);
 					mangle_t f_elec = Driver::to_mangle(fine_raw_);
 
 					// Электрический критерий
-					present_.D_raw = Driver::normalise(Driver::P_FINE * g_elec - Driver::P_GROSS * f_elec);
-					mangle_t D_elec = Driver::short_diff(present_.D_raw, 0);
-					present_.fault_elec_out = Driver::abs(D_elec) > Driver::D_THRESH;
+					present_.D_raw = Driver::short_diff(Driver::P_FINE * g_elec , Driver::P_GROSS * f_elec);
+
+
+					//mangle_t D_elec = Driver::short_diff(present_.D_raw, 0);
+					present_.fault_elec_out = Driver::abs(present_.D_raw) > Driver::D_THRESH;
+
+					g_elec = Driver::normalize(gross_raw_);
+					f_elec = Driver::normalize(fine_raw_);
 
 					// Грубый механический угол на валу датчика
-					mangle_t g_mech_abs = Driver::to_abs_sensor(g_elec / Driver::P_GROSS);
+					mangle_t g_mech_abs = Driver::to_abs_sensor(g_elec , Driver::P_GROSS);
 
 					// Центральный сектор по абсолютному датчику
 					mangle_t central_sector = Driver::to_central_sector(a);
@@ -268,6 +276,7 @@ namespace burst {
 
 					// Выбор ближайшего к a
 					mangle_t best_candidate = candidates[0];
+					// ошибка не деференциальная, так как данные приведены к абсолютному углу
 					mangle_t min_err = Driver::abs(a - candidates[0]);
 					for (int i = 1; i < 3; ++i) {
 						mangle_t err = Driver::abs(a - candidates[i]);
@@ -279,22 +288,25 @@ namespace burst {
 
 					// Критерий D_abs
 					present_.D_abs = best_candidate - a;
-					present_.fault_abs_out = Driver::abs(present_.D_abs) > Driver::D_ABS_THRESH;
+					present_.fault_abs_out = min_err > Driver::D_ABS_THRESH;
 
 					// При ошибке возвращаем только абсолютный датчик
 					if (present_.fault_elec_out || present_.fault_abs_out) {
-						present_.angle = Driver::to_actuator(a);
+						present_.angle = a;
 					}
 
 					// Уточнение по точной обмотке
-					mangle_t coarse_act = Driver::to_actuator(best_candidate);
-					mangle_t expected_fine_elec = Driver::to_electrical(coarse_act, Driver::P_FINE);
+					mangle_t expected_fine_elec = Driver::to_actuator(best_candidate, Driver::P_FINE);
 					mangle_t delta_elec = Driver::short_diff(f_elec, expected_fine_elec);
-					mangle_t correction_mech = delta_elec / Driver::P_FINE;
-					present_.angle = coarse_act + correction_mech;
+					mangle_t correction_mech = Driver::to_abs_sensor( delta_elec , Driver::P_FINE);
+					present_.angle = best_candidate + correction_mech;
 				}
 			}
 
+			void enable(void) {
+				//RESOLVER_PRESENT_S(p);
+				present_.enabled = true;
+			}
 		private:
 			const angle_t& abs_raw_;    //!< ссылка на измеренный угол абсолютного датчика
 			const angle_t& gross_raw_;  //!< ссылка на измеренный угол грубой обмотки

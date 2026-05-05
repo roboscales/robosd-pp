@@ -125,7 +125,7 @@ namespace burst {
 			#else
 			auto tmp = B::input;
 			#endif	
-			long_value = long_value * gain + robo::digit::lsh( (typename number::long_signal_t )  , presc_shift );
+			long_value = long_value * gain + robo::digit::lsh( (typename number::long_signal_t ) tmp , presc_shift );
 			if (reset_acc_value) {
 				#if ROBO_APP_ULTRACOMPACT == 0
 				*B::input = 0;

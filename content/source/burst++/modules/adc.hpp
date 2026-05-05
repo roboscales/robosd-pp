@@ -95,6 +95,7 @@ namespace burst {
 		}
 
 		virtual void begin(void) {
+
 			actor::begin();
 			ACTOR_CONFIG_S(cfg);
 			ACTOR_PRESENT_S(p);
@@ -104,9 +105,11 @@ namespace burst {
 			}
 			init_count = 1 << cfg.init_count_bits;
 			p.ready = false;
+
 		};
 
 		virtual void run(void) {
+
 			ACTOR_CONFIG_S(cfg);
 			ACTOR_PRESENT_S(p);
 			driver::query(p.raw);
@@ -138,6 +141,7 @@ namespace burst {
 					p.ready = true;
 				}
 			}
+
 		}
 		
 		
@@ -357,5 +361,6 @@ namespace burst {
 			#endif
 
 	};	
+
 }
 #endif

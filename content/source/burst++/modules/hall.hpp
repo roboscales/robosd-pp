@@ -78,7 +78,7 @@ namespace burst {
 				signal_t raw;
 				signal_t angle;
 				signal_t extra_angle;
-				signal_t delta;
+				int delta;
 				signal_t delta_acc;
 			};
 			
@@ -116,11 +116,13 @@ namespace burst {
 				}
 			}
 			#endif	
-			
 			ref_t(const config_s& _config, present_s& _present)
 				: actor(_config.tag, _present.tag) {};
+			#if ROBO_APP_ULTRACOMPACT == 0
 			ref_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 				: actor(_config.tag, _present.tag, _subsystem) {};
+			#else	
+			#endif
 		};
 		template < class number, class driver > class machine_t : public ref_t<number> {
 			using B = ref_t<number>;
@@ -152,25 +154,26 @@ namespace burst {
 			static inline const int sdiffs[6] = {
 				0, 1, 2, 3, -2, -1
 			};
-			static inline const signal_t one_div_3 = number::s_frac(1. / 3);
-			static inline const signal_t two_div_3 = number::s_frac(2. / 3);
-			static inline const signal_t one = number::s_frac(1.);
+			static inline const signal_t pi_div_3 = number::pi_div_3;
+			static inline const signal_t two_pi_div_3 = number::two_pi_div_3;
+			static inline const signal_t pi = number::pi;
 			static inline signal_t angles[6] = {
 				0
-				, one_div_3
-				, two_div_3
-				, one
-				, -two_div_3
-				, -one_div_3
+				, pi_div_3
+				, two_pi_div_3
+				, pi
+				, -two_pi_div_3
+				, -pi_div_3
 			};
 			
 
 
 			machine_t(const config_s & _config, present_s& _present)
 				: B(_config, _present) {};
+			#if ROBO_APP_ULTRACOMPACT == 0
 			machine_t(const config_s& _config, present_s& _present, subsystem& _subsystem)
 				: B(_config, _present, _subsystem) {};
-
+			#endif
 			int prev_index = -1;
 			int true_diff = 0;
 			int sector_prev = -1;
@@ -211,7 +214,7 @@ namespace burst {
 							else {
 								true_diff = delta;
 							}
-							int raw;
+							signal_t raw;
 							if (cfg.inv) {
 								delta = -delta;
 								raw = -angles[sector];
