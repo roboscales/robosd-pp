@@ -343,6 +343,14 @@ namespace burst {
 				return do_perform();
 			}
 		};
+
+		#ifndef FMSTR_ADDRESS_OFFSET_TYPE
+		#define FMSTR_ADDRESS_OFFSET_TYPE uint32_t
+		#endif 
+
+		#ifndef FMSTR_ADDRESS_OFFSET
+		#define FMSTR_ADDRESS_OFFSET 0
+		#endif 
 		class show :public  showpro {
 			void (*do_print_)(const char* _buf) = nullptr;
 		protected:
