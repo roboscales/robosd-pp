@@ -114,9 +114,6 @@
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_proto.hpp">
       <Filter>source\servo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\robosd-ref\tools\robosd_app_tuning.hpp">
-      <Filter>source</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\robosd-ref\core\robosd_convert.hpp">
       <Filter>source\core</Filter>
     </ClInclude>

@@ -5,7 +5,7 @@
 #include "net/robosd_can.hpp"
 #include "net/robosd_can_flow_bus.hpp"
 #include "net/robosd_can_flow_module.hpp"
-#include "..\srt-actuator\source\common\srt-actuator.proto.hpp"
+//#include "..\trv-actuator\source\common\srt-actuator.proto.hpp"
 namespace robo {
 	namespace net {
 		namespace can {

@@ -85,7 +85,8 @@ namespace burst {
 			static mangle_t to_abs_sensor(mangle_t _angle, int _poles) { return _angle / _poles / REDUCTION; }
 
 			static mangle_t to_central_sector(mangle_t a) {
-				return static_cast<mangle_t>(std::floor(a / SECTOR_SIZE_ABS));
+				auto ssize = SECTOR_SIZE_ABS;
+				return static_cast<mangle_t>(std::floor(a / ssize));
 			}
 
 			//static mangle_t to_electrical(mangle_t mech_angle, mangle_t P) {

@@ -60,7 +60,6 @@
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_backend.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_frontend.hpp" />
     <ClInclude Include="..\..\..\robosd-ref\servo\robosd_proto.hpp" />
-    <ClInclude Include="..\..\..\robosd-ref\tools\robosd_app_tuning.hpp" />
     <ClInclude Include="..\..\..\sysworxx-ref\CanItf.h" />
     <ClInclude Include="..\..\..\sysworxx-ref\Usbcan32.h" />
   </ItemGroup>
@@ -126,7 +125,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(SolutionDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\..\..\reference\robosd-ref\tools;$(SolutionDir)..\..\..\..\reference\robosd-ref\core\platform\win+vs19;$(SolutionDir)..\..\..\..\reference\robosd-ref;..\;$(SolutionDir)..\..\..\..\reference\vscom-ref;$(SolutionDir)..\..\..\..\reference\sysworxx-ref;$(SolutionDir);$(SolutionDir)\config;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(SolutionDir)\bin\$(Platform)\$(Configuration)\;$(SolutionDir)..\..\..\..\reference\vscom-ref\$(Platform);$(SolutionDir)..\..\..\..\reference\sysworxx-ref\$(Platform)</LibraryPath>
   </PropertyGroup>

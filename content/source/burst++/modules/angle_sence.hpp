@@ -323,9 +323,9 @@ namespace burst {
 
         struct present_s {
             actor::present_s tag;
-            angle_t  increment;         // разность между текущим и предыдущим углом
-            angle_t  previous_angle;
-            bool     first_run;
+            angle_t  increment;
+            bool     enable;
+            bool     first_tact;
         };
 
         angle_differentiator_t(const config_s& _config, present_s& _present, angle_t& _angle_ref)
@@ -333,21 +333,29 @@ namespace burst {
 
         virtual void begin(void) override {
             ACTOR_PRESENT_S(p);
-            p.first_run = true;
+            p.enable = false;
+            p.first_tact = true;
             p.increment = angle_t{ 0 };
-            p.previous_angle = angle_t{ 0 };
+        }
+
+        void enable(void) {
+            ACTOR_PRESENT_S(p);
+            p.enable = true;
+            p.first_tact = true;
         }
 
         virtual void run(void) override {
             ACTOR_PRESENT_S(p);
-            if (p.first_run) {
-                p.previous_angle = angle_ref_;
+            if (!p.enable) return;
+
+            if (p.first_tact) {
+                prev_angle_ = angle_ref_;
                 p.increment = angle_t{ 0 };
-                p.first_run = false;
+                p.first_tact = false;
             }
             else {
-                p.increment = Policy::difference(angle_ref_, p.previous_angle);
-                p.previous_angle = angle_ref_;
+                p.increment = Policy::difference(angle_ref_, prev_angle_);
+                prev_angle_ = angle_ref_;
             }
         }
 
@@ -356,7 +364,8 @@ namespace burst {
             using namespace burst::var;
             ACTOR_PRESENT_S(p);
             Policy::reg_angle(RT("increment"), p.increment);
-            reg(types::const_uint8, p.first_run, RT("first_run"));
+            reg(types::const_uint8, p.enable, RT("enable"));
+            reg(types::const_uint8, p.first_tact, RT("first_tact"));
         }
 
         virtual void do_regvar_conf(void) override { /* пусто */ }
@@ -364,13 +373,11 @@ namespace burst {
 
     private:
         angle_t& angle_ref_;
+        angle_t  prev_angle_{};
     };
 
     //==============================================================
     // Аккумулятор угла
-    //   - init_count тактов использует абсолютный угол
-    //   - затем суммирует приращения
-    //   - delta_acc накапливается и сбрасывается извне
     //==============================================================
     template<class Policy>
     class angle_accumulator_t : public actor {
@@ -379,29 +386,26 @@ namespace burst {
 
         struct config_s {
             actor::config_s tag;
-            uint32_t init_count;     // количество тактов инициализации абсолютным значением
-            bool     inverse;        // true – инвертировать направление приращений
-            angle_t  offset;         // смещение нуля (добавляется к абсолютному углу при инициализации)
+            bool     inverse;
+            angle_t  offset;
         };
 
 #define ANGLE_ACCUM_CONFIG(a) ANGLE_ACCUM_CONFIG_(a)
 #define ANGLE_ACCUM_CONFIG_(a) \
     { \
         ACTOR_CONFIG(a) \
-        , a##_INIT_COUNT \
         , a##_INVERSE \
         , a##_OFFSET \
     }
 
         struct present_s {
             actor::present_s tag;
-            angle_t  position;       // результирующее положение
-            angle_t  delta_acc;      // накопленное приращение (сбрасывается внешним кодом)
-            int32_t  init_counter;   // оставшиеся такты инициализации
-            bool     ready;          // true – рабочий режим (суммирование)
+            angle_t  position;
+            angle_t  delta_acc;
+            bool     enable;
+            bool     first_tact;
         };
 
-        // Принимает ссылки на абсолютный угол и на приращение
         angle_accumulator_t(const config_s& _config, present_s& _present,
             angle_t& _abs_angle, angle_t& _increment)
             : actor(_config.tag, _present.tag),
@@ -411,28 +415,34 @@ namespace burst {
         virtual void begin(void) override {
             ACTOR_CONFIG_S(c);
             ACTOR_PRESENT_S(p);
-            p.init_counter = c.init_count;
-            p.ready = false;
+            p.enable = false;
+            p.first_tact = true;
             p.position = c.offset;
             p.delta_acc = angle_t{ 0 };
+        }
+
+        void enable(void) {
+            ACTOR_PRESENT_S(p);
+            p.enable = true;
+            p.first_tact = true;
         }
 
         virtual void run(void) override {
             ACTOR_CONFIG_S(c);
             ACTOR_PRESENT_S(p);
-            if (!p.ready) {
-                // Инициализация: берём абсолютный угол, инвертируем при необходимости
+            if (!p.enable) return;
+
+            if (p.first_tact) {
+                // Инициализация: позиция = абсолютный угол
                 angle_t abs = abs_angle_;
                 if (c.inverse) {
-                    // -abs, безопасный для циклического представления
                     p.position = Policy::difference(angle_t{ 0 }, abs) + c.offset;
                 }
                 else {
                     p.position = abs + c.offset;
                 }
-                if (--p.init_counter <= 0) {
-                    p.ready = true;
-                }
+                p.delta_acc = angle_t{ 0 };   // сбрасываем накопление
+                p.first_tact = false;
             }
             else {
                 // Рабочий режим: добавляем приращение
@@ -440,8 +450,8 @@ namespace burst {
                 if (c.inverse) {
                     inc = Policy::difference(angle_t{ 0 }, inc);
                 }
-                p.position += inc;          // циклическое переполнение допустимо для целых
-                p.delta_acc += inc;         // внешний код может обнулить delta_acc
+                p.position += inc;
+                p.delta_acc += inc;         // внешний код может обнулить
             }
         }
 
@@ -451,15 +461,123 @@ namespace burst {
             ACTOR_PRESENT_S(p);
             Policy::reg_angle(RT("position"), p.position);
             Policy::reg_angle(RT("delta_acc"), p.delta_acc);
-            reg(types::const_int32, p.init_counter, RT("init_cnt"));
-            reg(types::const_uint8, p.ready, RT("ready"));
+            reg(types::const_uint8, p.enable, RT("enable"));
+            reg(types::const_uint8, p.first_tact, RT("first_tact"));
         }
 
         virtual void do_regvar_conf(void) override {
             using namespace burst::var;
             if (actual_mode >= mode::tuning) {
                 ACTOR_CONFIG_S(c);
-                reg(types::uint32, c.init_count, RT("init_count"), true);
+                reg(types::uint8, c.inverse, RT("inverse"), true);
+                Policy::reg_angle(RT("offset"), c.offset, true);
+            }
+        }
+#endif
+
+    private:
+        angle_t& abs_angle_;
+        angle_t& increment_;
+    };
+
+    //==============================================================
+    // Экстраполятор 0 – объединённый дифференциатор и аккумулятор
+    //==============================================================
+    template<class Policy>
+    class angle_extrapolator_0_t : public actor {
+    public:
+        using angle_t = typename Policy::angle_t;
+
+        struct config_s {
+            actor::config_s tag;
+            bool     inverse;
+            angle_t  offset;
+        };
+
+#define ANGLE_EXTRAP0_CONFIG(a) ANGLE_EXTRAP0_CONFIG_(a)
+#define ANGLE_EXTRAP0_CONFIG_(a) \
+    { \
+        ACTOR_CONFIG(a) \
+        , a##_INVERSE \
+        , a##_OFFSET \
+    }
+
+        struct present_s {
+            actor::present_s tag;
+            angle_t  position;
+            angle_t  increment;
+            angle_t  delta_acc;
+            bool     enable;
+            bool     first_tact;
+        };
+
+        angle_extrapolator_0_t(const config_s& _config, present_s& _present, angle_t& _abs_angle)
+            : actor(_config.tag, _present.tag), abs_angle_(_abs_angle) {}
+
+        virtual void begin(void) override {
+            ACTOR_CONFIG_S(c);
+            ACTOR_PRESENT_S(p);
+            p.enable = false;
+            p.first_tact = true;
+            p.position = c.offset;
+            p.increment = angle_t{ 0 };
+            p.delta_acc = angle_t{ 0 };
+        }
+
+        void enable(void) {
+            ACTOR_PRESENT_S(p);
+            p.enable = true;
+            p.first_tact = true;
+        }
+
+        virtual void run(void) override {
+            ACTOR_CONFIG_S(c);
+            ACTOR_PRESENT_S(p);
+
+            if (!p.enable) return;
+
+            if (p.first_tact) {
+                // Инициализация: позиция = абсолютный угол
+                angle_t abs = abs_angle_;
+                if (c.inverse) {
+                    p.position = Policy::difference(angle_t{ 0 }, abs) + c.offset;
+                }
+                else {
+                    p.position = abs + c.offset;
+                }
+                p.increment = angle_t{ 0 };
+                p.delta_acc = angle_t{ 0 };
+                prev_abs_ = abs_angle_;
+                p.first_tact = false;
+            }
+            else {
+                // Рабочий режим
+                p.increment = Policy::difference(abs_angle_, prev_abs_);
+                angle_t inc = p.increment;
+                if (c.inverse) {
+                    inc = Policy::difference(angle_t{ 0 }, inc);
+                }
+                p.delta_acc += inc;
+                p.position += inc;
+                prev_abs_ = abs_angle_;
+            }
+        }
+
+#if ROBO_APP_BURST_VARTREE_ENABLED
+        virtual void do_regvar_present(void) override {
+            using namespace burst::var;
+            ACTOR_PRESENT_S(p);
+            Policy::reg_angle(RT("position"), p.position);
+            Policy::reg_angle(RT("increment"), p.increment);
+            Policy::reg_angle(RT("delta_acc"), p.delta_acc);
+            reg(types::const_uint8, p.enable, RT("enable"));
+            reg(types::const_uint8, p.first_tact, RT("first_tact"));
+        }
+
+        virtual void do_regvar_conf(void) override {
+            using namespace burst::var;
+            if (actual_mode >= mode::tuning) {
+                ACTOR_CONFIG_S(c);
                 reg(types::uint8, c.inverse, RT("inverse"), true);
                 Policy::reg_angle(RT("offset"), c.offset);
             }
@@ -468,7 +586,7 @@ namespace burst {
 
     private:
         angle_t& abs_angle_;
-        angle_t& increment_;
+        angle_t  prev_abs_{};
     };
 
 } // namespace burst
