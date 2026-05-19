@@ -36,7 +36,7 @@ namespace robo{
 				if( phys::panic() ){
 					state_ = state::panic;
 				} else {
-					if(state_!=state::disable && state_ != state::panic ){
+					if(state_!=state::disable && state_ != state::panic && state_ != state::stopped ){
 						state_ = state::idle;
 					}
 				}
