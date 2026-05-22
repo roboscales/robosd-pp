@@ -4,6 +4,7 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_net_trafic.hpp"
+#include "core/robosd_autonum.hpp"
 #include <algorithm>
 namespace robo{
 	namespace net{
@@ -54,11 +55,13 @@ namespace robo{
 						uint16_t * prev = nullptr;
 						void set ( uint16_t * _memo){ 
 							G g__;
-							std::copy_n(memo,count,_memo); 
+							if(memo)
+								std::copy_n(memo,count,_memo); 
 						}
 						void get ( const uint16_t * _memo){ 
 							G g__;
-							std::copy_n(_memo,count,memo); 
+							if(memo)
+								std::copy_n(_memo,count,memo); 
 						}
 					private:
 						ref ref_;
@@ -114,11 +117,15 @@ namespace robo{
 						, active_(_active == actives::on)
 						, check_prev(_check_prev == freshes::on)
 						{
-							memo =  new uint16_t[_count];
-							ref_.attach_to(_dispetcher.regs_);
-							if(check_prev){
-								prev= new uint16_t [_count];
-								std::fill_n(prev,_count,0xFFFF);
+							if(count){
+								memo =  new uint16_t[_count];
+								ref_.attach_to(_dispetcher.regs_);
+								if(check_prev){
+									prev= new uint16_t [_count];
+									std::fill_n(prev,_count,0xFFFF);
+								}
+							} else{
+								memo =  nullptr;
 							}
 						}
 						~regs(void) { 
@@ -197,8 +204,85 @@ namespace robo{
 						}
 						virtual void on_refuse(const errors & _err){
 						}
-
 					};
+					#if ROBO_AUTONUM_ENABLED == 1
+					class command : public regs{
+					public:
+						enum class results{ success = 1, refuse = 0};
+						using confirm_s = robo::delegat::ref<void,results>;
+						using autonum = robo::delegat::autonum_fabric<void,results>;
+						int try_count_ = 0;
+						uint16_t buf_sz_ ;
+					private:
+						confirm_s * on_confirm_;
+					public:
+						command(
+							dispetcher_t & _dispetcher
+							, device_c & _device
+							, uint16_t _buf_sz
+						): regs(
+							_dispetcher
+							, _device
+							,0
+							,_buf_sz
+							, regs::actives::off
+							, regs::continues::off
+							, regs::freshes::off
+						)
+						, on_confirm_(nullptr)
+						,buf_sz_(_buf_sz)
+						{
+						}
+						void post( uint16_t _regaddr, uint16_t * _values, uint16_t _count, int _try_count = 1, confirm_s * _confirm=nullptr){
+							if(_count<=buf_sz_){
+								on_confirm_ = _confirm;
+								regs::regaddr = _regaddr;
+								regs::count = _count;
+								try_count_ = _try_count;
+								regs::get(_values);
+								regs::pulse();
+							} else {
+								if (_confirm) {
+									(*_confirm)(results::refuse);
+								}			
+							}							
+						}
+						template < typename S> void post( uint16_t _regaddr, const S & _s,  int _try_count = 1, confirm_s * _confirm=nullptr){
+							post(_regaddr, (uint16_t *) &_s,sizeof(_s)/sizeof(uint16_t), _try_count, _confirm );
+						}
+						void post( uint16_t _regaddr, std::initializer_list<uint16_t>  _s,  int _try_count = 1, confirm_s * _confirm=nullptr){
+							post(_regaddr, _s.begin(),_s.size(), _try_count, _confirm );
+						}
+					protected:
+						virtual void on_request(void){					
+							if(regs::count == 1){
+								regs::dispetcher.write_reg(regs::device.devaddr,regs::regaddr,regs::memo[0]);
+							} else {
+								regs::dispetcher.write_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
+							}
+						}
+						virtual bool exchange_need(void){
+							if(try_count_>0){
+								return regs::exchange_need();
+							} else  return false;
+						}
+						virtual void on_confirm(void){
+							try_count_ = 0;
+							if (on_confirm_) {
+								(*on_confirm_)(results::success);
+							}
+						}
+						virtual void on_refuse(const errors & _err){
+							try_count_ --;
+							if(try_count_<=0){
+								regs::pause();
+								if (on_confirm_) {
+									(*on_confirm_)(results::refuse);
+								}
+							}
+						}
+					};
+					#endif
 					class incom : public regs{
 						uint16_t * dst_;
 						robo::delegat::ref<void> * on_update_;
