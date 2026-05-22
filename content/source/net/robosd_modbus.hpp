@@ -4,7 +4,6 @@
 #include "core/robosd_delegat.hpp"
 #include "core/robosd_system.hpp"
 #include "net/robosd_net_trafic.hpp"
-#include "core/robosd_autonum.hpp"
 #include <algorithm>
 namespace robo{
 	namespace net{
@@ -84,9 +83,9 @@ namespace robo{
 							statistic.request ++;
 						}
 						void confirm(void){
-							on_confirm();
 							statistic.confirm ++;
 							if (!continues_) { active_ = false; }
+							on_confirm();
 						}
 						void refuse(const errors& _err){
 							on_refuse(_err);
@@ -205,12 +204,12 @@ namespace robo{
 						virtual void on_refuse(const errors & _err){
 						}
 					};
-					#if ROBO_AUTONUM_ENABLED == 1
+					#if 1
 					class command : public regs{
 					public:
 						enum class results{ success = 1, refuse = 0};
 						using confirm_s = robo::delegat::ref<void,results>;
-						using autonum = robo::delegat::autonum_fabric<void,results>;
+						using owned = robo::delegat::owned_fabric<void,results>;
 						int try_count_ = 0;
 						uint16_t buf_sz_ ;
 					private:
@@ -244,6 +243,7 @@ namespace robo{
 							} else {
 								if (_confirm) {
 									(*_confirm)(results::refuse);
+									
 								}			
 							}							
 						}
