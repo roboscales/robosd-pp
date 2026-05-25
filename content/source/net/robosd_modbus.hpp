@@ -5,6 +5,12 @@
 #include "core/robosd_system.hpp"
 #include "net/robosd_net_trafic.hpp"
 #include <algorithm>
+#ifndef ROBO_APP_STD_FUNCTIONAL_ENABLED
+#define  ROBO_APP_STD_FUNCTIONAL_ENABLED 1
+#endif
+#if ROBO_APP_STD_FUNCTIONAL_ENABLED
+#include <functional>
+#endif
 namespace robo{
 	namespace net{
 		namespace modbus{
@@ -14,6 +20,7 @@ namespace robo{
 					class regs;
 					friend class regs;
 					friend class device_c;
+				
 					class device_c{
 					public:
 					friend class regs;
@@ -204,7 +211,8 @@ namespace robo{
 						virtual void on_refuse(const errors & _err){
 						}
 					};
-					#if 1
+
+					#if ROBO_APP_STD_FUNCTIONAL_ENABLED
 					class command : public regs{
 					public:
 						enum class results{ success = 1, refuse = 0};
@@ -213,7 +221,8 @@ namespace robo{
 						int try_count_ = 0;
 						uint16_t buf_sz_ ;
 					private:
-						confirm_s * on_confirm_;
+						std::function<void(results)> on_confirm_;
+					//confirm_s * on_confirm_;
 					public:
 						command(
 							dispetcher_t & _dispetcher
@@ -232,6 +241,7 @@ namespace robo{
 						,buf_sz_(_buf_sz)
 						{
 						}
+						/*
 						void post( uint16_t _regaddr, uint16_t * _values, uint16_t _count, int _try_count = 1, confirm_s * _confirm=nullptr){
 							if(_count<=buf_sz_){
 								on_confirm_ = _confirm;
@@ -252,7 +262,32 @@ namespace robo{
 						}
 						void post( uint16_t _regaddr, std::initializer_list<uint16_t>  _s,  int _try_count = 1, confirm_s * _confirm=nullptr){
 							post(_regaddr, _s.begin(),_s.size(), _try_count, _confirm );
+						}*/
+						// Шаблонный метод post, принимающий любой callable
+						template <typename F>
+						void post(uint16_t _regaddr, uint16_t _value, int _try_count, F&& _confirm) {
+								post(_regaddr, &_value, 1, _try_count, std::forward<F>(_confirm));
 						}
+						template < typename S, typename F> void post( uint16_t _regaddr, const S & _s,  int _try_count, F&& _confirm){
+							post(_regaddr, (uint16_t *) &_s,sizeof(_s)/sizeof(uint16_t), _try_count, _confirm );
+						}
+						template <typename F> void post( uint16_t _regaddr, std::initializer_list<uint16_t>  _s,  int _try_count, F&& _confirm){
+							post(_regaddr, _s.begin(),_s.size(), _try_count, _confirm );
+						}
+
+						template <typename F>
+						void post(uint16_t _regaddr, const uint16_t* _values, uint16_t _count, int _try_count, F&& _confirm) {
+							if (_count <= buf_sz_) {
+								on_confirm_ = std::forward<F>(_confirm);
+								regs::regaddr = _regaddr;
+								regs::count = _count;
+								try_count_ = _try_count;
+								regs::get(_values);
+								regs::pulse();
+							} else  {
+								_confirm(results::refuse);
+							}
+					}
 					protected:
 						virtual void on_request(void){					
 							if(regs::count == 1){
@@ -268,17 +303,13 @@ namespace robo{
 						}
 						virtual void on_confirm(void){
 							try_count_ = 0;
-							if (on_confirm_) {
-								(*on_confirm_)(results::success);
-							}
+							on_confirm_(results::success);
 						}
 						virtual void on_refuse(const errors & _err){
 							try_count_ --;
 							if(try_count_<=0){
 								regs::pause();
-								if (on_confirm_) {
-									(*on_confirm_)(results::refuse);
-								}
+								on_confirm_(results::refuse);
 							}
 						}
 					};
