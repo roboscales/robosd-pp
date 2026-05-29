@@ -277,17 +277,22 @@ namespace robo{
 
 						template <typename F>
 						void post(uint16_t _regaddr, const uint16_t* _values, uint16_t _count, int _try_count, F&& _confirm) {
-							if (_count <= buf_sz_) {
-								on_confirm_ = std::forward<F>(_confirm);
-								regs::regaddr = _regaddr;
-								regs::count = _count;
-								try_count_ = _try_count;
-								regs::get(_values);
-								regs::pulse();
-							} else  {
-								_confirm(results::refuse);
-							}
-					}
+							if(!regs::active()){
+								if (_count <= buf_sz_) {
+									on_confirm_ = std::forward<F>(_confirm);
+									regs::regaddr = _regaddr;
+									regs::count = _count;
+									try_count_ = _try_count;
+									regs::get(_values);
+									regs::pulse();
+									return;
+								} 
+							}							
+							_confirm(results::refuse);
+					  }
+						void cancel(void){
+							try_count_ = 0;
+						}
 					protected:
 						virtual void on_request(void){					
 							if(regs::count == 1){
@@ -296,10 +301,8 @@ namespace robo{
 								regs::dispetcher.write_regs(regs::device.devaddr,regs::regaddr,regs::count,regs::memo);
 							}
 						}
-						virtual bool exchange_need(void){
-							if(try_count_>0){
+						virtual bool exchange_need(void){						
 								return regs::exchange_need();
-							} else  return false;
 						}
 						virtual void on_confirm(void){
 							try_count_ = 0;
