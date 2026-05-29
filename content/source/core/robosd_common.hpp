@@ -279,6 +279,15 @@ namespace robo {
 			return _x > 0 ? (_x >> _sh) : (-((-_x) >> _sh));
 			#endif
 		}
+		
+		// перегрузки для float и double
+    inline float rsh(float _x, int8_t _sh) {
+        return _sh >= 0 ? _x * (1.0f / (1 << _sh)) : _x * (1 << -_sh);
+    }
+    inline double rsh(double _x, int8_t _sh) {
+        return _sh >= 0 ? _x * (1.0 / (1 << _sh)) : _x * (1 << -_sh);
+    }
+		
 		template <typename T> constexpr T lsh(T _x, int8_t _sh) {
 			#if ROBO_APP_MATH_SHIFT_ENABLE
 			return _x << _sh;
@@ -488,7 +497,18 @@ namespace robo {
 		}
 		return result;
 	}
-
+	constexpr double clog(double x) {
+			if (x <= 0.0) return -INFINITY;  // или выбросить ошибку
+			double y = (x - 1.0) / (x + 1.0);
+			double y2 = y * y;
+			double term = y;
+			double sum = term;
+			for (int k = 1; k < 20; ++k) {
+					term *= y2;
+					sum += term / (2.0 * k + 1.0);
+			}
+			return 2.0 * sum;
+	}
 	template <typename M>
 	M expm(const M & _A, typename M::type _eps){
 		M R = {};
