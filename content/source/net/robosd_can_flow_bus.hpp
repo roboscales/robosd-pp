@@ -47,6 +47,7 @@ namespace robo {
 					const bus::packet* outcomm_ = nullptr;
 					robo::delegat::owned_fabric<void, ::robo::net::ican&, uint32_t, const uint8_t*, uint8_t   >::member<xphys> on_can_receive_;
 					void on_can_receive__(::robo::net::ican& _ican, uint32_t _id, const uint8_t* _data, uint8_t _len);
+					robo::time_us_t default_timeout_us = 0;
 				protected:
 					virtual void confirm(void) = 0;
 					virtual void refuse(void) = 0;

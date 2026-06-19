@@ -130,7 +130,7 @@ namespace robo {
 					if (can_->ready()) {
 						if (do_send(*can_, _outcomm->id.value, _outcomm->values, _outcomm->len)) {
 							outcomm_ = _outcomm;
-							//confirm();
+							confirm();
 						}
 						else {
 							refuse();
@@ -155,10 +155,12 @@ namespace robo {
 					return false;
 				}
 				time_us_t xphys::wd_us(const bus::packet* _packet) {
+					
 					//todo!!
-					robo::time_us_t tm = _packet->len * 100 + 200;
-					if (tm < 2000) tm = 2000;
-					return tm;
+					//robo::time_us_t tm = can_->wd_us(_packet->len);
+					//robo::time_us_t tm = _packet->len * 100 + 200;
+					//if (tm < 2000) tm = 2000;
+					return default_timeout_us;
 				}
 				/*
 				решил избаить интерфейс ican от функций, которые должны нести на себе объекты- оболочки или модули  отвечающие за 
@@ -167,6 +169,7 @@ namespace robo {
 				#if ROBO_APP_MODULE_ENABLED ==1
 				bool xphys::do_load(cstr _current, cstr _common) {
 					ROBO_LBREAKN(can_name.load(_current, _common, RT("name")));
+					ini::try_load( _current, _common, RT("default_timeout_us"), default_timeout_us);
 					//ROBO_LBREAKN(can_->load());
 					return true;
 				}

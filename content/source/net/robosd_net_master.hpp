@@ -106,8 +106,11 @@ namespace robo{
 				if (state_ == state::idle){
 					state_ = state::send;
 					wd_begin_us_ = system::time_us();
-					wd_enabled = true;
+					
 					wd_delay_us_ = phys::wd_us(outcom_packet_);
+
+					wd_enabled = wd_delay_us_ > 0;
+
 					if(incom_packet_){
 						wd_delay_us_ += phys::wd_us(incom_packet_);
 					}
