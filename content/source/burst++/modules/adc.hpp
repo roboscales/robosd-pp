@@ -247,8 +247,9 @@ namespace burst {
 			ACTOR_CONFIG(a)\
 			, a##_INIT_COUNT_BITS\
 		}
-
+		
 		struct converter{
+			signal_t value;
 			virtual void begin(void) = 0;
 			virtual signal_t operator () (const R & _value) = 0;
 			#if ROBO_APP_BURST_VARTREE_ENABLED
@@ -319,7 +320,7 @@ namespace burst {
 				std::copy_n(p.raw,N,tmp_raw);
 			}
 			for (int i = 0; i < N; ++i, ++n, ++v, ++c) {
-				*v = (**c)(*n);
+				(*v) = (*c)->value =  (**c)(*n);
 			}
 		}
 

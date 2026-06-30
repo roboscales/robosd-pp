@@ -641,7 +641,7 @@ namespace burst {
 		}
         #endif
         
-        #if BURST_PANICS_BOARD_FRIENDLY_BOARD_IN_TROUBLE_ENABLED == 1
+    #if BURST_PANICS_BOARD_FRIENDLY_BOARD_IN_TROUBLE_ENABLED == 1
 		bool burst_board_friend_state = friend_got_emcy();
         if (burst_board_friend_state == true)
         {

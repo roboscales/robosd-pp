@@ -624,6 +624,23 @@ namespace robo {
 		static float sin(const float& _t) { return ::sinf(_t); }
 		static float sqrt(const float& _t) { return ::sqrtf(_t); }
 	};
+	
+	template <typename F> void minmax3(const F & _a, const F & _b, const F & _c, F & _min, F & _max) {
+    // первое сравнение: упорядочиваем a и b
+    if (_a < _b) {
+        _min = _a;
+        _max = _b;
+    } else {
+        _min = _b;
+        _max = _a;
+    }
+    // оставшийся элемент c
+    if (_c < _min) {
+        _min = _c;
+    } else if (_c > _max) {
+        _max = _c;
+    }
+	}
 
 }
 
