@@ -151,7 +151,7 @@ namespace burst {
 			p.cross.ac.voltage.req = range_apply(a.cross.ac.voltage, p.cross.ac.voltage.range);
 			p.lateral.voltage.req = range_apply(a.lateral.voltage, p.lateral.voltage.range);
 			p.synchro.freq = a.synchro.freq;
-			p.synchro.angle = a.synchro.angle;
+			p.synchro.angle32 = a.synchro.angle;
 		}
 		void mode_synchro_voltage_start(void) {
 			DEV_PRESENT_S(p);
