@@ -641,6 +641,27 @@ namespace robo {
         _max = _c;
     }
 	}
+	template <typename F> void ramp(const F & _action, const F & _ramp, const F & _min, const F & _max,F & _requried, F & _actual) {
+		if(_action>_max){
+			_requried= _max;						
+		} else 	if(_action< _min){
+			_requried = _min;
+		}  else{
+			_requried = _action; 
+		}
+		
+		if(_actual < _requried ){
+			_actual +=  _ramp;
+			if(_actual > _requried){
+				_actual = _requried ;
+			}
+		}	else if(_actual > _requried) {
+			_actual -=  _ramp;
+			if(_actual < _requried){
+				_actual = _requried;
+			}
+		}				
+	}  
 
 }
 

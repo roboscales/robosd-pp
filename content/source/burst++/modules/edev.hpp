@@ -334,6 +334,72 @@ namespace burst {
 			virtual void do_reconfig(void) {
 			}
 		};
+	
+		template<typename I, typename O> class adc_t :public agent_t<O>::block {
+			O beta_ = 0.1f;
+			O scale_ = 1.f;
+			O volt2pp_ = 1.f;
+			O offset_ = 0.f;
+			uint8_t adc_bit_ = 12;
+			O noize_mag_ = 0.f;
+			uint8_t noise_bits_ = 1;
+			O noize_power_ = 1.f;
+			O max_pp_ = 1;
+			const I& in_;
+		public:
+			O adc_ref = 3.3f;
+			O voltage = 0.f;
+			uint32_t pp = 0;
+
+		protected:
+			robo::string type;
+			
+			virtual bool do_load(robo::cstr _specific_sect, robo::cstr _common_sect) {
+				robo::string stype(RT("%s.%s"), owner.ctype(), type.c_str());
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("beta"), beta_));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("scale"), scale_));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("offset_pp"), offset_));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("adc_bits"), adc_bit_));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("adc_ref"), adc_ref));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("noise_bits"), noise_bits_));
+				ROBO_LBREAKN(robo::ini::load(_specific_sect, stype, RT("noize_power"), noize_power_));
+				return true;
+			}
+			virtual void do_run(void) {
+				float noize = ::robo::system::rand(0.f, 1.f);
+				noize = ::powf(noize, noize_power_);
+				noize = (noize * 2.f - 1.f) * noize_mag_;
+				float tmp = in_ * scale_;
+				voltage = voltage * beta_ + tmp * (1 - beta_) + noize;
+				tmp = voltage * volt2pp_ + offset_ + 0.5f;
+				if (tmp > max_pp_) {
+					tmp = max_pp_;
+				}
+				else if (tmp < 0) {
+					tmp = 0.f;
+				}
+				pp = (uint32_t)tmp;
+			}
+			virtual void do_regvar(void) {
+				#if ROBO_APP_BURST_VARTREE_ENABLED == 1
+				using namespace burst::var;
+				reg(types::const_real, voltage, RT("v"));
+				reg(types::uint32, pp, RT("pp"));
+				#endif
+			}
+			virtual void do_reconfig(void) {
+				max_pp_ = (::powf(2, adc_bit_) - 1);
+				volt2pp_ = max_pp_ / adc_ref;
+				noize_mag_ = (::powf(2, noise_bits_) - 1) / volt2pp_;
+			}
+		public:
+			adc_t(agent_t<O>& _agent, robo::cstr _name, robo::cstr _type, I& _in)
+				: ::swana::edev::agent::block(_agent, _name)
+				, in_(_in)
+				, type(_type)
+			{
+			}
+		};
 	}
 }
 			
