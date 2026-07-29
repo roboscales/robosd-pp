@@ -280,7 +280,7 @@ namespace burst {
 
 		template<typename T> class current_sensor_t :public agent_t<T>::block {
 		public:
-			using raw_s = robo::edev::power::ph3::sabc;
+			using raw_s = typename robo::edev::power::ph3_t<T>::sabc;
 			const raw_s& raw;
 			struct adc_s {
 				uint32_t A;
@@ -301,9 +301,9 @@ namespace burst {
 			{
 			}
 
-			uint32_t sence_current(float _value) {
-				float noize = ::robo::system::rand(-noizeMag, noizeMag);
-				float tmp = (_value + noize) * gain;
+			uint32_t sence_current(T _value) {
+				T noize = ::robo::system::rand(-noizeMag, noizeMag);
+				T tmp = (_value + noize) * gain;
 				if (tmp > 0)  tmp += 0.5; else if (tmp < 0)	tmp -= 0.5; // округление данных датчика
 
 				int32_t ret = driverZero + (int32_t)tmp;
