@@ -151,7 +151,10 @@ namespace robo {
                     auto deltaTheta = (T * (2.0 * omega + actuator.contr_torque * g_factor * T + T * c * iq + T * d * omega)) / 2.0;
                     auto theta_new = theta + deltaTheta;
                     electro.position += deltaTheta;
-                    electro.phase = (double)fmod(theta_new + pi, 2 * pi) - pi;
+                    if (theta_new > pi) theta_new -= 2 * pi;
+                    if (theta_new < -pi) theta_new += 2 * pi;
+                    electro.phase = theta_new;
+                    //electro.phase = (double)fmod(theta_new + pi, 2 * pi) - pi;
                     electro.speed = (double)omega_new;
                     current.set_dq((double)id_new, (double)iq_new, electro.phase);
 
@@ -203,7 +206,10 @@ namespace robo {
                     auto deltaTheta = T * w + 0.5 * T * T * dw_dt;
                     auto theta_new = th + deltaTheta;
                     electro.position += deltaTheta;
-                    electro.phase = (double)fmod(theta_new + robo::pi<double>, 2 * robo::pi<double>) - robo::pi<double>;
+                    //electro.phase = (double)fmod(theta_new + robo::pi<double>, 2 * robo::pi<double>) - robo::pi<double>;
+                    if (theta_new > pi) theta_new -= 2 * pi;
+                    if (theta_new < -pi) theta_new += 2 * pi;
+                    electro.phase = theta_new;
                     electro.speed = w_new;
 
                     current.set_dq(0, 0, electro.phase);
