@@ -87,7 +87,7 @@ namespace robo {
 	void ROBO_EXPORT finish(void);*/
 
 	int32_t ROBO_EXPORT hash(cstr _src, int32_t _begin = 0);
-	int32_t ROBO_EXPORT hash(cstr _beg, cstr _end, int32_t _begin = 0);
+	int32_t ROBO_EXPORT hash(cstr _beg, cstr _end, int32_t _begin);
 	//unsigned short fast_hash(cstr _src, unsigned short _begin);
 	//unsigned short ROBO_EXPORT fast_hash(cstr _src, unsigned short _begin = 0);
 	void ROBO_EXPORT crash(char const* _function, char const* _file, int _line);
