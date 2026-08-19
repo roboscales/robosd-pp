@@ -315,7 +315,7 @@ namespace burst {
 			discret_t discret_hi;
 			discret_t discret_delta_lo;
 			discret_t discret_delta_hi;
-			long_signal_t pwm_force;
+			//long_signal_t pwm_force;
 			#if ROBO_APP_BURST_VARTREE_ENABLED
 			virtual void do_regvar_present(void) {
 				using namespace burst::var;
@@ -345,7 +345,7 @@ namespace burst {
 					pop();
 					//uint8_t swm;
 					reg(types::const_uint8, p.swm, RT("swm"));
-					reg(number::var::long_signal, pwm_force, RT("force"));
+					//reg(number::var::long_signal, pwm_force, RT("force"));
 
 				}
 			}
@@ -398,8 +398,11 @@ namespace burst {
 				p.dq.lateral = lateral;
 				p.dq.cross = cross;
 				#endif
+				//todo для защиты целочисленных вычислений - получакется, что амплитуда dq != амплитуде ab
 				long_signal_t lateral = number::lsf::mult(p.dq.lateral, number::sqrt2_div_2);
 				long_signal_t cross = number::lsf::mult(p.dq.cross, number::sqrt2_div_2);
+				//auto lateral = p.dq.lateral;
+				//auto cross = p.dq.cross;
 				ACTOR_ALIEN_PRESENT_S(rotator_t, rotator, rot);
 				p.ab.alfa = number::lsf::dot(rot.rot.cs, lateral, -rot.rot.sn, cross);
 				p.ab.beta = number::lsf::dot(rot.rot.sn, lateral, rot.rot.cs, cross);
@@ -481,8 +484,8 @@ namespace burst {
 				else 
 				#endif
 					{
-					//long_signal_t pwm_force = cfg.pwm_force;
 				#if ROBO_APP_ULTRACOMPACT == 0
+					auto pwm_force = c.pwm_force;
 					if (pwm_force > 0) {
 						long_signal_t lo = number::min + pwm_force;
 						long_signal_t hi = number::max - pwm_force;
@@ -538,9 +541,6 @@ namespace burst {
 				ACTOR_CONFIG_S(cfg);
 				discret_hi = cfg.native.hi;
 				discret_lo = cfg.native.lo;
-				#if ROBO_APP_ULTRACOMPACT == 0
-				pwm_force = cfg.pwm_force;
-				#endif
 				discret_t delta = cfg.native.hi - cfg.native.lo;
 				long_discret_t gain = delta;
 				gain = robo::digit::lsh(gain, number::discret_bits+1);
