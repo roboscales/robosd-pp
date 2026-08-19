@@ -77,6 +77,7 @@
 #endif
 
 #ifndef FMSTR_ADDRESS_OFFSET_TYPE
+#include "stdint.h"
 #define FMSTR_ADDRESS_OFFSET_TYPE uintptr_t
 #endif
 

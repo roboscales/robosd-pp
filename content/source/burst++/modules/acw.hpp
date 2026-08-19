@@ -173,6 +173,11 @@ namespace burst{
 			B::mode_speed_stop();
 		}
 
+		void mode_speed_ov_voltage_cl_runA(void)
+		{
+			limiter_.run();
+		}
+
 		void mode_speed_ov_voltage_cl_runB(void) {
 			B::mode_speed_runB();
 		}
