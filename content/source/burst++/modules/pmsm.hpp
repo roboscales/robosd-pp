@@ -183,6 +183,7 @@ namespace burst {
 			virtual void	loopB(void) {}
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
+			virtual void 	trajectory_loop(void) { }
 		} synchro_voltage_mode_;
 	protected:
 		void mode_synchro_current_applay_action(void) {
@@ -236,6 +237,7 @@ namespace burst {
 				virtual void	loopB(void) { }
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
+				virtual void 	trajectory_loop(void) { }
 			} synchro_current_mode_;
 		public:
 		virtual void switch_to_mode(int _mode) {

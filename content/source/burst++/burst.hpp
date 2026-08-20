@@ -115,6 +115,7 @@ namespace burst {
 			virtual void	loopB(void) = 0;
 			virtual void	loopC(void) = 0;
 			virtual void	frontend_loop(void) = 0;
+			virtual void    trajectory_loop(void) = 0;
 		private:
 			ref ref_;
 			dev& dev_;
@@ -200,6 +201,7 @@ namespace burst {
 		void loopB(void);
 		void loopC(void);
 		void frontend_loop(void);
+		void trajectory_loop(void);
 		void action_enable(void) { action_enabled_ = true; }
 		void action_disable(void) { action_enabled_ = false; }
 		void action_update(void) { action_.action_actual = true; }

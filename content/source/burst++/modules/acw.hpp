@@ -198,6 +198,7 @@ namespace burst{
 			virtual void	loopB(void) { owner<acw_t>().mode_speed_ov_voltage_cl_runB(); }
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
+			virtual void 	trajectory_loop(void) { }
 		} speed_ov_voltage_cl_mode_;
 #endif
 		protected:
@@ -233,12 +234,18 @@ namespace burst{
 			virtual void	loopB(void) { }
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
+			virtual void 	trajectory_loop(void) { }
 		} voltage_cl_mode_;
 
 		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED 
 		protected:
 		void mode_position_ov_voltage_cl_stop(void) {
 			B::mode_position_stop();
+		}
+
+		void mode_position_ov_voltage_cl_runA(void)
+		{
+			limiter_.run();
 		}
 
 		void mode_position_ov_voltage_cl_runB(void) {
@@ -268,6 +275,7 @@ namespace burst{
 			virtual void	loopB(void) { owner<acw_t>().mode_position_ov_voltage_cl_runB(); }
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
+			virtual void 	trajectory_loop(void) { }
 		} position_ov_voltage_cl_mode_;		
 		#endif		
 
@@ -343,6 +351,7 @@ namespace burst{
 				virtual void	loopB(void) {}
 				virtual void	loopC(void) {}
 				virtual void	frontend_loop(void) {}
+				virtual void 	trajectory_loop(void) { }
 			} current_mode_;
 			
 			#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED

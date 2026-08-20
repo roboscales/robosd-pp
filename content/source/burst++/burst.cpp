@@ -546,6 +546,14 @@ namespace burst {
 		}
 	}
 
+	void dev::trajectory_loop(void)
+	{
+		if(actual_mode_)
+		{
+			actual_mode_->trajectory_loop();
+		}
+	}
+
 	/*
 	void board::perform_panic(void) {
 		for (dev::ref* p = devs_ref_.first(); p; p = p->next()) {

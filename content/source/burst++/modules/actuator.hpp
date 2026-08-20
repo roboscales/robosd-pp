@@ -227,6 +227,7 @@ namespace burst{
 			virtual void	loopB(void) { }
 			virtual void	loopC(void) {}
 			virtual void	frontend_loop(void) {}
+			virtual void    trajectory_loop(void) { }
 		} voltage_mode_;
 		protected:
 		

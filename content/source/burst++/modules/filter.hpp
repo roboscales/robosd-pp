@@ -1,5 +1,6 @@
 #ifndef burst_filter_hpp
 #define burst_filter_hpp
+#include "burst++/burst.hpp"
 #include "burst++/modules/actor.hpp"
 #include "burst++/math.hpp"
 
