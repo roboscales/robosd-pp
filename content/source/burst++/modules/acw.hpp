@@ -39,7 +39,9 @@ namespace burst{
 				#if BURST_ACW_MOVE_OV_CURRENT_MODE_ENABLED
 				struct {
 					typename burst::motion_t<number>::config_s motion;
+					#if BURST_ACW_POSITIONER_OV_CURRENT_MODE_ENABLED
 					typename burst::positioner_t<number>::config_s positioner;
+					#endif	
 				} current;
 				#endif
 			} modes;
@@ -68,14 +70,21 @@ namespace burst{
 		#define BURST_PANICS_ACWC_OVERCURRENT_CO(a)
 		#endif
 		
-		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
-		#define BURST_ACW_MODES_CL_CO(a)\
+		#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED && BURST_ACW_POSITION_OV_VOLTAGE_CL_MODE_ENABLED
+			#define BURST_ACW_MODES_CL_CO(a)\
 				{\
 					MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
 					,POSITIONER_CONFIG(a##_POSITIONER_OV_VOLTAGE_CL)\
 				}
 		#else
-		#define BURST_ACW_MODES_CL_CO(a)
+			#if BURST_ACW_MOVE_OV_VOLTAGE_CL_MODE_ENABLED
+				#define BURST_ACW_MODES_CL_CO(a)\
+					{\
+						MOTION_CONFIG(a##_MOTION_OV_VOLTAGE_CL)\
+					}
+			#else
+				#define BURST_ACW_MODES_CL_CO(a)
+			#endif
 		#endif
 				
 				
