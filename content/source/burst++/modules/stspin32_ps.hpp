@@ -35,16 +35,16 @@ namespace burst
 
 			struct present_s
 			{
-				machine_t<driver>::present_s super;
+				typename machine_t<driver>::present_s super;
 				uint8_t driver_state;
 				uint8_t fault_state;
 			};
 
 			using duty_s = typename driver::duty_t;
 			using super = machine_t<driver>;
-			stspin32_t(const super::config_s& _config, present_s& _present)
+			stspin32_t(const typename super::config_s& _config, present_s& _present)
 			: super(_config, _present) {}
-			stspin32_t(const super::config_s& _config, present_s& _present, subsystem& _subsystem)
+			stspin32_t(const typename super::config_s& _config, present_s& _present, subsystem& _subsystem)
 			: super(_config, _present.super, _subsystem) {}
 
 			virtual void run(void)

@@ -32,7 +32,7 @@ namespace burst
             struct config_s
             {
                 typename super::config_s pmsm;
-                traj_handler_t::config_s thandler;
+                typename traj_handler_t::config_s thandler;
                 long_signal_t time_scale;
             };
             
@@ -102,8 +102,8 @@ namespace burst
 				, const signal_t& _current_mag
 				#endif
 				#endif
-				, traj_handler_t::present_s & _phandler
-				, traj_handler_t::config_s & _chandler
+				, typename traj_handler_t::present_s & _phandler
+				, typename traj_handler_t::config_s & _chandler
 			) : super(
 				_dev_id
 				, _config.pmsm
